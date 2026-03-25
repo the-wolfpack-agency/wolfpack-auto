@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getInventoryVehicles, getVehicleFacets } from "@/lib/data";
+import InventoryFilters, { InventorySortDropdown } from "@/components/InventoryFilters";
 
 export const dynamic = "force-dynamic";
 
@@ -47,152 +49,13 @@ export default async function InventoryPage({
             aria-label="Inventory filters"
             className="w-full shrink-0 lg:w-sidebar-width"
           >
-            <div className="rounded-2xl border border-surface-border bg-white p-6 shadow-card">
-              <h2 className="text-lg font-bold text-gray-900">Filters</h2>
-              <form method="GET" action="/inventory" className="mt-6 space-y-6">
-                {/* Search */}
-                <fieldset>
-                  <legend className="text-sm font-semibold text-gray-700">Search</legend>
-                  <label htmlFor="filter-search" className="sr-only">Keyword search</label>
-                  <div className="relative mt-2">
-                    <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                    </svg>
-                    <input
-                      id="filter-search"
-                      name="q"
-                      type="search"
-                      defaultValue={queryStr}
-                      placeholder="Make, model, keyword..."
-                      className="w-full rounded-lg border border-surface-border py-2.5 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    />
-                  </div>
-                </fieldset>
-
-                {/* Make */}
-                <fieldset>
-                  <legend className="text-sm font-semibold text-gray-700">Make</legend>
-                  <label htmlFor="filter-make" className="sr-only">Select make</label>
-                  <select
-                    id="filter-make"
-                    name="make"
-                    defaultValue={makeFilter ?? ""}
-                    className="mt-2 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option value="">All Makes</option>
-                    {facets.makes.map((f) => (
-                      <option key={f.value} value={f.value}>
-                        {f.value} ({f.count})
-                      </option>
-                    ))}
-                  </select>
-                </fieldset>
-
-                {/* Model */}
-                <fieldset>
-                  <legend className="text-sm font-semibold text-gray-700">Model</legend>
-                  <label htmlFor="filter-model" className="sr-only">Select model</label>
-                  <select
-                    id="filter-model"
-                    name="model"
-                    className="mt-2 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option value="">All Models</option>
-                  </select>
-                </fieldset>
-
-                {/* Condition */}
-                <FilterGroup
-                  legend="Condition"
-                  name="condition"
-                  options={facets.conditions.length > 0
-                    ? facets.conditions.map((f) => f.value.charAt(0).toUpperCase() + f.value.slice(1))
-                    : ["New", "Used", "Certified"]
-                  }
-                />
-
-                {/* Body Style */}
-                <FilterGroup
-                  legend="Body Style"
-                  name="body_style"
-                  options={facets.bodyStyles.length > 0
-                    ? facets.bodyStyles.map((f) => f.value.charAt(0).toUpperCase() + f.value.slice(1))
-                    : ["Sedan", "SUV", "Truck", "Coupe", "Van", "Wagon", "Convertible"]
-                  }
-                />
-
-                {/* Year Range */}
-                <fieldset>
-                  <legend className="text-sm font-semibold text-gray-700">Year</legend>
-                  <div className="mt-2 flex gap-2">
-                    <label htmlFor="year-min" className="sr-only">Minimum year</label>
-                    <select
-                      id="year-min"
-                      name="year_min"
-                      className="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    >
-                      <option value="">From</option>
-                      {[2024, 2023, 2022, 2021, 2020, 2019, 2018].map((y) => (
-                        <option key={y}>{y}</option>
-                      ))}
-                    </select>
-                    <label htmlFor="year-max" className="sr-only">Maximum year</label>
-                    <select
-                      id="year-max"
-                      name="year_max"
-                      className="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    >
-                      <option value="">To</option>
-                      {[2024, 2023, 2022, 2021, 2020, 2019, 2018].map((y) => (
-                        <option key={y}>{y}</option>
-                      ))}
-                    </select>
-                  </div>
-                </fieldset>
-
-                {/* Price Range */}
-                <fieldset>
-                  <legend className="text-sm font-semibold text-gray-700">Price Range</legend>
-                  <div className="mt-2 flex gap-2">
-                    <label htmlFor="price-min" className="sr-only">Minimum price</label>
-                    <select
-                      id="price-min"
-                      name="price_min"
-                      className="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    >
-                      <option value="">No Min</option>
-                      {[10000, 20000, 30000, 40000, 50000].map((p) => (
-                        <option key={p} value={p}>${(p / 1000)}K</option>
-                      ))}
-                    </select>
-                    <label htmlFor="price-max" className="sr-only">Maximum price</label>
-                    <select
-                      id="price-max"
-                      name="price_max"
-                      className="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    >
-                      <option value="">No Max</option>
-                      {[20000, 30000, 40000, 50000, 75000, 100000].map((p) => (
-                        <option key={p} value={p}>${(p / 1000)}K</option>
-                      ))}
-                    </select>
-                  </div>
-                </fieldset>
-
-                <button
-                  type="submit"
-                  className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                >
-                  Apply Filters
-                </button>
-                <button
-                  type="reset"
-                  className="w-full rounded-lg border border-surface-border px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-surface-subtle"
-                >
-                  Clear All
-                </button>
-              </form>
-            </div>
+            <Suspense fallback={<div className="rounded-2xl border border-surface-border bg-white p-6 shadow-card animate-pulse h-96" />}>
+              <InventoryFilters
+                makes={facets.makes}
+                conditions={facets.conditions}
+                bodyStyles={facets.bodyStyles}
+              />
+            </Suspense>
           </aside>
 
           {/* Results */}
@@ -205,19 +68,9 @@ export default async function InventoryPage({
                   <span> for &ldquo;<span className="font-medium">{queryStr}</span>&rdquo;</span>
                 )}
               </p>
-              <div className="flex items-center gap-2">
-                <label htmlFor="sort-by" className="text-sm text-gray-500">Sort by:</label>
-                <select
-                  id="sort-by"
-                  className="rounded-lg border border-surface-border px-3 py-1.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                >
-                  <option>Best Match</option>
-                  <option>Price: Low to High</option>
-                  <option>Price: High to Low</option>
-                  <option>Mileage: Low to High</option>
-                  <option>Year: Newest First</option>
-                </select>
-              </div>
+              <Suspense fallback={null}>
+                <InventorySortDropdown />
+              </Suspense>
             </div>
 
             {/* Vehicle Grid */}
@@ -335,37 +188,3 @@ export default async function InventoryPage({
   );
 }
 
-function FilterGroup({
-  legend,
-  name,
-  options,
-}: {
-  legend: string;
-  name: string;
-  options: string[];
-}) {
-  return (
-    <fieldset>
-      <legend className="text-sm font-semibold text-gray-700">{legend}</legend>
-      <div className="mt-2 space-y-2">
-        {options.map((opt) => {
-          const id = `${name}-${opt.toLowerCase().replace(/\s+/g, "-")}`;
-          return (
-            <div key={opt} className="flex items-center gap-2">
-              <input
-                id={id}
-                name={name}
-                value={opt.toLowerCase()}
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-              />
-              <label htmlFor={id} className="text-sm text-gray-600">
-                {opt}
-              </label>
-            </div>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
-}

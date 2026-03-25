@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ContactForm from "@/components/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -31,106 +32,7 @@ export default function ContactPage() {
                 Fill out the form below and a team member will be in touch shortly.
               </p>
 
-              <form className="mt-8 space-y-6" action="#" method="POST">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="contact-first-name" className="text-sm font-medium text-gray-700">
-                      First Name <span className="text-red-500" aria-hidden="true">*</span>
-                    </label>
-                    <input
-                      id="contact-first-name"
-                      name="first_name"
-                      type="text"
-                      required
-                      className="mt-1 w-full rounded-lg border border-surface-border px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                      placeholder="John"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="contact-last-name" className="text-sm font-medium text-gray-700">
-                      Last Name <span className="text-red-500" aria-hidden="true">*</span>
-                    </label>
-                    <input
-                      id="contact-last-name"
-                      name="last_name"
-                      type="text"
-                      required
-                      className="mt-1 w-full rounded-lg border border-surface-border px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                      placeholder="Smith"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="contact-email" className="text-sm font-medium text-gray-700">
-                      Email Address <span className="text-red-500" aria-hidden="true">*</span>
-                    </label>
-                    <input
-                      id="contact-email"
-                      name="email"
-                      type="email"
-                      required
-                      className="mt-1 w-full rounded-lg border border-surface-border px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                      placeholder="john@example.com"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="contact-phone" className="text-sm font-medium text-gray-700">
-                      Phone Number
-                    </label>
-                    <input
-                      id="contact-phone"
-                      name="phone"
-                      type="tel"
-                      className="mt-1 w-full rounded-lg border border-surface-border px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                      placeholder="(303) 555-0000"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="contact-subject" className="text-sm font-medium text-gray-700">
-                    What can we help with?
-                  </label>
-                  <select
-                    id="contact-subject"
-                    name="subject"
-                    className="mt-1 w-full rounded-lg border border-surface-border px-4 py-3 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option>General Inquiry</option>
-                    <option>Vehicle Question</option>
-                    <option>Schedule Test Drive</option>
-                    <option>Financing Question</option>
-                    <option>Trade-In Appraisal</option>
-                    <option>Service Appointment</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="contact-message" className="text-sm font-medium text-gray-700">
-                    Message <span className="text-red-500" aria-hidden="true">*</span>
-                  </label>
-                  <textarea
-                    id="contact-message"
-                    name="message"
-                    rows={5}
-                    required
-                    className="mt-1 w-full rounded-lg border border-surface-border px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    placeholder="Tell us how we can help..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-brand-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-                >
-                  <svg width="20" height="20" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                  Send Message
-                </button>
-              </form>
+              <ContactForm />
             </div>
           </div>
 
