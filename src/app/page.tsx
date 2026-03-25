@@ -86,12 +86,12 @@ export default async function HomePage() {
               aria-label="Vehicle search"
               className="mx-auto mt-10 flex max-w-3xl flex-col gap-3 sm:flex-row"
             >
-              <div className="flex flex-1 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr_auto]">
                 <label htmlFor="hero-make" className="sr-only">Make</label>
                 <select
                   id="hero-make"
                   name="make"
-                  className="w-full rounded-lg border-0 bg-white/10 px-4 py-3.5 text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30 sm:w-auto"
+                  className="w-full rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
                   defaultValue=""
                 >
                   <option value="" disabled className="text-gray-900">Any Make</option>
@@ -108,7 +108,7 @@ export default async function HomePage() {
                   name="q"
                   type="search"
                   placeholder="Search model or keyword..."
-                  className="flex-1 rounded-lg border-0 bg-white/10 px-4 py-3.5 text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  className="w-full rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30"
                 />
                 <label htmlFor="hero-zip" className="sr-only">ZIP Code</label>
                 <input
@@ -117,7 +117,7 @@ export default async function HomePage() {
                   type="text"
                   placeholder="ZIP"
                   maxLength={5}
-                  className="w-24 rounded-lg border-0 bg-white/10 px-4 py-3.5 text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  className="w-full rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30 sm:w-24"
                 />
               </div>
               <button
