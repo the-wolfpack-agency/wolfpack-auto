@@ -247,7 +247,7 @@ export default function ChatWidget() {
           role="dialog"
           aria-label="Chat with Wolfpack Motors assistant"
           aria-modal="true"
-          className="fixed bottom-0 right-0 z-50 flex h-[min(580px,100dvh)] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:bottom-24 sm:right-6 sm:h-[520px] sm:w-[380px] sm:rounded-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-[100dvh] max-h-[580px] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[520px] sm:max-h-[520px] sm:w-[380px] sm:rounded-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
           style={{
             animation: "slideUp 200ms ease-out",
           }}
@@ -336,7 +336,7 @@ export default function ChatWidget() {
               placeholder="Type a message..."
               maxLength={500}
               autoComplete="off"
-              className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
+              className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-base text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100"
               disabled={isTyping}
             />
             <button
