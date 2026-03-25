@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { searchVehicles, getFacets } from "@/lib/inventory-search";
-import { cacheGet, cacheSet } from "@/lib/cache";
-import type { InventoryFilters } from "@/types/vehicle";
+import { getInventoryVehicles, getVehicleFacets } from "@/lib/data";
 
 /**
- * Query parameter schema — all optional except dealer_id.
+ * Query parameter schema — all optional.
  */
 const searchParamsSchema = z.object({
-  dealer_id: z.string().min(1, "dealer_id is required"),
   make: z.string().optional(),
   model: z.string().optional(),
   year_min: z.coerce.number().int().min(1900).max(2100).optional(),
@@ -45,69 +42,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const {
-    dealer_id,
-    make,
-    model,
-    year_min,
-    year_max,
-    price_min,
-    price_max,
-    body_style,
-    condition,
-    fuel_type,
-    transmission,
-    q,
-    sort,
-    page,
-    page_size,
-  } = parsed.data;
+  const { make, condition, sort } = parsed.data;
 
   try {
-    // Build filters object
-    const filters: InventoryFilters = {
-      make,
-      model,
-      year_min,
-      year_max,
-      price_min,
-      price_max,
-      body_style,
-      condition,
-      fuel_type,
-      transmission,
-      sort_by: sort,
-    };
-
-    // Cache key based on full query fingerprint
-    const cacheKeyParts = JSON.stringify({ dealer_id, ...filters, q, page, page_size });
-    const searchCacheKey = `inventory:search:${dealer_id}:${Buffer.from(cacheKeyParts).toString("base64url")}`;
-    const facetCacheKey = `inventory:facets:${dealer_id}`;
-
-    // Try cache for search results
-    const cachedSearch = await cacheGet<Awaited<ReturnType<typeof searchVehicles>>>(searchCacheKey);
-    const cachedFacets = await cacheGet<Awaited<ReturnType<typeof getFacets>>>(facetCacheKey);
-
-    // Fetch in parallel, using cache where available
-    const [searchResult, facets] = await Promise.all([
-      cachedSearch ?? searchVehicles(dealer_id, filters, q, page, page_size),
-      cachedFacets ?? getFacets(dealer_id),
+    const [inventoryResult, facetsResult] = await Promise.all([
+      getInventoryVehicles({ make, condition, sort }),
+      getVehicleFacets(),
     ]);
 
-    // Populate cache (non-blocking)
-    if (!cachedSearch) {
-      void cacheSet(searchCacheKey, searchResult, 10);
-    }
-    if (!cachedFacets) {
-      void cacheSet(facetCacheKey, facets, 30);
-    }
-
     return NextResponse.json({
-      vehicles: searchResult.vehicles,
-      total: searchResult.total,
-      page: searchResult.page,
-      page_size: searchResult.page_size,
-      facets,
+      vehicles: inventoryResult.data,
+      total: inventoryResult.data.length,
+      page: parsed.data.page,
+      page_size: parsed.data.page_size,
+      facets: facetsResult.data,
+      source: inventoryResult.source,
     });
   } catch (err) {
     console.error("[api/inventory] Search failed:", err);

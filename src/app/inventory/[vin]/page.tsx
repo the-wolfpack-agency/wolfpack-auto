@@ -1,82 +1,35 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getVehicleByVin } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
 
 interface VDPParams {
   params: { vin: string };
 }
 
-const vehicleData = {
-  year: 2024,
-  make: "Honda",
-  model: "CR-V",
-  trim: "EX-L",
-  price: 34_250,
-  msrp: 36_500,
-  mileage: 1_283,
-  exteriorColor: "Radiant Red Metallic",
-  interiorColor: "Black Leather",
-  transmission: "CVT Automatic",
-  drivetrain: "All-Wheel Drive",
-  fuelType: "Gasoline",
-  engine: "1.5L Turbocharged 4-Cylinder",
-  mpg: "29 city / 36 hwy",
-  stockNumber: "WP24-0847",
-};
-
-const features = [
-  "Honda Sensing Suite",
-  "Leather-Trimmed Seats",
-  "Wireless Apple CarPlay & Android Auto",
-  "Heated Front & Rear Seats",
-  "Power Tailgate with Hands-Free Access",
-  "Panoramic Moonroof",
-  "9-inch Color Touchscreen",
-  "Blind Spot Information System",
-  "Remote Engine Start",
-  "Dual-Zone Automatic Climate Control",
-  "LED Headlights with Auto On/Off",
-  "18-inch Alloy Wheels",
-];
-
-const similarVehicles = [
-  {
-    year: 2024,
-    make: "Toyota",
-    model: "RAV4 XLE Premium",
-    price: 35_875,
-    mileage: 856,
-    gradient: "from-emerald-400 to-emerald-600",
-    vin: "2T3P1RFV4RC000003",
-  },
-  {
-    year: 2023,
-    make: "Hyundai",
-    model: "Tucson SEL",
-    price: 29_800,
-    mileage: 10_240,
-    gradient: "from-violet-400 to-violet-600",
-    vin: "5NMJFDAE4PH000008",
-  },
-  {
-    year: 2024,
-    make: "Mazda",
-    model: "CX-5 Carbon Turbo",
-    price: 36_950,
-    mileage: 2_150,
-    gradient: "from-amber-400 to-amber-600",
-    vin: "JM3KFBDM4R1000009",
-  },
-];
-
 export async function generateMetadata({ params }: VDPParams): Promise<Metadata> {
+  const { data: vehicle } = await getVehicleByVin(params.vin);
+
+  if (!vehicle) {
+    return { title: "Vehicle Not Found" };
+  }
+
   return {
-    title: `${vehicleData.year} ${vehicleData.make} ${vehicleData.model} ${vehicleData.trim}`,
-    description: `View details, photos, and pricing for the ${vehicleData.year} ${vehicleData.make} ${vehicleData.model} ${vehicleData.trim}. ${vehicleData.mileage.toLocaleString()} miles, $${vehicleData.price.toLocaleString()}.`,
+    title: `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim}`,
+    description: `View details, photos, and pricing for the ${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim}. ${vehicle.mileage.toLocaleString()} miles, $${vehicle.price.toLocaleString()}.`,
   };
 }
 
-export default function VehicleDetailPage({ params }: VDPParams) {
+export default async function VehicleDetailPage({ params }: VDPParams) {
   const { vin } = params;
-  const v = vehicleData;
+  const { data: vehicle } = await getVehicleByVin(vin);
+
+  if (!vehicle) {
+    notFound();
+  }
+
+  const v = vehicle;
 
   return (
     <div className="bg-surface-muted min-h-screen">
@@ -116,7 +69,7 @@ export default function VehicleDetailPage({ params }: VDPParams) {
           <div className="lg:col-span-2 space-y-8">
             {/* Photo Gallery */}
             <section aria-label="Vehicle photos">
-              <div className="h-80 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 shadow-card">
+              <div className={`h-80 overflow-hidden rounded-2xl bg-gradient-to-br ${v.gradient} shadow-card`}>
                 <div className="flex h-full items-center justify-center">
                   <div className="text-center">
                     <svg className="mx-auto h-20 w-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -184,7 +137,7 @@ export default function VehicleDetailPage({ params }: VDPParams) {
             <section aria-labelledby="features-heading" className="rounded-2xl border border-surface-border bg-white p-8 shadow-card">
               <h2 id="features-heading" className="text-xl font-bold text-gray-900">Key Features</h2>
               <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {features.map((feat) => (
+                {v.features.map((feat) => (
                   <li key={feat} className="flex items-center gap-3 text-sm text-gray-700">
                     <svg width="20" height="20" className="h-5 w-5 shrink-0 text-emerald-500" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                       <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
@@ -338,7 +291,7 @@ export default function VehicleDetailPage({ params }: VDPParams) {
         <section aria-labelledby="similar-heading" className="mt-16">
           <h2 id="similar-heading" className="text-2xl font-bold text-gray-900">Similar Vehicles</h2>
           <div className="mt-6 grid gap-6 sm:grid-cols-3">
-            {similarVehicles.map((sv) => (
+            {v.similarVehicles.map((sv) => (
               <a
                 key={sv.vin}
                 href={`/inventory/${sv.vin}`}

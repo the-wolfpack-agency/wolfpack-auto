@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import MobileMenu from "@/components/MobileMenu";
+import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: {
@@ -116,16 +118,8 @@ export default function RootLayout({
                 (303) 555-1234
               </a>
 
-              {/* Mobile menu button */}
-              <button
-                type="button"
-                className="inline-flex items-center justify-center rounded-lg p-2 text-gray-700 transition-colors hover:bg-surface-subtle md:hidden"
-                aria-label="Open navigation menu"
-              >
-                <svg width="24" height="24" className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              </button>
+              {/* Mobile menu — client component with open/close state */}
+              <MobileMenu />
             </div>
           </nav>
         </header>
@@ -261,6 +255,9 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+
+        {/* AI Chat Assistant — appears on every page */}
+        <ChatWidget />
       </body>
     </html>
   );

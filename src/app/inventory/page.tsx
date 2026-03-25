@@ -1,109 +1,27 @@
 import type { Metadata } from "next";
+import { getInventoryVehicles, getVehicleFacets } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Inventory",
   description: "Browse our full vehicle inventory with advanced filters.",
 };
 
-const vehicles = [
-  {
-    vin: "1HGCV1F34PA000001",
-    year: 2024,
-    make: "Honda",
-    model: "CR-V",
-    trim: "EX-L",
-    price: 34_250,
-    msrp: 36_500,
-    mileage: 1_283,
-    fuel: "Gasoline",
-    transmission: "CVT",
-    gradient: "from-blue-400 to-blue-600",
-    condition: "New",
-    bodyStyle: "SUV",
-  },
-  {
-    vin: "5YJ3E1EA1PF000002",
-    year: 2023,
-    make: "Tesla",
-    model: "Model 3",
-    trim: "Long Range",
-    price: 38_990,
-    msrp: 42_990,
-    mileage: 12_450,
-    fuel: "Electric",
-    transmission: "Single-Speed",
-    gradient: "from-red-400 to-red-600",
-    condition: "Used",
-    bodyStyle: "Sedan",
-  },
-  {
-    vin: "2T3P1RFV4RC000003",
-    year: 2024,
-    make: "Toyota",
-    model: "RAV4",
-    trim: "XLE Premium",
-    price: 35_875,
-    msrp: 37_200,
-    mileage: 856,
-    fuel: "Hybrid",
-    transmission: "CVT",
-    gradient: "from-emerald-400 to-emerald-600",
-    condition: "New",
-    bodyStyle: "SUV",
-  },
-  {
-    vin: "5UXTS3C50P9000004",
-    year: 2023,
-    make: "BMW",
-    model: "X3",
-    trim: "xDrive30i",
-    price: 42_500,
-    msrp: 48_750,
-    mileage: 8_720,
-    fuel: "Gasoline",
-    transmission: "8-Speed Auto",
-    gradient: "from-slate-500 to-slate-700",
-    condition: "Certified",
-    bodyStyle: "SUV",
-  },
-  {
-    vin: "1G1YA2D4XP5000005",
-    year: 2024,
-    make: "Chevrolet",
-    model: "Corvette",
-    trim: "Stingray 2LT",
-    price: 68_900,
-    msrp: 72_400,
-    mileage: 3_210,
-    fuel: "Gasoline",
-    transmission: "8-Speed DCT",
-    gradient: "from-yellow-400 to-orange-500",
-    condition: "Used",
-    bodyStyle: "Coupe",
-  },
-  {
-    vin: "1FTFW1E89PKA00006",
-    year: 2023,
-    make: "Ford",
-    model: "F-150",
-    trim: "Lariat",
-    price: 52_350,
-    msrp: 58_100,
-    mileage: 15_680,
-    fuel: "Gasoline",
-    transmission: "10-Speed Auto",
-    gradient: "from-sky-400 to-indigo-500",
-    condition: "Used",
-    bodyStyle: "Truck",
-  },
-];
-
-export default function InventoryPage({
+export default async function InventoryPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const query = typeof searchParams.q === "string" ? searchParams.q : "";
+  const queryStr = typeof searchParams.q === "string" ? searchParams.q : "";
+  const makeFilter = typeof searchParams.make === "string" ? searchParams.make : undefined;
+  const conditionFilter = typeof searchParams.condition === "string" ? searchParams.condition : undefined;
+  const sortFilter = typeof searchParams.sort === "string" ? searchParams.sort : undefined;
+
+  const [{ data: vehicles }, { data: facets }] = await Promise.all([
+    getInventoryVehicles({ make: makeFilter, condition: conditionFilter, sort: sortFilter }),
+    getVehicleFacets(),
+  ]);
 
   return (
     <div className="bg-surface-muted min-h-screen">
@@ -144,7 +62,7 @@ export default function InventoryPage({
                       id="filter-search"
                       name="q"
                       type="search"
-                      defaultValue={query}
+                      defaultValue={queryStr}
                       placeholder="Make, model, keyword..."
                       className="w-full rounded-lg border border-surface-border py-2.5 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                     />
@@ -158,15 +76,15 @@ export default function InventoryPage({
                   <select
                     id="filter-make"
                     name="make"
+                    defaultValue={makeFilter ?? ""}
                     className="mt-2 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                   >
                     <option value="">All Makes</option>
-                    <option>BMW</option>
-                    <option>Chevrolet</option>
-                    <option>Ford</option>
-                    <option>Honda</option>
-                    <option>Tesla</option>
-                    <option>Toyota</option>
+                    {facets.makes.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.value} ({f.count})
+                      </option>
+                    ))}
                   </select>
                 </fieldset>
 
@@ -187,14 +105,20 @@ export default function InventoryPage({
                 <FilterGroup
                   legend="Condition"
                   name="condition"
-                  options={["New", "Used", "Certified"]}
+                  options={facets.conditions.length > 0
+                    ? facets.conditions.map((f) => f.value.charAt(0).toUpperCase() + f.value.slice(1))
+                    : ["New", "Used", "Certified"]
+                  }
                 />
 
                 {/* Body Style */}
                 <FilterGroup
                   legend="Body Style"
                   name="body_style"
-                  options={["Sedan", "SUV", "Truck", "Coupe", "Van", "Wagon", "Convertible"]}
+                  options={facets.bodyStyles.length > 0
+                    ? facets.bodyStyles.map((f) => f.value.charAt(0).toUpperCase() + f.value.slice(1))
+                    : ["Sedan", "SUV", "Truck", "Coupe", "Van", "Wagon", "Convertible"]
+                  }
                 />
 
                 {/* Year Range */}
@@ -276,9 +200,9 @@ export default function InventoryPage({
             {/* Sort Bar */}
             <div className="flex items-center justify-between rounded-xl border border-surface-border bg-white px-5 py-3 shadow-card">
               <p className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-gray-900">24</span> vehicles
-                {query && (
-                  <span> for &ldquo;<span className="font-medium">{query}</span>&rdquo;</span>
+                Showing <span className="font-semibold text-gray-900">{vehicles.length}</span> vehicles
+                {queryStr && (
+                  <span> for &ldquo;<span className="font-medium">{queryStr}</span>&rdquo;</span>
                 )}
               </p>
               <div className="flex items-center gap-2">

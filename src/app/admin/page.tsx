@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
-import { query } from "@/lib/db";
+import { getDashboardStats, getRecentLeads } from "@/lib/data";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
@@ -9,113 +9,13 @@ export const metadata: Metadata = {
   description: "Dealer admin dashboard overview.",
 };
 
-// TODO: Replace with authenticated dealer from session middleware
-const DEALER_ID = process.env.DEALER_ID ?? "default";
-
-interface VehicleCounts {
-  total: number;
-  available: number;
-  pending: number;
-  sold: number;
-}
-
-interface LeadCounts {
-  total: number;
-  new: number;
-  contacted: number;
-  qualified: number;
-  appointment_set: number;
-  sold: number;
-  lost: number;
-}
-
-interface RecentLead {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string | null;
-  vehicle_interest: string;
-  source: string;
-  status: string;
-  created_at: string;
-}
-
-async function getDashboardData() {
-  const [vehicleRows, leadRows, avgDaysRows, recentLeadRows] =
-    await Promise.all([
-      query<{ status: string; count: string }>(
-        `SELECT status, COUNT(*)::text AS count
-         FROM vehicles WHERE dealer_id = $1
-         GROUP BY status`,
-        [DEALER_ID],
-      ),
-      query<{ status: string; count: string }>(
-        `SELECT status, COUNT(*)::text AS count
-         FROM leads WHERE dealer_id = $1
-         GROUP BY status`,
-        [DEALER_ID],
-      ),
-      query<{ avg_days: string }>(
-        `SELECT COALESCE(
-           ROUND(AVG(EXTRACT(EPOCH FROM (now() - created_at)) / 86400))::text,
-           '0'
-         ) AS avg_days
-         FROM vehicles
-         WHERE dealer_id = $1 AND status = 'available'`,
-        [DEALER_ID],
-      ),
-      query(
-        `SELECT id, first_name, last_name, email, phone,
-                vehicle_interest, source, status, created_at
-         FROM leads WHERE dealer_id = $1
-         ORDER BY created_at DESC LIMIT 10`,
-        [DEALER_ID],
-      ),
-    ]);
-
-  const vehicles: VehicleCounts = { total: 0, available: 0, pending: 0, sold: 0 };
-  for (const row of vehicleRows.rows as any[]) {
-    const count = parseInt(row.count, 10);
-    vehicles.total += count;
-    if (row.status in vehicles) {
-      vehicles[row.status as keyof VehicleCounts] = count;
-    }
-  }
-
-  const leads: LeadCounts = {
-    total: 0, new: 0, contacted: 0, qualified: 0,
-    appointment_set: 0, sold: 0, lost: 0,
-  };
-  for (const row of leadRows.rows as any[]) {
-    const count = parseInt(row.count, 10);
-    leads.total += count;
-    if (row.status in leads) {
-      leads[row.status as keyof LeadCounts] = count;
-    }
-  }
-
-  const avgDaysOnLot = parseInt(
-    (avgDaysRows.rows as any[])[0]?.avg_days ?? "0",
-    10,
-  );
-
-  const convertible = leads.total - leads.lost;
-  const conversionRate =
-    convertible > 0 ? Math.round((leads.sold / convertible) * 100) : 0;
-
-  return {
-    vehicles,
-    leads,
-    avgDaysOnLot,
-    conversionRate,
-    recentLeads: recentLeadRows.rows as unknown as RecentLead[],
-  };
-}
-
 export default async function AdminDashboardPage() {
-  const { vehicles, leads, avgDaysOnLot, conversionRate, recentLeads } =
-    await getDashboardData();
+  const [{ data: stats }, { data: recentLeads }] = await Promise.all([
+    getDashboardStats(),
+    getRecentLeads(10),
+  ]);
+
+  const { vehicles, leads, avgDaysOnLot, conversionRate } = stats;
 
   return (
     <>
