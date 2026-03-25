@@ -1,0 +1,430 @@
+/**
+ * Seed script for Wolfpack Auto.
+ *
+ * Creates a demo dealer ("Wolfpack Motors") with 20 sample vehicles
+ * and 5 sample leads.
+ *
+ * Usage:
+ *   npx tsx src/db/seed.ts
+ */
+
+import { pool } from "@/lib/db";
+
+const DEMO_DEALER_ID = "00000000-0000-4000-a000-000000000001";
+
+const DEALER = {
+  id: DEMO_DEALER_ID,
+  name: "Wolfpack Motors",
+  slug: "wolfpack-motors",
+  subdomain: "wolfpack",
+  phone: "(919) 555-0100",
+  email: "sales@wolfpackmotors.com",
+  website_url: "https://wolfpackmotors.com",
+  address: JSON.stringify({
+    street: "4200 Six Forks Rd",
+    city: "Raleigh",
+    state: "NC",
+    zip: "27609",
+    lat: 35.8428,
+    lng: -78.6414,
+  }),
+  sales_hours: JSON.stringify([
+    { day: "monday", open: "09:00", close: "19:00", closed: false },
+    { day: "tuesday", open: "09:00", close: "19:00", closed: false },
+    { day: "wednesday", open: "09:00", close: "19:00", closed: false },
+    { day: "thursday", open: "09:00", close: "19:00", closed: false },
+    { day: "friday", open: "09:00", close: "19:00", closed: false },
+    { day: "saturday", open: "09:00", close: "17:00", closed: false },
+    { day: "sunday", open: "12:00", close: "17:00", closed: false },
+  ]),
+  service_hours: JSON.stringify([
+    { day: "monday", open: "07:30", close: "18:00", closed: false },
+    { day: "tuesday", open: "07:30", close: "18:00", closed: false },
+    { day: "wednesday", open: "07:30", close: "18:00", closed: false },
+    { day: "thursday", open: "07:30", close: "18:00", closed: false },
+    { day: "friday", open: "07:30", close: "18:00", closed: false },
+    { day: "saturday", open: "08:00", close: "14:00", closed: false },
+    { day: "sunday", open: "00:00", close: "00:00", closed: true },
+  ]),
+  branding: JSON.stringify({
+    primary_color: "#CC0000",
+    secondary_color: "#1A1A1A",
+    accent_color: "#FF4444",
+    logo_url: "/images/wolfpack-logo.svg",
+    favicon_url: "/favicon.ico",
+    font_family: "Inter",
+  }),
+  has_service_center: true,
+  has_financing: true,
+  has_trade_in: true,
+};
+
+interface SeedVehicle {
+  vin: string;
+  stock_number: string;
+  year: number;
+  make: string;
+  model: string;
+  trim: string;
+  body_style: string;
+  exterior_color: string;
+  interior_color: string;
+  engine: string;
+  transmission: string;
+  drivetrain: string;
+  fuel_type: string;
+  mpg_city: number | null;
+  mpg_highway: number | null;
+  msrp: number | null;
+  price: number;
+  internet_price: number | null;
+  condition: string;
+  mileage: number;
+  status: string;
+  description: string;
+  features: string[];
+}
+
+const VEHICLES: SeedVehicle[] = [
+  {
+    vin: "1HGCV1F34PA000001", stock_number: "WP-001",
+    year: 2025, make: "Honda", model: "Accord", trim: "Sport",
+    body_style: "Sedan", exterior_color: "Crystal Black Pearl", interior_color: "Black",
+    engine: "1.5L Turbo I4", transmission: "cvt", drivetrain: "fwd", fuel_type: "gasoline",
+    mpg_city: 29, mpg_highway: 37, msrp: 31490, price: 30495, internet_price: 29999,
+    condition: "new", mileage: 12, status: "available",
+    description: "Brand new 2025 Accord Sport with turbocharged engine and Honda Sensing suite.",
+    features: ["Apple CarPlay", "Android Auto", "Honda Sensing", "LED Headlights", "Wireless Charging"],
+  },
+  {
+    vin: "5YJSA1E26PF000002", stock_number: "WP-002",
+    year: 2025, make: "Tesla", model: "Model 3", trim: "Long Range",
+    body_style: "Sedan", exterior_color: "Pearl White", interior_color: "White",
+    engine: "Dual Motor Electric", transmission: "automatic", drivetrain: "awd", fuel_type: "electric",
+    mpg_city: null, mpg_highway: null, msrp: 47490, price: 46990, internet_price: 46490,
+    condition: "new", mileage: 5, status: "available",
+    description: "2025 Model 3 Long Range with 358-mile range and full self-driving capability.",
+    features: ["Autopilot", "Full Self-Driving", "Glass Roof", "15\" Touchscreen", "Premium Audio"],
+  },
+  {
+    vin: "1N4BL4BV8PN000003", stock_number: "WP-003",
+    year: 2025, make: "Nissan", model: "Altima", trim: "SR",
+    body_style: "Sedan", exterior_color: "Scarlet Ember", interior_color: "Charcoal",
+    engine: "2.5L I4", transmission: "cvt", drivetrain: "fwd", fuel_type: "gasoline",
+    mpg_city: 28, mpg_highway: 39, msrp: 29690, price: 28495, internet_price: 27999,
+    condition: "new", mileage: 8, status: "available",
+    description: "Sporty 2025 Altima SR with aggressive styling and ProPILOT Assist.",
+    features: ["ProPILOT Assist", "Bose Audio", "Sport Seats", "19\" Wheels", "Remote Start"],
+  },
+  {
+    vin: "3GNKBBRS8PS000004", stock_number: "WP-004",
+    year: 2024, make: "Chevrolet", model: "Equinox", trim: "RS",
+    body_style: "SUV", exterior_color: "Summit White", interior_color: "Jet Black",
+    engine: "1.5L Turbo I4", transmission: "automatic", drivetrain: "awd", fuel_type: "gasoline",
+    mpg_city: 26, mpg_highway: 31, msrp: 34195, price: 32500, internet_price: 31999,
+    condition: "new", mileage: 45, status: "available",
+    description: "Versatile 2024 Equinox RS with AWD and sport-tuned suspension.",
+    features: ["Chevrolet Safety Assist", "WiFi Hotspot", "Wireless Charging", "Panoramic Sunroof"],
+  },
+  {
+    vin: "5TDKK3DC4PS000005", stock_number: "WP-005",
+    year: 2024, make: "Toyota", model: "Highlander", trim: "XLE",
+    body_style: "SUV", exterior_color: "Celestial Silver", interior_color: "Graphite",
+    engine: "2.4L Turbo I4", transmission: "automatic", drivetrain: "awd", fuel_type: "gasoline",
+    mpg_city: 22, mpg_highway: 29, msrp: 43470, price: 42500, internet_price: 41995,
+    condition: "new", mileage: 22, status: "available",
+    description: "Family-ready 2024 Highlander XLE with third row and Toyota Safety Sense 3.0.",
+    features: ["Toyota Safety Sense 3.0", "3rd Row", "JBL Audio", "Power Liftgate", "Leather Seats"],
+  },
+  {
+    vin: "WBA53BJ06PCR00006", stock_number: "WP-006",
+    year: 2024, make: "BMW", model: "330i", trim: "xDrive",
+    body_style: "Sedan", exterior_color: "Alpine White", interior_color: "Cognac",
+    engine: "2.0L Turbo I4", transmission: "automatic", drivetrain: "awd", fuel_type: "gasoline",
+    mpg_city: 25, mpg_highway: 34, msrp: 47600, price: 45990, internet_price: 44995,
+    condition: "new", mileage: 18, status: "available",
+    description: "Luxury 2024 BMW 330i xDrive with sport handling and premium interior.",
+    features: ["Live Cockpit Pro", "Harman Kardon", "Sport Seats", "Parking Assistant", "Gesture Control"],
+  },
+  {
+    vin: "1FTEW1EP0PFA00007", stock_number: "WP-007",
+    year: 2025, make: "Ford", model: "F-150", trim: "XLT",
+    body_style: "Truck", exterior_color: "Area 51 Blue", interior_color: "Medium Dark Slate",
+    engine: "2.7L EcoBoost V6", transmission: "automatic", drivetrain: "4wd", fuel_type: "gasoline",
+    mpg_city: 20, mpg_highway: 26, msrp: 47595, price: 46250, internet_price: 45499,
+    condition: "new", mileage: 30, status: "available",
+    description: "America's best-selling truck. 2025 F-150 XLT with EcoBoost power.",
+    features: ["Co-Pilot360", "SYNC 4", "Pro Trailer Backup", "LED Bed Lights", "Spray-In Liner"],
+  },
+  {
+    vin: "JN1AZ4EH0PM000008", stock_number: "WP-008",
+    year: 2024, make: "Nissan", model: "Z", trim: "Performance",
+    body_style: "Coupe", exterior_color: "Ikazuchi Yellow", interior_color: "Black",
+    engine: "3.0L Twin-Turbo V6", transmission: "manual", drivetrain: "rwd", fuel_type: "gasoline",
+    mpg_city: 19, mpg_highway: 28, msrp: 53940, price: 52500, internet_price: null,
+    condition: "new", mileage: 7, status: "available",
+    description: "Legendary Nissan Z Performance with 400hp twin-turbo V6 and 6-speed manual.",
+    features: ["Launch Control", "Sport Brakes", "RAYS Wheels", "Bose Audio", "Sport Exhaust"],
+  },
+  {
+    vin: "WVWZZZ3CZPE000009", stock_number: "WP-009",
+    year: 2024, make: "Volkswagen", model: "ID.4", trim: "Pro S Plus",
+    body_style: "SUV", exterior_color: "Moonstone Grey", interior_color: "Galaxy Black",
+    engine: "Dual Motor Electric", transmission: "automatic", drivetrain: "awd", fuel_type: "electric",
+    mpg_city: null, mpg_highway: null, msrp: 52795, price: 49990, internet_price: 49490,
+    condition: "new", mileage: 15, status: "available",
+    description: "All-electric 2024 ID.4 Pro S Plus with 275-mile range and AWD.",
+    features: ["IQ.DRIVE", "12\" Touchscreen", "Augmented Reality HUD", "Heated Seats", "360 Camera"],
+  },
+  {
+    vin: "JTDKN3DU6A0000010", stock_number: "WP-010",
+    year: 2023, make: "Toyota", model: "Camry", trim: "SE",
+    body_style: "Sedan", exterior_color: "Midnight Black", interior_color: "Black/Red",
+    engine: "2.5L I4", transmission: "automatic", drivetrain: "fwd", fuel_type: "gasoline",
+    mpg_city: 28, mpg_highway: 39, msrp: 28855, price: 24990, internet_price: 24495,
+    condition: "certified", mileage: 18200, status: "available",
+    description: "Toyota Certified Pre-Owned 2023 Camry SE. One owner, clean CARFAX.",
+    features: ["Toyota Safety Sense 2.5", "Apple CarPlay", "Android Auto", "Sport Tuned Suspension"],
+  },
+  {
+    vin: "1G1YY22G655000011", stock_number: "WP-011",
+    year: 2022, make: "Chevrolet", model: "Corvette", trim: "3LT",
+    body_style: "Coupe", exterior_color: "Torch Red", interior_color: "Adrenaline Red",
+    engine: "6.2L V8", transmission: "automatic", drivetrain: "rwd", fuel_type: "gasoline",
+    mpg_city: 15, mpg_highway: 27, msrp: 73740, price: 68995, internet_price: null,
+    condition: "used", mileage: 8400, status: "available",
+    description: "Mid-engine masterpiece. 2022 C8 Corvette 3LT with Z51 performance package.",
+    features: ["Z51 Package", "Magnetic Ride", "Front Lift", "Performance Exhaust", "Carbon Fiber Trim"],
+  },
+  {
+    vin: "5UXCR6C09P9000012", stock_number: "WP-012",
+    year: 2023, make: "BMW", model: "X3", trim: "xDrive30i",
+    body_style: "SUV", exterior_color: "Phytonic Blue", interior_color: "Oyster",
+    engine: "2.0L Turbo I4", transmission: "automatic", drivetrain: "awd", fuel_type: "gasoline",
+    mpg_city: 24, mpg_highway: 29, msrp: 49595, price: 41990, internet_price: 41490,
+    condition: "certified", mileage: 22100, status: "available",
+    description: "BMW Certified 2023 X3 with premium package and low miles.",
+    features: ["Panoramic Sunroof", "Vernasca Leather", "Parking Assistant", "Wireless CarPlay"],
+  },
+  {
+    vin: "1C4RJFBG0PC000013", stock_number: "WP-013",
+    year: 2024, make: "Jeep", model: "Grand Cherokee", trim: "Limited",
+    body_style: "SUV", exterior_color: "Diamond Black", interior_color: "Global Black",
+    engine: "3.6L V6", transmission: "automatic", drivetrain: "4wd", fuel_type: "gasoline",
+    mpg_city: 19, mpg_highway: 26, msrp: 49240, price: 47490, internet_price: 46995,
+    condition: "new", mileage: 35, status: "available",
+    description: "2024 Grand Cherokee Limited with Quadra-Trac II 4WD and luxury interior.",
+    features: ["Quadra-Trac II", "Uconnect 5", "Nappa Leather", "Advanced Safety Group", "Tow Package"],
+  },
+  {
+    vin: "KNAE35L17P5000014", stock_number: "WP-014",
+    year: 2024, make: "Kia", model: "EV6", trim: "GT-Line",
+    body_style: "SUV", exterior_color: "Snow White Pearl", interior_color: "Black/Green",
+    engine: "Dual Motor Electric", transmission: "automatic", drivetrain: "awd", fuel_type: "electric",
+    mpg_city: null, mpg_highway: null, msrp: 56990, price: 52990, internet_price: 52490,
+    condition: "new", mileage: 10, status: "available",
+    description: "Ultra-fast charging Kia EV6 GT-Line. 0-80% in 18 minutes.",
+    features: ["800V Architecture", "V2L Capability", "Augmented Reality HUD", "Meridian Audio"],
+  },
+  {
+    vin: "2T1BURHE8PC000015", stock_number: "WP-015",
+    year: 2022, make: "Toyota", model: "Corolla", trim: "LE",
+    body_style: "Sedan", exterior_color: "Classic Silver", interior_color: "Light Gray",
+    engine: "1.8L I4", transmission: "cvt", drivetrain: "fwd", fuel_type: "gasoline",
+    mpg_city: 31, mpg_highway: 40, msrp: 22050, price: 18490, internet_price: 17995,
+    condition: "used", mileage: 34500, status: "available",
+    description: "Reliable 2022 Corolla LE. Great fuel economy, one owner, service records available.",
+    features: ["Toyota Safety Sense 2.0", "Apple CarPlay", "Adaptive Cruise Control", "Lane Departure Alert"],
+  },
+  {
+    vin: "1GCUYEED2PZ000016", stock_number: "WP-016",
+    year: 2024, make: "Chevrolet", model: "Silverado 1500", trim: "LT Trail Boss",
+    body_style: "Truck", exterior_color: "Oxford Brown", interior_color: "Jet Black",
+    engine: "5.3L V8", transmission: "automatic", drivetrain: "4wd", fuel_type: "gasoline",
+    mpg_city: 16, mpg_highway: 22, msrp: 54295, price: 52990, internet_price: 51995,
+    condition: "new", mileage: 28, status: "available",
+    description: "Off-road ready 2024 Silverado Trail Boss with Z71 suspension.",
+    features: ["Z71 Off-Road Package", "Trailer Camera", "Multi-Flex Tailgate", "Bose Audio", "Skid Plates"],
+  },
+  {
+    vin: "WBAPH5C50BA000017", stock_number: "WP-017",
+    year: 2021, make: "BMW", model: "530i", trim: "xDrive",
+    body_style: "Sedan", exterior_color: "Black Sapphire", interior_color: "Canberra Beige",
+    engine: "2.0L Turbo I4", transmission: "automatic", drivetrain: "awd", fuel_type: "gasoline",
+    mpg_city: 25, mpg_highway: 33, msrp: 56695, price: 35990, internet_price: 35490,
+    condition: "used", mileage: 41200, status: "available",
+    description: "Executive sedan. 2021 BMW 530i xDrive with M Sport package.",
+    features: ["M Sport Package", "Gesture Control", "Soft-Close Doors", "Comfort Access", "Ambient Lighting"],
+  },
+  {
+    vin: "5NMS3DAJ2PH000018", stock_number: "WP-018",
+    year: 2024, make: "Hyundai", model: "Santa Fe", trim: "SEL",
+    body_style: "SUV", exterior_color: "Hampton Grey", interior_color: "Dark Grey",
+    engine: "2.5L I4", transmission: "automatic", drivetrain: "awd", fuel_type: "gasoline",
+    mpg_city: 26, mpg_highway: 29, msrp: 38050, price: 36990, internet_price: 36490,
+    condition: "new", mileage: 20, status: "available",
+    description: "All-new 2024 Santa Fe SEL with bold design and Hyundai SmartSense.",
+    features: ["SmartSense Safety", "12.3\" Display", "Digital Key 2", "Blind-Spot View Monitor"],
+  },
+  {
+    vin: "3MW5R1J04P8000019", stock_number: "WP-019",
+    year: 2023, make: "Honda", model: "CR-V", trim: "EX-L",
+    body_style: "SUV", exterior_color: "Canyon River Blue", interior_color: "Black Leather",
+    engine: "1.5L Turbo I4", transmission: "cvt", drivetrain: "awd", fuel_type: "gasoline",
+    mpg_city: 28, mpg_highway: 34, msrp: 37750, price: 33490, internet_price: 32995,
+    condition: "certified", mileage: 15800, status: "available",
+    description: "Honda Certified 2023 CR-V EX-L. Leather, sunroof, AWD. Excellent condition.",
+    features: ["Honda Sensing", "Leather Seats", "Moonroof", "Wireless CarPlay", "Power Tailgate"],
+  },
+  {
+    vin: "1G1FE1R70P0000020", stock_number: "WP-020",
+    year: 2024, make: "Chevrolet", model: "Camaro", trim: "LT1",
+    body_style: "Coupe", exterior_color: "Vivid Orange", interior_color: "Jet Black",
+    engine: "6.2L V8", transmission: "manual", drivetrain: "rwd", fuel_type: "gasoline",
+    mpg_city: 16, mpg_highway: 27, msrp: 42695, price: 41990, internet_price: null,
+    condition: "new", mileage: 11, status: "pending",
+    description: "Final edition 2024 Camaro LT1. V8 power with 6-speed manual. Collector potential.",
+    features: ["6-Speed Manual", "Brembo Brakes", "Performance Exhaust", "Recaro Seats", "HUD"],
+  },
+];
+
+interface SeedLead {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+  vehicle_interest: string;
+  source: string;
+  status: string;
+  notes: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+}
+
+const LEADS: SeedLead[] = [
+  {
+    first_name: "Sarah", last_name: "Chen",
+    email: "sarah.chen@example.com", phone: "(919) 555-0201",
+    vehicle_interest: "2025 Honda Accord Sport",
+    source: "website_form", status: "new", notes: "Interested in test drive this weekend.",
+    utm_source: "google", utm_medium: "cpc", utm_campaign: "spring-sale-2025",
+  },
+  {
+    first_name: "Marcus", last_name: "Williams",
+    email: "m.williams@example.com", phone: "(919) 555-0202",
+    vehicle_interest: "2025 Tesla Model 3 Long Range",
+    source: "vdp_inquiry", status: "contacted", notes: "Called back, wants financing info.",
+    utm_source: "facebook", utm_medium: "social", utm_campaign: null,
+  },
+  {
+    first_name: "Jennifer", last_name: "Park",
+    email: "jpark@example.com", phone: null,
+    vehicle_interest: "Used SUV under $45,000",
+    source: "chat", status: "qualified", notes: "Budget is firm. Considering X3 or CR-V.",
+    utm_source: null, utm_medium: null, utm_campaign: null,
+  },
+  {
+    first_name: "Robert", last_name: "Garcia",
+    email: "rgarcia@example.com", phone: "(919) 555-0204",
+    vehicle_interest: "2024 Chevrolet Camaro LT1",
+    source: "phone", status: "appointment_set", notes: "Appointment set for Saturday 10 AM.",
+    utm_source: "google", utm_medium: "organic", utm_campaign: null,
+  },
+  {
+    first_name: "Emily", last_name: "Thompson",
+    email: "emily.t@example.com", phone: "(919) 555-0205",
+    vehicle_interest: "2024 Kia EV6 GT-Line",
+    source: "third_party", status: "new", notes: "Came from Cars.com listing.",
+    utm_source: "cars_com", utm_medium: "referral", utm_campaign: "ev-listings",
+  },
+];
+
+async function seed(): Promise<void> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // -- Dealer ---------------------------------------------------------------
+    await client.query(
+      `INSERT INTO dealers (
+        id, name, slug, subdomain, phone, email, website_url,
+        address, sales_hours, service_hours, branding,
+        has_service_center, has_financing, has_trade_in
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      ON CONFLICT (slug) DO NOTHING`,
+      [
+        DEALER.id, DEALER.name, DEALER.slug, DEALER.subdomain,
+        DEALER.phone, DEALER.email, DEALER.website_url,
+        DEALER.address, DEALER.sales_hours, DEALER.service_hours, DEALER.branding,
+        DEALER.has_service_center, DEALER.has_financing, DEALER.has_trade_in,
+      ],
+    );
+
+    console.log(`[seed] Dealer "${DEALER.name}" created (${DEMO_DEALER_ID}).`);
+
+    // -- Vehicles -------------------------------------------------------------
+    for (const v of VEHICLES) {
+      await client.query(
+        `INSERT INTO vehicles (
+          dealer_id, vin, stock_number,
+          year, make, model, trim, body_style, exterior_color, interior_color,
+          engine, transmission, drivetrain, fuel_type, mpg_city, mpg_highway,
+          msrp, price, internet_price,
+          condition, mileage, status,
+          description, features
+        ) VALUES (
+          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24
+        )
+        ON CONFLICT (dealer_id, vin) DO NOTHING`,
+        [
+          DEMO_DEALER_ID, v.vin, v.stock_number,
+          v.year, v.make, v.model, v.trim, v.body_style, v.exterior_color, v.interior_color,
+          v.engine, v.transmission, v.drivetrain, v.fuel_type, v.mpg_city, v.mpg_highway,
+          v.msrp, v.price, v.internet_price,
+          v.condition, v.mileage, v.status,
+          v.description, JSON.stringify(v.features),
+        ],
+      );
+    }
+
+    console.log(`[seed] ${VEHICLES.length} vehicles inserted.`);
+
+    // -- Leads ----------------------------------------------------------------
+    for (const l of LEADS) {
+      await client.query(
+        `INSERT INTO leads (
+          dealer_id, first_name, last_name, email, phone,
+          vehicle_interest, source, status, notes,
+          utm_source, utm_medium, utm_campaign
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [
+          DEMO_DEALER_ID, l.first_name, l.last_name, l.email, l.phone,
+          l.vehicle_interest, l.source, l.status, l.notes,
+          l.utm_source, l.utm_medium, l.utm_campaign,
+        ],
+      );
+    }
+
+    console.log(`[seed] ${LEADS.length} leads inserted.`);
+
+    await client.query("COMMIT");
+    console.log("[seed] Done.");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// CLI entry point
+if (require.main === module) {
+  seed()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("[seed] Error:", err);
+      process.exit(1);
+    });
+}

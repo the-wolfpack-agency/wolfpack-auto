@@ -1,0 +1,149 @@
+import { NextRequest, NextResponse } from "next/server";
+import { redis } from "@/lib/redis";
+import { optimizeImage, generateThumbnail, type OutputFormat } from "@/lib/images";
+import { uploadImage } from "@/lib/storage";
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const RATE_LIMIT = 100; // uploads per hour per dealer
+const RATE_WINDOW = 3_600; // seconds
+
+const ALLOWED_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+]);
+
+const FORMAT_EXT: Record<OutputFormat, string> = {
+  webp: "webp",
+  avif: "avif",
+  jpeg: "jpg",
+};
+
+// ---------------------------------------------------------------------------
+// POST /api/images/upload
+// ---------------------------------------------------------------------------
+
+export async function POST(req: NextRequest) {
+  try {
+    // ------------------------------------------------------------------
+    // Parse multipart body
+    // ------------------------------------------------------------------
+    const formData = await req.formData();
+
+    const file = formData.get("file") as File | null;
+    const dealerId = formData.get("dealer_id") as string | null;
+    const vin = formData.get("vin") as string | null;
+
+    if (!file || !dealerId || !vin) {
+      return NextResponse.json(
+        { error: "Missing required fields: file, dealer_id, vin" },
+        { status: 400 },
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Validate file type
+    // ------------------------------------------------------------------
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return NextResponse.json(
+        {
+          error: `Unsupported file type: ${file.type}. Allowed: jpeg, png, webp, heic`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Validate file size
+    // ------------------------------------------------------------------
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max: 10 MB`,
+        },
+        { status: 400 },
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Rate limit (sliding window via Redis)
+    // ------------------------------------------------------------------
+    const rateKey = `rate:img:${dealerId}`;
+    const currentCount = await redis.incr(rateKey);
+
+    if (currentCount === 1) {
+      await redis.expire(rateKey, RATE_WINDOW);
+    }
+
+    if (currentCount > RATE_LIMIT) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded (100 uploads/hour)" },
+        { status: 429 },
+      );
+    }
+
+    // ------------------------------------------------------------------
+    // Read buffer
+    // ------------------------------------------------------------------
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // ------------------------------------------------------------------
+    // Generate optimized variants + thumbnail
+    // ------------------------------------------------------------------
+    const timestamp = Date.now();
+    const baseName = `${timestamp}`;
+
+    const [variants, thumbnail] = await Promise.all([
+      optimizeImage(buffer, { formats: ["webp", "avif", "jpeg"] }),
+      generateThumbnail(buffer, 320, 240),
+    ]);
+
+    // ------------------------------------------------------------------
+    // Upload all variants to R2
+    // ------------------------------------------------------------------
+    const uploads = await Promise.all([
+      ...variants.map((v) =>
+        uploadImage(
+          dealerId,
+          vin,
+          `${baseName}.${FORMAT_EXT[v.format]}`,
+          v.buffer,
+        ),
+      ),
+      uploadImage(dealerId, vin, `${baseName}_thumb.webp`, thumbnail.buffer),
+    ]);
+
+    // Build response map keyed by variant name
+    const urls: Record<string, string> = {};
+    for (let i = 0; i < variants.length; i++) {
+      urls[variants[i].format] = uploads[i].publicUrl;
+    }
+    urls.thumbnail = uploads[uploads.length - 1].publicUrl;
+
+    return NextResponse.json({
+      success: true,
+      vin,
+      dealer_id: dealerId,
+      variants: urls,
+      sizes: {
+        original: file.size,
+        webp: variants.find((v) => v.format === "webp")?.size ?? 0,
+        avif: variants.find((v) => v.format === "avif")?.size ?? 0,
+        jpeg: variants.find((v) => v.format === "jpeg")?.size ?? 0,
+        thumbnail: thumbnail.size,
+      },
+    });
+  } catch (err) {
+    console.error("[api/images/upload] Error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}

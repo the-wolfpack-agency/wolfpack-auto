@@ -1,0 +1,117 @@
+/**
+ * GET /api/admin/stats
+ *
+ * Returns dashboard statistics for the admin portal.
+ * In production this would be scoped to the authenticated dealer.
+ */
+
+import { NextResponse } from "next/server";
+import { query } from "@/lib/db";
+
+// TODO: Replace with authenticated dealer ID from session
+const DEALER_ID = process.env.DEALER_ID ?? "default";
+
+export async function GET() {
+  try {
+    const [vehicleStats, leadStats, avgDaysResult, recentLeadsResult] =
+      await Promise.all([
+        // Vehicle counts by status
+        query<{ status: string; count: string }>(
+          `SELECT status, COUNT(*)::text AS count
+           FROM vehicles
+           WHERE dealer_id = $1
+           GROUP BY status`,
+          [DEALER_ID],
+        ),
+
+        // Lead counts by status
+        query<{ status: string; count: string }>(
+          `SELECT status, COUNT(*)::text AS count
+           FROM leads
+           WHERE dealer_id = $1
+           GROUP BY status`,
+          [DEALER_ID],
+        ),
+
+        // Average days on lot for available vehicles
+        query<{ avg_days: string }>(
+          `SELECT COALESCE(
+             ROUND(AVG(EXTRACT(EPOCH FROM (now() - created_at)) / 86400))::text,
+             '0'
+           ) AS avg_days
+           FROM vehicles
+           WHERE dealer_id = $1 AND status = 'available'`,
+          [DEALER_ID],
+        ),
+
+        // Recent leads (last 10)
+        query(
+          `SELECT id, first_name, last_name, email, phone,
+                  vehicle_interest, source, status, created_at
+           FROM leads
+           WHERE dealer_id = $1
+           ORDER BY created_at DESC
+           LIMIT 10`,
+          [DEALER_ID],
+        ),
+      ]);
+
+    // Parse vehicle counts
+    const vehicles = {
+      total: 0,
+      available: 0,
+      pending: 0,
+      sold: 0,
+      in_transit: 0,
+    };
+    for (const row of vehicleStats.rows as any[]) {
+      const count = parseInt(row.count, 10);
+      vehicles.total += count;
+      if (row.status in vehicles) {
+        vehicles[row.status as keyof typeof vehicles] = count;
+      }
+    }
+
+    // Parse lead counts
+    const leads = {
+      total: 0,
+      new: 0,
+      contacted: 0,
+      qualified: 0,
+      appointment_set: 0,
+      sold: 0,
+      lost: 0,
+    };
+    for (const row of leadStats.rows as any[]) {
+      const count = parseInt(row.count, 10);
+      leads.total += count;
+      if (row.status in leads) {
+        leads[row.status as keyof typeof leads] = count;
+      }
+    }
+
+    // Conversion rate: sold / total leads (excluding lost)
+    const convertible = leads.total - leads.lost;
+    const conversionRate =
+      convertible > 0
+        ? Math.round((leads.sold / convertible) * 100)
+        : 0;
+
+    return NextResponse.json({
+      vehicles,
+      leads,
+      avg_days_on_lot: parseInt(
+        (avgDaysResult.rows as any[])[0]?.avg_days ?? "0",
+        10,
+      ),
+      conversion_rate: conversionRate,
+      recent_leads: recentLeadsResult.rows,
+    });
+  } catch (error) {
+    console.error("[api/admin/stats] Error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch dashboard stats" },
+      { status: 500 },
+    );
+  }
+}
