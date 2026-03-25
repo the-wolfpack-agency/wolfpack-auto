@@ -56,8 +56,8 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "1.5L Turbocharged 4-Cylinder",
     mpg: "29 city / 36 hwy",
     stockNumber: "WP24-0847",
-    photo: "https://images.unsplash.com/photo-1568844293986-8d0400f3b57b?w=800&h=600&fit=crop&auto=format",
-    thumbnail: "https://images.unsplash.com/photo-1568844293986-8d0400f3b57b?w=400&h=300&fit=crop&auto=format",
+    photo: "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=600&fit=crop&auto=format",
+    thumbnail: "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=400&h=300&fit=crop&auto=format",
     tag: "New Arrival",
     features: [
       "Honda Sensing Suite",

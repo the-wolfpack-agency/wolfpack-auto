@@ -366,7 +366,7 @@ export default async function HomePage() {
               { label: "Electric", photo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop&auto=format", count: "45+" },
               { label: "Vans", photo: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop&auto=format", count: "25+" },
               { label: "Convertibles", photo: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&h=300&fit=crop&auto=format", count: "30+" },
-              { label: "Wagons", photo: "https://images.unsplash.com/photo-1549317661-bd32c8ce0ffe?w=400&h=300&fit=crop&auto=format", count: "15+" },
+              { label: "Wagons", photo: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=300&fit=crop&auto=format", count: "15+" },
             ].map((cat, idx) => (
               <a
                 key={cat.label}
