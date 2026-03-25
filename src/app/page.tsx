@@ -91,7 +91,7 @@ export default async function HomePage() {
                 <select
                   id="hero-make"
                   name="make"
-                  className="w-full rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+                  className="w-full appearance-none rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
                   defaultValue=""
                 >
                   <option value="" disabled className="text-gray-900">Any Make</option>
