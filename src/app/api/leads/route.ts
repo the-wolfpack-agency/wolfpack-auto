@@ -146,6 +146,35 @@ export async function POST(request: NextRequest) {
     // Invalidate any cached lead-related data for this dealer
     void cacheInvalidate(`leads:dealer:${lead.dealer_id}:*`);
 
+    // Fire-and-forget email notifications — never block the response
+    void (async () => {
+      try {
+        const { sendLeadNotification, sendLeadConfirmation } = await import(
+          "@/lib/email"
+        );
+        // Fetch dealer record for branding / contact info
+        const dealerResult = await query<Record<string, unknown>>(
+          `SELECT * FROM dealers WHERE id = $1`,
+          [lead.dealer_id],
+        );
+        if (dealerResult.rows[0]) {
+          const dealer = dealerResult.rows[0] as unknown as import("@/types/dealer").Dealer;
+          const fullLead = {
+            ...lead,
+            id: created.id,
+            status: "new" as const,
+            created_at: created.created_at,
+            updated_at: created.created_at,
+          } satisfies import("@/types/lead").Lead;
+
+          void sendLeadNotification(dealer, fullLead);
+          void sendLeadConfirmation(dealer, fullLead);
+        }
+      } catch (emailErr) {
+        console.error("[api/leads] Email notification failed:", emailErr);
+      }
+    })();
+
     return NextResponse.json(
       {
         success: true,
