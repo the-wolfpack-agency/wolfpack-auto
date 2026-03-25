@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  searchVehiclesByQuery,
+  type VehicleSearchResult,
+} from "@/lib/vehicle-search";
+import type { PlaceholderVehicle } from "@/lib/placeholder-data";
 
 /* ------------------------------------------------------------------ */
-/*  ZERO-TOKEN rule-based chat responder for Wolfpack Motors           */
-/*  No AI calls — all pattern matching against dealer knowledge base   */
+/*  HYBRID chat responder for Wolfpack Motors                          */
+/*  Rule-based intents + vector/keyword vehicle search                 */
+/*  No AI calls — all pattern matching + vector similarity             */
 /* ------------------------------------------------------------------ */
 
 interface ChatRequest {
@@ -13,6 +19,19 @@ interface ChatRequest {
 interface ChatResponse {
   response: string;
   suggested_actions?: string[];
+  vehicles?: VehicleCard[];
+  search_source?: "vector" | "keyword" | "placeholder";
+}
+
+interface VehicleCard {
+  vin: string;
+  title: string;
+  price: number;
+  mileage: number;
+  condition: string;
+  bodyStyle: string;
+  thumbnail: string;
+  link: string;
 }
 
 /* ---------- Dealer knowledge base ---------- */
@@ -70,7 +89,84 @@ function sanitize(input: string): string {
     .slice(0, 500);
 }
 
-/* ---------- Pattern matching engine ---------- */
+/* ---------- Vehicle card formatting ---------- */
+
+function vehicleToCard(v: PlaceholderVehicle): VehicleCard {
+  return {
+    vin: v.vin,
+    title: `${v.year} ${v.make} ${v.model} ${v.trim}`,
+    price: v.price,
+    mileage: v.mileage,
+    condition: v.condition,
+    bodyStyle: v.bodyStyle,
+    thumbnail: v.thumbnail,
+    link: `/inventory/${v.vin}`,
+  };
+}
+
+function formatVehicleCards(vehicles: PlaceholderVehicle[]): string {
+  return vehicles
+    .map((v) => {
+      const price = v.price.toLocaleString("en-US");
+      const miles = v.mileage.toLocaleString("en-US");
+      return `- **[${v.year} ${v.make} ${v.model} ${v.trim}](/inventory/${v.vin})** — $${price} | ${miles} miles | ${v.condition}`;
+    })
+    .join("\n");
+}
+
+/* ---------- Vehicle search intent detection ---------- */
+
+/** Make names we can detect in queries. */
+const KNOWN_MAKES = [
+  "honda", "toyota", "ford", "chevrolet", "chevy", "bmw", "tesla", "mazda",
+  "hyundai", "kia", "nissan", "subaru", "volkswagen", "vw", "audi", "mercedes",
+  "lexus", "acura", "jeep", "ram", "dodge", "gmc", "cadillac", "lincoln",
+  "volvo", "porsche", "rivian", "lucid", "genesis",
+];
+
+const BODY_STYLE_WORDS = [
+  "suv", "suvs", "truck", "trucks", "pickup", "sedan", "sedans",
+  "coupe", "coupes", "convertible", "van", "minivan", "wagon", "hatchback",
+  "crossover",
+];
+
+const SEARCH_TRIGGERS = [
+  /\b(show\s*me|do\s*you\s*have|looking\s*for|find|search|any|got\s*any)\b/i,
+  /\b(what|which)\s+(cars?|vehicles?|trucks?|suvs?)\b/i,
+  /\b(cheapest|most\s*affordable|lowest\s*price|best\s*deal)\b/i,
+  /\b(under|below|less\s*than|up\s*to)\s*\$?\d/i,
+  /\b(over|above|more\s*than)\s*\$?\d/i,
+];
+
+const COMPARE_PATTERN =
+  /\b(compare|versus|vs\.?|or|between)\b/i;
+
+function isVehicleSearchIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+
+  // Contains a known make
+  for (const make of KNOWN_MAKES) {
+    if (new RegExp(`\\b${make}\\b`, "i").test(lower)) return true;
+  }
+
+  // Contains a body style word
+  for (const style of BODY_STYLE_WORDS) {
+    if (new RegExp(`\\b${style}\\b`, "i").test(lower)) return true;
+  }
+
+  // Matches search trigger patterns
+  for (const pattern of SEARCH_TRIGGERS) {
+    if (pattern.test(lower)) return true;
+  }
+
+  return false;
+}
+
+function isComparisonIntent(message: string): boolean {
+  return COMPARE_PATTERN.test(message) && isVehicleSearchIntent(message);
+}
+
+/* ---------- Pattern matching engine (rule-based intents) ---------- */
 
 type IntentMatcher = {
   patterns: RegExp[];
@@ -93,64 +189,10 @@ const INTENTS: IntentMatcher[] = [
     }),
   },
 
-  // --- Inventory: body style ---
+  // --- Pricing (generic — vehicle-specific price queries handled by search) ---
   {
     patterns: [
-      /\b(suv|suvs|crossover|crossovers)\b/i,
-      /\b(truck|trucks|pickup|pickups)\b/i,
-      /\b(sedan|sedans|car|cars)\b/i,
-      /\b(coupe|coupes|convertible|convertibles)\b/i,
-      /\b(van|vans|minivan|minivans)\b/i,
-      /\b(electric|ev|hybrid|plug.?in)\b/i,
-      /\b(inventory|vehicles|what\s*(do\s*)?you\s*have|show\s*me|looking\s*for|browse)\b/i,
-    ],
-    respond: (msg) => {
-      const lower = msg.toLowerCase();
-      let bodyStyle: string | null = null;
-      let label = "vehicles";
-
-      if (/suv|crossover/i.test(lower)) {
-        bodyStyle = "SUV";
-        label = "SUVs and crossovers";
-      } else if (/truck|pickup/i.test(lower)) {
-        bodyStyle = "Truck";
-        label = "trucks and pickups";
-      } else if (/sedan|car(?!e)/i.test(lower)) {
-        bodyStyle = "Sedan";
-        label = "sedans";
-      } else if (/coupe/i.test(lower)) {
-        bodyStyle = "Coupe";
-        label = "coupes";
-      } else if (/convertible/i.test(lower)) {
-        bodyStyle = "Convertible";
-        label = "convertibles";
-      } else if (/van|minivan/i.test(lower)) {
-        bodyStyle = "Van";
-        label = "vans and minivans";
-      } else if (/electric|ev\b|hybrid|plug.?in/i.test(lower)) {
-        bodyStyle = "Electric";
-        label = "electric and hybrid vehicles";
-      }
-
-      const link = bodyStyle
-        ? `[Browse ${label}](/inventory?body_style=${encodeURIComponent(bodyStyle)})`
-        : "[Browse all inventory](/inventory)";
-
-      return {
-        response: bodyStyle
-          ? `We have a great selection of ${label}! ${link} to see current availability with photos and pricing.`
-          : `We carry SUVs, trucks, sedans, coupes, and electric vehicles. ${link} to explore our full selection, or tell me what type of vehicle you're looking for!`,
-        suggested_actions: bodyStyle
-          ? ["View all inventory", "Financing options", "Schedule test drive"]
-          : ["SUVs", "Trucks", "Sedans", "Electric vehicles"],
-      };
-    },
-  },
-
-  // --- Pricing ---
-  {
-    patterns: [
-      /\b(price|pricing|how\s*much|cost|afford|budget|cheap|expensive|deal|range)\b/i,
+      /\b(how\s*much\s*(?:is|are|does|do)\s+(?:your|the)\s+(?:financing|loans?|payments?))\b/i,
     ],
     respond: () => ({
       response:
@@ -209,7 +251,7 @@ const INTENTS: IntentMatcher[] = [
   // --- Test Drive ---
   {
     patterns: [
-      /\b(test\s*drive|schedule|appointment|come\s*(in|by)|visit|see\s*(the|a)\s*(car|vehicle|truck))\b/i,
+      /\b(test\s*drive|appointment|come\s*(in|by)|visit|see\s*(the|a)\s*(car|vehicle|truck))\b/i,
     ],
     respond: () => ({
       response: `We'd love to get you behind the wheel! You can schedule a test drive by:\n\n- Visiting our [contact page](/contact) and filling out the form\n- Calling us at ${DEALER.phone}\n- Just stop by during sales hours (${DEALER.hours.sales})\n\nNo appointment needed — but scheduling ahead guarantees the vehicle is ready for you!`,
@@ -266,7 +308,9 @@ const INTENTS: IntentMatcher[] = [
   },
 ];
 
-function matchIntent(message: string): ChatResponse {
+/* ---------- Rule-based intent matching ---------- */
+
+function matchRuleIntent(message: string): ChatResponse | null {
   const clean = sanitize(message);
 
   for (const intent of INTENTS) {
@@ -277,7 +321,110 @@ function matchIntent(message: string): ChatResponse {
     }
   }
 
-  // Fallback
+  return null;
+}
+
+/* ---------- Vehicle search response builders ---------- */
+
+async function handleVehicleSearch(message: string): Promise<ChatResponse> {
+  const result: VehicleSearchResult = await searchVehiclesByQuery(message, 3);
+  const cards = result.vehicles.map(vehicleToCard);
+  const formatted = formatVehicleCards(result.vehicles);
+
+  return {
+    response: `Here are some vehicles that match what you're looking for:\n\n${formatted}\n\n[Browse our full inventory](/inventory) to see all available vehicles, or tell me more about what you need!`,
+    suggested_actions: [
+      "Financing options",
+      "Schedule test drive",
+      "See more vehicles",
+    ],
+    vehicles: cards,
+    search_source: result.source,
+  };
+}
+
+async function handleComparison(message: string): Promise<ChatResponse> {
+  // Try to extract the two items being compared
+  const parts = message.split(/\b(?:compare|versus|vs\.?|or|between|and)\b/i);
+  const queries = parts
+    .map((p) => p.trim())
+    .filter((p) => p.length > 2);
+
+  if (queries.length < 2) {
+    // Fall back to a general search
+    return handleVehicleSearch(message);
+  }
+
+  const [resultA, resultB] = await Promise.all([
+    searchVehiclesByQuery(queries[0], 1),
+    searchVehiclesByQuery(queries[1], 1),
+  ]);
+
+  const vehiclesA = resultA.vehicles;
+  const vehiclesB = resultB.vehicles;
+
+  if (vehiclesA.length === 0 && vehiclesB.length === 0) {
+    return {
+      response: `I couldn't find exact matches for those vehicles, but you can [browse our full inventory](/inventory) to compare options side by side!`,
+      suggested_actions: ["Browse inventory", "Financing options"],
+    };
+  }
+
+  const allVehicles = [...vehiclesA.slice(0, 1), ...vehiclesB.slice(0, 1)];
+  const cards = allVehicles.map(vehicleToCard);
+
+  let comparison = "Here's a side-by-side look:\n\n";
+  for (const v of allVehicles) {
+    const price = v.price.toLocaleString("en-US");
+    const miles = v.mileage.toLocaleString("en-US");
+    comparison += `**[${v.year} ${v.make} ${v.model} ${v.trim}](/inventory/${v.vin})**\n`;
+    comparison += `- Price: $${price}\n`;
+    comparison += `- Mileage: ${miles} miles\n`;
+    comparison += `- Fuel: ${v.fuel}\n`;
+    comparison += `- Drivetrain: ${v.drivetrain}\n`;
+    comparison += `- Condition: ${v.condition}\n\n`;
+  }
+
+  comparison +=
+    "Want to see either of these in person? [Schedule a test drive](/contact)!";
+
+  return {
+    response: comparison,
+    suggested_actions: [
+      "Schedule test drive",
+      "Financing options",
+      "Browse more vehicles",
+    ],
+    vehicles: cards,
+    search_source: resultA.source,
+  };
+}
+
+/* ---------- Main intent dispatcher ---------- */
+
+async function matchIntent(message: string): Promise<ChatResponse> {
+  const clean = sanitize(message);
+
+  // 1. Check rule-based intents FIRST for non-vehicle queries
+  //    (greetings, hours, financing, contact, etc.)
+  //    But skip inventory-related rule intents — let the vehicle search handle them
+  const ruleResult = matchRuleIntent(clean);
+
+  // 2. If the message is about vehicles, use the hybrid search
+  if (isComparisonIntent(clean)) {
+    return handleComparison(clean);
+  }
+
+  if (isVehicleSearchIntent(clean)) {
+    return handleVehicleSearch(clean);
+  }
+
+  // 3. Return rule-based result if it matched
+  if (ruleResult) {
+    return ruleResult;
+  }
+
+  // 4. Final fallback
   return {
     response: `I'd be happy to help! For detailed questions, you can reach our team at ${DEALER.phone} or visit our [contact page](/contact). I can also help with inventory, financing, hours, or scheduling a test drive.`,
     suggested_actions: [
@@ -333,7 +480,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = matchIntent(body.message);
+    const result = await matchIntent(body.message);
 
     return NextResponse.json(result);
   } catch {

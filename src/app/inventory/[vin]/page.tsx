@@ -70,38 +70,75 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
             {/* Photo Gallery */}
             <section aria-label="Vehicle photos">
               <div className={`h-80 overflow-hidden rounded-2xl bg-gradient-to-br ${v.gradient} shadow-card`}>
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-center">
-                    <svg className="mx-auto h-20 w-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                    </svg>
-                    <p className="mt-2 text-sm text-white/40">1 of 32 photos</p>
+                {v.photo ? (
+                  <img
+                    src={v.photo.replace("w=800&h=600", "w=1200&h=800")}
+                    alt={`${v.year} ${v.make} ${v.model} ${v.trim}`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="text-center">
+                      <svg className="mx-auto h-20 w-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                      </svg>
+                      <p className="mt-2 text-sm text-white/40">1 of 32 photos</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               {/* Thumbnails */}
               <div className="mt-3 grid grid-cols-4 gap-3">
-                {[
-                  "from-blue-500 to-blue-700",
-                  "from-blue-300 to-blue-500",
-                  "from-slate-400 to-slate-600",
-                  "from-blue-400 to-indigo-500",
-                ].map((grad, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className={`h-48 overflow-hidden rounded-xl bg-gradient-to-br ${grad} ring-2 transition-all ${
-                      i === 0 ? "ring-brand-500" : "ring-transparent hover:ring-brand-300"
-                    }`}
-                    aria-label={`View photo ${i + 1}`}
-                  >
-                    <div className="flex h-full items-center justify-center">
-                      <svg width="24" height="24" className="h-6 w-6 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                      </svg>
-                    </div>
-                  </button>
-                ))}
+                {v.photo ? (
+                  [
+                    { w: 400, h: 300, q: 80 },
+                    { w: 400, h: 250, q: 80 },
+                    { w: 350, h: 300, q: 80 },
+                    { w: 450, h: 300, q: 80 },
+                  ].map((crop, i) => {
+                    const baseUrl = v.photo.split("?")[0];
+                    const thumbUrl = `${baseUrl}?w=${crop.w}&h=${crop.h}&fit=crop&auto=format&q=${crop.q}`;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`h-24 overflow-hidden rounded-xl ring-2 transition-all ${
+                          i === 0 ? "ring-brand-500" : "ring-transparent hover:ring-brand-300"
+                        }`}
+                        aria-label={`View photo ${i + 1}`}
+                      >
+                        <img
+                          src={thumbUrl}
+                          alt={`${v.year} ${v.make} ${v.model} - view ${i + 1}`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </button>
+                    );
+                  })
+                ) : (
+                  [
+                    "from-blue-500 to-blue-700",
+                    "from-blue-300 to-blue-500",
+                    "from-slate-400 to-slate-600",
+                    "from-blue-400 to-indigo-500",
+                  ].map((grad, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={`h-24 overflow-hidden rounded-xl bg-gradient-to-br ${grad} ring-2 transition-all ${
+                        i === 0 ? "ring-brand-500" : "ring-transparent hover:ring-brand-300"
+                      }`}
+                      aria-label={`View photo ${i + 1}`}
+                    >
+                      <div className="flex h-full items-center justify-center">
+                        <svg width="24" height="24" className="h-6 w-6 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                        </svg>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </section>
 
@@ -298,11 +335,20 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
                 className="group overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1"
               >
                 <div className={`h-48 bg-gradient-to-br ${sv.gradient}`}>
-                  <div className="flex h-full items-center justify-center">
-                    <svg width="48" height="48" className="h-12 w-12 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                    </svg>
-                  </div>
+                  {sv.photo ? (
+                    <img
+                      src={sv.photo}
+                      alt={`${sv.year} ${sv.make} ${sv.model}`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <svg width="48" height="48" className="h-12 w-12 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
                 <div className="p-5">
                   <h3 className="font-bold text-gray-900 group-hover:text-brand-600 transition-colors">

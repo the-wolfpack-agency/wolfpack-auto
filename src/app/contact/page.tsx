@@ -122,20 +122,21 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Map Placeholder */}
+            {/* Google Map */}
             <div className="overflow-hidden rounded-2xl border border-surface-border shadow-card">
-              <div className="flex h-48 items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300">
-                <div className="text-center">
-                  <svg className="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                  </svg>
-                  <p className="mt-2 text-sm font-medium text-slate-500">Interactive Map</p>
-                  <p className="text-xs text-slate-400">1234 Auto Drive, Denver CO</p>
-                </div>
+              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3067.2!2d-104.9903!3d39.7392!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMznCsDQ0JzIxLjEiTiAxMDTCsDU5JzI1LjEiVw!5e0!3m2!1sen!2sus!4v1"
+                  className="absolute inset-0 h-full w-full border-0"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Wolfpack Motors location - Denver, CO"
+                />
               </div>
               <div className="bg-white p-4 text-center">
                 <a
-                  href="https://maps.google.com"
+                  href="https://www.google.com/maps/dir//39.7392,-104.9903"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"

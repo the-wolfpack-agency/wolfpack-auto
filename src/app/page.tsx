@@ -234,11 +234,20 @@ export default async function HomePage() {
                 className="group overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1"
               >
                 <div className={`relative h-48 bg-gradient-to-br ${v.gradient}`}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <svg width="64" height="64" className="h-16 w-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                    </svg>
-                  </div>
+                  {v.photo ? (
+                    <img
+                      src={v.photo}
+                      alt={`${v.year} ${v.make} ${v.model}`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <svg width="64" height="64" className="h-16 w-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                      </svg>
+                    </div>
+                  )}
                   <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-900 backdrop-blur-sm">
                     {v.tag}
                   </span>
@@ -350,27 +359,33 @@ export default async function HomePage() {
           </h2>
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
-              { label: "SUVs", icon: "M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12", count: "150+" },
-              { label: "Trucks", icon: "M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12", count: "85+" },
-              { label: "Sedans", icon: "M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12", count: "120+" },
-              { label: "Electric", icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z", count: "45+" },
-              { label: "Luxury", icon: "M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z", count: "60+" },
-              { label: "Under $20K", icon: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z", count: "90+" },
-              { label: "Certified", icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z", count: "200+" },
-              { label: "New Arrivals", icon: "M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z", count: "35+" },
-            ].map((cat) => (
+              { label: "Sedans", photo: "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop&auto=format", count: "120+" },
+              { label: "SUVs", photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&auto=format", count: "150+" },
+              { label: "Trucks", photo: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=400&h=300&fit=crop&auto=format", count: "85+" },
+              { label: "Coupes", photo: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop&auto=format", count: "40+" },
+              { label: "Electric", photo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop&auto=format", count: "45+" },
+              { label: "Vans", photo: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop&auto=format", count: "25+" },
+              { label: "Convertibles", photo: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&h=300&fit=crop&auto=format", count: "30+" },
+              { label: "Wagons", photo: "https://images.unsplash.com/photo-1549317661-bd32c8ce0ffe?w=400&h=300&fit=crop&auto=format", count: "15+" },
+            ].map((cat, idx) => (
               <a
                 key={cat.label}
                 href={`/inventory?category=${encodeURIComponent(cat.label)}`}
-                className="group flex flex-col items-center gap-3 rounded-2xl border border-surface-border bg-white p-6 text-center shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1 hover:border-brand-200"
+                className="group overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1 hover:border-brand-200"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600 transition-colors group-hover:bg-brand-100">
-                  <svg width="24" height="24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d={cat.icon} />
-                  </svg>
+                <div className="relative h-32 overflow-hidden">
+                  <img
+                    src={cat.photo}
+                    alt={`Browse ${cat.label}`}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading={idx < 4 ? undefined : "lazy"}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-3 left-3">
+                    <span className="text-sm font-bold text-white">{cat.label}</span>
+                    <span className="ml-2 text-xs text-white/80">{cat.count}</span>
+                  </div>
                 </div>
-                <span className="font-semibold text-gray-900">{cat.label}</span>
-                <span className="text-xs text-gray-500">{cat.count} vehicles</span>
               </a>
             ))}
           </div>

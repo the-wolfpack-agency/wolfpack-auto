@@ -58,6 +58,7 @@ export interface InventoryVehicle {
   gradient: string;
   condition: string;
   bodyStyle: string;
+  photo: string;
 }
 
 function toInventoryVehicle(p: PlaceholderVehicle): InventoryVehicle {
@@ -75,6 +76,7 @@ function toInventoryVehicle(p: PlaceholderVehicle): InventoryVehicle {
     gradient: p.gradient,
     condition: p.condition,
     bodyStyle: p.bodyStyle,
+    photo: p.photo,
   };
 }
 
@@ -189,6 +191,7 @@ export async function getInventoryVehicles(
       gradient: "from-brand-400 to-brand-600",
       condition: r.condition ?? "used",
       bodyStyle: r.body_style ?? "Sedan",
+      photo: r.photo_url ?? "",
     }));
 
     return { data: vehicles, source: "database" };
@@ -227,6 +230,8 @@ export interface VehicleDetail {
   features: string[];
   gradient: string;
   condition: string;
+  photo: string;
+  thumbnail: string;
   similarVehicles: {
     year: number;
     make: string;
@@ -235,6 +240,7 @@ export interface VehicleDetail {
     mileage: number;
     gradient: string;
     vin: string;
+    photo: string;
   }[];
 }
 
@@ -290,6 +296,8 @@ export async function getVehicleByVin(
       features: Array.isArray(row.features) ? row.features : [],
       gradient: "from-brand-400 to-brand-600",
       condition: row.condition ?? "used",
+      photo: row.photo_url ?? "",
+      thumbnail: row.thumbnail_url ?? "",
       similarVehicles: placeholderSimilarVehicles,
     };
 
@@ -325,6 +333,8 @@ function placeholderToDetail(p: PlaceholderVehicle): VehicleDetail {
     features: p.features,
     gradient: p.gradient,
     condition: p.condition,
+    photo: p.photo,
+    thumbnail: p.thumbnail,
     similarVehicles: placeholderSimilarVehicles,
   };
 }
@@ -342,6 +352,7 @@ export interface FeaturedVehicle {
   mileage: number;
   gradient: string;
   tag: string;
+  photo: string;
 }
 
 export async function getFeaturedVehicles(
@@ -380,6 +391,7 @@ export async function getFeaturedVehicles(
       mileage: Number(r.mileage),
       gradient: "from-brand-400 to-brand-600",
       tag: r.condition === "new" ? "New Arrival" : r.condition === "certified" ? "Certified" : "Pre-Owned",
+      photo: r.photo_url ?? "",
     }));
 
     return { data: vehicles, source: "database" };

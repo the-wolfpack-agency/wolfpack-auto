@@ -31,6 +31,8 @@ export interface PlaceholderVehicle {
   stockNumber: string;
   features: string[];
   tag?: string;
+  photo: string;
+  thumbnail: string;
 }
 
 export const placeholderVehicles: PlaceholderVehicle[] = [
@@ -54,6 +56,8 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "1.5L Turbocharged 4-Cylinder",
     mpg: "29 city / 36 hwy",
     stockNumber: "WP24-0847",
+    photo: "https://images.unsplash.com/photo-1568844293986-8d0400f3b57b?w=800&h=600&fit=crop&auto=format",
+    thumbnail: "https://images.unsplash.com/photo-1568844293986-8d0400f3b57b?w=400&h=300&fit=crop&auto=format",
     tag: "New Arrival",
     features: [
       "Honda Sensing Suite",
@@ -90,6 +94,8 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "Dual Motor Electric",
     mpg: "134 MPGe combined",
     stockNumber: "WP23-1102",
+    photo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&h=600&fit=crop&auto=format",
+    thumbnail: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop&auto=format",
     tag: "Electric",
     features: [
       "Autopilot",
@@ -126,6 +132,8 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "2.5L 4-Cylinder Hybrid",
     mpg: "41 city / 38 hwy",
     stockNumber: "WP24-0903",
+    photo: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop&auto=format",
+    thumbnail: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop&auto=format",
     tag: "New Arrival",
     features: [
       "Toyota Safety Sense 2.5+",
@@ -162,6 +170,8 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "2.0L TwinPower Turbo 4-Cylinder",
     mpg: "25 city / 29 hwy",
     stockNumber: "WP23-0781",
+    photo: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop&auto=format",
+    thumbnail: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop&auto=format",
     tag: "Luxury",
     features: [
       "BMW Live Cockpit Professional",
@@ -198,6 +208,8 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "6.2L V8",
     mpg: "16 city / 24 hwy",
     stockNumber: "WP24-0215",
+    photo: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop&auto=format",
+    thumbnail: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop&auto=format",
     features: [
       "Performance Exhaust",
       "Magnetic Ride Control",
@@ -233,6 +245,8 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "3.5L EcoBoost V6",
     mpg: "18 city / 24 hwy",
     stockNumber: "WP23-1450",
+    photo: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=800&h=600&fit=crop&auto=format",
+    thumbnail: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=400&h=300&fit=crop&auto=format",
     features: [
       "Ford Co-Pilot360 2.0",
       "SYNC 4 with 12-inch Screen",
@@ -262,6 +276,7 @@ export const placeholderSimilarVehicles = [
     mileage: 856,
     gradient: "from-emerald-400 to-emerald-600",
     vin: "2T3P1RFV4RC000003",
+    photo: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop&auto=format",
   },
   {
     year: 2023,
@@ -271,6 +286,7 @@ export const placeholderSimilarVehicles = [
     mileage: 10_240,
     gradient: "from-violet-400 to-violet-600",
     vin: "5NMJFDAE4PH000008",
+    photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=600&fit=crop&auto=format",
   },
   {
     year: 2024,
@@ -280,6 +296,7 @@ export const placeholderSimilarVehicles = [
     mileage: 2_150,
     gradient: "from-amber-400 to-amber-600",
     vin: "JM3KFBDM4R1000009",
+    photo: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop&auto=format",
   },
 ];
 
@@ -298,6 +315,7 @@ export const placeholderFeaturedVehicles = placeholderVehicles
     mileage: v.mileage,
     gradient: v.gradient,
     tag: v.tag ?? v.condition,
+    photo: v.photo,
   }));
 
 // ---------------------------------------------------------------------------

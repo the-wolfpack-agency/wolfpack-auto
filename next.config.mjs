@@ -12,6 +12,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "**.r2.cloudflarestorage.com",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
   },
 
@@ -51,9 +55,10 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com",
+              "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://images.unsplash.com",
               "font-src 'self'",
               "connect-src 'self'",
+              "frame-src https://www.google.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
