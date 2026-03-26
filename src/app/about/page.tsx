@@ -5,30 +5,6 @@ export const metadata: Metadata = {
   description: "Learn about Wolfpack Motors — trusted automotive sales since 2021, 500+ vehicles sold, and a 4.8-star rating.",
 };
 
-const teamMembers = [
-  {
-    name: "Nick Hoxsie",
-    role: "Founder & CEO",
-    bio: "Former Director at AMCI Global with deep roots in automotive marketing. Founded Wolfpack in 2021 with a vision to build the most customer-focused dealership in Colorado.",
-    gradient: "from-brand-500 to-brand-700",
-    initials: "NH",
-  },
-  {
-    name: "Max Fuerst",
-    role: "Executive Vice President",
-    bio: "Former CCO at Lokal Media House and Director at Speed Patrol. Max brings creative leadership and operational excellence to every aspect of the Wolfpack experience.",
-    gradient: "from-emerald-500 to-emerald-700",
-    initials: "MF",
-  },
-  {
-    name: "Meghan Burke",
-    role: "Brand & Marketing Director",
-    bio: "15 years in the agency world with her own marketing agency under her belt. Meghan ensures every customer touchpoint reflects the quality and trust Wolfpack stands for.",
-    gradient: "from-amber-500 to-amber-700",
-    initials: "MB",
-  },
-];
-
 const stats = [
   { value: "500+", label: "Vehicles Sold" },
   { value: "4.8", label: "Star Rating" },
@@ -123,33 +99,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
-      <section aria-labelledby="team-heading" className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 id="team-heading" className="text-center text-3xl font-bold tracking-tight text-gray-900">
-            Meet Our Team
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-gray-600">
-            Real people who care about finding you the right vehicle at the right price.
-          </p>
-          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {teamMembers.map((member) => (
-              <div
-                key={member.name}
-                className="group rounded-2xl border border-surface-border bg-white p-6 text-center shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1"
-              >
-                <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${member.gradient} text-2xl font-bold text-white shadow-lg`}>
-                  {member.initials}
-                </div>
-                <h3 className="mt-5 text-lg font-bold text-gray-900">{member.name}</h3>
-                <p className="text-sm font-medium text-brand-600">{member.role}</p>
-                <p className="mt-3 text-sm leading-relaxed text-gray-600">{member.bio}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* History Timeline */}
       <section aria-labelledby="history-heading" className="bg-surface-muted py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
@@ -158,9 +107,9 @@ export default function AboutPage() {
           </h2>
           <div className="mt-12 space-y-8">
             {[
-              { year: "2021", event: "Nick Hoxsie founds Wolfpack Motors in Denver, CO — bringing automotive marketing expertise to the dealer floor." },
+              { year: "2021", event: "Wolfpack Motors opens in Denver, CO — built from the ground up with a customer-first philosophy." },
               { year: "2022", event: "Expanded inventory and launched our online buying platform, serving customers across Colorado." },
-              { year: "2023", event: "Grew the team with industry veterans Max and Meghan. Introduced our 150-point inspection guarantee." },
+              { year: "2023", event: "Grew the team and introduced our 150-point inspection guarantee." },
               { year: "2024", event: "Launched contactless delivery, virtual test drives, and our AI-powered vehicle search." },
               { year: "2025", event: "Surpassed 500 vehicles sold with a 4.8-star customer satisfaction rating." },
               { year: "2026", event: "Celebrating 5 years of redefining the Colorado car-buying experience." },

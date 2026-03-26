@@ -14,6 +14,7 @@ import {
   testNoConsoleErrors,
   testImagesLoad,
   testResponsive,
+  testAnalyticsCollector,
 } from "./shared/page-checks";
 
 // ---------------------------------------------------------------------------
@@ -32,6 +33,9 @@ const PAGES: PageConfig[] = [
   { path: "/financing", titleFragment: "Financing" },
   { path: "/about", titleFragment: "About" },
   { path: "/contact", titleFragment: "Contact" },
+  // Dealer sub-pages — must have ALL the same features as main pages
+  { path: "/dealers/summit-auto", titleFragment: "Summit Auto" },
+  { path: "/dealers/mile-high-motors", titleFragment: "Mile High" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -70,6 +74,10 @@ for (const pg of PAGES) {
 
     test("responsive layout", async ({ page }) => {
       await testResponsive(page);
+    });
+
+    test("analytics collector active", async ({ page }) => {
+      await testAnalyticsCollector(page);
     });
   });
 }

@@ -252,6 +252,55 @@ export async function testImagesLoad(page: Page) {
 }
 
 // ---------------------------------------------------------------------------
+// Analytics brain — EventCollector active
+// ---------------------------------------------------------------------------
+
+export async function testAnalyticsCollector(page: Page) {
+  // Wait for React hydration and EventCollector to initialize
+  await page.waitForTimeout(2500);
+
+  // Session ID must be set (proves EventCollector mounted and ran)
+  const sessionId = await page.evaluate(() =>
+    sessionStorage.getItem("wolfpack_analytics_session"),
+  );
+  expect(sessionId, "EventCollector did not set session ID").toBeTruthy();
+  expect(sessionId).toMatch(/^s_/);
+
+  // Fingerprint must be set (proves persistent tracking is active)
+  const fingerprint = await page.evaluate(() =>
+    localStorage.getItem("wolfpack_analytics_fp"),
+  );
+  expect(fingerprint, "EventCollector did not set user fingerprint").toBeTruthy();
+  expect(fingerprint).toMatch(/^fp_/);
+}
+
+/**
+ * Verify that page interactions actually produce analytics events
+ * by clicking an element and checking the event buffer grows.
+ */
+export async function testAnalyticsEventFiring(
+  page: Page,
+  request: import("@playwright/test").APIRequestContext,
+) {
+  // Get baseline event count
+  const beforeRes = await request.get("/api/analytics/events");
+  const before = await beforeRes.json();
+  const beforeTotal = before.total_events;
+
+  // Interact with the page to produce events
+  await page.click("body");
+  await page.waitForTimeout(6000); // Wait for flush interval
+
+  // Verify events were sent
+  const afterRes = await request.get("/api/analytics/events");
+  const after = await afterRes.json();
+  expect(
+    after.total_events,
+    "No analytics events were fired from this page",
+  ).toBeGreaterThan(beforeTotal);
+}
+
+// ---------------------------------------------------------------------------
 // Responsive - no horizontal overflow
 // ---------------------------------------------------------------------------
 

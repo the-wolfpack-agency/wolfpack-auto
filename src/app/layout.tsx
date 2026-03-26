@@ -151,7 +151,7 @@ export default function RootLayout({
                   </span>
                 </div>
                 <p className="mt-4 text-sm leading-relaxed">
-                  Your trusted destination for quality vehicles, transparent pricing, and exceptional service since 2011.
+                  Your trusted destination for quality vehicles, transparent pricing, and exceptional service since 2021.
                 </p>
                 <div className="mt-6 flex gap-3">
                   {/* Social Icons */}

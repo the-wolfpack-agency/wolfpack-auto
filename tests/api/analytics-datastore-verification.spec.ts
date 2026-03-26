@@ -252,10 +252,10 @@ test.describe("Data Store Verification — no silent write failures", () => {
     for (const type of allEventTypes) {
       const beforeCount = before.events_by_type[type] ?? 0;
       const afterCount = after.events_by_type[type] ?? 0;
-      expect(afterCount).toBeGreaterThan(
-        beforeCount,
+      expect(
+        afterCount,
         `Event type "${type}" was not persisted — possible silent discard!`,
-      );
+      ).toBeGreaterThan(beforeCount);
     }
   });
 
