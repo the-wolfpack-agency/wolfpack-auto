@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import ChatBubble from "./ChatBubble";
 import ChatMessage, { type ChatMessageData } from "./ChatMessage";
 import TypingIndicator from "./TypingIndicator";
+import { useAnalytics } from "./EventCollector";
 
 const STORAGE_KEY = "wolfpack_chat_messages";
 const STORAGE_OPEN_KEY = "wolfpack_chat_open";
@@ -48,6 +49,8 @@ export default function ChatWidget() {
   const [isTyping, setIsTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(1);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  const { trackChat, track, getSessionId } = useAnalytics();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -151,6 +154,7 @@ export default function ChatWidget() {
   const toggleChat = useCallback(() => {
     setIsOpen((prev) => {
       const next = !prev;
+      track("chat_interaction", next ? "chat_opened" : "chat_closed");
       if (next) {
         setUnreadCount(0);
         // Add welcome message if this is the first open and no saved messages
@@ -163,7 +167,7 @@ export default function ChatWidget() {
       }
       return next;
     });
-  }, []);
+  }, [track]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -181,6 +185,9 @@ export default function ChatWidget() {
       setInput("");
       setIsTyping(true);
 
+      // Track user message in analytics brain
+      trackChat("user", trimmed);
+
       try {
         const history = messages.map((m) => ({
           role: m.role,
@@ -189,7 +196,10 @@ export default function ChatWidget() {
 
         const res = await fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-session-id": getSessionId(),
+          },
           body: JSON.stringify({
             message: trimmed,
             history,
@@ -206,6 +216,9 @@ export default function ChatWidget() {
           suggested_actions: data.suggested_actions,
         };
 
+        // Track assistant response in analytics brain
+        trackChat("assistant", assistantMsg.content);
+
         setMessages((prev) => [...prev, assistantMsg]);
       } catch {
         const errorMsg: ChatMessageData = {
@@ -220,14 +233,15 @@ export default function ChatWidget() {
         setIsTyping(false);
       }
     },
-    [isTyping, messages],
+    [isTyping, messages, trackChat, getSessionId],
   );
 
   const handleActionClick = useCallback(
     (action: string) => {
+      track("chat_interaction", "suggested_action_click", { action });
       sendMessage(action);
     },
-    [sendMessage],
+    [sendMessage, track],
   );
 
   const handleSubmit = useCallback(

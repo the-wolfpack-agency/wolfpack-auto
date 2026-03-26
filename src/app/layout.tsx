@@ -3,6 +3,7 @@ import "./globals.css";
 import MobileMenu from "@/components/MobileMenu";
 import ChatWidget from "@/components/ChatWidget";
 import Analytics from "@/components/Analytics";
+import EventCollector from "@/components/EventCollector";
 
 export const metadata: Metadata = {
   title: {
@@ -34,6 +35,7 @@ export default function RootLayout({
         <Analytics />
       </head>
       <body className="min-h-screen bg-surface text-gray-900 antialiased">
+        <EventCollector>
         {/* Skip navigation link for keyboard / screen reader users */}
         <a
           href="#main-content"
@@ -262,6 +264,7 @@ export default function RootLayout({
 
         {/* AI Chat Assistant — appears on every page */}
         <ChatWidget />
+        </EventCollector>
       </body>
     </html>
   );

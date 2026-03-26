@@ -431,3 +431,138 @@ function escapeXml(s: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
 }
+
+// ---------------------------------------------------------------------------
+// Behavior-driven SEO optimization (powered by analytics brain)
+// ---------------------------------------------------------------------------
+
+import { queryInsights } from "@/lib/analytics-engine";
+
+/**
+ * Query behavioral insights to determine which pages/vehicles should
+ * be prioritized in internal linking and sitemap generation.
+ *
+ * Returns pages ranked by engagement + conversion correlation.
+ */
+export async function getHighValuePages(): Promise<
+  { path: string; priority: number; reason: string }[]
+> {
+  try {
+    const insights = await queryInsights(
+      "most popular pages highest engagement conversion",
+      5,
+    );
+
+    const pages: { path: string; priority: number; reason: string }[] = [];
+
+    for (const insight of insights) {
+      if (insight.category === "engagement" && insight.data.ranking) {
+        const ranking = insight.data.ranking as {
+          page: string;
+          avg_ms: number;
+        }[];
+        for (const entry of ranking) {
+          pages.push({
+            path: entry.page,
+            priority: Math.min(entry.avg_ms / 60000, 1),
+            reason: `${Math.round(entry.avg_ms / 1000)}s avg engagement`,
+          });
+        }
+      }
+
+      if (insight.category === "conversion" && insight.data.common_pages) {
+        const common = insight.data.common_pages as [string, number][];
+        for (const [page, count] of common) {
+          const existing = pages.find((p) => p.path === page);
+          if (existing) {
+            existing.priority = Math.min(existing.priority + 0.3, 1);
+            existing.reason += `, ${count} conversions`;
+          } else {
+            pages.push({
+              path: page,
+              priority: 0.8,
+              reason: `${count} conversions`,
+            });
+          }
+        }
+      }
+    }
+
+    return pages.sort((a, b) => b.priority - a.priority);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get popular search terms from behavioral data to inform
+ * meta descriptions, internal linking, and content strategy.
+ */
+export async function getPopularSearchTerms(): Promise<string[]> {
+  try {
+    const insights = await queryInsights("popular search queries terms", 3);
+
+    for (const insight of insights) {
+      if (insight.category === "search" && insight.data.top_searches) {
+        return (insight.data.top_searches as [string, number][]).map(
+          ([term]) => term,
+        );
+      }
+    }
+
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Generate a behavior-optimized sitemap that boosts priorities
+ * for pages with high engagement and conversion rates.
+ */
+export async function generateBehaviorOptimizedSitemap(
+  dealerBaseUrl: string,
+  vehicles: Pick<VehicleListItem, "vin">[] | Pick<Vehicle, "vin" | "updated_at">[],
+): Promise<string> {
+  const base = dealerBaseUrl.replace(/\/$/, "");
+  const now = new Date().toISOString().split("T")[0];
+
+  // Get behavioral data to boost priorities
+  const highValuePages = await getHighValuePages();
+  const hvMap = new Map(highValuePages.map((p) => [p.path, p.priority]));
+
+  const staticPages: SitemapEntry[] = [
+    { loc: base, lastmod: now, changefreq: "weekly", priority: hvMap.get("/") ?? 1.0 },
+    { loc: `${base}/inventory`, lastmod: now, changefreq: "daily", priority: hvMap.get("/inventory") ?? 0.9 },
+    { loc: `${base}/financing`, lastmod: now, changefreq: "weekly", priority: hvMap.get("/financing") ?? 0.6 },
+    { loc: `${base}/about`, lastmod: now, changefreq: "monthly", priority: hvMap.get("/about") ?? 0.6 },
+    { loc: `${base}/contact`, lastmod: now, changefreq: "monthly", priority: hvMap.get("/contact") ?? 0.6 },
+  ];
+
+  const vehiclePages: SitemapEntry[] = vehicles.map((v) => ({
+    loc: `${base}/inventory/${v.vin}`,
+    lastmod: "updated_at" in v ? new Date(v.updated_at).toISOString().split("T")[0] : now,
+    changefreq: "daily" as const,
+    priority: 0.8,
+  }));
+
+  const entries = [...staticPages, ...vehiclePages].sort(
+    (a, b) => b.priority - a.priority,
+  );
+
+  const urls = entries
+    .map(
+      (e) => `  <url>
+    <loc>${escapeXml(e.loc)}</loc>
+    <lastmod>${e.lastmod}</lastmod>
+    <changefreq>${e.changefreq}</changefreq>
+    <priority>${e.priority.toFixed(1)}</priority>
+  </url>`,
+    )
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>`;
+}

@@ -4,10 +4,16 @@ import {
   type VehicleSearchResult,
 } from "@/lib/vehicle-search";
 import type { PlaceholderVehicle } from "@/lib/placeholder-data";
+import {
+  queryInsights,
+  ingestEvents,
+  type AnalyticsEvent,
+} from "@/lib/analytics-engine";
 
 /* ------------------------------------------------------------------ */
 /*  HYBRID chat responder for Wolfpack Motors                          */
 /*  Rule-based intents + vector/keyword vehicle search                 */
+/*  + behavioral insights from analytics brain                        */
 /*  No AI calls — all pattern matching + vector similarity             */
 /* ------------------------------------------------------------------ */
 
@@ -400,10 +406,60 @@ async function handleComparison(message: string): Promise<ChatResponse> {
   };
 }
 
+/* ---------- Behavioral insights from analytics brain ---------- */
+
+/**
+ * Query the analytics brain for insights relevant to the user's message.
+ * Enriches responses with data-driven context when available.
+ */
+async function getBehavioralContext(message: string): Promise<string | null> {
+  try {
+    const insights = await queryInsights(message, 3);
+    if (insights.length === 0) return null;
+
+    // Pick the most relevant high-confidence insight
+    const relevant = insights.find((i) => i.confidence > 0.3);
+    if (!relevant) return null;
+
+    return relevant.insight;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Track a chat interaction as an analytics event.
+ */
+function trackChatEvent(
+  role: "user" | "assistant",
+  content: string,
+  sessionId: string,
+  metadata: Record<string, unknown> = {},
+): void {
+  const event: AnalyticsEvent = {
+    event_type: "chat_message",
+    action: `chat_${role}`,
+    page: "/chat",
+    session_id: sessionId,
+    user_fingerprint: sessionId, // best we have server-side
+    timestamp: new Date().toISOString(),
+    metadata: { role, content: content.slice(0, 200), ...metadata },
+  };
+
+  // Fire-and-forget — never block the response
+  ingestEvents([event]);
+}
+
 /* ---------- Main intent dispatcher ---------- */
 
-async function matchIntent(message: string): Promise<ChatResponse> {
+async function matchIntent(
+  message: string,
+  sessionId: string,
+): Promise<ChatResponse> {
   const clean = sanitize(message);
+
+  // Track the user's message
+  trackChatEvent("user", clean, sessionId);
 
   // 1. Check rule-based intents FIRST for non-vehicle queries
   //    (greetings, hours, financing, contact, etc.)
@@ -412,20 +468,49 @@ async function matchIntent(message: string): Promise<ChatResponse> {
 
   // 2. If the message is about vehicles, use the hybrid search
   if (isComparisonIntent(clean)) {
-    return handleComparison(clean);
+    const response = await handleComparison(clean);
+    trackChatEvent("assistant", response.response, sessionId, {
+      intent: "comparison",
+    });
+    return response;
   }
 
   if (isVehicleSearchIntent(clean)) {
-    return handleVehicleSearch(clean);
+    const response = await handleVehicleSearch(clean);
+    trackChatEvent("assistant", response.response, sessionId, {
+      intent: "vehicle_search",
+      search_source: response.search_source,
+    });
+    return response;
   }
 
   // 3. Return rule-based result if it matched
   if (ruleResult) {
+    trackChatEvent("assistant", ruleResult.response, sessionId, {
+      intent: "rule_based",
+    });
     return ruleResult;
   }
 
-  // 4. Final fallback
-  return {
+  // 4. Check behavioral insights for data-driven response
+  const insight = await getBehavioralContext(clean);
+  if (insight) {
+    const response: ChatResponse = {
+      response: `Based on what our customers are looking for: ${insight}\n\nI can also help with browsing inventory, financing, or scheduling a test drive. What would you like to know more about?`,
+      suggested_actions: [
+        "Browse inventory",
+        "Financing options",
+        "Schedule test drive",
+      ],
+    };
+    trackChatEvent("assistant", response.response, sessionId, {
+      intent: "behavioral_insight",
+    });
+    return response;
+  }
+
+  // 5. Final fallback
+  const fallback: ChatResponse = {
     response: `I'd be happy to help! For detailed questions, you can reach our team at ${DEALER.phone} or visit our [contact page](/contact). I can also help with inventory, financing, hours, or scheduling a test drive.`,
     suggested_actions: [
       "Browse inventory",
@@ -434,6 +519,10 @@ async function matchIntent(message: string): Promise<ChatResponse> {
       "Schedule test drive",
     ],
   };
+  trackChatEvent("assistant", fallback.response, sessionId, {
+    intent: "fallback",
+  });
+  return fallback;
 }
 
 /* ---------- Route handler ---------- */
@@ -480,7 +569,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await matchIntent(body.message);
+    // Use IP as a server-side session identifier for analytics
+    const sessionId =
+      request.headers.get("x-session-id") ?? `server_${ip}`;
+
+    const result = await matchIntent(body.message, sessionId);
 
     return NextResponse.json(result);
   } catch {
