@@ -20,6 +20,15 @@
   }
 }
 
+/* Prevent iOS Safari auto-zoom on form inputs (triggers when font-size < 16px) */
+@media screen and (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Safety net: prevent SVGs from ever overflowing their containers */
 svg {
   max-width: 100%;
