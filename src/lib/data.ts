@@ -33,7 +33,7 @@ interface WithSource<T> {
   source: DataSource;
 }
 
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+const DEALER_ID = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 /** Return true when there is no DATABASE_URL configured at all. */
 function dbUnavailable(): boolean {
@@ -82,9 +82,21 @@ function toInventoryVehicle(p: PlaceholderVehicle): InventoryVehicle {
 
 function applyPlaceholderFilters(
   vehicles: PlaceholderVehicle[],
-  filters?: { make?: string; condition?: string; sort?: string },
+  filters?: { make?: string; condition?: string; sort?: string; q?: string },
 ): PlaceholderVehicle[] {
   let result = [...vehicles];
+
+  if (filters?.q) {
+    const tokens = filters.q.toLowerCase().split(/\s+/).filter(Boolean);
+    result = result.filter((v) => {
+      const searchable = [
+        v.make, v.model, v.trim, v.bodyStyle, v.fuel, v.drivetrain,
+        v.exteriorColor, v.condition, v.engine, String(v.year),
+        ...v.features,
+      ].join(" ").toLowerCase();
+      return tokens.every((t) => searchable.includes(t));
+    });
+  }
 
   if (filters?.make) {
     result = result.filter(
@@ -122,7 +134,7 @@ function applyPlaceholderFilters(
  * Get inventory vehicles with optional filters.
  */
 export async function getInventoryVehicles(
-  filters?: { make?: string; condition?: string; sort?: string },
+  filters?: { make?: string; condition?: string; sort?: string; q?: string },
 ): Promise<WithSource<InventoryVehicle[]>> {
   if (dbUnavailable()) {
     return {
