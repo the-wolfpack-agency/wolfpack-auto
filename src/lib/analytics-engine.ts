@@ -823,6 +823,206 @@ export function generateInsights(): BehavioralInsight[] {
     });
   }
 
+  // ================================================================
+  // TIER 2 INSIGHT GENERATORS — industry-changing analytics
+  // ================================================================
+
+  // --- Insight 15: Rage clicks (UX frustration) ---
+  const rageClickElements = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "rage_click") {
+        const el = String(e.metadata.element_text ?? e.metadata.element ?? "unknown");
+        rageClickElements.set(el, (rageClickElements.get(el) ?? 0) + 1);
+      }
+    }
+  }
+  if (rageClickElements.size > 0) {
+    const sorted = [...rageClickElements.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    insights.push({
+      id: `rage_clicks_${Date.now()}`,
+      insight: `UX frustration detected: ${sorted.map(([el, c]) => `"${el.slice(0, 40)}" (${c} rage clicks)`).join(", ")}. Users are rapidly clicking these elements expecting a response — check for slow loading, missing feedback, or broken interactions.`,
+      category: "ux_friction",
+      confidence: Math.min(sorted[0][1] / 5, 1),
+      sample_size: sorted.reduce((a, [, c]) => a + c, 0),
+      generated_at: now,
+      data: { elements: sorted },
+    });
+  }
+
+  // --- Insight 16: Dead clicks (UX gaps) ---
+  const deadClickElements = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "dead_click") {
+        const el = `${e.metadata.element_tag}: "${String(e.metadata.element_text ?? "").slice(0, 30)}"`;
+        deadClickElements.set(el, (deadClickElements.get(el) ?? 0) + 1);
+      }
+    }
+  }
+  if (deadClickElements.size > 0) {
+    const sorted = [...deadClickElements.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    insights.push({
+      id: `dead_clicks_${Date.now()}`,
+      insight: `Users are clicking non-interactive elements: ${sorted.map(([el, c]) => `${el} (${c}x)`).join(", ")}. These elements look clickable but aren't — consider making them interactive or changing their visual styling.`,
+      category: "ux_friction",
+      confidence: Math.min(sorted[0][1] / 5, 1),
+      sample_size: sorted.reduce((a, [, c]) => a + c, 0),
+      generated_at: now,
+      data: { elements: sorted },
+    });
+  }
+
+  // --- Insight 17: Form abandonment attribution ---
+  const abandonmentFields = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "form_abandonment") {
+        const field = String(e.metadata.last_field ?? "unknown");
+        abandonmentFields.set(field, (abandonmentFields.get(field) ?? 0) + 1);
+      }
+    }
+  }
+  if (abandonmentFields.size > 0) {
+    const sorted = [...abandonmentFields.entries()].sort((a, b) => b[1] - a[1]);
+    const total = sorted.reduce((a, [, c]) => a + c, 0);
+    insights.push({
+      id: `form_abandonment_${Date.now()}`,
+      insight: `${total} form abandonments detected. Users quit most often at: ${sorted.map(([f, c]) => `"${f}" field (${c}x, ${((c / total) * 100).toFixed(0)}%)`).join(", ")}. Consider making these fields optional, adding helper text, or reducing the form length.`,
+      category: "conversion",
+      confidence: Math.min(total / 10, 1),
+      sample_size: total,
+      generated_at: now,
+      data: { fields: sorted, total },
+    });
+  }
+
+  // --- Insight 18: Exit intent patterns ---
+  const exitIntentPages = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "exit_intent") {
+        const page = String(e.metadata.page ?? "/");
+        exitIntentPages.set(page, (exitIntentPages.get(page) ?? 0) + 1);
+      }
+    }
+  }
+  if (exitIntentPages.size > 0) {
+    const sorted = [...exitIntentPages.entries()].sort((a, b) => b[1] - a[1]);
+    insights.push({
+      id: `exit_intent_${Date.now()}`,
+      insight: `Exit intent detected most on: ${sorted.map(([p, c]) => `${p} (${c}x)`).join(", ")}. These are the pages where users move to leave — consider adding retention offers, chat prompts, or urgency elements on these pages.`,
+      category: "conversion",
+      confidence: Math.min(sorted[0][1] / 10, 1),
+      sample_size: sorted.reduce((a, [, c]) => a + c, 0),
+      generated_at: now,
+      data: { pages: sorted },
+    });
+  }
+
+  // --- Insight 19: Price trajectory (buyer psychology) ---
+  const trajectoryDirections = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "price_trajectory" && e.metadata.direction) {
+        const dir = String(e.metadata.direction);
+        trajectoryDirections.set(dir, (trajectoryDirections.get(dir) ?? 0) + 1);
+      }
+    }
+  }
+  if (trajectoryDirections.size > 0) {
+    const total = [...trajectoryDirections.values()].reduce((a, b) => a + b, 0);
+    const breakdown = [...trajectoryDirections.entries()].map(([d, c]) => `${d}: ${c} (${((c / total) * 100).toFixed(0)}%)`);
+    insights.push({
+      id: `price_trajectory_${Date.now()}`,
+      insight: `Buyer price psychology: ${breakdown.join(", ")}. ${(trajectoryDirections.get("anchoring_down") ?? 0) > (trajectoryDirections.get("anchoring_up") ?? 0) ? "More users start high and work down — they're aspirational browsers. Show premium vehicles first." : "More users start low and work up — they're budget-conscious and upgrading. Lead with value propositions."}`,
+      category: "conversion",
+      confidence: Math.min(total / 15, 1),
+      sample_size: total,
+      generated_at: now,
+      data: { directions: Object.fromEntries(trajectoryDirections) },
+    });
+  }
+
+  // --- Insight 20: Session momentum ---
+  const momentumCounts = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "session_momentum" && e.metadata.momentum) {
+        const m = String(e.metadata.momentum);
+        momentumCounts.set(m, (momentumCounts.get(m) ?? 0) + 1);
+      }
+    }
+  }
+  if (momentumCounts.size > 0) {
+    const total = [...momentumCounts.values()].reduce((a, b) => a + b, 0);
+    const accel = momentumCounts.get("accelerating") ?? 0;
+    insights.push({
+      id: `session_momentum_${Date.now()}`,
+      insight: `Session momentum: ${[...momentumCounts.entries()].map(([m, c]) => `${m}: ${c}`).join(", ")}. ${accel > total / 2 ? "Most sessions are accelerating — users are getting more engaged over time. Your content flow is working." : "Most sessions are steady or decelerating — consider adding interactive elements or CTAs mid-page to maintain engagement."}`,
+      category: "engagement",
+      confidence: Math.min(total / 20, 1),
+      sample_size: total,
+      generated_at: now,
+      data: { momentum: Object.fromEntries(momentumCounts) },
+    });
+  }
+
+  // --- Insight 21: Referrer behavior correlation ---
+  const sourceMetrics = new Map<string, { sessions: number; conversions: number }>();
+  for (const [sessionId, events] of buffer.sessions) {
+    const sourceEvent = events.find((e) => e.event_type === "referrer_correlation");
+    if (!sourceEvent) continue;
+    const source = String(sourceEvent.metadata.referrer_source ?? "direct");
+    const entry = sourceMetrics.get(source) ?? { sessions: 0, conversions: 0 };
+    entry.sessions++;
+    const summary = buildSessionSummary(sessionId);
+    if (summary?.converted) entry.conversions++;
+    sourceMetrics.set(source, entry);
+  }
+  if (sourceMetrics.size > 1) {
+    const ranked = [...sourceMetrics.entries()]
+      .map(([source, data]) => ({ source, ...data, rate: data.sessions > 0 ? data.conversions / data.sessions : 0 }))
+      .sort((a, b) => b.rate - a.rate);
+    insights.push({
+      id: `referrer_correlation_${Date.now()}`,
+      insight: `Traffic source performance: ${ranked.map((r) => `${r.source}: ${r.sessions} sessions, ${(r.rate * 100).toFixed(0)}% conversion`).join("; ")}. ${ranked[0].rate > 0 ? `Best converting source: ${ranked[0].source}. Invest more marketing budget here.` : "No conversions yet from tracked sources — need more data."}`,
+      category: "marketing",
+      confidence: Math.min(ranked.reduce((a, r) => a + r.sessions, 0) / 20, 1),
+      sample_size: ranked.reduce((a, r) => a + r.sessions, 0),
+      generated_at: now,
+      data: { sources: ranked },
+    });
+  }
+
+  // --- Insight 22: Viewport attention (what content users actually read) ---
+  const sectionAttention = new Map<string, { totalMs: number; count: number }>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "viewport_attention" && typeof e.metadata.visible_duration_ms === "number") {
+        const section = String(e.metadata.section_id ?? "unknown");
+        const entry = sectionAttention.get(section) ?? { totalMs: 0, count: 0 };
+        entry.totalMs += e.metadata.visible_duration_ms as number;
+        entry.count++;
+        sectionAttention.set(section, entry);
+      }
+    }
+  }
+  if (sectionAttention.size > 0) {
+    const ranked = [...sectionAttention.entries()]
+      .map(([section, data]) => ({ section, avg_ms: Math.round(data.totalMs / data.count), views: data.count }))
+      .sort((a, b) => b.avg_ms - a.avg_ms);
+    insights.push({
+      id: `viewport_attention_${Date.now()}`,
+      insight: `Content attention ranking (avg time visible): ${ranked.slice(0, 5).map((r) => `"${r.section}" ${Math.round(r.avg_ms / 1000)}s (${r.views} views)`).join(", ")}. Place your most important CTAs in the highest-attention sections.`,
+      category: "engagement",
+      confidence: Math.min(ranked[0].views / 10, 1),
+      sample_size: ranked.reduce((a, r) => a + r.views, 0),
+      generated_at: now,
+      data: { sections: ranked.slice(0, 10) },
+    });
+  }
+
   return insights;
 }
 

@@ -133,6 +133,20 @@ function getOrCreateFingerprint(): string {
 const FLUSH_INTERVAL_MS = 5_000;
 const FLUSH_THRESHOLD = 20;
 
+/** Categorize a numeric value into a privacy-safe range bucket. */
+function categorizeValue(val: string): string {
+  const n = parseFloat(val.replace(/[^0-9.]/g, ""));
+  if (isNaN(n)) return "non_numeric";
+  if (n < 100) return "under_100";
+  if (n < 1000) return "100_999";
+  if (n < 5000) return "1K_5K";
+  if (n < 10000) return "5K_10K";
+  if (n < 25000) return "10K_25K";
+  if (n < 50000) return "25K_50K";
+  if (n < 100000) return "50K_100K";
+  return "100K_plus";
+}
+
 let eventBuffer: AnalyticsEvent[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -907,6 +921,515 @@ export default function EventCollector({
     });
     return () =>
       document.removeEventListener("click", recordInteraction);
+  }, [buildEvent]);
+
+  // ================================================================
+  // TIER 2 — INDUSTRY-CHANGING SIGNALS (no competitor captures these)
+  // ================================================================
+
+  // --- 11. Rage clicks (3+ rapid clicks on same element within 1s) ---
+  useEffect(() => {
+    const clickLog: { target: string; time: number }[] = [];
+
+    function handleClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      const id = target.getAttribute("data-track") || target.id || target.className.slice(0, 40) || target.tagName;
+      const now = Date.now();
+      clickLog.push({ target: id, time: now });
+
+      // Keep only last 1s of clicks
+      while (clickLog.length > 0 && now - clickLog[0].time > 1000) clickLog.shift();
+
+      const sameTarget = clickLog.filter((c) => c.target === id);
+      if (sameTarget.length >= 3) {
+        enqueueEvent(buildEvent("rage_click", "rage_click_detected", {
+          element: id,
+          element_tag: target.tagName.toLowerCase(),
+          element_text: (target.textContent ?? "").trim().slice(0, 80),
+          click_count: sameTarget.length,
+          window_ms: now - sameTarget[0].time,
+        }));
+        clickLog.length = 0; // reset to avoid duplicate fires
+      }
+    }
+
+    document.addEventListener("click", handleClick, { passive: true });
+    return () => document.removeEventListener("click", handleClick);
+  }, [buildEvent]);
+
+  // --- 12. Dead clicks (clicks on non-interactive elements) ---
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      const interactive = target.closest("a, button, input, select, textarea, [role='button'], [tabindex], label, [data-track], [onclick]");
+      if (!interactive && target.tagName !== "HTML" && target.tagName !== "BODY") {
+        enqueueEvent(buildEvent("dead_click", "non_interactive_click", {
+          element_tag: target.tagName.toLowerCase(),
+          element_text: (target.textContent ?? "").trim().slice(0, 100),
+          element_class: target.className.toString().slice(0, 80),
+          x: e.clientX,
+          y: e.clientY,
+          page: window.location.pathname,
+        }));
+      }
+    }
+
+    document.addEventListener("click", handleClick, { passive: true });
+    return () => document.removeEventListener("click", handleClick);
+  }, [buildEvent]);
+
+  // --- 13. Form abandonment with field-level attribution ---
+  useEffect(() => {
+    let lastFocusedField: string | null = null;
+    let formStarted = false;
+
+    function handleFocusIn(e: FocusEvent) {
+      const t = e.target as HTMLElement;
+      if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) {
+        lastFocusedField = t.name || t.id || t.tagName.toLowerCase();
+        formStarted = true;
+      }
+    }
+
+    function handleBeforeUnload() {
+      if (formStarted && lastFocusedField) {
+        enqueueEvent(buildEvent("form_abandonment", "form_abandoned", {
+          last_field: lastFocusedField,
+          page: window.location.pathname,
+        }));
+      }
+    }
+
+    function handleSubmit() { formStarted = false; }
+
+    document.addEventListener("focusin", handleFocusIn, { passive: true });
+    document.addEventListener("submit", handleSubmit, { passive: true });
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("submit", handleSubmit);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [buildEvent]);
+
+  // --- 14. Exit intent detection ---
+  useEffect(() => {
+    let fired = false;
+
+    function handleMouseLeave(e: MouseEvent) {
+      if (fired) return;
+      // Mouse left viewport toward top (back/close button area)
+      if (e.clientY <= 5 && e.movementY < -5) {
+        fired = true;
+        enqueueEvent(buildEvent("exit_intent", "exit_intent_detected", {
+          page: window.location.pathname,
+          time_on_page_ms: Date.now() - pageEnteredAt.current,
+          exit_x: e.clientX,
+        }));
+        // Reset after 10s so it can fire again if they stay
+        setTimeout(() => { fired = false; }, 10000);
+      }
+    }
+
+    document.addEventListener("mouseleave", handleMouseLeave, { passive: true });
+    return () => document.removeEventListener("mouseleave", handleMouseLeave);
+  }, [buildEvent]);
+
+  // --- 15. Navigation hesitation (hover 500ms+ on nav link without click) ---
+  useEffect(() => {
+    let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+    let hoveredLink: string | null = null;
+
+    function handleMouseEnter(e: MouseEvent) {
+      const target = (e.target as HTMLElement).closest("header a");
+      if (!target) return;
+      const href = (target as HTMLAnchorElement).href;
+      hoveredLink = href;
+      hoverTimer = setTimeout(() => {
+        enqueueEvent(buildEvent("nav_hesitation", "nav_hover_no_click", {
+          href,
+          link_text: (target.textContent ?? "").trim(),
+          hover_duration_ms: 500,
+        }));
+      }, 500);
+    }
+
+    function handleMouseLeave(e: MouseEvent) {
+      const target = (e.target as HTMLElement).closest("header a");
+      if (target && hoverTimer) {
+        clearTimeout(hoverTimer);
+        hoverTimer = null;
+      }
+    }
+
+    function handleClick() {
+      if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+    }
+
+    const header = document.querySelector("header");
+    if (header) {
+      header.addEventListener("mouseover", handleMouseEnter, { passive: true });
+      header.addEventListener("mouseout", handleMouseLeave, { passive: true });
+      header.addEventListener("click", handleClick, { passive: true });
+    }
+    return () => {
+      if (header) {
+        header.removeEventListener("mouseover", handleMouseEnter);
+        header.removeEventListener("mouseout", handleMouseLeave);
+        header.removeEventListener("click", handleClick);
+      }
+    };
+  }, [buildEvent]);
+
+  // --- 16. Price anchor trajectory ---
+  useEffect(() => {
+    const PRICE_KEY = "wolfpack_price_trajectory";
+    // Detect prices on vehicle pages
+    const priceEl = document.querySelector("[data-track-price], .text-2xl, .text-3xl");
+    if (!priceEl) return;
+
+    const priceText = priceEl.textContent ?? "";
+    const priceMatch = priceText.match(/\$?([\d,]+)/);
+    if (!priceMatch) return;
+
+    const price = parseInt(priceMatch[1].replace(/,/g, ""), 10);
+    if (price < 1000) return;
+
+    try {
+      const raw = sessionStorage.getItem(PRICE_KEY);
+      const trajectory: number[] = raw ? JSON.parse(raw) : [];
+      trajectory.push(price);
+
+      if (trajectory.length >= 2) {
+        const first = trajectory[0];
+        const last = trajectory[trajectory.length - 1];
+        const direction = last > first ? "anchoring_up" : last < first ? "anchoring_down" : "stable";
+        const avgPrice = Math.round(trajectory.reduce((a, b) => a + b, 0) / trajectory.length);
+
+        enqueueEvent(buildEvent("price_trajectory", "price_viewed", {
+          price,
+          trajectory_length: trajectory.length,
+          direction,
+          avg_price: avgPrice,
+          min_price: Math.min(...trajectory),
+          max_price: Math.max(...trajectory),
+          price_range: Math.max(...trajectory) - Math.min(...trajectory),
+        }));
+      }
+
+      sessionStorage.setItem(PRICE_KEY, JSON.stringify(trajectory.slice(-20)));
+    } catch { /* sessionStorage unavailable */ }
+  }, [buildEvent]);
+
+  // --- 17. Calculator input analysis ---
+  useEffect(() => {
+    function handleChange(e: Event) {
+      const target = e.target as HTMLInputElement;
+      if (!target || !target.form) return;
+
+      const formAction = target.form.action || target.form.id || "";
+      const isCalculator = formAction.includes("calc") || formAction.includes("financ") ||
+        target.form.querySelector("[data-track*='calc']") !== null ||
+        target.name?.match(/price|payment|down|term|rate|trade/i);
+
+      if (!isCalculator) return;
+
+      enqueueEvent(buildEvent("calculator_input", "calc_value_entered", {
+        field_name: target.name || target.id || "unknown",
+        value_type: target.type,
+        // Store ranges not exact values for privacy
+        value_range: categorizeValue(target.value),
+      }));
+    }
+
+    document.addEventListener("change", handleChange, { passive: true });
+    return () => document.removeEventListener("change", handleChange);
+  }, [buildEvent]);
+
+  // --- 18. Viewport attention mapping (IntersectionObserver) ---
+  useEffect(() => {
+    const sectionTimes = new Map<string, number>();
+    const sectionVisible = new Map<string, number>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const now = Date.now();
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).getAttribute("aria-labelledby") ||
+            (entry.target as HTMLElement).id ||
+            entry.target.tagName + "_" + Array.from(entry.target.parentElement?.children ?? []).indexOf(entry.target);
+
+          if (entry.isIntersecting) {
+            sectionVisible.set(id, now);
+          } else {
+            const startTime = sectionVisible.get(id);
+            if (startTime) {
+              const duration = now - startTime;
+              sectionTimes.set(id, (sectionTimes.get(id) ?? 0) + duration);
+              sectionVisible.delete(id);
+
+              if (duration > 2000) {
+                enqueueEvent(buildEvent("viewport_attention", "section_viewed", {
+                  section_id: id,
+                  visible_duration_ms: duration,
+                  total_duration_ms: sectionTimes.get(id),
+                }));
+              }
+            }
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+
+    // Observe all section elements
+    const sections = document.querySelectorAll("section, article, [role='region']");
+    sections.forEach((s) => observer.observe(s));
+
+    return () => observer.disconnect();
+  }, [buildEvent]);
+
+  // --- 19. Touch gesture analysis (mobile) ---
+  useEffect(() => {
+    if (!("ontouchstart" in window)) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let initialDistance = 0;
+
+    function getDistance(t1: Touch, t2: Touch): number {
+      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    }
+
+    function handleTouchStart(e: TouchEvent) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+      if (e.touches.length === 2) {
+        initialDistance = getDistance(e.touches[0], e.touches[1]);
+      }
+    }
+
+    function handleTouchEnd(e: TouchEvent) {
+      const duration = Date.now() - touchStartTime;
+
+      // Long press detection (500ms+)
+      if (duration > 500 && e.changedTouches.length === 1) {
+        const dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
+        const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+        if (dx < 10 && dy < 10) {
+          const target = document.elementFromPoint(touchStartX, touchStartY);
+          enqueueEvent(buildEvent("touch_gesture", "long_press", {
+            duration_ms: duration,
+            element_tag: target?.tagName.toLowerCase() ?? "unknown",
+            element_text: (target?.textContent ?? "").trim().slice(0, 60),
+          }));
+        }
+      }
+
+      // Swipe detection
+      if (e.changedTouches.length === 1 && duration < 500) {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+
+        if (absDx > 60 && absDx > absDy * 1.5) {
+          enqueueEvent(buildEvent("touch_gesture", "swipe", {
+            direction: dx > 0 ? "right" : "left",
+            distance_px: Math.round(absDx),
+            velocity: Math.round(absDx / duration * 1000),
+          }));
+        }
+      }
+    }
+
+    // Pinch-zoom detection
+    function handleTouchMove(e: TouchEvent) {
+      if (e.touches.length === 2 && initialDistance > 0) {
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const scale = currentDistance / initialDistance;
+
+        if (Math.abs(scale - 1) > 0.3) {
+          enqueueEvent(buildEvent("touch_gesture", "pinch_zoom", {
+            scale: Math.round(scale * 100) / 100,
+            direction: scale > 1 ? "zoom_in" : "zoom_out",
+            page: window.location.pathname,
+          }));
+          initialDistance = currentDistance; // prevent rapid re-fires
+        }
+      }
+    }
+
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchend", handleTouchEnd, { passive: true });
+    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [buildEvent]);
+
+  // --- 20. Session momentum scoring ---
+  useEffect(() => {
+    const EVENT_WINDOW_MS = 10000; // 10s windows
+    const eventTimestamps: number[] = [];
+
+    function recordEvent() {
+      const now = Date.now();
+      eventTimestamps.push(now);
+
+      // Trim to last 60s
+      while (eventTimestamps.length > 0 && now - eventTimestamps[0] > 60000) {
+        eventTimestamps.shift();
+      }
+
+      // Need at least 2 windows of data
+      if (eventTimestamps.length < 5) return;
+
+      // Split into first half and second half
+      const mid = Math.floor(eventTimestamps.length / 2);
+      const firstHalf = eventTimestamps.slice(0, mid);
+      const secondHalf = eventTimestamps.slice(mid);
+
+      const firstRate = firstHalf.length / ((firstHalf[firstHalf.length - 1] - firstHalf[0]) / 1000 || 1);
+      const secondRate = secondHalf.length / ((secondHalf[secondHalf.length - 1] - secondHalf[0]) / 1000 || 1);
+
+      // Only emit when momentum shifts significantly
+      if (eventTimestamps.length % 10 === 0) {
+        const momentum = secondRate > firstRate * 1.3 ? "accelerating" : secondRate < firstRate * 0.7 ? "decelerating" : "steady";
+        enqueueEvent(buildEvent("session_momentum", "momentum_update", {
+          momentum,
+          first_half_rate: Math.round(firstRate * 100) / 100,
+          second_half_rate: Math.round(secondRate * 100) / 100,
+          total_events_60s: eventTimestamps.length,
+        }));
+      }
+    }
+
+    document.addEventListener("click", recordEvent, { passive: true });
+    document.addEventListener("scroll", recordEvent, { passive: true });
+    return () => {
+      document.removeEventListener("click", recordEvent);
+      document.removeEventListener("scroll", recordEvent);
+    };
+  }, [buildEvent]);
+
+  // --- 21. Referrer behavior correlation ---
+  useEffect(() => {
+    const referrer = document.referrer;
+    if (!referrer) return;
+
+    // Classify referrer source
+    let source = "direct";
+    try {
+      const url = new URL(referrer);
+      const host = url.hostname.toLowerCase();
+      if (host.includes("google")) source = "google_organic";
+      else if (host.includes("facebook") || host.includes("fb.")) source = "facebook";
+      else if (host.includes("instagram")) source = "instagram";
+      else if (host.includes("tiktok")) source = "tiktok";
+      else if (host.includes("youtube")) source = "youtube";
+      else if (host.includes("bing")) source = "bing";
+      else if (host.includes("twitter") || host.includes("x.com")) source = "twitter";
+      else source = host;
+    } catch { /* invalid URL */ }
+
+    // Capture UTM params
+    const params = new URLSearchParams(window.location.search);
+    const utm: Record<string, string> = {};
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+      const val = params.get(key);
+      if (val) utm[key] = val;
+    }
+
+    enqueueEvent(buildEvent("referrer_correlation", "session_source", {
+      referrer_source: source,
+      referrer_full: referrer.slice(0, 200),
+      landing_page: window.location.pathname,
+      ...utm,
+    }));
+  }, [buildEvent]);
+
+  // --- 22. Error recovery patterns ---
+  useEffect(() => {
+    let lastError: { time: number; type: string } | null = null;
+
+    // Track validation errors
+    function handleInvalid(e: Event) {
+      const target = e.target as HTMLInputElement;
+      lastError = { time: Date.now(), type: "validation" };
+      enqueueEvent(buildEvent("error_event", "validation_error", {
+        field_name: target.name || target.id || "unknown",
+        field_type: target.type,
+        page: window.location.pathname,
+      }));
+    }
+
+    // Track recovery: next interaction after an error
+    function handleRecoveryClick() {
+      if (!lastError) return;
+      const recoveryTime = Date.now() - lastError.time;
+      if (recoveryTime > 60000) { lastError = null; return; } // stale
+
+      enqueueEvent(buildEvent("error_recovery", "recovery_action", {
+        error_type: lastError.type,
+        recovery_time_ms: recoveryTime,
+        recovery_action: "click",
+        recovered: recoveryTime < 10000, // quick recovery = user retried
+      }));
+      lastError = null;
+    }
+
+    document.addEventListener("invalid", handleInvalid, { capture: true });
+    document.addEventListener("click", handleRecoveryClick, { passive: true });
+    return () => {
+      document.removeEventListener("invalid", handleInvalid, { capture: true });
+      document.removeEventListener("click", handleRecoveryClick);
+    };
+  }, [buildEvent]);
+
+  // --- 23. Social proof dwell time ---
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const el = entry.target as HTMLElement;
+          const key = `_proofStart_${el.dataset.proofId || "unknown"}`;
+
+          if (entry.isIntersecting) {
+            (el as unknown as Record<string, number>)[key] = Date.now();
+          } else {
+            const start = (el as unknown as Record<string, number>)[key];
+            if (start) {
+              const dwell = Date.now() - start;
+              if (dwell > 1000) {
+                enqueueEvent(buildEvent("social_proof_dwell", "proof_viewed", {
+                  proof_type: el.dataset.proofType || "testimonial",
+                  proof_id: el.dataset.proofId || el.textContent?.trim().slice(0, 40),
+                  dwell_ms: dwell,
+                  read_fully: dwell > 5000,
+                }));
+              }
+            }
+          }
+        }
+      },
+      { threshold: 0.6 },
+    );
+
+    // Observe testimonials, reviews, star ratings
+    const proofElements = document.querySelectorAll(
+      "[data-proof], [class*='testimonial'], [class*='review'], [class*='rating'], blockquote",
+    );
+    proofElements.forEach((el, i) => {
+      (el as HTMLElement).dataset.proofId = (el as HTMLElement).dataset.proofId || `proof_${i}`;
+      observer.observe(el);
+    });
+
+    return () => observer.disconnect();
   }, [buildEvent]);
 
   // --- Flush on page unload ---
