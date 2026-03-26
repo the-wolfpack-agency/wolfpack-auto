@@ -2,44 +2,37 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About Us",
-  description: "Learn about Wolfpack Motors — 15 years of trusted automotive sales, 500+ vehicles sold, and a 4.8-star rating.",
+  description: "Learn about Wolfpack Motors — trusted automotive sales since 2021, 500+ vehicles sold, and a 4.8-star rating.",
 };
 
 const teamMembers = [
   {
-    name: "Michael Torres",
+    name: "Nick Hoxsie",
     role: "Founder & CEO",
-    bio: "20+ years in automotive. Founded Wolfpack Motors with one mission: make buying a car as easy as ordering online.",
+    bio: "Former Director at AMCI Global with deep roots in automotive marketing. Founded Wolfpack in 2021 with a vision to build the most customer-focused dealership in Colorado.",
     gradient: "from-brand-500 to-brand-700",
-    initials: "MT",
+    initials: "NH",
   },
   {
-    name: "Sarah Chen",
-    role: "Sales Director",
-    bio: "Certified automotive specialist. Sarah leads our team with a customer-first philosophy and deep market knowledge.",
+    name: "Max Fuerst",
+    role: "Executive Vice President",
+    bio: "Former CCO at Lokal Media House and Director at Speed Patrol. Max brings creative leadership and operational excellence to every aspect of the Wolfpack experience.",
     gradient: "from-emerald-500 to-emerald-700",
-    initials: "SC",
+    initials: "MF",
   },
   {
-    name: "David Kim",
-    role: "Finance Manager",
-    bio: "Former credit union executive. David leverages 30+ lender relationships to secure the best rates for every buyer.",
+    name: "Meghan Burke",
+    role: "Brand & Marketing Director",
+    bio: "15 years in the agency world with her own marketing agency under her belt. Meghan ensures every customer touchpoint reflects the quality and trust Wolfpack stands for.",
     gradient: "from-amber-500 to-amber-700",
-    initials: "DK",
-  },
-  {
-    name: "Jessica Rivera",
-    role: "Service Manager",
-    bio: "ASE-certified master technician. Jessica oversees our 150-point inspection process and ensures every vehicle meets our standards.",
-    gradient: "from-violet-500 to-violet-700",
-    initials: "JR",
+    initials: "MB",
   },
 ];
 
 const stats = [
   { value: "500+", label: "Vehicles Sold" },
   { value: "4.8", label: "Star Rating" },
-  { value: "15", label: "Years in Business" },
+  { value: "5", label: "Years in Business" },
   { value: "98%", label: "Customer Satisfaction" },
 ];
 
@@ -59,7 +52,7 @@ export default function AboutPage() {
               Built on Trust, Driven by Excellence
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-brand-200">
-              Since 2011, Wolfpack Motors has been redefining the car-buying experience in the Denver metro area. What started as a small family-run lot has grown into one of Colorado&apos;s most trusted dealerships, all because we believe in one simple idea: you deserve honesty, transparency, and a car you can count on.
+              Since 2021, Wolfpack Motors has been redefining the car-buying experience in the Denver metro area. What started as a bold vision from a team of automotive and marketing veterans has grown into one of Colorado&apos;s most trusted dealerships, all because we believe in one simple idea: you deserve honesty, transparency, and a car you can count on.
             </p>
           </div>
         </div>
@@ -139,7 +132,7 @@ export default function AboutPage() {
           <p className="mx-auto mt-4 max-w-2xl text-center text-gray-600">
             Real people who care about finding you the right vehicle at the right price.
           </p>
-          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {teamMembers.map((member) => (
               <div
                 key={member.name}
@@ -165,12 +158,12 @@ export default function AboutPage() {
           </h2>
           <div className="mt-12 space-y-8">
             {[
-              { year: "2011", event: "Founded Wolfpack Motors with a 20-car lot in Aurora, CO." },
-              { year: "2014", event: "Expanded to our current Denver location with 200+ vehicle capacity." },
-              { year: "2017", event: "Launched our online buying platform, serving customers statewide." },
-              { year: "2020", event: "Introduced contactless delivery and virtual test drives." },
-              { year: "2023", event: "Named Top Dealer in Colorado by AutoReview for the 3rd consecutive year." },
-              { year: "2026", event: "Celebrating 15 years and 5,000+ happy customers." },
+              { year: "2021", event: "Nick Hoxsie founds Wolfpack Motors in Denver, CO — bringing automotive marketing expertise to the dealer floor." },
+              { year: "2022", event: "Expanded inventory and launched our online buying platform, serving customers across Colorado." },
+              { year: "2023", event: "Grew the team with industry veterans Max and Meghan. Introduced our 150-point inspection guarantee." },
+              { year: "2024", event: "Launched contactless delivery, virtual test drives, and our AI-powered vehicle search." },
+              { year: "2025", event: "Surpassed 500 vehicles sold with a 4.8-star customer satisfaction rating." },
+              { year: "2026", event: "Celebrating 5 years of redefining the Colorado car-buying experience." },
             ].map((milestone, i) => (
               <div key={milestone.year} className="flex gap-6">
                 <div className="flex flex-col items-center">
