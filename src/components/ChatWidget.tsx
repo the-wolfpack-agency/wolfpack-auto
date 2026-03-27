@@ -261,9 +261,9 @@ export default function ChatWidget() {
           role="dialog"
           aria-label="Chat with Wolfpack Motors assistant"
           aria-modal="true"
-          className="fixed inset-x-0 bottom-0 z-50 flex h-[100dvh] max-h-[580px] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[520px] sm:max-h-[520px] sm:w-[380px] sm:rounded-2xl animate-in slide-in-from-bottom-4 fade-in duration-200"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-[100dvh] max-h-[580px] w-full flex-col overflow-hidden rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[520px] sm:max-h-[520px] sm:w-[380px] sm:rounded-2xl"
           style={{
-            animation: "slideUp 200ms ease-out",
+            animation: "slideUp 200ms ease-out forwards",
           }}
         >
           {/* Header */}
@@ -393,19 +393,6 @@ export default function ChatWidget() {
         <ChatBubble onClick={toggleChat} unreadCount={unreadCount} />
       </div>
 
-      {/* Keyframe for slide-up animation */}
-      <style jsx global>{`
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(16px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </>
   );
 }
