@@ -26,6 +26,13 @@ import {
 const MARKETING_SITE_URL =
   process.env.MARKETING_SITE_URL ?? "https://wolfpackauto.com";
 
+/**
+ * OEM ID for this deployment. Set via OEM_ID env var per-deployment so
+ * OEM-scoped admin portals always query the correct OEM partition without
+ * a DB round-trip in Edge middleware.
+ */
+const OEM_ID = process.env.OEM_ID ?? "";
+
 /** Routes that bypass tenant resolution (admin panel, API health, etc.). */
 const ADMIN_ROUTE_PREFIXES = ["/admin", "/api/admin", "/api/health", "/_next"];
 
@@ -151,6 +158,8 @@ export async function middleware(request: NextRequest) {
   if (isAdminRoute(pathname) || isAuthApi) {
     const adminReqHeaders = new Headers(request.headers);
     adminReqHeaders.set("x-is-admin", "1");
+    // Propagate OEM context for admin routes — read by server components via headers()
+    adminReqHeaders.set("x-oem-id", OEM_ID);
     const adminResponse = NextResponse.next({ request: { headers: adminReqHeaders } });
     return applyHeaders(adminResponse, hostname, request);
   }
@@ -179,6 +188,9 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set("x-tenant-type", "subdomain");
   }
 
+  // OEM context for public tenant routes (dealer sub-pages, inventory, etc.)
+  requestHeaders.set("x-oem-id", OEM_ID);
+
   const response = NextResponse.next({
     request: { headers: requestHeaders },
   });
@@ -203,6 +215,13 @@ function applyHeaders(
   // Strip server identification
   response.headers.delete("X-Powered-By");
   response.headers.delete("Server");
+
+  // Propagate OEM ID as a response header so server components can read it.
+  // The request-side header is set above; this ensures it surfaces on the
+  // response object as well (useful for debugging and Edge->Node handoff).
+  if (OEM_ID) {
+    response.headers.set("x-oem-id", OEM_ID);
+  }
 
   // Ensure a CSRF double-submit cookie is always set. The client reads
   // this cookie and sends it back as a header on mutating requests.

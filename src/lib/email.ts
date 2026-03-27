@@ -1,3 +1,4 @@
+import { Resend } from "resend";
 import type { Dealer } from "@/types/dealer";
 import type { Lead } from "@/types/lead";
 import {
@@ -11,8 +12,15 @@ import {
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const RESEND_FROM_EMAIL =
-  process.env.RESEND_FROM_EMAIL ?? "leads@wolfpackauto.com";
-const RESEND_API_URL = "https://api.resend.com/emails";
+  process.env.RESEND_FROM_EMAIL ?? "Wolfpack Motors <leads@wolfpackauto.com>";
+
+/**
+ * Lazily-initialised Resend client. Null when API key is absent so the
+ * module can be imported safely in all environments (CI, local dev, tests).
+ */
+const resendClient: Resend | null = RESEND_API_KEY
+  ? new Resend(RESEND_API_KEY)
+  : null;
 
 // ---------------------------------------------------------------------------
 // Core send function
@@ -26,7 +34,7 @@ interface SendEmailParams {
 }
 
 async function sendEmail(params: SendEmailParams): Promise<void> {
-  if (!RESEND_API_KEY) {
+  if (!resendClient) {
     console.log(
       `[email] No RESEND_API_KEY — logging email instead:\n` +
         `  To: ${params.to}\n` +
@@ -37,26 +45,16 @@ async function sendEmail(params: SendEmailParams): Promise<void> {
     return;
   }
 
-  const response = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: RESEND_FROM_EMAIL,
-      to: [params.to],
-      subject: params.subject,
-      html: params.html,
-      ...(params.replyTo ? { reply_to: params.replyTo } : {}),
-    }),
+  const { error } = await resendClient.emails.send({
+    from: RESEND_FROM_EMAIL,
+    to: [params.to],
+    subject: params.subject,
+    html: params.html,
+    ...(params.replyTo ? { replyTo: params.replyTo } : {}),
   });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => "(unreadable)");
-    console.error(
-      `[email] Resend API error ${response.status}: ${body}`,
-    );
+  if (error) {
+    console.error(`[email] Resend SDK error:`, error);
   }
 }
 

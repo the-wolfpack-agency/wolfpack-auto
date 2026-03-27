@@ -1,3 +1,4 @@
+import { Resend } from "resend";
 import {
   newLeadHTML,
   contactSubmissionHTML,
@@ -81,9 +82,17 @@ async function getDealerName(dealerId: string): Promise<string> {
   }
 }
 
+// Lazily-initialised Resend client shared across all notification dispatches.
+const _notifResendKey = process.env.RESEND_API_KEY ?? "";
+const _notifResendFrom =
+  process.env.RESEND_FROM_EMAIL ?? "Wolfpack Motors <leads@wolfpackauto.com>";
+const _notifResendClient: Resend | null = _notifResendKey
+  ? new Resend(_notifResendKey)
+  : null;
+
 /**
- * Send an email via the existing Resend-based sendEmail function.
- * Logs to console if the email module is unavailable.
+ * Send an email via the Resend SDK.
+ * Logs to console when RESEND_API_KEY is absent (safe for dev/CI).
  */
 async function dispatchEmail(
   to: string,
@@ -91,11 +100,7 @@ async function dispatchEmail(
   html: string,
   replyTo?: string,
 ): Promise<void> {
-  const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-  const RESEND_FROM_EMAIL =
-    process.env.RESEND_FROM_EMAIL ?? "leads@wolfpackauto.com";
-
-  if (!RESEND_API_KEY) {
+  if (!_notifResendClient) {
     console.log(
       `[notifications] No RESEND_API_KEY — logging email:\n` +
         `  To: ${to}\n` +
@@ -105,26 +110,16 @@ async function dispatchEmail(
     return;
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: RESEND_FROM_EMAIL,
-      to: [to],
-      subject,
-      html,
-      ...(replyTo ? { reply_to: replyTo } : {}),
-    }),
+  const { error } = await _notifResendClient.emails.send({
+    from: _notifResendFrom,
+    to: [to],
+    subject,
+    html,
+    ...(replyTo ? { replyTo } : {}),
   });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => "(unreadable)");
-    console.error(
-      `[notifications] Resend API error ${response.status}: ${body}`,
-    );
+  if (error) {
+    console.error(`[notifications] Resend SDK error:`, error);
   }
 }
 

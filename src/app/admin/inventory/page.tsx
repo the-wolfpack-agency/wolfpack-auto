@@ -78,31 +78,36 @@ async function getInventory(params: {
   const sortCol = SORT_COLUMNS[params.sort ?? ""] ?? "created_at";
   const sortDir = params.dir === "asc" ? "ASC" : "DESC";
 
-  const [dataResult, countResult] = await Promise.all([
-    query(
-      `SELECT
-         v.id, v.vin, v.stock_number, v.year, v.make, v.model, v.trim,
-         v.price, v.status, v.exterior_color,
-         (v.photos->0->>'url') AS photo_url,
-         v.created_at,
-         EXTRACT(EPOCH FROM (now() - v.created_at))::int / 86400 AS days_on_lot
-       FROM vehicles v
-       WHERE ${where}
-       ORDER BY ${sortCol} ${sortDir}
-       LIMIT $${idx} OFFSET $${idx + 1}`,
-      [...queryParams, PAGE_SIZE, offset],
-    ),
-    query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM vehicles v WHERE ${where}`,
-      queryParams,
-    ),
-  ]);
+  try {
+    const [dataResult, countResult] = await Promise.all([
+      query(
+        `SELECT
+           v.id, v.vin, v.stock_number, v.year, v.make, v.model, v.trim,
+           v.price, v.status, v.exterior_color,
+           (v.photos->0->>'url') AS photo_url,
+           v.created_at,
+           EXTRACT(EPOCH FROM (now() - v.created_at))::int / 86400 AS days_on_lot
+         FROM vehicles v
+         WHERE ${where}
+         ORDER BY ${sortCol} ${sortDir}
+         LIMIT $${idx} OFFSET $${idx + 1}`,
+        [...queryParams, PAGE_SIZE, offset],
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM vehicles v WHERE ${where}`,
+        queryParams,
+      ),
+    ]);
 
-  return {
-    vehicles: dataResult.rows as unknown as InventoryVehicle[],
-    total: parseInt((countResult.rows as any[])[0]?.count ?? "0", 10),
-    page,
-  };
+    return {
+      vehicles: dataResult.rows as unknown as InventoryVehicle[],
+      total: parseInt((countResult.rows as any[])[0]?.count ?? "0", 10),
+      page,
+    };
+  } catch {
+    // DB unavailable — render page with empty inventory
+    return { vehicles: [], total: 0, page };
+  }
 }
 
 export default async function InventoryPage({ searchParams }: PageProps) {
@@ -138,7 +143,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
           </p>
         </div>
         <a
-          href="/admin/vehicles/new"
+          href="/admin/inventory/add"
           className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
         >
           + Add Vehicle
@@ -255,13 +260,16 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                     )}
                   </a>
                 </th>
+                <th scope="col" className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
               {vehicles.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-12 text-center text-sm text-gray-500"
                   >
                     No vehicles match your filters.
@@ -311,6 +319,14 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                       {formatDate(v.created_at)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                      <a
+                        href={`/admin/inventory/${v.vin}/edit`}
+                        className="rounded-md px-2.5 py-1.5 text-xs font-medium text-brand-600 ring-1 ring-inset ring-brand-200 transition-colors hover:bg-brand-50"
+                      >
+                        Edit
+                      </a>
                     </td>
                   </tr>
                 ))

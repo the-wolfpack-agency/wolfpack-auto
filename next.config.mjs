@@ -1,7 +1,7 @@
-
-
 import { fileURLToPath } from "url";
 import path from "path";
+import { withSentryConfig } from "@sentry/nextjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig = {
@@ -84,4 +84,18 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap with Sentry only when auth token is present (i.e. in CI/production).
+// In local dev without credentials, the plain config is exported so the build
+// never blocks on missing Sentry env vars.
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, {
+      silent: true,
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      widenClientFileUpload: true,
+      hideSourceMaps: true,
+      disableLogger: true,
+      automaticVercelMonitors: true,
+    })
+  : nextConfig;

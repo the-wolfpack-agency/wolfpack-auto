@@ -32,11 +32,16 @@ const DAYS: DealerHours["day"][] = [
 ];
 
 async function getDealer(): Promise<Dealer | null> {
-  const result = await query(
-    `SELECT * FROM dealers WHERE id = $1 LIMIT 1`,
-    [DEALER_ID],
-  );
-  return (result.rows as any[])[0] ?? null;
+  try {
+    const result = await query(
+      `SELECT * FROM dealers WHERE id = $1 LIMIT 1`,
+      [DEALER_ID],
+    );
+    return (result.rows as any[])[0] ?? null;
+  } catch {
+    // DB unavailable — render page with empty defaults
+    return null;
+  }
 }
 
 export default async function SettingsPage() {
