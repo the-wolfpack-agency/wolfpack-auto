@@ -1030,7 +1030,6 @@ export default function TradeInWizard() {
                               style={{ fontSize: 16 }}
                             />
                           </div>
-                        </div>
 
                         {submitError && <InlineError message={submitError} />}
 
