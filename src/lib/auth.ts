@@ -149,14 +149,6 @@ const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 /* NextAuth configuration                                                     */
 /* -------------------------------------------------------------------------- */
 
-// Fail fast if running in production with the default dev secret.
-// Set NEXTAUTH_SECRET via `openssl rand -base64 32` and store in env vars.
-if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
-  throw new Error(
-    "[auth] NEXTAUTH_SECRET is not set. Set it in your environment variables before deploying.",
-  );
-}
-
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-change-in-production",
 
@@ -187,6 +179,13 @@ export const authOptions: NextAuthOptions = {
       },
 
       async authorize(credentials) {
+        // Fail fast at request-time (not build-time) if secret is missing in prod
+        if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+          throw new Error(
+            "[auth] NEXTAUTH_SECRET is not set. Set it in your Vercel environment variables.",
+          );
+        }
+
         // ----------------------------------------------------------------
         // MFA second-step: verify TOTP / backup code and issue full session
         // ----------------------------------------------------------------
