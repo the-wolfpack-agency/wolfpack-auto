@@ -343,7 +343,107 @@ test.describe("API: /api/trade-in/estimate — multiple scenarios", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. Full wizard flow with estimate (UI round-trip)
+// 5. VIN autofill — API and UI
+// ---------------------------------------------------------------------------
+
+test.describe("API: /api/trade-in/decode-vin", () => {
+  test("decodes a real Honda Civic VIN", async ({ request }) => {
+    const response = await request.post("/api/trade-in/decode-vin", {
+      data: { vin: "1HGCV1F34PA000001" },
+    });
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.year).toBeGreaterThan(1990);
+    expect(body.make).toMatch(/honda/i);
+    expect(body.model).toBeTruthy();
+  });
+
+  test("returns 422 for an invalid VIN format", async ({ request }) => {
+    const response = await request.post("/api/trade-in/decode-vin", {
+      data: { vin: "TOOSHORT" },
+    });
+    expect(response.status()).toBe(422);
+    const body = await response.json();
+    expect(body.error).toMatch(/VIN/i);
+  });
+
+  test("returns 422 for VIN with illegal characters (I, O, Q)", async ({ request }) => {
+    const response = await request.post("/api/trade-in/decode-vin", {
+      data: { vin: "1IOGV1F34PA00001O" }, // contains I, O
+    });
+    expect(response.status()).toBe(422);
+  });
+
+  test("returns 400 when vin field is missing", async ({ request }) => {
+    const response = await request.post("/api/trade-in/decode-vin", {
+      data: { vehicle: "Toyota" },
+    });
+    expect(response.status()).toBe(400);
+  });
+
+  test("GET method returns 404 or 405", async ({ request }) => {
+    const response = await request.get("/api/trade-in/decode-vin");
+    expect([404, 405]).toContain(response.status());
+  });
+});
+
+test.describe("Wizard: VIN autofill UI", () => {
+  test.skip(({ browserName }) => browserName !== "chromium", "Run once");
+
+  test("VIN input appears on step 1", async ({ page }) => {
+    await acceptCookies(page);
+    await page.goto("/trade-in", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("#ti-vin, input[aria-label*='VIN' i]").first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("autofill button is disabled until 17 chars entered", async ({ page }) => {
+    await acceptCookies(page);
+    await page.goto("/trade-in", { waitUntil: "domcontentloaded" });
+
+    const vinInput = page.locator("#ti-vin").first();
+    const autofillBtn = page.locator("button:has-text('Autofill')").first();
+
+    await expect(autofillBtn).toBeDisabled();
+    await vinInput.fill("1HGCV1F34PA0000"); // 16 chars — still disabled
+    await expect(autofillBtn).toBeDisabled();
+    await vinInput.fill("1HGCV1F34PA000001"); // 17 chars — enabled
+    await expect(autofillBtn).toBeEnabled();
+  });
+
+  test("autofill populates year/make/model from a valid VIN", async ({ page }) => {
+    await acceptCookies(page);
+    await page.goto("/trade-in", { waitUntil: "domcontentloaded" });
+
+    await page.locator("#ti-vin").fill("1HGCV1F34PA000001");
+    await page.locator("button:has-text('Autofill')").click();
+
+    // Wait for success message
+    await expect(page.locator("text=/filled.*VIN|Vehicle details filled/i").first()).toBeVisible({ timeout: 10_000 });
+
+    // Year dropdown should now have a value
+    const yearVal = await page.locator("#ti-year").inputValue();
+    expect(yearVal).toMatch(/\d{4}/);
+
+    // Make should be populated
+    const makeVal = await page.locator("#ti-make").inputValue();
+    expect(makeVal.toLowerCase()).toMatch(/honda/i);
+  });
+
+  test("shows friendly error for a malformed VIN", async ({ page }) => {
+    await acceptCookies(page);
+    await page.goto("/trade-in", { waitUntil: "domcontentloaded" });
+
+    // Fill 17 chars but with letters that create an invalid VIN
+    await page.locator("#ti-vin").fill("AAAAAAAAAAAAAAAAA");
+    await page.locator("button:has-text('Autofill')").click();
+
+    // Should show an error message (not crash, not show 404/500)
+    await expect(page.locator("text=/couldn't decode|couldn't reach|not a valid VIN|fill in/i").first()).toBeVisible({ timeout: 8_000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. Full wizard flow with estimate (UI round-trip)
 // ---------------------------------------------------------------------------
 
 test.describe("Wizard: full flow to estimate screen", () => {

@@ -370,6 +370,45 @@ describe("BUG-005: trade-in wizard coerces year/previousOwners to numbers", () =
 });
 
 /* -------------------------------------------------------------------------- */
+/* VIN-001: VIN autofill must be present and wired to analytics              */
+/* -------------------------------------------------------------------------- */
+
+describe("VIN-001: trade-in wizard VIN autofill is wired", () => {
+  it("wizard calls /api/trade-in/decode-vin for autofill", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    expect(src).toContain("/api/trade-in/decode-vin");
+  });
+
+  it("VIN autofill fires analytics events", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    expect(src).toMatch(/trackEvent\("trade_in_vin_autofill"/);
+    expect(src).toMatch(/track\("trade_in",\s*"vin_autofill"/);
+  });
+
+  it("decode-vin route exists and exports POST", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/trade-in/decode-vin/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export async function POST/);
+    expect(src).toMatch(/decodeVIN/);
+    expect(src).toMatch(/isValidVIN/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
 /* ANA-001: Trade-in wizard must track all key events (GA4 + platform)       */
 /* -------------------------------------------------------------------------- */
 

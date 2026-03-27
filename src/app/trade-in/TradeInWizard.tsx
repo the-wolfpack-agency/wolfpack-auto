@@ -292,6 +292,11 @@ export default function TradeInWizard() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // VIN autofill state
+  const [vinInput, setVinInput] = useState("");
+  const [vinDecoding, setVinDecoding] = useState(false);
+  const [vinError, setVinError] = useState<string | null>(null);
+  const [vinFilled, setVinFilled] = useState(false);
 
   // Dealer analytics platform
   const { track, trackConversion } = useAnalytics();
@@ -316,6 +321,48 @@ export default function TradeInWizard() {
   const step2Valid = !!data.mileage && !!data.condition;
   const step3Valid =
     !!data.accidentHistory && !!data.titleStatus && !!data.previousOwners;
+
+  async function handleVinAutofill() {
+    const vin = vinInput.trim().toUpperCase();
+    if (!vin) return;
+    setVinDecoding(true);
+    setVinError(null);
+    setVinFilled(false);
+    try {
+      const res = await fetch("/api/trade-in/decode-vin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vin }),
+      });
+      if (res.status === 422) {
+        setVinError("That doesn't look like a valid VIN. Check it and try again.");
+        return;
+      }
+      if (res.status === 404) {
+        setVinError("We couldn't decode that VIN. Please fill in your details below.");
+        return;
+      }
+      if (!res.ok) {
+        setVinError("Something went wrong. Please enter your details manually.");
+        return;
+      }
+      const decoded = await res.json() as { year: number; make: string; model: string; trim: string };
+      setData((prev) => ({
+        ...prev,
+        year: String(decoded.year),
+        make: decoded.make,
+        model: decoded.model,
+        trim: decoded.trim ?? "",
+      }));
+      setVinFilled(true);
+      trackEvent("trade_in_vin_autofill", { make: decoded.make, year: decoded.year });
+      track("trade_in", "vin_autofill", { make: decoded.make, year: decoded.year, model: decoded.model });
+    } catch {
+      setVinError("Couldn't reach the VIN lookup service. Please enter your details manually.");
+    } finally {
+      setVinDecoding(false);
+    }
+  }
 
   async function fetchEstimate() {
     setEstimating(true);
@@ -460,6 +507,61 @@ export default function TradeInWizard() {
                 <p className="mt-1 text-sm text-gray-500">
                   We&apos;ll give you an instant offer based on real market data.
                 </p>
+
+                {/* VIN Autofill */}
+                <div className="mt-5 rounded-xl border border-brand-100 bg-brand-50/60 px-4 py-4">
+                  <p className="mb-2 text-sm font-semibold text-brand-800">
+                    Have your VIN? Autofill in seconds.
+                  </p>
+                  <p className="mb-3 text-xs text-gray-500">
+                    Found on your dashboard (driver&apos;s side), door jamb sticker, or insurance card.
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      id="ti-vin"
+                      type="text"
+                      value={vinInput}
+                      onChange={(e) => {
+                        setVinInput(e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/gi, ""));
+                        setVinError(null);
+                        setVinFilled(false);
+                      }}
+                      placeholder="e.g. 1HGCV1F34PA000001"
+                      maxLength={17}
+                      aria-label="Vehicle Identification Number"
+                      className="min-w-0 flex-1 rounded-lg border border-surface-border bg-white px-3 py-2 font-mono text-sm tracking-widest shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                      style={{ fontSize: 16 }}
+                      onKeyDown={(e) => e.key === "Enter" && vinInput.length === 17 && handleVinAutofill()}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVinAutofill}
+                      disabled={vinInput.length !== 17 || vinDecoding}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {vinDecoding ? (
+                        <>
+                          <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+                          </svg>
+                          Looking up…
+                        </>
+                      ) : "Autofill"}
+                    </button>
+                  </div>
+                  {vinFilled && (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-green-700">
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      Vehicle details filled in from your VIN. Confirm below.
+                    </p>
+                  )}
+                  {vinError && (
+                    <p className="mt-2 text-xs text-red-600">{vinError}</p>
+                  )}
+                </div>
 
                 <div className="mt-6 space-y-4">
                   {/* Year */}
