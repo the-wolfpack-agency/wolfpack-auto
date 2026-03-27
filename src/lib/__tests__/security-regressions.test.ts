@@ -340,3 +340,54 @@ describe("BUG-004: next.config.mjs disables lint/TS checks that break Vercel bui
     expect(src).toContain("ignoreBuildErrors: true");
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* ANA-001: Trade-in wizard must track all key events (GA4 + platform)       */
+/* -------------------------------------------------------------------------- */
+
+describe("ANA-001: trade-in wizard analytics events are wired", () => {
+  it("wizard imports Analytics trackEvent and useAnalytics", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    expect(src).toMatch(/import.*trackEvent.*from.*Analytics/);
+    expect(src).toMatch(/useAnalytics/);
+  });
+
+  it("wizard fires trackEvent on step advance", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    expect(src).toMatch(/trackEvent\("trade_in_step"/);
+    // Platform analytics
+    expect(src).toMatch(/track\("trade_in",\s*`step_/);
+  });
+
+  it("wizard fires trackEvent when estimate is received", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    expect(src).toMatch(/trackEvent\("trade_in_estimate_received"/);
+    expect(src).toMatch(/track\("trade_in",\s*"estimate_received"/);
+  });
+
+  it("wizard fires trackConversion when lead is submitted", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    expect(src).toMatch(/trackEvent\("trade_in_lead_submitted"/);
+    expect(src).toMatch(/trackConversion\("trade_in_lead"/);
+  });
+});

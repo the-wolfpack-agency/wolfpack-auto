@@ -6,6 +6,7 @@ const navLinks = [
   { href: "/", label: "Home" },
   { href: "/inventory", label: "Inventory" },
   { href: "/financing", label: "Financing" },
+  { href: "/trade-in", label: "Trade-In" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
