@@ -49,16 +49,34 @@ export async function getDealerConfig(
 
       if (rows.length > 0) {
         const row = rows[0];
+
+        // The DB stores address as JSONB {street, city, state, zip, lat, lng}.
+        // Extract the scalar fields so they can be safely rendered in JSX.
+        const addr = row.address;
+        const addrObj = addr && typeof addr === "object" ? addr : null;
+        const streetStr: string = addrObj
+          ? String(addrObj.street ?? DEFAULT_CONFIG.address)
+          : String(addr ?? DEFAULT_CONFIG.address);
+        const cityStr: string = addrObj
+          ? String(addrObj.city ?? row.city ?? DEFAULT_CONFIG.city)
+          : String(row.city ?? DEFAULT_CONFIG.city);
+        const stateStr: string = addrObj
+          ? String(addrObj.state ?? row.state ?? DEFAULT_CONFIG.state)
+          : String(row.state ?? DEFAULT_CONFIG.state);
+        const zipStr: string = addrObj
+          ? String(addrObj.zip ?? row.zip ?? DEFAULT_CONFIG.zip)
+          : String(row.zip ?? DEFAULT_CONFIG.zip);
+
         config = {
           id: row.id,
           name: row.name ?? DEFAULT_CONFIG.name,
           tagline: row.tagline ?? DEFAULT_CONFIG.tagline,
           phone: row.phone ?? DEFAULT_CONFIG.phone,
           email: row.email ?? DEFAULT_CONFIG.email,
-          address: row.address ?? DEFAULT_CONFIG.address,
-          city: row.city ?? DEFAULT_CONFIG.city,
-          state: row.state ?? DEFAULT_CONFIG.state,
-          zip: row.zip ?? DEFAULT_CONFIG.zip,
+          address: streetStr,
+          city: cityStr,
+          state: stateStr,
+          zip: zipStr,
           logo_url: row.logo_url ?? DEFAULT_CONFIG.logo_url,
           primary_color: row.primary_color ?? DEFAULT_CONFIG.primary_color,
           secondary_color:
