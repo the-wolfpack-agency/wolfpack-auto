@@ -836,13 +836,13 @@ test.describe("Inventory spotlight endpoint", () => {
     const code = read("src/app/api/inventory/spotlight/route.ts");
     expect(code).toMatch(/\$1|\$2/);
     // Must not use template literal with user input in SQL
-    expect(code).not.toMatch(/`.*\$\{dealerId\}.*`/s);
+    expect(code).not.toMatch(/`[^`]*\$\{dealerId\}[^`]*`/);
   });
 
   test("spotlight filters by dealer_id (no cross-tenant leakage)", () => {
     const code = read("src/app/api/inventory/spotlight/route.ts");
     // The WHERE clause must include dealer_id to prevent cross-tenant data leaks
-    expect(code).toMatch(/WHERE.*dealer_id|dealer_id.*WHERE/s);
+    expect(code).toMatch(/WHERE[\s\S]{0,200}dealer_id|dealer_id[\s\S]{0,200}WHERE/);
   });
 
   test("spotlight does not expose internal cost fields", () => {

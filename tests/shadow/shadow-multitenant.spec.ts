@@ -287,3 +287,150 @@ test.describe("Lead data isolation across dealers", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Tenant boundary enforcement — API-level isolation probes
+// ---------------------------------------------------------------------------
+
+test.describe("Tenant boundary enforcement", () => {
+  test("GET /api/inventory with dealer_1 context never returns dealer_2 vehicles", async ({ request }) => {
+    const resp = await request.get(`/api/inventory?dealer_id=${DEALER_1_ID}`);
+    expect(resp.status()).toBe(200);
+
+    const body = await resp.json();
+    expect(body).toHaveProperty("vehicles");
+    expect(Array.isArray(body.vehicles)).toBe(true);
+
+    // Must have at least some response (even if empty array) — no 500
+    expect(body.total).toBeGreaterThanOrEqual(0);
+
+    // For any vehicle that exposes dealer_id, it must match dealer 1 only
+    const crossTenantVehicles = body.vehicles.filter(
+      (v: { dealer_id?: string }) =>
+        v.dealer_id !== undefined && v.dealer_id !== DEALER_1_ID,
+    );
+    expect(crossTenantVehicles.length).toBe(0);
+  });
+
+  test("GET /api/admin/leads with dealer_1 context never leaks dealer_2 leads", async ({ request }) => {
+    const resp = await request.get(`/api/admin/leads?dealer_id=${DEALER_1_ID}`);
+
+    // 401/403 = auth enforced, isolation is implicit — pass
+    if (resp.status() === 401 || resp.status() === 403) return;
+
+    expect(resp.status()).toBe(200);
+    const body = await resp.json();
+    expect(body).toHaveProperty("leads");
+
+    // For any lead that exposes dealer_id, it must only be dealer 1
+    const crossTenantLeads = body.leads.filter(
+      (l: { dealer_id?: string }) =>
+        l.dealer_id !== undefined && l.dealer_id !== DEALER_1_ID,
+    );
+    expect(crossTenantLeads.length).toBe(0);
+  });
+
+  test("POST /api/leads cannot inject cross-tenant dealer_id", async ({ request }) => {
+    // Submit with dealer_1 as the URL context but forge dealer_2 in the body
+    const resp = await request.post("/api/leads", {
+      data: {
+        dealer_id: DEALER_2_ID, // forged: attempt to write into dealer 2's space
+        first_name: "CrossTenant",
+        last_name: "InjectionProbe",
+        email: `shadow-xsrf-${Date.now()}@shadow-test.invalid`,
+        vehicle_interest: "cross-tenant injection test",
+        source: "website_form",
+      },
+      headers: {
+        // Simulate request coming in under dealer 1's context
+        "x-dealer-id": DEALER_1_ID,
+      },
+    });
+
+    // Must not be a server error
+    expect(resp.status()).not.toBe(500);
+    expect(resp.status()).not.toBe(502);
+    expect(resp.status()).not.toBe(503);
+
+    // Acceptable outcomes: 201 (created, but must reflect legitimate dealer),
+    // 422 (validation rejected the dealer_id mismatch)
+    expect([201, 422]).toContain(resp.status());
+
+    if (resp.status() === 201) {
+      const body = await resp.json();
+      // The recorded dealer_id must NOT be dealer_2 (the injected value) if
+      // the server enforces tenant scoping from its own context
+      if (body.dealer_id !== undefined) {
+        expect(body.dealer_id).not.toBe(DEALER_2_ID);
+      }
+    }
+  });
+
+  test("GET /api/inventory with x-dealer-slug header set cannot bypass tenant", async ({ request }) => {
+    const resp = await request.get("/api/inventory", {
+      headers: {
+        "x-dealer-slug": "fake-dealer",
+      },
+    });
+
+    // Must never crash the server
+    expect(resp.status()).not.toBe(500);
+    expect(resp.status()).not.toBe(502);
+    expect(resp.status()).not.toBe(503);
+
+    // Acceptable: 200 (responds with real tenant data, ignoring the forged header)
+    // or 404 (dealer not found for that slug, but handled gracefully)
+    expect([200, 404]).toContain(resp.status());
+
+    if (resp.status() === 200) {
+      const body = await resp.json();
+      // Response must not surface the fake-dealer slug back to the caller
+      const bodyStr = JSON.stringify(body);
+      // The fake slug appearing in a dealer_slug field would indicate the server
+      // trusted the untrusted header — assert it is not echoed as the active tenant
+      if (body.dealer_slug !== undefined) {
+        expect(body.dealer_slug).not.toBe("fake-dealer");
+      }
+    }
+  });
+
+  test("Health check is tenant-agnostic", async ({ request }) => {
+    const resp = await request.get("/api/health");
+
+    // Must return 200 (healthy) or 503 (degraded) — never a 5xx crash
+    expect([200, 503]).toContain(resp.status());
+
+    const body = await resp.json().catch(() => ({}));
+
+    // Health payload must never include per-tenant sensitive data
+    // (no lead counts, no dealer-specific config, no PII)
+    expect(body).not.toHaveProperty("leads");
+    expect(body).not.toHaveProperty("dealer_leads");
+    expect(body).not.toHaveProperty("vehicles");
+  });
+
+  test("Admin routes with nonexistent dealer context return consistent result", async ({ request }) => {
+    const NONEXISTENT_DEALER = "00000000-0000-0000-0000-000000000000";
+    const resp = await request.get(`/api/admin/leads?dealer_id=${NONEXISTENT_DEALER}`);
+
+    // Never a server error
+    expect(resp.status()).not.toBe(500);
+    expect(resp.status()).not.toBe(502);
+    expect(resp.status()).not.toBe(503);
+
+    // Acceptable: 200 (empty result set), 401/403 (auth enforced), 404 (not found)
+    expect([200, 401, 403, 404]).toContain(resp.status());
+
+    if (resp.status() === 200) {
+      const body = await resp.json();
+      // If 200, result must be an empty set — not another dealer's data
+      if (body.leads !== undefined) {
+        const alienLeads = body.leads.filter(
+          (l: { dealer_id?: string }) =>
+            l.dealer_id !== undefined && l.dealer_id !== NONEXISTENT_DEALER,
+        );
+        expect(alienLeads.length).toBe(0);
+      }
+    }
+  });
+});
