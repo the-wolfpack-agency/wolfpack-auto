@@ -26,7 +26,7 @@ export default async function AdminDashboardPage() {
             Overview of your dealership performance.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <a
             href="/admin/inventory"
             className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
@@ -107,9 +107,9 @@ export default async function AdminDashboardPage() {
               <thead className="bg-surface-muted">
                 <tr>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Name</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Email</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Vehicle Interest</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Source</th>
+                  <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 sm:table-cell">Email</th>
+                  <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">Vehicle Interest</th>
+                  <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">Source</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
                   <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
                 </tr>
@@ -133,13 +133,13 @@ export default async function AdminDashboardPage() {
                       <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                         {lead.first_name} {lead.last_name}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 sm:table-cell">
                         {lead.email}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 lg:table-cell">
                         {lead.vehicle_interest || "\u2014"}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 md:table-cell">
                         {formatSource(lead.source)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm">

@@ -280,7 +280,7 @@ export default function LeadsManagementPage() {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as LeadStatus | "")}
-          className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 lg:w-auto"
           style={{ fontSize: 16 }}
         >
           {STATUS_OPTIONS.map((o) => (
@@ -294,7 +294,7 @@ export default function LeadsManagementPage() {
         <select
           value={tempFilter}
           onChange={(e) => setTempFilter(e.target.value as LeadTemperature | "")}
-          className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 lg:w-auto"
           style={{ fontSize: 16 }}
         >
           {TEMP_OPTIONS.map((o) => (
@@ -308,7 +308,7 @@ export default function LeadsManagementPage() {
         <select
           value={assignedFilter}
           onChange={(e) => setAssignedFilter(e.target.value)}
-          className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 lg:w-auto"
           style={{ fontSize: 16 }}
         >
           <option value="">All Team</option>
@@ -327,7 +327,7 @@ export default function LeadsManagementPage() {
           <select
             value={sort}
             onChange={(e) => handleSort(e.target.value)}
-            className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            className="flex-1 rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 lg:flex-none"
             style={{ fontSize: 16 }}
           >
             {SORT_OPTIONS.map((o) => (
@@ -436,20 +436,23 @@ export default function LeadsManagementPage() {
                   />
                 </th>
                 <Th label="Name" sortKey="name" current={sort} dir={sortDir} onSort={handleSort} />
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 sm:table-cell">
                   Contact
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
                   Vehicle Interest
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Status
                 </th>
-                <Th label="Temp" sortKey="temperature" current={sort} dir={sortDir} onSort={handleSort} />
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <Th label="Temp" sortKey="temperature" current={sort} dir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 sm:table-cell">
+                  Score
+                </th>
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
                   Assigned
                 </th>
-                <Th label="Date" sortKey="date" current={sort} dir={sortDir} onSort={handleSort} />
+                <Th label="Date" sortKey="date" current={sort} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
                 <th scope="col" className="px-4 py-3">
                   <span className="sr-only">Expand</span>
                 </th>
@@ -458,13 +461,13 @@ export default function LeadsManagementPage() {
             <tbody className="divide-y divide-surface-border">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-sm text-gray-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-gray-500">
                     Loading leads...
                   </td>
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-sm text-gray-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-gray-500">
                     No leads match your filters.
                   </td>
                 </tr>
@@ -499,13 +502,13 @@ export default function LeadsManagementPage() {
                           {lead.first_name} {lead.last_name}
                         </p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="hidden px-4 py-3 sm:table-cell">
                         <p className="text-sm text-gray-700">{lead.email}</p>
                         {lead.phone && (
                           <p className="text-xs text-gray-500">{lead.phone}</p>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 lg:table-cell">
                         {lead.vehicle_interest || "\u2014"}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -517,7 +520,7 @@ export default function LeadsManagementPage() {
                           {STATUS_LABEL[lead.status] ?? lead.status}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm">
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm sm:table-cell">
                         <span
                           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${
                             TEMP_BADGE[lead.temperature] ?? "bg-gray-100 text-gray-600"
@@ -526,12 +529,19 @@ export default function LeadsManagementPage() {
                           {TEMP_LABEL[lead.temperature] ?? lead.temperature}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm sm:table-cell">
+                        {lead.intent_score != null ? (
+                          <IntentScoreBadge score={lead.intent_score} />
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 md:table-cell">
                         {lead.assigned_to ?? (
                           <span className="text-gray-400">Unassigned</span>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
                         {formatDate(lead.created_at)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">
@@ -624,18 +634,20 @@ function Th({
   current,
   dir,
   onSort,
+  className,
 }: {
   label: string;
   sortKey: string;
   current: string;
   dir: "asc" | "desc";
   onSort: (key: string) => void;
+  className?: string;
 }) {
   const active = current === sortKey;
   return (
     <th
       scope="col"
-      className="cursor-pointer select-none px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:text-gray-900"
+      className={`cursor-pointer select-none px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:text-gray-900 ${className ?? ""}`}
       onClick={() => onSort(sortKey)}
     >
       {label}
@@ -643,5 +655,27 @@ function Th({
         <span className="ml-1">{dir === "desc" ? "\u2193" : "\u2191"}</span>
       )}
     </th>
+  );
+}
+
+function IntentScoreBadge({ score }: { score: number }) {
+  let colorClass: string;
+  if (score >= 75) {
+    colorClass = "bg-green-50 text-green-700 ring-green-600/20";
+  } else if (score >= 50) {
+    colorClass = "bg-yellow-50 text-yellow-700 ring-yellow-600/20";
+  } else if (score >= 25) {
+    colorClass = "bg-orange-50 text-orange-700 ring-orange-600/20";
+  } else {
+    colorClass = "bg-red-50 text-red-700 ring-red-600/20";
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${colorClass}`}
+      title={`Intent score: ${score}/100`}
+    >
+      {score}
+    </span>
   );
 }

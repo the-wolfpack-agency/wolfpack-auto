@@ -42,11 +42,11 @@ export default function AdminLayout({
         Desktop: sidebar is static in the flex row → main takes remaining
                  width naturally, no top padding needed.
       */}
-      <div className="flex min-h-[100dvh]">
+      <div className="flex min-h-[100dvh] overflow-x-hidden">
         <AdminSidebar />
         <main
           id="admin-main-content"
-          className="flex-1 bg-surface-muted pt-14 lg:pt-0"
+          className="min-w-0 flex-1 overflow-x-hidden bg-surface-muted pt-14 lg:pt-0"
         >
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             {children}

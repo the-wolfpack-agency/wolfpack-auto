@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 /**
  * GET /api/admin/analytics/dashboard
@@ -7,10 +8,59 @@ import { NextResponse } from "next/server";
  * Attempts PostgreSQL query first, falls back to realistic sample data.
  */
 export async function GET() {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
+  const { dealer_id } = authResult.user;
+
   try {
-    // In production this would pull from analytics_events via the dealer session.
-    // For now, return realistic sample data so the dashboard renders immediately.
     const data = generateSampleData();
+
+    // Enrich with real trade-in funnel data when DB is available
+    if (process.env.DATABASE_URL) {
+      try {
+        const { query } = await import("@/lib/db");
+
+        const [estimatesResult, submissionsResult] = await Promise.all([
+          query<{ total: string; avg_mid: string }>(
+            `SELECT COUNT(*)::text AS total, AVG(estimated_mid)::text AS avg_mid
+               FROM trade_in_estimates
+              WHERE ($1::text IS NULL OR dealer_id = $1)
+                AND created_at > NOW() - INTERVAL '30 days'`,
+            [dealer_id ?? null],
+          ),
+          query<{ total: string; converted: string }>(
+            `SELECT COUNT(*)::text AS total,
+                    COUNT(converted_to_lead_id)::text AS converted
+               FROM trade_in_estimates
+              WHERE ($1::text IS NULL OR dealer_id = $1)
+                AND created_at > NOW() - INTERVAL '30 days'
+                AND lead_captured = true`,
+            [dealer_id ?? null],
+          ),
+        ]);
+
+        const totalEstimates = parseInt(estimatesResult.rows[0]?.total ?? "0", 10);
+        const avgMid = parseFloat(estimatesResult.rows[0]?.avg_mid ?? "0");
+        const totalSubmitted = parseInt(submissionsResult.rows[0]?.total ?? "0", 10);
+        const conversionRate = totalEstimates > 0
+          ? Math.round((totalSubmitted / totalEstimates) * 100)
+          : 0;
+
+        (data as Record<string, unknown>).tradeInFunnel = {
+          estimatesLast30Days: totalEstimates,
+          leadsConverted: totalSubmitted,
+          conversionRate,
+          avgEstimatedValue: Math.round(avgMid),
+        };
+      } catch {
+        // DB unavailable — add sample trade-in data
+        (data as Record<string, unknown>).tradeInFunnel = sampleTradeInFunnel();
+      }
+    } else {
+      (data as Record<string, unknown>).tradeInFunnel = sampleTradeInFunnel();
+    }
+
     return NextResponse.json(data);
   } catch (err) {
     console.error("[analytics/dashboard] Error:", err);
@@ -19,6 +69,15 @@ export async function GET() {
       { status: 500 },
     );
   }
+}
+
+function sampleTradeInFunnel() {
+  return {
+    estimatesLast30Days: 47,
+    leadsConverted: 18,
+    conversionRate: 38,
+    avgEstimatedValue: 14_250,
+  };
 }
 
 /* -------------------------------------------------------------------------- */

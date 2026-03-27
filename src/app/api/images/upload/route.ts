@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { optimizeImage, generateThumbnail, type OutputFormat } from "@/lib/images";
 import { uploadImage } from "@/lib/storage";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -31,17 +32,23 @@ const FORMAT_EXT: Record<OutputFormat, string> = {
 export async function POST(req: NextRequest) {
   try {
     // ------------------------------------------------------------------
+    // Authenticate — only logged-in dealers may upload
+    // ------------------------------------------------------------------
+    const authResult = await requireAuth();
+    if (!isAuthenticated(authResult)) return authResult;
+    const dealerId = authResult.user.dealer_id;
+
+    // ------------------------------------------------------------------
     // Parse multipart body
     // ------------------------------------------------------------------
     const formData = await req.formData();
 
     const file = formData.get("file") as File | null;
-    const dealerId = formData.get("dealer_id") as string | null;
     const vin = formData.get("vin") as string | null;
 
-    if (!file || !dealerId || !vin) {
+    if (!file || !vin) {
       return NextResponse.json(
-        { error: "Missing required fields: file, dealer_id, vin" },
+        { error: "Missing required fields: file, vin" },
         { status: 400 },
       );
     }
