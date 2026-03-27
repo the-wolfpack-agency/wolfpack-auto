@@ -1,0 +1,51 @@
+/**
+ * POST /api/admin/mfa/setup
+ *
+ * Requires authentication. Generates a new TOTP secret + QR code for the
+ * authenticated user and stores the encrypted secret in the DB (NOT yet
+ * enabled). Returns { qrDataUrl, secret, backupCodes } for display.
+ *
+ * The backup codes returned here are the plaintext versions — shown to the
+ * user once. The hashed versions are stored only after the user confirms
+ * via /api/admin/mfa/enable.
+ */
+
+import { NextResponse } from "next/server";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { generateTOTPSecret, generateBackupCodes } from "@/lib/mfa";
+import { encryptPII } from "@/lib/crypto";
+import { query } from "@/lib/db";
+
+export async function POST(): Promise<NextResponse> {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
+  const { user } = authResult;
+
+  try {
+    const { secret, qrDataUrl } = await generateTOTPSecret(user.email);
+    const backupCodes = generateBackupCodes();
+
+    // Encrypt the raw TOTP secret before storing. The backup codes are NOT
+    // stored yet — they are persisted (hashed) only when the user confirms
+    // their authenticator app via /api/admin/mfa/enable.
+    const encryptedSecret = encryptPII(secret);
+
+    await query(
+      `UPDATE dealer_users
+          SET mfa_secret = $1,
+              mfa_enabled = false,
+              mfa_backup_codes = NULL
+        WHERE id = $2`,
+      [encryptedSecret, user.id],
+    );
+
+    return NextResponse.json({ qrDataUrl, secret, backupCodes });
+  } catch (err) {
+    console.error("[mfa/setup] Error:", err);
+    return NextResponse.json(
+      { error: "Failed to generate MFA setup. Please try again." },
+      { status: 500 },
+    );
+  }
+}

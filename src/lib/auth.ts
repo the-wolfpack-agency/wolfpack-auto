@@ -2,6 +2,8 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { query } from "@/lib/db";
+import { decryptPII } from "@/lib/crypto";
+import { verifyTOTP, verifyBackupCode } from "@/lib/mfa";
 
 /* -------------------------------------------------------------------------- */
 /* Type augmentation for NextAuth session / JWT                               */
@@ -16,6 +18,8 @@ declare module "next-auth" {
       dealer_id: string;
       role: "admin" | "manager" | "staff";
     };
+    /** True when the session JWT was created after MFA was verified. */
+    mfaVerified?: boolean;
   }
 
   interface User {
@@ -24,6 +28,8 @@ declare module "next-auth" {
     name: string;
     dealer_id: string;
     role: "admin" | "manager" | "staff";
+    /** Set when MFA is required before issuing a full session. */
+    mfa_required?: boolean;
   }
 }
 
@@ -35,6 +41,15 @@ declare module "next-auth/jwt" {
     dealer_id: string;
     role: "admin" | "manager" | "staff";
     lastActivity: number;
+    /**
+     * When true the user authenticated with password but has NOT yet
+     * completed the TOTP step. The session is in a "pending MFA" state:
+     * only the MFA verify endpoint is accessible until the user passes
+     * the TOTP challenge and receives a new session.
+     */
+    mfa_pending?: boolean;
+    /** True once MFA has been verified for this session. */
+    mfa_verified?: boolean;
   }
 }
 
@@ -134,6 +149,14 @@ const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 /* NextAuth configuration                                                     */
 /* -------------------------------------------------------------------------- */
 
+// Fail fast if running in production with the default dev secret.
+// Set NEXTAUTH_SECRET via `openssl rand -base64 32` and store in env vars.
+if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_SECRET) {
+  throw new Error(
+    "[auth] NEXTAUTH_SECRET is not set. Set it in your environment variables before deploying.",
+  );
+}
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-change-in-production",
 
@@ -152,9 +175,87 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        /**
+         * Second-step MFA credentials. When the login page detects that
+         * MFA is required (via the `mfa_required` flag on the user object),
+         * it calls signIn again with just these fields after the user enters
+         * their TOTP token or backup code.
+         */
+        mfa_user_id: { label: "MFA User ID", type: "text" },
+        mfa_token: { label: "MFA Token", type: "text" },
+        mfa_is_backup_code: { label: "Is Backup Code", type: "text" },
       },
 
       async authorize(credentials) {
+        // ----------------------------------------------------------------
+        // MFA second-step: verify TOTP / backup code and issue full session
+        // ----------------------------------------------------------------
+        if (credentials?.mfa_user_id && credentials?.mfa_token) {
+          const userId = credentials.mfa_user_id.trim();
+          const token = credentials.mfa_token.trim();
+          const isBackupCode = credentials.mfa_is_backup_code === "true";
+
+          const mfaRow = await query<{
+            id: string;
+            email: string;
+            name: string;
+            dealer_id: string;
+            role: string;
+            is_active: boolean;
+            mfa_secret: string | null;
+            mfa_enabled: boolean;
+            mfa_backup_codes: string[] | null;
+          }>(
+            `SELECT id, email, name, dealer_id, role, is_active,
+                    mfa_secret, mfa_enabled, mfa_backup_codes
+               FROM dealer_users
+              WHERE id = $1
+              LIMIT 1`,
+            [userId],
+          );
+
+          const mfaUser = mfaRow.rows[0];
+          if (!mfaUser || !mfaUser.is_active || !mfaUser.mfa_enabled || !mfaUser.mfa_secret) {
+            return null;
+          }
+
+          const plaintextSecret = decryptPII(mfaUser.mfa_secret);
+          let mfaValid = false;
+
+          if (isBackupCode) {
+            mfaValid = verifyBackupCode(token, mfaUser.mfa_backup_codes ?? []);
+            if (mfaValid) {
+              // Consume the backup code
+              const { hashBackupCode } = await import("@/lib/mfa");
+              const usedHash = hashBackupCode(token);
+              const remaining = (mfaUser.mfa_backup_codes ?? []).filter(
+                (h) => h !== usedHash,
+              );
+              await query(
+                `UPDATE dealer_users SET mfa_backup_codes = $1 WHERE id = $2`,
+                [remaining, userId],
+              );
+            }
+          } else {
+            mfaValid = verifyTOTP(plaintextSecret, token);
+          }
+
+          if (!mfaValid) return null;
+
+          return {
+            id: mfaUser.id,
+            email: mfaUser.email,
+            name: mfaUser.name,
+            dealer_id: mfaUser.dealer_id,
+            role: mfaUser.role as "admin" | "manager" | "staff",
+            // Signal to the JWT callback that MFA has been verified
+            mfa_required: false,
+          };
+        }
+
+        // ----------------------------------------------------------------
+        // Step 1: password authentication
+        // ----------------------------------------------------------------
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -162,11 +263,7 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase().trim();
 
         // Rate limit check: deny if too many recent failures
-        if (!checkLoginRateLimit(email)) {
-          // Returning null denies login. NextAuth shows the error page.
-          // The user sees the generic "sign-in failed" message. A more
-          // specific message could be returned via CredentialsSignin error
-          // but null is safest to avoid leaking timing information.
+        if (!(await checkLoginRateLimit(email))) {
           throw new Error(
             "Too many login attempts. Please try again in 15 minutes.",
           );
@@ -180,8 +277,9 @@ export const authOptions: NextAuthOptions = {
           dealer_id: string;
           role: string;
           is_active: boolean;
+          mfa_enabled: boolean;
         }>(
-          `SELECT id, email, name, password_hash, dealer_id, role, is_active
+          `SELECT id, email, name, password_hash, dealer_id, role, is_active, mfa_enabled
            FROM dealer_users
            WHERE email = $1
            LIMIT 1`,
@@ -191,13 +289,13 @@ export const authOptions: NextAuthOptions = {
         const user = result.rows[0];
 
         if (!user) {
-          recordFailedLogin(email);
+          await recordFailedLogin(email);
           return null;
         }
 
         // Account must be active
         if (!user.is_active) {
-          recordFailedLogin(email);
+          await recordFailedLogin(email);
           return null;
         }
 
@@ -208,19 +306,23 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!passwordValid) {
-          recordFailedLogin(email);
+          await recordFailedLogin(email);
           return null;
         }
 
-        // Successful login — reset rate limiter
-        resetLoginRateLimit(email);
+        // Successful password auth — reset rate limiter
+        await resetLoginRateLimit(email);
 
+        // If MFA is enabled, signal the login page to show the TOTP step.
+        // We return the user with mfa_required=true; the JWT callback will
+        // set mfa_pending=true so middleware can gate access.
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           dealer_id: user.dealer_id,
           role: user.role as "admin" | "manager" | "staff",
+          mfa_required: user.mfa_enabled,
         };
       },
     }),
@@ -238,6 +340,18 @@ export const authOptions: NextAuthOptions = {
         token.dealer_id = user.dealer_id;
         token.role = user.role;
         token.lastActivity = now;
+
+        // Mark whether MFA still needs to be verified for this session.
+        // mfa_required=true  → password passed, TOTP not yet checked
+        // mfa_required=false → either MFA is not enabled, or TOTP passed
+        if (user.mfa_required) {
+          token.mfa_pending = true;
+          token.mfa_verified = false;
+        } else {
+          token.mfa_pending = false;
+          token.mfa_verified = true;
+        }
+
         return token;
       }
 
@@ -270,6 +384,7 @@ export const authOptions: NextAuthOptions = {
         dealer_id: token.dealer_id,
         role: token.role,
       };
+      session.mfaVerified = token.mfa_verified ?? true;
       return session;
     },
   },
