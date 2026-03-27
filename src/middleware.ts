@@ -40,6 +40,8 @@ const ADMIN_ROUTE_PREFIXES = ["/admin", "/api/admin", "/api/health", "/_next"];
 const PLATFORM_DOMAINS = new Set([
   "wolfpackauto.com",
   "www.wolfpackauto.com",
+  // Vercel deployment domains (dev + preview)
+  "wolfpack-auto.vercel.app",
 ]);
 
 /** Subdomain suffixes to strip when extracting a dealer slug. */
@@ -73,6 +75,12 @@ function extractTenantSlug(hostname: string): string | null {
       const slug = normalized.slice(0, -suffix.length);
       if (slug && !slug.includes(".")) return slug;
     }
+  }
+
+  // Vercel preview/branch deploy URLs — treat as platform, not a dealer tenant.
+  // Covers wolfpack-auto-git-branch-org.vercel.app, etc.
+  if (normalized.endsWith(".vercel.app")) {
+    return null;
   }
 
   // Custom domain — pass the full hostname as the slug hint so the
@@ -130,9 +138,11 @@ export async function middleware(request: NextRequest) {
   const isLogin = pathname === "/admin/login";
   const isAuthApi = pathname.startsWith("/api/auth");
 
-  // DEMO MODE: auth check disabled for demo deployments
-  // Re-enable before production: remove `false &&` below
-  if (false && isAdminRoute(pathname) && !isLogin && !isAuthApi) {
+  // Auth check for admin routes.
+  // Controlled by DEMO_MODE env var — set to "true" only for public demos.
+  // Production deployments must NOT set DEMO_MODE=true.
+  const isDemoMode = process.env.DEMO_MODE === "true";
+  if (!isDemoMode && isAdminRoute(pathname) && !isLogin && !isAuthApi) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-change-in-production" });
 
     if (!token) {
