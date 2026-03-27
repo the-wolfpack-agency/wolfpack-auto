@@ -11,6 +11,14 @@ const ANALYTICS_CHILDREN = [
   { href: "/admin/analytics/inventory", label: "Inventory" },
 ] as const;
 
+/** Sub-items shown under OEM Network when on an /admin/oem page. */
+const OEM_CHILDREN = [
+  { href: "/admin/oem", label: "Overview" },
+  { href: "/admin/oem/dealers", label: "Dealer Network" },
+  { href: "/admin/oem/programs", label: "Programs" },
+  { href: "/admin/oem/analytics", label: "Cross-Dealer Analytics" },
+] as const;
+
 /** Navigation items for the admin sidebar. */
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: DashboardIcon },
@@ -22,6 +30,7 @@ const NAV_ITEMS = [
   { href: "/admin/analytics-brain", label: "Brain", icon: BrainIcon },
   { href: "/admin/reports", label: "Reports", icon: ReportsIcon },
   { href: "/admin/onboarding", label: "Onboarding", icon: OnboardingIcon },
+  { href: "/admin/oem", label: "OEM Network", icon: OemIcon },
   { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
 ] as const;
 
@@ -36,6 +45,8 @@ export default function AdminSidebar() {
   const isAnalyticsPage =
     pathname.startsWith("/admin/analytics") &&
     !pathname.startsWith("/admin/analytics-brain");
+
+  const isOemPage = pathname.startsWith("/admin/oem");
 
   const navContent = (
     <>
@@ -68,11 +79,13 @@ export default function AdminSidebar() {
         <ul className="space-y-1" role="list">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isAnalytics = href === "/admin/analytics";
+            const isOem = href === "/admin/oem";
             const isActive =
               href === "/admin"
                 ? pathname === href
                 : pathname.startsWith(href) &&
-                  !(isAnalytics && !isAnalyticsPage);
+                  !(isAnalytics && !isAnalyticsPage) &&
+                  !(isOem && !isOemPage);
             return (
               <li key={href}>
                 <a
@@ -91,6 +104,26 @@ export default function AdminSidebar() {
                 {isAnalytics && isAnalyticsPage && (
                   <ul className="ml-8 mt-1 space-y-0.5" role="list">
                     {ANALYTICS_CHILDREN.map((child) => (
+                      <li key={child.href}>
+                        <a
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                            pathname === child.href
+                              ? "font-semibold text-brand-400"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* OEM Network sub-navigation */}
+                {isOem && isOemPage && (
+                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
+                    {OEM_CHILDREN.map((child) => (
                       <li key={child.href}>
                         <a
                           href={child.href}
@@ -302,6 +335,14 @@ function SignOutIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+    </svg>
+  );
+}
+
+function OemIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.92 17.92 0 0 1-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
     </svg>
   );
 }
