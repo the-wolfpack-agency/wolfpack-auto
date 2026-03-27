@@ -1,476 +1,560 @@
-export const dynamic = "force-dynamic";
-import type { Metadata } from "next";
-import { query } from "@/lib/db";
-import { StatsCard } from "@/components/admin/StatsCard";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Analytics",
-  description: "Dealership analytics and performance insights.",
-};
+import { useEffect, useState } from "react";
+import AnalyticsChat from "@/components/AnalyticsChat";
 
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+/* -------------------------------------------------------------------------- */
+/* Types                                                                      */
+/* -------------------------------------------------------------------------- */
 
-interface TopVehicle {
-  id: string;
-  year: number;
-  make: string;
-  model: string;
-  trim: string;
-  price: number;
-  view_count: number;
-}
-
-interface LeadSourceBreakdown {
-  source: string;
-  count: number;
-  percentage: number;
-}
-
-interface SearchTerm {
-  term: string;
-  count: number;
-}
-
-async function getAnalyticsData() {
-  const [
-    totalViewsResult,
-    topVehiclesResult,
-    leadSourcesResult,
-    searchTermsResult,
-    funnelResult,
-  ] = await Promise.all([
-    // Total page views (from analytics_events table if it exists, fallback to 0)
-    query<{ total: string }>(
-      `SELECT COALESCE(COUNT(*)::text, '0') AS total
-       FROM analytics_events
-       WHERE dealer_id = $1
-         AND event_type = 'page_view'
-         AND created_at >= now() - interval '30 days'`,
-      [DEALER_ID],
-    ).catch(() => ({ rows: [{ total: "0" }] })),
-
-    // Top viewed vehicles
-    query(
-      `SELECT
-         v.id, v.year, v.make, v.model, v.trim, v.price,
-         COALESCE(ae.view_count, 0) AS view_count
-       FROM vehicles v
-       LEFT JOIN (
-         SELECT vehicle_id, COUNT(*) AS view_count
-         FROM analytics_events
-         WHERE dealer_id = $1
-           AND event_type = 'vdp_view'
-           AND created_at >= now() - interval '30 days'
-         GROUP BY vehicle_id
-       ) ae ON ae.vehicle_id = v.id
-       WHERE v.dealer_id = $1 AND v.status = 'available'
-       ORDER BY view_count DESC
-       LIMIT 10`,
-      [DEALER_ID],
-    ).catch(() => ({ rows: [] })),
-
-    // Lead sources
-    query<{ source: string; count: string }>(
-      `SELECT source, COUNT(*)::text AS count
-       FROM leads
-       WHERE dealer_id = $1
-         AND created_at >= now() - interval '30 days'
-       GROUP BY source
-       ORDER BY count DESC`,
-      [DEALER_ID],
-    ).catch(() => ({ rows: [] })),
-
-    // Top search terms
-    query<{ term: string; count: string }>(
-      `SELECT search_query AS term, COUNT(*)::text AS count
-       FROM analytics_events
-       WHERE dealer_id = $1
-         AND event_type = 'search'
-         AND created_at >= now() - interval '30 days'
-       GROUP BY search_query
-       ORDER BY count DESC
-       LIMIT 20`,
-      [DEALER_ID],
-    ).catch(() => ({ rows: [] })),
-
-    // Conversion funnel
-    query<{ status: string; count: string }>(
-      `SELECT status, COUNT(*)::text AS count
-       FROM leads
-       WHERE dealer_id = $1
-         AND created_at >= now() - interval '30 days'
-       GROUP BY status`,
-      [DEALER_ID],
-    ).catch(() => ({ rows: [] })),
-  ]);
-
-  const totalViews = parseInt(
-    (totalViewsResult.rows as any[])[0]?.total ?? "0",
-    10,
-  );
-
-  const topVehicles = (topVehiclesResult.rows as any[]).map((r) => ({
-    id: r.id,
-    year: r.year,
-    make: r.make,
-    model: r.model,
-    trim: r.trim,
-    price: r.price,
-    view_count: parseInt(r.view_count, 10),
-  })) as TopVehicle[];
-
-  const leadSourcesRaw = (leadSourcesResult.rows as any[]).map((r) => ({
-    source: r.source as string,
-    count: parseInt(r.count, 10),
-  }));
-  const totalLeadsSources = leadSourcesRaw.reduce(
-    (sum, r) => sum + r.count,
-    0,
-  );
-  const leadSources: LeadSourceBreakdown[] = leadSourcesRaw.map((r) => ({
-    ...r,
-    percentage:
-      totalLeadsSources > 0
-        ? Math.round((r.count / totalLeadsSources) * 100)
-        : 0,
-  }));
-
-  const searchTerms: SearchTerm[] = (searchTermsResult.rows as any[]).map(
-    (r) => ({
-      term: r.term,
-      count: parseInt(r.count, 10),
-    }),
-  );
-
-  // Funnel data
-  const funnelMap: Record<string, number> = {};
-  for (const row of funnelResult.rows as any[]) {
-    funnelMap[row.status] = parseInt(row.count, 10);
-  }
-  const funnel = [
-    { stage: "New", count: funnelMap["new"] ?? 0 },
-    { stage: "Contacted", count: funnelMap["contacted"] ?? 0 },
-    { stage: "Qualified", count: funnelMap["qualified"] ?? 0 },
-    { stage: "Appointment", count: funnelMap["appointment_set"] ?? 0 },
-    { stage: "Sold", count: funnelMap["sold"] ?? 0 },
-  ];
-  const funnelMax = Math.max(...funnel.map((f) => f.count), 1);
-
-  return {
-    totalViews,
-    topVehicles,
-    leadSources,
-    searchTerms,
-    funnel,
-    funnelMax,
+interface DashboardData {
+  keyMetrics: {
+    visitors: { today: number; week: number; month: number };
+    leadTemperature: { hot: number; warm: number; cool: number; cold: number };
+    conversionRate: number;
+    avgSessionDuration: string;
+  };
+  trafficEngagement: {
+    topPages: { page: string; views: number }[];
+    peakHours: { hour: number; count: number }[];
+    referrers: { source: string; percentage: number }[];
+    deviceSplit: { desktop: number; mobile: number; tablet: number };
+  };
+  vehicleIntelligence: {
+    mostViewed: { name: string; views: number; vin: string }[];
+    inventoryGaps: { query: string; searches: number }[];
+    comparisonPatterns: { pair: string; count: number }[];
+    photoEngagement: { vehicle: string; score: number }[];
+  };
+  conversionFunnel: {
+    temperatureDistribution: { label: string; value: number; color: string }[];
+    formAbandonment: { field: string; dropoff: number }[];
+    exitIntentTriggers: { trigger: string; count: number }[];
+    ctaVisibility: { cta: string; impressions: number; clicks: number }[];
+  };
+  uxHealth: {
+    rageClicks: { count: number; locations: { page: string; element: string; count: number }[] };
+    deadClicks: { count: number; locations: { page: string; element: string; count: number }[] };
+    pageLoadPerformance: { page: string; avgLoadMs: number }[];
+    mobileVsDesktopConversion: { mobile: number; desktop: number };
   };
 }
 
-export default async function AnalyticsPage() {
-  const {
-    totalViews,
-    topVehicles,
-    leadSources,
-    searchTerms,
-    funnel,
-    funnelMax,
-  } = await getAnalyticsData();
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export default function AnalyticsDashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/admin/analytics/dashboard")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((json) => setData(json))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <LoadingSkeleton />;
+  if (error) return <ErrorState message={error} />;
+  if (!data) return null;
+
+  const { keyMetrics, trafficEngagement, vehicleIntelligence, conversionFunnel, uxHealth } = data;
 
   return (
-    <>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Performance insights for the last 30 days.
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
+        <p className="mt-1 text-base text-gray-500">
+          Behavioral insights from 31 signal generators across your dealership.
         </p>
       </div>
 
-      {/* Summary cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatsCard
-          label="Page Views (30d)"
-          value={totalViews.toLocaleString()}
-          icon={<EyeIcon />}
+      {/* NLP Analytics Chat */}
+      <AnalyticsChat />
+
+      {/* Sub-navigation */}
+      <div className="flex gap-2 border-b border-surface-border pb-3">
+        <TabLink href="/admin/analytics" active>Dashboard</TabLink>
+        <TabLink href="/admin/analytics/leads">Leads</TabLink>
+        <TabLink href="/admin/analytics/inventory">Inventory</TabLink>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Key Metrics — Top Row                                              */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          label="Visitors Today"
+          value={keyMetrics.visitors.today.toLocaleString()}
+          sub={`${keyMetrics.visitors.week.toLocaleString()} this week`}
+          color="brand"
         />
-        <StatsCard
-          label="New Leads (30d)"
-          value={leadSources.reduce((s, r) => s + r.count, 0)}
-          icon={<UsersAnalyticsIcon />}
+        <MetricCard
+          label="Hot Leads"
+          value={keyMetrics.leadTemperature.hot}
+          sub={`${keyMetrics.leadTemperature.warm} warm / ${keyMetrics.leadTemperature.cool} cool / ${keyMetrics.leadTemperature.cold} cold`}
+          color="red"
         />
-        <StatsCard
-          label="Top Search Terms"
-          value={searchTerms.length}
-          icon={<SearchAnalyticsIcon />}
+        <MetricCard
+          label="Conversion Rate"
+          value={`${keyMetrics.conversionRate}%`}
+          sub="Visitor to lead"
+          color="green"
+        />
+        <MetricCard
+          label="Avg Session"
+          value={keyMetrics.avgSessionDuration}
+          sub="Time on site"
+          color="blue"
         />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        {/* ---------------------------------------------------------------- */}
-        {/* Page Views Over Time (chart placeholder)                         */}
-        {/* ---------------------------------------------------------------- */}
-        <section
-          aria-labelledby="views-chart-heading"
-          className="rounded-card border border-surface-border bg-white p-6 shadow-card lg:col-span-2"
-        >
-          <h2
-            id="views-chart-heading"
-            className="mb-4 text-lg font-semibold text-gray-900"
-          >
-            Page Views Over Time
-          </h2>
-          <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-surface-border bg-surface-muted">
-            <div className="text-center">
-              <ChartIcon className="mx-auto h-12 w-12 text-gray-300" />
-              <p className="mt-2 text-sm font-medium text-gray-500">
-                Chart integration pending
-              </p>
-              <p className="text-xs text-gray-400">
-                Connect Recharts or Chart.js to visualize page view trends
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Top Viewed Vehicles                                              */}
-        {/* ---------------------------------------------------------------- */}
-        <section
-          aria-labelledby="top-vehicles-heading"
-          className="rounded-card border border-surface-border bg-white p-6 shadow-card"
-        >
-          <h2
-            id="top-vehicles-heading"
-            className="mb-4 text-lg font-semibold text-gray-900"
-          >
-            Top Viewed Vehicles
-          </h2>
-
-          {topVehicles.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">
-              No vehicle view data available yet.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-surface-border">
-                <caption className="sr-only">
-                  Most viewed vehicles in the last 30 days
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col" className="pb-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Vehicle</th>
-                    <th scope="col" className="pb-2 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Price</th>
-                    <th scope="col" className="pb-2 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Views</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-border">
-                  {topVehicles.map((v) => (
-                    <tr key={v.id}>
-                      <td className="py-2 text-sm text-gray-900">
-                        {v.year} {v.make} {v.model} {v.trim}
-                      </td>
-                      <td className="py-2 text-right text-sm font-medium text-gray-700">
-                        ${v.price.toLocaleString()}
-                      </td>
-                      <td className="py-2 text-right text-sm font-semibold text-brand-600">
-                        {v.view_count}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Lead Sources Breakdown                                           */}
-        {/* ---------------------------------------------------------------- */}
-        <section
-          aria-labelledby="lead-sources-heading"
-          className="rounded-card border border-surface-border bg-white p-6 shadow-card"
-        >
-          <h2
-            id="lead-sources-heading"
-            className="mb-4 text-lg font-semibold text-gray-900"
-          >
-            Lead Sources
-          </h2>
-
-          {leadSources.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">
-              No lead source data available yet.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {leadSources.map(({ source, count, percentage }) => (
-                <div key={source}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-700">
-                      {formatSourceLabel(source)}
-                    </span>
-                    <span className="text-gray-500">
-                      {count} ({percentage}%)
-                    </span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-subtle">
-                    <div
-                      className="h-full rounded-full bg-brand-500 transition-all"
-                      style={{ width: `${percentage}%` }}
-                      role="progressbar"
-                      aria-valuenow={percentage}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`${formatSourceLabel(source)}: ${percentage}%`}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Search Terms                                                     */}
-        {/* ---------------------------------------------------------------- */}
-        <section
-          aria-labelledby="search-terms-heading"
-          className="rounded-card border border-surface-border bg-white p-6 shadow-card"
-        >
-          <h2
-            id="search-terms-heading"
-            className="mb-4 text-lg font-semibold text-gray-900"
-          >
-            Popular Search Terms
-          </h2>
-
-          {searchTerms.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">
-              No search data available yet.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {searchTerms.map(({ term, count }) => (
-                <span
-                  key={term}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-surface-muted px-3 py-1 text-sm"
-                >
-                  <span className="text-gray-700">{term}</span>
-                  <span className="text-xs font-medium text-gray-400">
-                    {count}
-                  </span>
-                </span>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Conversion Funnel                                                */}
-        {/* ---------------------------------------------------------------- */}
-        <section
-          aria-labelledby="funnel-heading"
-          className="rounded-card border border-surface-border bg-white p-6 shadow-card"
-        >
-          <h2
-            id="funnel-heading"
-            className="mb-4 text-lg font-semibold text-gray-900"
-          >
-            Conversion Funnel
-          </h2>
-
+      {/* ------------------------------------------------------------------ */}
+      {/* Traffic & Engagement                                               */}
+      {/* ------------------------------------------------------------------ */}
+      <SectionHeading title="Traffic & Engagement" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Top Pages */}
+        <Card title="Page Engagement Ranking">
           <div className="space-y-3">
-            {funnel.map(({ stage, count }, idx) => {
-              const widthPct = Math.max(
-                (count / funnelMax) * 100,
-                4, // minimum visible bar
-              );
-              const colors = [
-                "bg-blue-500",
-                "bg-indigo-500",
-                "bg-purple-500",
-                "bg-cyan-500",
-                "bg-green-500",
-              ];
+            {trafficEngagement.topPages.map((p, i) => {
+              const max = trafficEngagement.topPages[0]?.views || 1;
               return (
-                <div key={stage}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-700">{stage}</span>
-                    <span className="font-semibold text-gray-900">
-                      {count}
+                <div key={p.page}>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-700">
+                      <span className="mr-2 text-gray-400">#{i + 1}</span>
+                      {p.page}
                     </span>
+                    <span className="font-semibold text-gray-900">{p.views.toLocaleString()}</span>
                   </div>
-                  <div className="mt-1 h-6 overflow-hidden rounded bg-surface-subtle">
-                    <div
-                      className={`flex h-full items-center rounded ${colors[idx % colors.length]} px-2 text-xs font-medium text-white transition-all`}
-                      style={{ width: `${widthPct}%` }}
-                      role="progressbar"
-                      aria-valuenow={count}
-                      aria-valuemin={0}
-                      aria-valuemax={funnelMax}
-                      aria-label={`${stage}: ${count} leads`}
-                    >
-                      {count > 0 ? count : ""}
-                    </div>
-                  </div>
+                  <Bar value={p.views} max={max} color="bg-brand-500" />
                 </div>
               );
             })}
           </div>
-        </section>
+        </Card>
+
+        {/* Peak Hours */}
+        <Card title="Peak Hours (24h)">
+          <div className="flex items-end gap-1 h-40">
+            {trafficEngagement.peakHours.map((h) => {
+              const max = Math.max(...trafficEngagement.peakHours.map((x) => x.count), 1);
+              const heightPct = Math.max((h.count / max) * 100, 2);
+              return (
+                <div key={h.hour} className="flex-1 flex flex-col items-center gap-1">
+                  <div
+                    className="w-full rounded-t bg-indigo-500 transition-all"
+                    style={{ height: `${heightPct}%` }}
+                    title={`${h.hour}:00 — ${h.count} visits`}
+                  />
+                  <span className="text-[10px] text-gray-400">
+                    {h.hour % 6 === 0 ? `${h.hour}h` : ""}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Referrer Breakdown */}
+        <Card title="Traffic Sources">
+          <div className="space-y-3">
+            {trafficEngagement.referrers.map((r) => (
+              <div key={r.source}>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium text-gray-700">{r.source}</span>
+                  <span className="font-semibold text-gray-900">{r.percentage}%</span>
+                </div>
+                <Bar value={r.percentage} max={100} color="bg-emerald-500" />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Device Split */}
+        <Card title="Device Split">
+          <div className="space-y-4">
+            {(["desktop", "mobile", "tablet"] as const).map((device) => {
+              const val = trafficEngagement.deviceSplit[device];
+              const colors = { desktop: "bg-blue-500", mobile: "bg-purple-500", tablet: "bg-orange-400" };
+              return (
+                <div key={device}>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium capitalize text-gray-700">{device}</span>
+                    <span className="font-semibold text-gray-900">{val}%</span>
+                  </div>
+                  <Bar value={val} max={100} color={colors[device]} />
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
-    </>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Vehicle Intelligence                                               */}
+      {/* ------------------------------------------------------------------ */}
+      <SectionHeading title="Vehicle Intelligence" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Most Viewed */}
+        <Card title="Most Viewed Vehicles">
+          <div className="space-y-3">
+            {vehicleIntelligence.mostViewed.map((v, i) => {
+              const max = vehicleIntelligence.mostViewed[0]?.views || 1;
+              return (
+                <div key={v.vin}>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-700">
+                      <span className="mr-2 text-gray-400">#{i + 1}</span>
+                      {v.name}
+                    </span>
+                    <span className="font-semibold text-gray-900">{v.views}</span>
+                  </div>
+                  <Bar value={v.views} max={max} color="bg-cyan-500" />
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Inventory Gaps */}
+        <Card title="Inventory Gap Alerts">
+          <p className="mb-3 text-xs text-gray-500">Searches with no matching inventory</p>
+          {vehicleIntelligence.inventoryGaps.length === 0 ? (
+            <p className="py-4 text-center text-sm text-gray-400">No gaps detected</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-border">
+                  <th className="pb-2 text-left font-semibold text-gray-500 text-xs uppercase">Search Query</th>
+                  <th className="pb-2 text-right font-semibold text-gray-500 text-xs uppercase">Searches</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-border">
+                {vehicleIntelligence.inventoryGaps.map((g) => (
+                  <tr key={g.query}>
+                    <td className="py-2 text-gray-700">{g.query}</td>
+                    <td className="py-2 text-right font-semibold text-red-600">{g.searches}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+
+        {/* Comparison Shopping */}
+        <Card title="Comparison Shopping Patterns">
+          <div className="space-y-2">
+            {vehicleIntelligence.comparisonPatterns.map((c) => (
+              <div key={c.pair} className="flex justify-between rounded-lg bg-surface-muted px-3 py-2 text-sm">
+                <span className="text-gray-700">{c.pair}</span>
+                <span className="font-semibold text-gray-900">{c.count}x</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Photo Engagement */}
+        <Card title="Photo Engagement Scores">
+          <div className="space-y-3">
+            {vehicleIntelligence.photoEngagement.map((p) => (
+              <div key={p.vehicle}>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium text-gray-700">{p.vehicle}</span>
+                  <span className="font-semibold text-gray-900">{p.score}/100</span>
+                </div>
+                <Bar value={p.score} max={100} color="bg-amber-500" />
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Conversion Funnel                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <SectionHeading title="Conversion Funnel" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Temperature Distribution */}
+        <Card title="Lead Temperature Distribution">
+          <div className="flex items-end gap-3 h-40">
+            {conversionFunnel.temperatureDistribution.map((t) => {
+              const max = Math.max(...conversionFunnel.temperatureDistribution.map((x) => x.value), 1);
+              const heightPct = Math.max((t.value / max) * 100, 4);
+              return (
+                <div key={t.label} className="flex-1 flex flex-col items-center gap-2">
+                  <span className="text-xs font-semibold text-gray-700">{t.value}</span>
+                  <div
+                    className="w-full rounded-t transition-all"
+                    style={{ height: `${heightPct}%`, backgroundColor: t.color }}
+                  />
+                  <span className="text-xs font-medium text-gray-500">{t.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Form Abandonment */}
+        <Card title="Form Abandonment Rate">
+          <p className="mb-3 text-xs text-gray-500">Which fields lose people</p>
+          <div className="space-y-3">
+            {conversionFunnel.formAbandonment.map((f) => (
+              <div key={f.field}>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium text-gray-700">{f.field}</span>
+                  <span className="font-semibold text-red-600">{f.dropoff}% drop</span>
+                </div>
+                <Bar value={f.dropoff} max={100} color="bg-red-400" />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Exit Intent */}
+        <Card title="Exit Intent Triggers">
+          <div className="space-y-2">
+            {conversionFunnel.exitIntentTriggers.map((e) => (
+              <div key={e.trigger} className="flex justify-between rounded-lg bg-surface-muted px-3 py-2 text-sm">
+                <span className="text-gray-700">{e.trigger}</span>
+                <span className="font-semibold text-orange-600">{e.count}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* CTA Visibility */}
+        <Card title="CTA Visibility">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-surface-border">
+                <th className="pb-2 text-left font-semibold text-gray-500 text-xs uppercase">CTA</th>
+                <th className="pb-2 text-right font-semibold text-gray-500 text-xs uppercase">Seen</th>
+                <th className="pb-2 text-right font-semibold text-gray-500 text-xs uppercase">Clicked</th>
+                <th className="pb-2 text-right font-semibold text-gray-500 text-xs uppercase">CTR</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-border">
+              {conversionFunnel.ctaVisibility.map((c) => {
+                const ctr = c.impressions > 0 ? ((c.clicks / c.impressions) * 100).toFixed(1) : "0";
+                return (
+                  <tr key={c.cta}>
+                    <td className="py-2 text-gray-700">{c.cta}</td>
+                    <td className="py-2 text-right text-gray-500">{c.impressions.toLocaleString()}</td>
+                    <td className="py-2 text-right font-medium text-gray-900">{c.clicks.toLocaleString()}</td>
+                    <td className="py-2 text-right font-semibold text-brand-600">{ctr}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </Card>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* UX Health                                                          */}
+      {/* ------------------------------------------------------------------ */}
+      <SectionHeading title="UX Health" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Rage Clicks */}
+        <Card title="Rage Clicks">
+          <div className="mb-4 flex items-center gap-3">
+            <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700">
+              {uxHealth.rageClicks.count}
+            </span>
+            <span className="text-sm text-gray-500">total rage clicks detected</span>
+          </div>
+          <div className="space-y-2">
+            {uxHealth.rageClicks.locations.map((l, i) => (
+              <div key={i} className="flex justify-between rounded-lg bg-red-50 px-3 py-2 text-sm">
+                <span className="text-gray-700">{l.page} &mdash; <code className="text-xs">{l.element}</code></span>
+                <span className="font-semibold text-red-600">{l.count}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Dead Clicks */}
+        <Card title="Dead Clicks">
+          <div className="mb-4 flex items-center gap-3">
+            <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-bold text-yellow-700">
+              {uxHealth.deadClicks.count}
+            </span>
+            <span className="text-sm text-gray-500">total dead clicks detected</span>
+          </div>
+          <div className="space-y-2">
+            {uxHealth.deadClicks.locations.map((l, i) => (
+              <div key={i} className="flex justify-between rounded-lg bg-yellow-50 px-3 py-2 text-sm">
+                <span className="text-gray-700">{l.page} &mdash; <code className="text-xs">{l.element}</code></span>
+                <span className="font-semibold text-yellow-700">{l.count}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Page Load Performance */}
+        <Card title="Page Load Performance">
+          <div className="space-y-3">
+            {uxHealth.pageLoadPerformance.map((p) => {
+              const color = p.avgLoadMs < 1500 ? "bg-green-500" : p.avgLoadMs < 3000 ? "bg-yellow-500" : "bg-red-500";
+              const label = p.avgLoadMs < 1500 ? "text-green-700" : p.avgLoadMs < 3000 ? "text-yellow-700" : "text-red-700";
+              return (
+                <div key={p.page}>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-700">{p.page}</span>
+                    <span className={`font-semibold ${label}`}>{(p.avgLoadMs / 1000).toFixed(2)}s</span>
+                  </div>
+                  <Bar value={p.avgLoadMs} max={5000} color={color} />
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Mobile vs Desktop Conversion */}
+        <Card title="Mobile vs Desktop Conversion">
+          <div className="flex items-center gap-8 py-4">
+            <div className="flex-1 text-center">
+              <p className="text-3xl font-bold text-purple-600">{uxHealth.mobileVsDesktopConversion.mobile}%</p>
+              <p className="mt-1 text-sm font-medium text-gray-500">Mobile</p>
+            </div>
+            <div className="h-16 w-px bg-surface-border" />
+            <div className="flex-1 text-center">
+              <p className="text-3xl font-bold text-blue-600">{uxHealth.mobileVsDesktopConversion.desktop}%</p>
+              <p className="mt-1 text-sm font-medium text-gray-500">Desktop</p>
+            </div>
+          </div>
+          <div className="flex h-4 overflow-hidden rounded-full">
+            <div
+              className="bg-purple-500 transition-all"
+              style={{ width: `${uxHealth.mobileVsDesktopConversion.mobile}%` }}
+            />
+            <div
+              className="bg-blue-500 transition-all"
+              style={{ width: `${uxHealth.mobileVsDesktopConversion.desktop}%` }}
+            />
+          </div>
+        </Card>
+      </div>
+    </div>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
+/* Shared Components                                                          */
 /* -------------------------------------------------------------------------- */
 
-function formatSourceLabel(source: string): string {
-  const map: Record<string, string> = {
-    website_form: "Website Form",
-    vdp_inquiry: "VDP Inquiry",
-    chat: "Chat",
-    phone: "Phone",
-    third_party: "3rd Party",
-    walk_in: "Walk-in",
+function TabLink({ href, children, active = false }: { href: string; children: React.ReactNode; active?: boolean }) {
+  return (
+    <a
+      href={href}
+      className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "bg-brand-600 text-white"
+          : "text-gray-600 hover:bg-surface-muted hover:text-gray-900"
+      }`}
+    >
+      {children}
+    </a>
+  );
+}
+
+function SectionHeading({ title }: { title: string }) {
+  return (
+    <h2 className="border-b border-surface-border pb-2 text-lg font-bold text-gray-900">
+      {title}
+    </h2>
+  );
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-card border border-surface-border bg-white p-6 shadow-card">
+      <h3 className="mb-4 text-base font-semibold text-gray-900">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  sub,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  sub: string;
+  color: string;
+}) {
+  const dotColors: Record<string, string> = {
+    brand: "bg-brand-600",
+    red: "bg-red-500",
+    green: "bg-green-500",
+    blue: "bg-blue-500",
   };
-  return map[source] ?? source;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Icons                                                                      */
-/* -------------------------------------------------------------------------- */
-
-function EyeIcon() {
   return (
-    <svg width="20" height="20" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-    </svg>
+    <div className="rounded-card border border-surface-border bg-white p-5 shadow-card">
+      <div className="flex items-center gap-2">
+        <span className={`h-2.5 w-2.5 rounded-full ${dotColors[color] || "bg-gray-400"}`} />
+        <span className="text-sm font-medium text-gray-500">{label}</span>
+      </div>
+      <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900">{value}</p>
+      <p className="mt-1 text-sm text-gray-400">{sub}</p>
+    </div>
   );
 }
 
-function UsersAnalyticsIcon() {
+function Bar({ value, max, color }: { value: number; max: number; color: string }) {
+  const pct = Math.max((value / max) * 100, 2);
   return (
-    <svg width="20" height="20" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-    </svg>
+    <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-subtle">
+      <div
+        className={`h-full rounded-full ${color} transition-all`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
   );
 }
 
-function SearchAnalyticsIcon() {
+function LoadingSkeleton() {
   return (
-    <svg width="20" height="20" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-    </svg>
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 w-64 rounded bg-gray-200" />
+      <div className="h-4 w-96 rounded bg-gray-100" />
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-28 rounded-card bg-gray-100" />
+        ))}
+      </div>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="grid gap-6 lg:grid-cols-2">
+          <div className="h-64 rounded-card bg-gray-100" />
+          <div className="h-64 rounded-card bg-gray-100" />
+        </div>
+      ))}
+    </div>
   );
 }
 
-function ChartIcon({ className }: { className?: string }) {
+function ErrorState({ message }: { message: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
-    </svg>
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="rounded-full bg-red-100 p-4">
+        <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+        </svg>
+      </div>
+      <p className="mt-4 text-base font-semibold text-gray-900">Failed to load analytics</p>
+      <p className="mt-1 text-sm text-gray-500">{message}</p>
+    </div>
   );
 }

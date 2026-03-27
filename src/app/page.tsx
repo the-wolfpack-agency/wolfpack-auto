@@ -1,13 +1,23 @@
 import type { Metadata } from "next";
 import { getFeaturedVehicles } from "@/lib/data";
+import { getDealerConfig } from "@/lib/dealer-config";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Wolfpack Auto | Find Your Next Vehicle",
-  description:
-    "Browse thousands of new and used vehicles. Lightning-fast search, transparent pricing, and a dealership experience built for the modern buyer.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dealer = await getDealerConfig();
+  return {
+    title: `${dealer.name} | ${dealer.tagline}`,
+    description:
+      "Browse thousands of new and used vehicles. Lightning-fast search, transparent pricing, and a dealership experience built for the modern buyer.",
+    openGraph: {
+      title: `${dealer.name} | ${dealer.tagline}`,
+      description:
+        "Browse thousands of new and used vehicles. Lightning-fast search, transparent pricing, and a dealership experience built for the modern buyer.",
+      type: "website",
+    },
+  };
+}
 
 const testimonials = [
   {
@@ -49,7 +59,10 @@ function StarRating({ count }: { count: number }) {
 }
 
 export default async function HomePage() {
-  const { data: featuredVehicles } = await getFeaturedVehicles(4);
+  const [{ data: featuredVehicles }, dealer] = await Promise.all([
+    getFeaturedVehicles(4),
+    getDealerConfig(),
+  ]);
 
   return (
     <div>
@@ -71,7 +84,7 @@ export default async function HomePage() {
               id="hero-heading"
               className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
             >
-              Find Your Perfect Vehicle
+              {dealer.tagline}
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-brand-200">
               Browse our curated selection of certified vehicles with transparent
@@ -95,12 +108,20 @@ export default async function HomePage() {
                   defaultValue=""
                 >
                   <option value="" disabled className="text-gray-900">Any Make</option>
-                  <option className="text-gray-900">Honda</option>
-                  <option className="text-gray-900">Toyota</option>
-                  <option className="text-gray-900">Tesla</option>
+                  <option className="text-gray-900">Audi</option>
                   <option className="text-gray-900">BMW</option>
-                  <option className="text-gray-900">Ford</option>
                   <option className="text-gray-900">Chevrolet</option>
+                  <option className="text-gray-900">Ford</option>
+                  <option className="text-gray-900">Honda</option>
+                  <option className="text-gray-900">Hyundai</option>
+                  <option className="text-gray-900">Jeep</option>
+                  <option className="text-gray-900">Kia</option>
+                  <option className="text-gray-900">Mazda</option>
+                  <option className="text-gray-900">Nissan</option>
+                  <option className="text-gray-900">Subaru</option>
+                  <option className="text-gray-900">Tesla</option>
+                  <option className="text-gray-900">Toyota</option>
+                  <option className="text-gray-900">Volkswagen</option>
                 </select>
                 <label htmlFor="hero-model" className="sr-only">Model</label>
                 <input
@@ -159,7 +180,7 @@ export default async function HomePage() {
             id="why-heading"
             className="text-center text-3xl font-bold tracking-tight text-gray-900"
           >
-            Why Choose Wolfpack Motors
+            Why Choose {dealer.name}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-gray-600">
             We are redefining the car-buying experience with transparency, quality, and customer-first service.

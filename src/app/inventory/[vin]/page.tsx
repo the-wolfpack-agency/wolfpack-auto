@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getVehicleByVin } from "@/lib/data";
+import PaymentCalculator from "@/components/PaymentCalculator";
+import PhotoGallery from "@/components/PhotoGallery";
+import VehicleDisclosures from "@/components/VehicleDisclosures";
+import FinancingDisclaimer from "@/components/FinancingDisclaimer";
+import CARSRuleDisclosures from "@/components/CARSRuleDisclosures";
 
 export const dynamic = "force-dynamic";
 
 interface VDPParams {
-  params: { vin: string };
+  params: Promise<{ vin: string }>;
 }
 
 export async function generateMetadata({ params }: VDPParams): Promise<Metadata> {
-  const { data: vehicle } = await getVehicleByVin(params.vin);
+  const { vin } = await params;
+  const { data: vehicle } = await getVehicleByVin(vin);
 
   if (!vehicle) {
     return { title: "Vehicle Not Found" };
@@ -22,7 +28,7 @@ export async function generateMetadata({ params }: VDPParams): Promise<Metadata>
 }
 
 export default async function VehicleDetailPage({ params }: VDPParams) {
-  const { vin } = params;
+  const { vin } = await params;
   const { data: vehicle } = await getVehicleByVin(vin);
 
   if (!vehicle) {
@@ -68,79 +74,23 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
           {/* Left Column: Photos + Specs */}
           <div className="lg:col-span-2 space-y-8">
             {/* Photo Gallery */}
-            <section aria-label="Vehicle photos">
-              <div className={`h-80 overflow-hidden rounded-2xl bg-gradient-to-br ${v.gradient} shadow-card`}>
-                {v.photo ? (
-                  <img
-                    src={v.photo.replace("w=800&h=600", "w=1200&h=800")}
-                    alt={`${v.year} ${v.make} ${v.model} ${v.trim}`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
+            {v.photo ? (
+              <PhotoGallery
+                mainPhoto={v.photo}
+                alt={`${v.year} ${v.make} ${v.model} ${v.trim}`}
+                gradient={v.gradient}
+              />
+            ) : (
+              <section aria-label="Vehicle photos">
+                <div className={`h-80 overflow-hidden rounded-2xl bg-gradient-to-br ${v.gradient} shadow-card`}>
                   <div className="flex h-full items-center justify-center">
-                    <div className="text-center">
-                      <svg className="mx-auto h-20 w-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                      </svg>
-                      <p className="mt-2 text-sm text-white/40">1 of 32 photos</p>
-                    </div>
+                    <svg className="mx-auto h-20 w-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+                    </svg>
                   </div>
-                )}
-              </div>
-              {/* Thumbnails */}
-              <div className="mt-3 grid grid-cols-4 gap-3">
-                {v.photo ? (
-                  [
-                    { w: 400, h: 300, q: 80 },
-                    { w: 400, h: 250, q: 80 },
-                    { w: 350, h: 300, q: 80 },
-                    { w: 450, h: 300, q: 80 },
-                  ].map((crop, i) => {
-                    const baseUrl = v.photo.split("?")[0];
-                    const thumbUrl = `${baseUrl}?w=${crop.w}&h=${crop.h}&fit=crop&auto=format&q=${crop.q}`;
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        className={`h-24 overflow-hidden rounded-xl ring-2 transition-all ${
-                          i === 0 ? "ring-brand-500" : "ring-transparent hover:ring-brand-300"
-                        }`}
-                        aria-label={`View photo ${i + 1}`}
-                      >
-                        <img
-                          src={thumbUrl}
-                          alt={`${v.year} ${v.make} ${v.model} - view ${i + 1}`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      </button>
-                    );
-                  })
-                ) : (
-                  [
-                    "from-blue-500 to-blue-700",
-                    "from-blue-300 to-blue-500",
-                    "from-slate-400 to-slate-600",
-                    "from-blue-400 to-indigo-500",
-                  ].map((grad, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`h-24 overflow-hidden rounded-xl bg-gradient-to-br ${grad} ring-2 transition-all ${
-                        i === 0 ? "ring-brand-500" : "ring-transparent hover:ring-brand-300"
-                      }`}
-                      aria-label={`View photo ${i + 1}`}
-                    >
-                      <div className="flex h-full items-center justify-center">
-                        <svg width="24" height="24" className="h-6 w-6 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                        </svg>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </section>
+                </div>
+              </section>
+            )}
 
             {/* Specifications */}
             <section aria-labelledby="specs-heading" className="rounded-2xl border border-surface-border bg-white p-8 shadow-card">
@@ -184,6 +134,17 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
                 ))}
               </ul>
             </section>
+
+            {/* FTC Vehicle Disclosures */}
+            <VehicleDisclosures vehicle={v} showFull />
+
+            {/* FTC CARS Rule Pricing Disclosure */}
+            <CARSRuleDisclosures />
+
+            {/* AI Content Disclosure */}
+            <p className="mt-4 text-xs text-gray-400">
+              Some content on this page may be generated with AI assistance.
+            </p>
           </div>
 
           {/* Right Column: Price + CTAs */}
@@ -210,72 +171,36 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
               </div>
 
               <div className="mt-6 space-y-3">
-                <button
-                  type="button"
+                <a
+                  href={`/contact?subject=price_request&vehicle=${encodeURIComponent(`${v.year} ${v.make} ${v.model} ${v.trim}`)}&vin=${v.vin}`}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-brand-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                  data-track="cta-request-price"
+                  data-track-vehicle={v.vin}
                 >
                   <svg width="20" height="20" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                   </svg>
                   Request Price
-                </button>
-                <button
-                  type="button"
+                </a>
+                <a
+                  href={`/contact?subject=test_drive&vehicle=${encodeURIComponent(`${v.year} ${v.make} ${v.model} ${v.trim}`)}&vin=${v.vin}`}
                   className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-brand-600 px-6 py-3.5 text-base font-bold text-brand-600 transition-all hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+                  data-track="cta-schedule-test-drive"
+                  data-track-vehicle={v.vin}
                 >
                   <svg width="20" height="20" className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                   </svg>
                   Schedule Test Drive
-                </button>
+                </a>
               </div>
             </div>
 
-            {/* Payment Calculator Card */}
-            <div className="rounded-2xl border border-surface-border bg-white p-6 shadow-card">
-              <h3 className="text-lg font-bold text-gray-900">Payment Calculator</h3>
-              <div className="mt-4 rounded-xl bg-brand-50 p-5 text-center">
-                <p className="text-sm text-brand-600">Estimated Monthly Payment</p>
-                <p className="mt-1 text-3xl font-bold text-brand-700">$389<span className="text-lg font-normal text-brand-500">/mo</span></p>
-                <p className="mt-1 text-xs text-brand-500">72 months at 4.9% APR with $3,000 down</p>
-              </div>
-              <div className="mt-4 space-y-3">
-                <div>
-                  <label htmlFor="calc-down" className="text-xs font-medium text-gray-600">Down Payment</label>
-                  <input
-                    id="calc-down"
-                    type="text"
-                    defaultValue="$3,000"
-                    className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="calc-term" className="text-xs font-medium text-gray-600">Loan Term</label>
-                  <select
-                    id="calc-term"
-                    className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                  >
-                    <option>36 months</option>
-                    <option>48 months</option>
-                    <option>60 months</option>
-                    <option selected>72 months</option>
-                    <option>84 months</option>
-                  </select>
-                </div>
-                <button
-                  type="button"
-                  className="w-full rounded-lg bg-surface-subtle px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-surface-border"
-                >
-                  Calculate Payment
-                </button>
-              </div>
-              <a
-                href="/financing"
-                className="mt-4 block text-center text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
-              >
-                Get Pre-Approved &rarr;
-              </a>
-            </div>
+            {/* Payment Calculator */}
+            <PaymentCalculator vehiclePrice={v.price} msrp={v.msrp} />
+
+            {/* Financing Disclosure */}
+            <FinancingDisclaimer showAPRDefinition />
 
             {/* Dealer Card */}
             <div className="rounded-2xl border border-surface-border bg-white p-6 shadow-card">

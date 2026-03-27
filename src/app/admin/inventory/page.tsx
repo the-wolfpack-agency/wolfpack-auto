@@ -138,7 +138,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
           </p>
         </div>
         <a
-          href="/admin/inventory/new"
+          href="/admin/vehicles/new"
           className="inline-flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
         >
           + Add Vehicle

@@ -1,12 +1,46 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+import { getDealerConfig } from "@/lib/dealer-config";
 
-export const metadata: Metadata = {
-  title: "Contact Us",
-  description: "Get in touch with Wolfpack Motors. Visit our Denver showroom, call us, or send a message. We respond within 1 business hour.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dealer = await getDealerConfig();
+  return {
+    title: "Contact Us",
+    description: `Get in touch with ${dealer.name}. Visit our ${dealer.city} showroom, call us, or send a message. We respond within 1 business hour.`,
+    openGraph: {
+      title: `Contact Us | ${dealer.name}`,
+      description: `Get in touch with ${dealer.name}. Visit our ${dealer.city} showroom, call us, or send a message. We respond within 1 business hour.`,
+      type: "website",
+    },
+  };
+}
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const sp = await searchParams;
+  const dealer = await getDealerConfig();
+  const phoneHref = `tel:+1${dealer.phone.replace(/\D/g, "")}`;
+  const subjectParam = typeof sp.subject === "string" ? sp.subject : undefined;
+  const vehicleParam = typeof sp.vehicle === "string" ? sp.vehicle : undefined;
+  const vinParam = typeof sp.vin === "string" ? sp.vin : undefined;
+
+  // Map URL subject to form subject
+  const subjectMap: Record<string, string> = {
+    price_request: "Vehicle Question",
+    test_drive: "Schedule Test Drive",
+  };
+  const initialSubject = subjectParam ? subjectMap[subjectParam] ?? "General Inquiry" : undefined;
+
+  // Build pre-filled message from vehicle context
+  let initialMessage = "";
+  if (vehicleParam && subjectParam === "price_request") {
+    initialMessage = `I'm interested in the ${vehicleParam}${vinParam ? ` (VIN: ${vinParam})` : ""}. Could you please send me the best price?`;
+  } else if (vehicleParam && subjectParam === "test_drive") {
+    initialMessage = `I'd like to schedule a test drive for the ${vehicleParam}${vinParam ? ` (VIN: ${vinParam})` : ""}. What times are available?`;
+  }
   return (
     <div>
       {/* Hero */}
@@ -32,7 +66,11 @@ export default function ContactPage() {
                 Fill out the form below and a team member will be in touch shortly.
               </p>
 
-              <ContactForm />
+              <ContactForm
+                initialSubject={initialSubject}
+                initialMessage={initialMessage}
+                vehicleInfo={vehicleParam}
+              />
             </div>
           </div>
 
@@ -65,8 +103,8 @@ export default function ContactPage() {
                   <div>
                     <p className="text-sm font-semibold text-gray-900">Address</p>
                     <p className="mt-0.5 text-sm text-gray-600">
-                      1234 Auto Drive<br />
-                      Denver, CO 80202
+                      {dealer.address}<br />
+                      {dealer.city}, {dealer.state} {dealer.zip}
                     </p>
                   </div>
                 </div>
@@ -79,8 +117,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900">Phone</p>
-                    <a href="tel:+13035551234" className="mt-0.5 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700">
-                      (303) 555-1234
+                    <a href={phoneHref} className="mt-0.5 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700">
+                      {dealer.phone}
                     </a>
                   </div>
                 </div>
@@ -93,8 +131,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900">Email</p>
-                    <a href="mailto:hello@wolfpackmotors.com" className="mt-0.5 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700">
-                      hello@wolfpackmotors.com
+                    <a href={`mailto:${dealer.email}`} className="mt-0.5 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700">
+                      {dealer.email}
                     </a>
                   </div>
                 </div>
@@ -105,14 +143,10 @@ export default function ContactPage() {
             <div className="rounded-2xl border border-surface-border bg-white p-8 shadow-card">
               <h3 className="text-lg font-bold text-gray-900">Business Hours</h3>
               <div className="mt-4 space-y-3">
-                {[
-                  { day: "Monday - Friday", hours: "9:00 AM - 8:00 PM" },
-                  { day: "Saturday", hours: "9:00 AM - 6:00 PM" },
-                  { day: "Sunday", hours: "10:00 AM - 5:00 PM" },
-                ].map((item) => (
-                  <div key={item.day} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{item.day}</span>
-                    <span className="font-medium text-gray-900">{item.hours}</span>
+                {Object.entries(dealer.business_hours).map(([day, hours]) => (
+                  <div key={day} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">{day}</span>
+                    <span className="font-medium text-gray-900">{hours}</span>
                   </div>
                 ))}
               </div>
@@ -131,7 +165,7 @@ export default function ContactPage() {
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Wolfpack Motors location - Denver, CO"
+                  title={`${dealer.name} location - ${dealer.city}, ${dealer.state}`}
                 />
               </div>
               <div className="bg-white p-4 text-center">

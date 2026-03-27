@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
+import { getDealerConfig } from "@/lib/dealer-config";
 
-export const metadata: Metadata = {
-  title: "About Us",
-  description: "Learn about Wolfpack Motors — trusted automotive sales since 2021, 500+ vehicles sold, and a 4.8-star rating.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dealer = await getDealerConfig();
+  return {
+    title: "About Us",
+    description: `Learn about ${dealer.name} — trusted automotive sales since 2021, 500+ vehicles sold, and a 4.8-star rating.`,
+    openGraph: {
+      title: `About Us | ${dealer.name}`,
+      description: `Learn about ${dealer.name} — trusted automotive sales since 2021, 500+ vehicles sold, and a 4.8-star rating.`,
+      type: "website",
+    },
+  };
+}
 
 const stats = [
   { value: "500+", label: "Vehicles Sold" },
@@ -12,7 +21,8 @@ const stats = [
   { value: "98%", label: "Customer Satisfaction" },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const dealer = await getDealerConfig();
   return (
     <div>
       {/* Hero */}
@@ -28,7 +38,7 @@ export default function AboutPage() {
               Built on Trust, Driven by Excellence
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-brand-200">
-              Since 2021, Wolfpack Motors has been redefining the car-buying experience in the Denver metro area. What started as a bold vision from a team of automotive and marketing veterans has grown into one of Colorado&apos;s most trusted dealerships, all because we believe in one simple idea: you deserve honesty, transparency, and a car you can count on.
+              Since 2021, {dealer.name} has been redefining the car-buying experience in the {dealer.city} metro area. What started as a bold vision from a team of automotive and marketing veterans has grown into one of {dealer.state}&apos;s most trusted dealerships, all because we believe in one simple idea: you deserve honesty, transparency, and a car you can count on.
             </p>
           </div>
         </div>
@@ -107,12 +117,12 @@ export default function AboutPage() {
           </h2>
           <div className="mt-12 space-y-8">
             {[
-              { year: "2021", event: "Wolfpack Motors opens in Denver, CO — built from the ground up with a customer-first philosophy." },
-              { year: "2022", event: "Expanded inventory and launched our online buying platform, serving customers across Colorado." },
+              { year: "2021", event: `${dealer.name} opens in ${dealer.city}, ${dealer.state} — built from the ground up with a customer-first philosophy.` },
+              { year: "2022", event: `Expanded inventory and launched our online buying platform, serving customers across ${dealer.state}.` },
               { year: "2023", event: "Grew the team and introduced our 150-point inspection guarantee." },
               { year: "2024", event: "Launched contactless delivery, virtual test drives, and our AI-powered vehicle search." },
               { year: "2025", event: "Surpassed 500 vehicles sold with a 4.8-star customer satisfaction rating." },
-              { year: "2026", event: "Celebrating 5 years of redefining the Colorado car-buying experience." },
+              { year: "2026", event: `Celebrating 5 years of redefining the ${dealer.state} car-buying experience.` },
             ].map((milestone, i) => (
               <div key={milestone.year} className="flex gap-6">
                 <div className="flex flex-col items-center">
@@ -136,7 +146,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-white">Come See Us</h2>
           <p className="mt-4 text-lg text-brand-200">
-            Visit our showroom and experience the Wolfpack difference in person.
+            Visit our showroom and experience the {dealer.name} difference in person.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a

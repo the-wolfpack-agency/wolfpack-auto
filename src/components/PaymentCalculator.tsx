@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useAnalytics } from "@/components/EventCollector";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -100,13 +101,39 @@ export default function PaymentCalculator({
   vehiclePrice,
   msrp,
 }: PaymentCalculatorProps) {
+  const { track } = useAnalytics();
   const [mode, setMode] = useState<CalcMode>("loan");
   const [downPayment, setDownPayment] = useState(DEFAULT_DOWN);
   const [tradeIn, setTradeIn] = useState(DEFAULT_TRADE);
   const [apr, setApr] = useState(DEFAULT_APR);
   const [term, setTerm] = useState(DEFAULT_TERM);
+  const interactionCount = useRef(0);
+  const lastEmit = useRef(0);
 
   const maxDown = vehiclePrice;
+
+  // Track calculator interactions (debounced — emit after user settles)
+  useEffect(() => {
+    interactionCount.current++;
+    const now = Date.now();
+    // Only emit every 3 seconds to avoid flooding
+    if (now - lastEmit.current < 3000) return;
+    lastEmit.current = now;
+
+    const principal = Math.max(vehiclePrice - downPayment - tradeIn, 0);
+    const monthly = loanPayment(principal, apr, term);
+
+    track("calculator_input", "calc_interaction", {
+      mode,
+      vehicle_price: vehiclePrice,
+      // Privacy-safe ranges, not exact values
+      down_payment_range: downPayment < 1000 ? "under_1K" : downPayment < 5000 ? "1K_5K" : downPayment < 10000 ? "5K_10K" : downPayment < 20000 ? "10K_20K" : "20K_plus",
+      trade_in_range: tradeIn < 1000 ? "under_1K" : tradeIn < 5000 ? "1K_5K" : tradeIn < 10000 ? "5K_10K" : "10K_plus",
+      term_months: term,
+      target_monthly_range: monthly < 300 ? "under_300" : monthly < 500 ? "300_500" : monthly < 700 ? "500_700" : monthly < 1000 ? "700_1000" : "1000_plus",
+      interaction_count: interactionCount.current,
+    });
+  }, [mode, downPayment, tradeIn, apr, term, vehiclePrice, track]);
 
   // Loan calculation
   const loanResult = useMemo(() => {

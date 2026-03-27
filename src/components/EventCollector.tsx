@@ -150,7 +150,24 @@ function categorizeValue(val: string): string {
 let eventBuffer: AnalyticsEvent[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** Event types that are always tracked regardless of consent level. */
+const ESSENTIAL_EVENT_TYPES = new Set(["page_view"]);
+
 function enqueueEvent(event: AnalyticsEvent): void {
+  // Respect cookie consent: if consent is not "all", only allow essential events.
+  if (!ESSENTIAL_EVENT_TYPES.has(event.event_type)) {
+    try {
+      const consent =
+        typeof localStorage !== "undefined"
+          ? localStorage.getItem("cookie_consent")
+          : null;
+      if (consent !== "all") return;
+    } catch {
+      // localStorage unavailable — skip non-essential events
+      return;
+    }
+  }
+
   eventBuffer.push(event);
 
   if (eventBuffer.length >= FLUSH_THRESHOLD) {
@@ -205,11 +222,36 @@ export default function EventCollector({
   const pageEnteredAt = useRef(Date.now());
   const currentPage = useRef("");
   const scrollDepthReported = useRef(new Set<number>());
+  /** Cookie consent level: "all" = full tracking, "essential" = page views only, "" = not yet set (treat as essential) */
+  const consentLevel = useRef<string>("");
 
-  // Initialize session
+  /** Returns true if the user has consented to full (non-essential) tracking. */
+  function hasFullConsent(): boolean {
+    return consentLevel.current === "all";
+  }
+
+  // Initialize session + read consent
   useEffect(() => {
     sessionId.current = getOrCreateSession();
     fingerprint.current = getOrCreateFingerprint();
+
+    // Read stored consent preference
+    try {
+      consentLevel.current = localStorage.getItem("cookie_consent") ?? "";
+    } catch {
+      consentLevel.current = "";
+    }
+
+    // Listen for consent changes from CookieConsent banner
+    function handleConsentChange(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.level) {
+        consentLevel.current = detail.level;
+      }
+    }
+    window.addEventListener("cookie_consent_change", handleConsentChange);
+    return () =>
+      window.removeEventListener("cookie_consent_change", handleConsentChange);
   }, []);
 
   // --- Core event builder ---
@@ -314,9 +356,11 @@ export default function EventCollector({
     }
   }, [buildEvent]);
 
-  // --- Auto-tracking: clicks ---
+  // --- Auto-tracking: clicks (non-essential — requires full consent) ---
   useEffect(() => {
     function handleClick(e: MouseEvent) {
+      if (!hasFullConsent()) return;
+
       const target = e.target as HTMLElement;
       if (!target) return;
 
@@ -357,9 +401,10 @@ export default function EventCollector({
     return () => document.removeEventListener("click", handleClick);
   }, [buildEvent]);
 
-  // --- Auto-tracking: scroll depth ---
+  // --- Auto-tracking: scroll depth (non-essential — requires full consent) ---
   useEffect(() => {
     function handleScroll() {
+      if (!hasFullConsent()) return;
       const scrollTop = window.scrollY;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (docHeight <= 0) return;
@@ -384,9 +429,10 @@ export default function EventCollector({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [buildEvent]);
 
-  // --- Auto-tracking: visibility change (time on page) ---
+  // --- Auto-tracking: visibility change (non-essential — requires full consent) ---
   useEffect(() => {
     function handleVisibilityChange() {
+      if (!hasFullConsent()) return;
       if (document.hidden) {
         const duration = Date.now() - pageEnteredAt.current;
         enqueueEvent(
@@ -405,9 +451,10 @@ export default function EventCollector({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [buildEvent]);
 
-  // --- Auto-tracking: form interactions ---
+  // --- Auto-tracking: form interactions (non-essential — requires full consent) ---
   useEffect(() => {
     function handleFocusIn(e: FocusEvent) {
+      if (!hasFullConsent()) return;
       const target = e.target as HTMLElement;
       if (
         target instanceof HTMLInputElement ||
@@ -425,6 +472,7 @@ export default function EventCollector({
     }
 
     function handleSubmit(e: Event) {
+      if (!hasFullConsent()) return;
       const form = e.target as HTMLFormElement;
       enqueueEvent(
         buildEvent("form_interaction", "form_submit", {
@@ -446,7 +494,7 @@ export default function EventCollector({
   // ADVANCED BEHAVIORAL SIGNALS — industry-differentiating captures
   // ================================================================
 
-  // --- 1. Micro-hesitation tracking (abandoned keystrokes) ---
+  // --- 1. Micro-hesitation tracking (non-essential — requires full consent) ---
   useEffect(() => {
     const fieldState = new Map<
       string,
@@ -454,6 +502,7 @@ export default function EventCollector({
     >();
 
     function handleInput(e: Event) {
+      if (!hasFullConsent()) return;
       const target = e.target as HTMLInputElement | HTMLTextAreaElement;
       if (
         !(target instanceof HTMLInputElement) &&
@@ -505,6 +554,7 @@ export default function EventCollector({
     const MOVE_TOLERANCE = 20; // px — movement within this = still lingering
 
     function handleMouseMove(e: MouseEvent) {
+      if (!hasFullConsent()) return;
       const now = Date.now();
 
       // Check for linger: cursor stayed near same spot
@@ -1430,6 +1480,226 @@ export default function EventCollector({
     });
 
     return () => observer.disconnect();
+  }, [buildEvent]);
+
+  // ================================================================
+  // TIER 3 — DATA MOAT SIGNALS (compositions that require full-stack)
+  // ================================================================
+
+  // --- 24. Page performance (Navigation Timing API) ---
+  useEffect(() => {
+    // Wait for page to fully load before measuring
+    function measurePerformance() {
+      const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+      if (!nav) return;
+
+      const loadTime = nav.loadEventEnd - nav.startTime;
+      const ttfb = nav.responseStart - nav.requestStart;
+      const domInteractive = nav.domInteractive - nav.startTime;
+      const domContentLoaded = nav.domContentLoadedEventEnd - nav.startTime;
+
+      // Only emit if we have valid timing (loadEventEnd > 0 means page finished loading)
+      if (nav.loadEventEnd <= 0) return;
+
+      enqueueEvent(buildEvent("page_performance", "timing_measured", {
+        load_time_ms: Math.round(loadTime),
+        ttfb_ms: Math.round(ttfb),
+        dom_interactive_ms: Math.round(domInteractive),
+        dom_content_loaded_ms: Math.round(domContentLoaded),
+        transfer_size_kb: Math.round((nav.transferSize ?? 0) / 1024),
+        page: window.location.pathname,
+        connection_type: (navigator as unknown as { connection?: { effectiveType?: string } }).connection?.effectiveType ?? "unknown",
+      }));
+
+      // Also track Largest Contentful Paint if available
+      try {
+        const lcpObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries();
+          const lastEntry = entries[entries.length - 1];
+          if (lastEntry) {
+            enqueueEvent(buildEvent("page_performance", "lcp_measured", {
+              lcp_ms: Math.round(lastEntry.startTime),
+              element: (lastEntry as unknown as { element?: Element }).element?.tagName.toLowerCase() ?? "unknown",
+              page: window.location.pathname,
+            }));
+          }
+          lcpObserver.disconnect();
+        });
+        lcpObserver.observe({ type: "largest-contentful-paint", buffered: true });
+      } catch { /* PerformanceObserver not available */ }
+
+      // Track First Input Delay
+      try {
+        const fidObserver = new PerformanceObserver((list) => {
+          const entry = list.getEntries()[0] as PerformanceEventTiming | undefined;
+          if (entry) {
+            enqueueEvent(buildEvent("page_performance", "fid_measured", {
+              fid_ms: Math.round(entry.processingStart - entry.startTime),
+              event_type: entry.name,
+              page: window.location.pathname,
+            }));
+          }
+          fidObserver.disconnect();
+        });
+        fidObserver.observe({ type: "first-input", buffered: true });
+      } catch { /* PerformanceObserver not available */ }
+    }
+
+    // Measure after load completes
+    if (document.readyState === "complete") {
+      setTimeout(measurePerformance, 100);
+    } else {
+      window.addEventListener("load", () => setTimeout(measurePerformance, 100), { once: true });
+    }
+  }, [buildEvent]);
+
+  // --- 25. CTA visibility tracking (which CTAs are actually seen) ---
+  useEffect(() => {
+    const ctaTimers = new Map<Element, number>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const now = Date.now();
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            ctaTimers.set(entry.target, now);
+          } else {
+            const startTime = ctaTimers.get(entry.target);
+            if (startTime) {
+              const visibleDuration = now - startTime;
+              const el = entry.target as HTMLElement;
+              const rect = el.getBoundingClientRect();
+              const docHeight = document.documentElement.scrollHeight;
+              const ctaPositionPct = Math.round(((rect.top + window.scrollY) / docHeight) * 100);
+
+              enqueueEvent(buildEvent("cta_visibility", "cta_seen", {
+                cta_text: (el.textContent ?? "").trim().slice(0, 80),
+                cta_tag: el.tagName.toLowerCase(),
+                cta_href: (el as HTMLAnchorElement).href || el.getAttribute("data-track") || "none",
+                visible_duration_ms: visibleDuration,
+                position_pct: ctaPositionPct,
+                page: window.location.pathname,
+                was_clicked: false, // updated by click handler
+              }));
+              ctaTimers.delete(entry.target);
+            }
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+
+    // Observe all CTA elements
+    const ctas = document.querySelectorAll(
+      'a[href*="contact"], a[href*="schedule"], a[href*="financing"], ' +
+      'button[type="submit"], [data-track*="cta"], [data-track*="convert"], ' +
+      '[class*="cta"], a[href^="tel:"], a[href^="mailto:"]',
+    );
+    ctas.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [buildEvent]);
+
+  // --- 26. Cross-session buyer lifecycle data collection ---
+  useEffect(() => {
+    const LIFECYCLE_KEY = "wolfpack_buyer_lifecycle";
+    try {
+      const now = Date.now();
+      const page = window.location.pathname;
+      const raw = localStorage.getItem(LIFECYCLE_KEY);
+      const lifecycle: {
+        visits: { ts: number; pages: string[]; vehicles: string[]; searched: string[]; converted: boolean; duration_ms: number }[];
+        first_seen: number;
+      } = raw ? JSON.parse(raw) : { visits: [], first_seen: now };
+
+      // Record current visit start — we'll update on unload
+      const currentVisit = {
+        ts: now,
+        pages: [page],
+        vehicles: [] as string[],
+        searched: [] as string[],
+        converted: false,
+        duration_ms: 0,
+      };
+
+      // Push this visit
+      lifecycle.visits.push(currentVisit);
+
+      // Emit lifecycle event for the brain
+      const visitCount = lifecycle.visits.length;
+      const daysSinceFirst = Math.round((now - lifecycle.first_seen) / (1000 * 60 * 60 * 24));
+
+      // Analyze vehicle narrowing across visits
+      const allVehicles = lifecycle.visits.flatMap((v) => v.vehicles);
+      const vehicleMakes = allVehicles.map((v) => v.split("|")[0]).filter(Boolean);
+      const uniqueMakes = new Set(vehicleMakes);
+      const recentMakes = new Set(vehicleMakes.slice(-5));
+
+      // Analyze price trajectory across visits
+      const allSearches = lifecycle.visits.flatMap((v) => v.searched);
+
+      enqueueEvent(buildEvent("buyer_lifecycle", "lifecycle_snapshot", {
+        visit_count: visitCount,
+        days_since_first_visit: daysSinceFirst,
+        total_vehicles_viewed: allVehicles.length,
+        unique_makes_explored: uniqueMakes.size,
+        recent_makes: [...recentMakes],
+        is_narrowing: uniqueMakes.size > recentMakes.size && visitCount > 2,
+        total_searches: allSearches.length,
+        visit_frequency_days: visitCount > 1
+          ? Math.round(daysSinceFirst / (visitCount - 1))
+          : 0,
+        lifecycle_stage: visitCount === 1 ? "awareness" :
+          visitCount <= 3 ? "consideration" :
+          visitCount <= 6 ? "evaluation" : "decision",
+      }));
+
+      // Save — keep last 30 visits
+      lifecycle.visits = lifecycle.visits.slice(-30);
+      localStorage.setItem(LIFECYCLE_KEY, JSON.stringify(lifecycle));
+
+      // Update current visit on unload
+      function updateOnUnload() {
+        const current = lifecycle.visits[lifecycle.visits.length - 1];
+        if (current) {
+          current.duration_ms = Date.now() - now;
+          localStorage.setItem(LIFECYCLE_KEY, JSON.stringify(lifecycle));
+        }
+      }
+      window.addEventListener("beforeunload", updateOnUnload);
+      return () => window.removeEventListener("beforeunload", updateOnUnload);
+    } catch { /* localStorage unavailable */ }
+  }, [buildEvent]);
+
+  // --- 27. Network quality detection ---
+  useEffect(() => {
+    const conn = (navigator as unknown as { connection?: {
+      effectiveType?: string;
+      downlink?: number;
+      rtt?: number;
+      saveData?: boolean;
+    } }).connection;
+    if (!conn) return;
+
+    enqueueEvent(buildEvent("network_quality", "connection_detected", {
+      effective_type: conn.effectiveType ?? "unknown",
+      downlink_mbps: conn.downlink ?? 0,
+      rtt_ms: conn.rtt ?? 0,
+      save_data: conn.saveData ?? false,
+      page: window.location.pathname,
+    }));
+
+    function handleChange() {
+      enqueueEvent(buildEvent("network_quality", "connection_changed", {
+        effective_type: conn!.effectiveType ?? "unknown",
+        downlink_mbps: conn!.downlink ?? 0,
+        rtt_ms: conn!.rtt ?? 0,
+        save_data: conn!.saveData ?? false,
+      }));
+    }
+
+    (conn as unknown as EventTarget).addEventListener?.("change", handleChange);
+    return () => (conn as unknown as EventTarget).removeEventListener?.("change", handleChange);
   }, [buildEvent]);
 
   // --- Flush on page unload ---

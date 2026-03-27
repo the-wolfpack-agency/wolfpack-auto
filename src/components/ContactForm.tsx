@@ -79,8 +79,18 @@ const INITIAL: FormData = {
   message: "",
 };
 
-export default function ContactForm() {
-  const [form, setForm] = useState<FormData>(INITIAL);
+interface ContactFormProps {
+  initialSubject?: string;
+  initialMessage?: string;
+  vehicleInfo?: string;
+}
+
+export default function ContactForm({ initialSubject, initialMessage, vehicleInfo }: ContactFormProps = {}) {
+  const [form, setForm] = useState<FormData>({
+    ...INITIAL,
+    subject: initialSubject ?? INITIAL.subject,
+    message: initialMessage ?? INITIAL.message,
+  });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [state, setState] = useState<FormState>("idle");
   const [serverError, setServerError] = useState("");

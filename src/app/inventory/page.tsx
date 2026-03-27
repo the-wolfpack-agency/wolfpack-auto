@@ -1,32 +1,98 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getInventoryVehicles, getVehicleFacets } from "@/lib/data";
+import { getDealerConfig } from "@/lib/dealer-config";
 import InventoryFilters, { InventorySortDropdown } from "@/components/InventoryFilters";
+import CompareBar, { CompareButton } from "@/components/CompareBar";
+import VehicleDisclosures from "@/components/VehicleDisclosures";
+
+/** Escape HTML-special characters to prevent XSS when rendering user input. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Inventory",
-  description: "Browse our full vehicle inventory with advanced filters.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const dealer = await getDealerConfig();
+  return {
+    title: "Inventory",
+    description: "Browse our full vehicle inventory with advanced filters.",
+    openGraph: {
+      title: `Vehicle Inventory | ${dealer.name}`,
+      description: "Browse our full vehicle inventory with advanced filters.",
+      type: "website",
+    },
+  };
+}
 
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const queryStr = typeof searchParams.q === "string" ? searchParams.q : "";
-  const makeFilter = typeof searchParams.make === "string" ? searchParams.make : undefined;
-  const conditionFilter = typeof searchParams.condition === "string" ? searchParams.condition : undefined;
-  const sortFilter = typeof searchParams.sort === "string" ? searchParams.sort : undefined;
+  const sp = await searchParams;
+  const rawQuery = typeof sp.q === "string" ? sp.q : "";
+  const queryStr = escapeHtml(rawQuery);
+  const makeFilter = typeof sp.make === "string" ? sp.make : undefined;
+  const conditionFilter = typeof sp.condition === "string" ? sp.condition : undefined;
+  const sortFilter = typeof sp.sort === "string" ? sp.sort : undefined;
 
-  const [{ data: vehicles }, { data: facets }] = await Promise.all([
-    getInventoryVehicles({ make: makeFilter, condition: conditionFilter, sort: sortFilter }),
+  const [{ data: vehicles }, { data: facets }, dealer] = await Promise.all([
+    getInventoryVehicles({ make: makeFilter, condition: conditionFilter, sort: sortFilter, q: queryStr || undefined }),
     getVehicleFacets(),
+    getDealerConfig(),
   ]);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AutoDealer",
+    name: dealer.name,
+    telephone: `+1${dealer.phone.replace(/\D/g, "")}`,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: dealer.address,
+      addressLocality: dealer.city,
+      addressRegion: dealer.state,
+      postalCode: dealer.zip,
+      addressCountry: "US",
+    },
+    makesOffer: vehicles.slice(0, 20).map((v) => ({
+      "@type": "Offer",
+      itemOffered: {
+        "@type": "Car",
+        name: `${v.year} ${v.make} ${v.model}`,
+        brand: { "@type": "Brand", name: v.make },
+        model: v.model,
+        vehicleIdentificationNumber: v.vin,
+        mileageFromOdometer: {
+          "@type": "QuantitativeValue",
+          value: v.mileage,
+          unitCode: "SMI",
+        },
+        fuelType: v.fuel,
+        vehicleTransmission: v.transmission,
+        itemCondition:
+          v.condition === "New"
+            ? "https://schema.org/NewCondition"
+            : "https://schema.org/UsedCondition",
+      },
+      price: v.price,
+      priceCurrency: "USD",
+    })),
+  };
 
   return (
     <div className="bg-surface-muted min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Page Header */}
       <div className="bg-gradient-to-r from-brand-800 to-brand-950 py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -101,15 +167,7 @@ export default async function InventoryPage({
                         {v.condition}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-gray-600 backdrop-blur-sm transition-colors hover:bg-white hover:text-red-500"
-                      aria-label={`Save ${v.year} ${v.make} ${v.model}`}
-                    >
-                      <svg width="16" height="16" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                      </svg>
-                    </button>
+                    <CompareButton vin={v.vin} />
                   </div>
                   <div className="p-5">
                     <div className="flex items-start justify-between">
@@ -143,7 +201,8 @@ export default async function InventoryPage({
                         {v.transmission}
                       </span>
                     </div>
-                    <div className="mt-4 flex items-center text-sm font-semibold text-brand-600 transition-colors group-hover:text-brand-700">
+                    <VehicleDisclosures vehicle={v} />
+                    <div className="mt-3 flex items-center text-sm font-semibold text-brand-600 transition-colors group-hover:text-brand-700">
                       View Details
                       <svg className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -153,6 +212,13 @@ export default async function InventoryPage({
                 </a>
               ))}
             </div>
+
+            {/* Inventory disclaimer footer */}
+            <p className="mt-6 text-center text-[11px] leading-relaxed text-gray-400">
+              Prices do not include tax, title, registration, or dealer fees.
+              Availability and pricing are subject to change without notice.
+              Please verify all information with the dealership before purchase.
+            </p>
 
             {/* Pagination */}
             <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-2">
@@ -193,6 +259,7 @@ export default async function InventoryPage({
           </section>
         </div>
       </div>
+      <CompareBar />
     </div>
   );
 }

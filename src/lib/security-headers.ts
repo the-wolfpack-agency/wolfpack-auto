@@ -16,9 +16,26 @@ export interface SecurityHeader {
   value: string;
 }
 
+/**
+ * CSP directives.
+ *
+ * NOTE on 'unsafe-inline' in script-src:
+ *   Next.js 14 injects inline scripts for its runtime hydration and
+ *   error overlay in both dev and production builds. There is no
+ *   first-party nonce support yet (experimentalCacheHandlers in
+ *   Next.js 15 is in progress). Once Next.js ships stable nonce
+ *   support, replace 'unsafe-inline' with 'nonce-${nonce}' here
+ *   and in middleware.
+ *
+ *   'unsafe-eval' has been removed — it was never required by
+ *   Next.js and posed a significant XSS escalation risk.
+ *
+ *   'unsafe-inline' remains in style-src because Tailwind CSS
+ *   and Next.js both inject inline styles at runtime.
+ */
 const CSP_DIRECTIVES = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://images.unsplash.com",
   "font-src 'self'",

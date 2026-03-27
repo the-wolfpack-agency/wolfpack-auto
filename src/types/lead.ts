@@ -18,6 +18,24 @@ export type LeadStatus =
   | "sold"
   | "lost";
 
+export type LeadTemperature = "hot" | "warm" | "cool" | "cold";
+
+export interface LeadNote {
+  id: string;
+  text: string;
+  author: string;
+  created_at: string;
+}
+
+export interface LeadActivity {
+  id: string;
+  type: "status_change" | "assignment" | "note" | "follow_up";
+  description: string;
+  author: string;
+  created_at: string;
+  meta?: Record<string, string>;
+}
+
 export interface Lead {
   id: string;
   dealer_id: string;
@@ -35,7 +53,13 @@ export interface Lead {
   // Tracking
   source: LeadSource;
   status: LeadStatus;
+  temperature: LeadTemperature;
   notes: string;
+  structured_notes: LeadNote[];
+  assigned_to: string | null;
+  message: string;
+  follow_up_date: string | null;
+  activity: LeadActivity[];
 
   // Attribution
   utm_source: string | null;

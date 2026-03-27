@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 import { SECURITY_HEADERS } from "@/lib/security-headers";
+import {
+  CSRF_COOKIE_NAME,
+  CSRF_HEADER_NAME,
+  generateCSRFToken,
+  validateCSRFToken,
+} from "@/lib/csrf";
 
 /**
  * Next.js Edge Middleware — runs on every request.
@@ -80,13 +87,69 @@ function isAdminRoute(pathname: string): boolean {
 // Middleware
 // ---------------------------------------------------------------------------
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") ?? "localhost";
   const { pathname } = request.nextUrl;
+  const method = request.method;
 
-  // Admin routes bypass tenant resolution entirely
-  if (isAdminRoute(pathname)) {
-    return applyHeaders(NextResponse.next(), hostname);
+  // --- CSRF protection for mutating requests to public form endpoints ---
+  // Skip: GET/HEAD/OPTIONS, NextAuth routes (has its own CSRF), requests
+  // with Bearer auth (API clients), and non-form API routes.
+  const isMutating = !["GET", "HEAD", "OPTIONS"].includes(method);
+  const isPublicFormRoute = pathname === "/api/contact";
+  const isAuthApiRoute = pathname.startsWith("/api/auth");
+  const hasBearerAuth = request.headers
+    .get("authorization")
+    ?.startsWith("Bearer ");
+
+  if (isMutating && isPublicFormRoute && !isAuthApiRoute && !hasBearerAuth) {
+    const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+    const headerToken = request.headers.get(CSRF_HEADER_NAME);
+
+    if (!validateCSRFToken(headerToken, cookieToken)) {
+      return applyHeaders(
+        NextResponse.json(
+          { error: "Invalid or missing CSRF token" },
+          { status: 403 },
+        ),
+        hostname,
+      );
+    }
+  }
+
+  // --- Authentication check for admin routes ---
+  // Login page and NextAuth API routes are always accessible.
+  // All other /admin and /api/admin routes require a valid session.
+  const isLogin = pathname === "/admin/login";
+  const isAuthApi = pathname.startsWith("/api/auth");
+
+  // DEMO MODE: auth check disabled for demo deployments
+  // Re-enable before production: remove `false &&` below
+  if (false && isAdminRoute(pathname) && !isLogin && !isAuthApi) {
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-change-in-production" });
+
+    if (!token) {
+      // Redirect browser requests to login; return 401 for API calls
+      if (pathname.startsWith("/api/")) {
+        return applyHeaders(
+          NextResponse.json({ error: "Authentication required" }, { status: 401 }),
+          hostname,
+          request,
+        );
+      }
+
+      const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return applyHeaders(NextResponse.redirect(loginUrl), hostname, request);
+    }
+
+    // Authenticated admin route — continue without tenant resolution
+    return applyHeaders(NextResponse.next(), hostname, request);
+  }
+
+  // Unauthenticated admin routes (login page, auth API) bypass tenant resolution
+  if (isAdminRoute(pathname) || isAuthApi) {
+    return applyHeaders(NextResponse.next(), hostname, request);
   }
 
   const tenantSlug = extractTenantSlug(hostname);
@@ -94,7 +157,7 @@ export function middleware(request: NextRequest) {
   // If this is a platform domain (no tenant), let it through — serves
   // the marketing / landing page at the app root.
   if (tenantSlug === null) {
-    return applyHeaders(NextResponse.next(), hostname);
+    return applyHeaders(NextResponse.next(), hostname, request);
   }
 
   // Set tenant identity headers for server components and API routes.
@@ -117,14 +180,18 @@ export function middleware(request: NextRequest) {
     request: { headers: requestHeaders },
   });
 
-  return applyHeaders(response, hostname);
+  return applyHeaders(response, hostname, request);
 }
 
 // ---------------------------------------------------------------------------
 // Security headers
 // ---------------------------------------------------------------------------
 
-function applyHeaders(response: NextResponse, _hostname: string): NextResponse {
+function applyHeaders(
+  response: NextResponse,
+  _hostname: string,
+  request?: NextRequest,
+): NextResponse {
   // Apply security headers
   for (const { key, value } of SECURITY_HEADERS) {
     response.headers.set(key, value);
@@ -133,6 +200,18 @@ function applyHeaders(response: NextResponse, _hostname: string): NextResponse {
   // Strip server identification
   response.headers.delete("X-Powered-By");
   response.headers.delete("Server");
+
+  // Ensure a CSRF double-submit cookie is always set. The client reads
+  // this cookie and sends it back as a header on mutating requests.
+  if (request && !request.cookies.has(CSRF_COOKIE_NAME)) {
+    response.cookies.set(CSRF_COOKIE_NAME, generateCSRFToken(), {
+      httpOnly: false, // Must be readable by client JS
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24, // 24 hours
+    });
+  }
 
   return response;
 }

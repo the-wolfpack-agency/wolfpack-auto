@@ -1,334 +1,558 @@
-export const dynamic = "force-dynamic";
-import type { Metadata } from "next";
-import { query } from "@/lib/db";
-import { StatsCard } from "@/components/admin/StatsCard";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Leads",
-  description: "Manage customer leads and inquiries.",
-};
+import { useCallback, useEffect, useMemo, useState } from "react";
+import LeadDetailPanel from "@/components/LeadDetailPanel";
+import type {
+  Lead,
+  LeadStatus,
+  LeadTemperature,
+} from "@/types/lead";
 
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+/* -------------------------------------------------------------------------- */
+/* Constants                                                                  */
+/* -------------------------------------------------------------------------- */
 
-type LeadStatus = "new" | "contacted" | "qualified" | "appointment_set" | "sold" | "lost";
-
-interface LeadRow {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string | null;
-  vehicle_interest: string;
-  source: string;
-  status: string;
-  notes: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface LeadCounts {
-  total: number;
-  new: number;
-  contacted: number;
-  qualified: number;
-  appointment_set: number;
-  sold: number;
-  lost: number;
-}
-
-interface PageProps {
-  searchParams: Promise<{
-    status?: string;
-    search?: string;
-    page?: string;
-  }>;
-}
-
-const PAGE_SIZE = 25;
-
-const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "All" },
+const STATUS_OPTIONS: { value: LeadStatus | ""; label: string }[] = [
+  { value: "", label: "All Statuses" },
   { value: "new", label: "New" },
   { value: "contacted", label: "Contacted" },
   { value: "qualified", label: "Qualified" },
-  { value: "appointment_set", label: "Appointment" },
+  { value: "appointment_set", label: "Appointment Set" },
   { value: "sold", label: "Sold" },
   { value: "lost", label: "Lost" },
 ];
 
-const QUICK_STATUS_TRANSITIONS: Record<string, LeadStatus[]> = {
-  new: ["contacted", "lost"],
-  contacted: ["qualified", "lost"],
-  qualified: ["appointment_set", "lost"],
-  appointment_set: ["sold", "lost"],
-  sold: [],
-  lost: ["new"],
+const TEMP_OPTIONS: { value: LeadTemperature | ""; label: string }[] = [
+  { value: "", label: "All Temps" },
+  { value: "hot", label: "Hot" },
+  { value: "warm", label: "Warm" },
+  { value: "cool", label: "Cool" },
+  { value: "cold", label: "Cold" },
+];
+
+const SORT_OPTIONS = [
+  { value: "date", label: "Date" },
+  { value: "temperature", label: "Temperature" },
+  { value: "status", label: "Status" },
+  { value: "name", label: "Name" },
+];
+
+const STATUS_BADGE: Record<LeadStatus, string> = {
+  new: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  contacted: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
+  qualified: "bg-green-50 text-green-700 ring-green-600/20",
+  appointment_set: "bg-purple-50 text-purple-700 ring-purple-600/20",
+  sold: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+  lost: "bg-gray-100 text-gray-500 ring-gray-400/20",
 };
 
-async function getLeadsData(params: {
-  status?: string;
-  search?: string;
-  page?: string;
-}) {
-  const page = Math.max(1, parseInt(params.page ?? "1", 10));
-  const offset = (page - 1) * PAGE_SIZE;
+const STATUS_LABEL: Record<LeadStatus, string> = {
+  new: "New",
+  contacted: "Contacted",
+  qualified: "Qualified",
+  appointment_set: "Appointment Set",
+  sold: "Sold",
+  lost: "Lost",
+};
 
-  const conditions: string[] = ["dealer_id = $1"];
-  const queryParams: unknown[] = [DEALER_ID];
-  let idx = 2;
+const TEMP_BADGE: Record<LeadTemperature, string> = {
+  hot: "bg-red-50 text-red-700 ring-red-600/20",
+  warm: "bg-orange-50 text-orange-700 ring-orange-600/20",
+  cool: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  cold: "bg-gray-100 text-gray-500 ring-gray-400/20",
+};
 
-  if (params.status && ["new", "contacted", "qualified", "appointment_set", "sold", "lost"].includes(params.status)) {
-    conditions.push(`status = $${idx++}`);
-    queryParams.push(params.status);
-  }
+const TEMP_LABEL: Record<LeadTemperature, string> = {
+  hot: "Hot",
+  warm: "Warm",
+  cool: "Cool",
+  cold: "Cold",
+};
 
-  if (params.search) {
-    conditions.push(
-      `(first_name ILIKE $${idx} OR last_name ILIKE $${idx} OR email ILIKE $${idx} OR phone ILIKE $${idx})`,
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export default function LeadsManagementPage() {
+  // Data state
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [teamMembers, setTeamMembers] = useState<string[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | "">("");
+  const [tempFilter, setTempFilter] = useState<LeadTemperature | "">("");
+  const [assignedFilter, setAssignedFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+
+  // UI state
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<"assign" | "status">("status");
+  const [bulkValue, setBulkValue] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  // Fetch leads
+  const fetchLeads = useCallback(async () => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (statusFilter) params.set("status", statusFilter);
+    if (tempFilter) params.set("temperature", tempFilter);
+    if (assignedFilter) params.set("assigned_to", assignedFilter);
+    if (search) params.set("search", search);
+    params.set("sort", sort);
+    params.set("dir", sortDir);
+    params.set("page", String(page));
+    params.set("page_size", String(pageSize));
+
+    try {
+      const res = await fetch(`/api/admin/leads?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLeads(data.leads ?? []);
+        setTotal(data.total ?? 0);
+        setTeamMembers(data.team_members ?? []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch leads:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter, tempFilter, assignedFilter, search, sort, sortDir, page]);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, tempFilter, assignedFilter, search, sort, sortDir]);
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  // Local lead update
+  function handleLeadUpdate(leadId: string, updates: Partial<Lead>) {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? { ...l, ...updates } : l)),
     );
-    queryParams.push(`%${params.search}%`);
-    idx++;
   }
 
-  const where = conditions.join(" AND ");
-
-  const [dataResult, countResult, statsResult] = await Promise.all([
-    query(
-      `SELECT id, first_name, last_name, email, phone,
-              vehicle_interest, source, status, notes,
-              created_at, updated_at
-       FROM leads
-       WHERE ${where}
-       ORDER BY created_at DESC
-       LIMIT $${idx} OFFSET $${idx + 1}`,
-      [...queryParams, PAGE_SIZE, offset],
-    ),
-    query<{ count: string }>(
-      `SELECT COUNT(*)::text AS count FROM leads WHERE ${where}`,
-      queryParams,
-    ),
-    query<{ status: string; count: string }>(
-      `SELECT status, COUNT(*)::text AS count
-       FROM leads WHERE dealer_id = $1
-       GROUP BY status`,
-      [DEALER_ID],
-    ),
-  ]);
-
-  const counts: LeadCounts = {
-    total: 0, new: 0, contacted: 0, qualified: 0,
-    appointment_set: 0, sold: 0, lost: 0,
-  };
-  for (const row of statsResult.rows as any[]) {
-    const count = parseInt(row.count, 10);
-    counts.total += count;
-    if (row.status in counts) {
-      counts[row.status as keyof LeadCounts] = count;
+  // Toggle sort direction
+  function handleSort(col: string) {
+    if (sort === col) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSort(col);
+      setSortDir("desc");
     }
   }
 
-  return {
-    leads: dataResult.rows as unknown as LeadRow[],
-    total: parseInt((countResult.rows as any[])[0]?.count ?? "0", 10),
-    page,
-    counts,
-  };
-}
-
-export default async function LeadsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const { leads, total, page, counts } = await getLeadsData(params);
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  function buildUrl(overrides: Record<string, string>): string {
-    const sp = new URLSearchParams({
-      ...(params.status ? { status: params.status } : {}),
-      ...(params.search ? { search: params.search } : {}),
-      page: String(page),
-      ...overrides,
-    });
-    return `/admin/leads?${sp.toString()}`;
+  // Select all / none
+  function toggleSelectAll() {
+    if (selectedIds.size === leads.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(leads.map((l) => l.id)));
+    }
   }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // Bulk operations
+  async function handleBulk() {
+    if (selectedIds.size === 0 || !bulkValue) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/admin/leads/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: bulkAction,
+          lead_ids: Array.from(selectedIds),
+          value: bulkValue,
+        }),
+      });
+      if (res.ok) {
+        // Optimistic update
+        setLeads((prev) =>
+          prev.map((l) => {
+            if (!selectedIds.has(l.id)) return l;
+            if (bulkAction === "status") return { ...l, status: bulkValue as LeadStatus };
+            if (bulkAction === "assign") return { ...l, assigned_to: bulkValue };
+            return l;
+          }),
+        );
+        setSelectedIds(new Set());
+        setBulkValue("");
+      }
+    } catch (err) {
+      console.error("Bulk operation failed:", err);
+    } finally {
+      setBulkLoading(false);
+    }
+  }
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  // Unique assigned-to values for filter
+  const assignedOptions = useMemo(() => {
+    const set = new Set<string>();
+    leads.forEach((l) => {
+      if (l.assigned_to) set.add(l.assigned_to);
+    });
+    return Array.from(set).sort();
+  }, [leads]);
 
   return (
     <>
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Manage customer inquiries and track conversions.
+          Track, assign, and convert customer inquiries.
         </p>
       </div>
 
-      {/* Summary cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          label="Total Leads"
-          value={counts.total}
-          icon={<UsersSmallIcon />}
+      {/* Summary stats */}
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <MiniStat label="Total" value={total} />
+        <MiniStat
+          label="Hot Leads"
+          value={leads.filter((l) => l.temperature === "hot").length}
+          color="text-red-600"
         />
-        <StatsCard
-          label="New"
-          value={counts.new}
-          icon={<InboxIcon />}
+        <MiniStat
+          label="Unassigned"
+          value={leads.filter((l) => !l.assigned_to).length}
+          color="text-amber-600"
         />
-        <StatsCard
-          label="Qualified"
-          value={counts.qualified}
-          icon={<CheckSmallIcon />}
-        />
-        <StatsCard
-          label="Converted"
-          value={counts.sold}
-          icon={<TrophyIcon />}
+        <MiniStat
+          label="New Today"
+          value={
+            leads.filter(
+              (l) =>
+                l.status === "new" &&
+                new Date(l.created_at).toDateString() ===
+                  new Date().toDateString(),
+            ).length
+          }
+          color="text-blue-600"
         />
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end">
-        <form
-          action="/admin/leads"
-          method="GET"
-          role="search"
-          aria-label="Search leads"
-          className="flex flex-1 gap-2"
-        >
-          {params.status && (
-            <input type="hidden" name="status" value={params.status} />
-          )}
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end">
+        {/* Search */}
+        <div className="flex-1">
           <label htmlFor="lead-search" className="sr-only">
-            Search by name, email, or phone
+            Search leads
           </label>
           <input
             id="lead-search"
-            name="search"
             type="search"
-            defaultValue={params.search}
-            placeholder="Search name, email, phone..."
-            className="flex-1 rounded-lg border border-surface-border px-4 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name, email, or phone..."
+            className="w-full rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            style={{ fontSize: 16 }}
           />
-          <button
-            type="submit"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-          >
-            Search
-          </button>
-        </form>
+        </div>
 
-        <nav aria-label="Filter by lead status" className="flex flex-wrap gap-2">
-          {STATUS_OPTIONS.map(({ value, label }) => {
-            const isActive =
-              value === "" ? !params.status : params.status === value;
-            return (
-              <a
-                key={value}
-                href={buildUrl({
-                  ...(value ? { status: value } : {}),
-                  page: "1",
-                })}
-                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-brand-600 bg-brand-50 text-brand-700"
-                    : "border-surface-border bg-white text-gray-600 hover:bg-surface-muted"
-                }`}
-                aria-current={isActive ? "true" : undefined}
-              >
-                {label}
-                {value && (
-                  <span className="ml-1 text-xs text-gray-400">
-                    {counts[value as keyof LeadCounts] ?? 0}
-                  </span>
-                )}
-              </a>
-            );
-          })}
-        </nav>
+        {/* Status */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as LeadStatus | "")}
+          className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          style={{ fontSize: 16 }}
+        >
+          {STATUS_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+
+        {/* Temperature */}
+        <select
+          value={tempFilter}
+          onChange={(e) => setTempFilter(e.target.value as LeadTemperature | "")}
+          className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          style={{ fontSize: 16 }}
+        >
+          {TEMP_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+
+        {/* Assigned */}
+        <select
+          value={assignedFilter}
+          onChange={(e) => setAssignedFilter(e.target.value)}
+          className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          style={{ fontSize: 16 }}
+        >
+          <option value="">All Team</option>
+          <option value="__unassigned">Unassigned</option>
+          {(teamMembers.length > 0 ? teamMembers : assignedOptions).map(
+            (m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ),
+          )}
+        </select>
+
+        {/* Sort */}
+        <div className="flex items-center gap-1">
+          <select
+            value={sort}
+            onChange={(e) => handleSort(e.target.value)}
+            className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            style={{ fontSize: 16 }}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+            className="rounded-lg border border-surface-border bg-white p-2.5 text-sm text-gray-600 shadow-sm transition-colors hover:bg-surface-muted"
+            aria-label={`Sort ${sortDir === "desc" ? "ascending" : "descending"}`}
+          >
+            {sortDir === "desc" ? "\u2193" : "\u2191"}
+          </button>
+        </div>
       </div>
+
+      {/* Bulk actions */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3">
+          <span className="text-sm font-medium text-brand-700">
+            {selectedIds.size} selected
+          </span>
+          <select
+            value={bulkAction}
+            onChange={(e) => {
+              setBulkAction(e.target.value as "assign" | "status");
+              setBulkValue("");
+            }}
+            className="rounded-lg border border-surface-border bg-white px-3 py-2 text-sm"
+            style={{ fontSize: 16 }}
+          >
+            <option value="status">Change Status</option>
+            <option value="assign">Assign To</option>
+          </select>
+
+          {bulkAction === "status" ? (
+            <select
+              value={bulkValue}
+              onChange={(e) => setBulkValue(e.target.value)}
+              className="rounded-lg border border-surface-border bg-white px-3 py-2 text-sm"
+              style={{ fontSize: 16 }}
+            >
+              <option value="">Select status...</option>
+              {STATUS_OPTIONS.filter((o) => o.value).map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select
+              value={bulkValue}
+              onChange={(e) => setBulkValue(e.target.value)}
+              className="rounded-lg border border-surface-border bg-white px-3 py-2 text-sm"
+              style={{ fontSize: 16 }}
+            >
+              <option value="">Select person...</option>
+              {(teamMembers.length > 0 ? teamMembers : assignedOptions).map(
+                (m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ),
+              )}
+            </select>
+          )}
+
+          <button
+            type="button"
+            onClick={handleBulk}
+            disabled={bulkLoading || !bulkValue}
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-50"
+          >
+            {bulkLoading ? "Updating..." : "Apply"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-hidden rounded-card border border-surface-border bg-white shadow-card">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-surface-border">
-            <caption className="sr-only">Customer leads</caption>
+            <caption className="sr-only">Lead management table</caption>
             <thead className="bg-surface-muted">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Name</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Contact</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Vehicle Interest</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Source</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
+                <th scope="col" className="w-10 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={
+                      leads.length > 0 && selectedIds.size === leads.length
+                    }
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    aria-label="Select all leads"
+                  />
+                </th>
+                <Th label="Name" sortKey="name" current={sort} dir={sortDir} onSort={handleSort} />
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  <span className="sr-only">Actions</span>
+                  Contact
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Vehicle Interest
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Status
+                </th>
+                <Th label="Temp" sortKey="temperature" current={sort} dir={sortDir} onSort={handleSort} />
+                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Assigned
+                </th>
+                <Th label="Date" sortKey="date" current={sort} dir={sortDir} onSort={handleSort} />
+                <th scope="col" className="px-4 py-3">
+                  <span className="sr-only">Expand</span>
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
-              {leads.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-12 text-center text-sm text-gray-500"
-                  >
+                  <td colSpan={9} className="px-4 py-12 text-center text-sm text-gray-500">
+                    Loading leads...
+                  </td>
+                </tr>
+              ) : leads.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center text-sm text-gray-500">
                     No leads match your filters.
                   </td>
                 </tr>
               ) : (
                 leads.map((lead) => (
-                  <tr
-                    key={lead.id}
-                    className="group transition-colors hover:bg-surface-muted/50"
-                  >
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <p className="text-sm font-medium text-gray-900">
-                        {lead.first_name} {lead.last_name}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-sm text-gray-700">{lead.email}</p>
-                      {lead.phone && (
-                        <p className="text-xs text-gray-500">{lead.phone}</p>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                      {lead.vehicle_interest || "\u2014"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                      {formatSource(lead.source)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <StatusBadge status={lead.status} />
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-                      {formatDate(lead.created_at)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        {(QUICK_STATUS_TRANSITIONS[lead.status] ?? []).map(
-                          (nextStatus) => (
-                            <form
-                              key={nextStatus}
-                              action={`/api/admin/leads/${lead.id}/status`}
-                              method="POST"
-                            >
-                              <input
-                                type="hidden"
-                                name="status"
-                                value={nextStatus}
-                              />
-                              <button
-                                type="submit"
-                                className="rounded border border-surface-border px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-surface-muted hover:text-gray-900"
-                                aria-label={`Update ${lead.first_name} ${lead.last_name} to ${nextStatus}`}
-                              >
-                                {formatStatusLabel(nextStatus)}
-                              </button>
-                            </form>
-                          ),
+                  <>
+                    <tr
+                      key={lead.id}
+                      className={`group cursor-pointer transition-colors hover:bg-surface-muted/50 ${
+                        expandedId === lead.id ? "bg-surface-muted/30" : ""
+                      }`}
+                      onClick={() =>
+                        setExpandedId((prev) =>
+                          prev === lead.id ? null : lead.id,
+                        )
+                      }
+                    >
+                      <td
+                        className="w-10 px-3 py-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(lead.id)}
+                          onChange={() => toggleSelect(lead.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          aria-label={`Select ${lead.first_name} ${lead.last_name}`}
+                        />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <p className="text-sm font-medium text-gray-900">
+                          {lead.first_name} {lead.last_name}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-sm text-gray-700">{lead.email}</p>
+                        {lead.phone && (
+                          <p className="text-xs text-gray-500">{lead.phone}</p>
                         )}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                        {lead.vehicle_interest || "\u2014"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${
+                            STATUS_BADGE[lead.status] ?? "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {STATUS_LABEL[lead.status] ?? lead.status}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${
+                            TEMP_BADGE[lead.temperature] ?? "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {TEMP_LABEL[lead.temperature] ?? lead.temperature}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                        {lead.assigned_to ?? (
+                          <span className="text-gray-400">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                        {formatDate(lead.created_at)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">
+                        <span
+                          className={`inline-block transition-transform ${
+                            expandedId === lead.id ? "rotate-90" : ""
+                          }`}
+                        >
+                          &#9654;
+                        </span>
+                      </td>
+                    </tr>
+                    {expandedId === lead.id && (
+                      <LeadDetailPanel
+                        key={`detail-${lead.id}`}
+                        lead={lead}
+                        teamMembers={teamMembers}
+                        onUpdate={handleLeadUpdate}
+                      />
+                    )}
+                  </>
                 ))
               )}
             </tbody>
@@ -346,20 +570,22 @@ export default async function LeadsPage({ searchParams }: PageProps) {
             </p>
             <div className="flex gap-2">
               {page > 1 && (
-                <a
-                  href={buildUrl({ page: String(page - 1) })}
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p - 1)}
                   className="rounded-md border border-surface-border px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-surface-muted"
                 >
                   Previous
-                </a>
+                </button>
               )}
               {page < totalPages && (
-                <a
-                  href={buildUrl({ page: String(page + 1) })}
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p + 1)}
                   className="rounded-md border border-surface-border px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-surface-muted"
                 >
                   Next
-                </a>
+                </button>
               )}
             </div>
           </nav>
@@ -370,73 +596,52 @@ export default async function LeadsPage({ searchParams }: PageProps) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
+/* Sub-components                                                             */
 /* -------------------------------------------------------------------------- */
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatSource(source: string): string {
-  const map: Record<string, string> = {
-    website_form: "Website",
-    vdp_inquiry: "VDP",
-    chat: "Chat",
-    phone: "Phone",
-    third_party: "3rd Party",
-    walk_in: "Walk-in",
-  };
-  return map[source] ?? source;
-}
-
-function formatStatusLabel(status: string): string {
-  const map: Record<string, string> = {
-    new: "New",
-    contacted: "Mark Contacted",
-    qualified: "Mark Qualified",
-    appointment_set: "Set Appt",
-    sold: "Mark Sold",
-    lost: "Mark Lost",
-  };
-  return map[status] ?? status;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Icons                                                                      */
-/* -------------------------------------------------------------------------- */
-
-function UsersSmallIcon() {
+function MiniStat({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color?: string;
+}) {
   return (
-    <svg width="20" height="20" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
-    </svg>
+    <div className="rounded-card border border-surface-border bg-white p-4 shadow-card">
+      <p className="text-xs font-medium text-gray-500">{label}</p>
+      <p className={`mt-1 text-2xl font-bold tracking-tight ${color ?? "text-gray-900"}`}>
+        {value}
+      </p>
+    </div>
   );
 }
 
-function InboxIcon() {
+function Th({
+  label,
+  sortKey,
+  current,
+  dir,
+  onSort,
+}: {
+  label: string;
+  sortKey: string;
+  current: string;
+  dir: "asc" | "desc";
+  onSort: (key: string) => void;
+}) {
+  const active = current === sortKey;
   return (
-    <svg width="20" height="20" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z" />
-    </svg>
-  );
-}
-
-function CheckSmallIcon() {
-  return (
-    <svg width="20" height="20" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-    </svg>
-  );
-}
-
-function TrophyIcon() {
-  return (
-    <svg width="20" height="20" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0 1 16.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 0 1-2.27.308 6.023 6.023 0 0 1-2.27-.308" />
-    </svg>
+    <th
+      scope="col"
+      className="cursor-pointer select-none px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:text-gray-900"
+      onClick={() => onSort(sortKey)}
+    >
+      {label}
+      {active && (
+        <span className="ml-1">{dir === "desc" ? "\u2193" : "\u2191"}</span>
+      )}
+    </th>
   );
 }

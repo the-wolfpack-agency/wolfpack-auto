@@ -14,6 +14,7 @@ import {
   searchPoints,
   type QdrantFilter,
 } from "@/lib/qdrant-client";
+import { executeNeo4jQueries } from "@/lib/neo4j-client";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -1023,6 +1024,1005 @@ export function generateInsights(): BehavioralInsight[] {
     });
   }
 
+  // ================================================================
+  // TIER 3 — DATA MOAT INSIGHTS (require full-stack ownership)
+  // ================================================================
+
+  // --- Insight 23: Lead Temperature Score (composite of ALL signals) ---
+  for (const [sessionId, events] of buffer.sessions) {
+    const summary = buildSessionSummary(sessionId);
+    if (!summary) continue;
+
+    let temperature = 0;
+    const signals: Record<string, number> = {};
+
+    // Vehicle engagement (0-20 pts)
+    const vehiclesViewed = summary.vehicles_viewed.length;
+    const vehiclePts = Math.min(vehiclesViewed * 4, 20);
+    temperature += vehiclePts;
+    signals.vehicle_engagement = vehiclePts;
+
+    // Session depth (0-15 pts)
+    const pagesVisited = summary.pages_visited.length;
+    const depthPts = Math.min(pagesVisited * 3, 15);
+    temperature += depthPts;
+    signals.session_depth = depthPts;
+
+    // Chat engagement (0-15 pts)
+    const chatPts = Math.min(summary.chat_messages * 5, 15);
+    temperature += chatPts;
+    signals.chat_engagement = chatPts;
+
+    // Return visitor boost (0-15 pts)
+    const lifecycleEvent = events.find((e) => e.event_type === "buyer_lifecycle");
+    if (lifecycleEvent) {
+      const visitCount = (lifecycleEvent.metadata.visit_count as number) ?? 1;
+      const returnPts = Math.min((visitCount - 1) * 5, 15);
+      temperature += returnPts;
+      signals.return_visitor = returnPts;
+    }
+
+    // Price/financing interaction (0-10 pts)
+    const priceEvents = events.filter((e) =>
+      e.event_type === "price_trajectory" ||
+      e.event_type === "calculator_input" ||
+      (e.event_type === "copy_paste" && (e.metadata.content_type === "price" || e.metadata.content_type === "vin")),
+    );
+    const pricePts = Math.min(priceEvents.length * 3, 10);
+    temperature += pricePts;
+    signals.price_interaction = pricePts;
+
+    // Search specificity (0-10 pts)
+    const searchPts = Math.min(summary.search_queries.length * 2, 10);
+    temperature += searchPts;
+    signals.search_activity = searchPts;
+
+    // Time investment (0-10 pts)
+    const timeMinutes = summary.duration_ms / 60000;
+    const timePts = Math.min(Math.round(timeMinutes * 2), 10);
+    temperature += timePts;
+    signals.time_investment = timePts;
+
+    // High-intent signals (0-5 pts each)
+    const hasFormInteraction = events.some((e) => e.event_type === "form_interaction" && e.action === "field_focus");
+    if (hasFormInteraction) { temperature += 5; signals.form_started = 5; }
+
+    const hasChatSpecificity = events.some((e) =>
+      e.event_type === "chat_message" && e.metadata.role === "user" &&
+      /vin|test\s*drive|financ|appoint|schedul|trade|down\s*payment/i.test(String(e.metadata.content ?? "")),
+    );
+    if (hasChatSpecificity) { temperature += 5; signals.high_intent_chat = 5; }
+
+    // Comparison shopping (indicator of serious buyer, +5)
+    const isComparisonShopper = events.some(
+      (e) => e.event_type === "tab_visibility" && e.metadata.likely_comparison_shopping === true,
+    );
+    if (isComparisonShopper) { temperature += 5; signals.comparison_shopping = 5; }
+
+    // Narrowing behavior from lifecycle (+5)
+    if (lifecycleEvent?.metadata.is_narrowing === true) {
+      temperature += 5;
+      signals.narrowing_behavior = 5;
+    }
+
+    // Cap at 100
+    temperature = Math.min(temperature, 100);
+
+    // Classify
+    const tier = temperature >= 80 ? "hot" :
+      temperature >= 50 ? "warm" :
+        temperature >= 25 ? "cool" : "cold";
+
+    insights.push({
+      id: `lead_temperature_${sessionId}_${Date.now()}`,
+      insight: `Session ${sessionId.slice(0, 8)} has a lead temperature of ${temperature}/100 (${tier}). Signal breakdown: ${Object.entries(signals).filter(([, v]) => v > 0).map(([k, v]) => `${k.replace(/_/g, " ")}=${v}`).join(", ")}. ${tier === "hot" ? "HIGH PRIORITY — this user is ready to buy. Proactive outreach recommended." : tier === "warm" ? "Engaged lead — nurture with personalized follow-up." : "Early-stage browser — optimize for discovery."}`,
+      category: "conversion",
+      confidence: Math.min(summary.total_events / 20, 1),
+      sample_size: summary.total_events,
+      generated_at: now,
+      data: {
+        session_id: sessionId,
+        temperature,
+        tier,
+        signals,
+        vehicles_viewed: summary.vehicles_viewed,
+        converted: summary.converted,
+      },
+    });
+  }
+
+  // --- Insight 24: Inventory Gap Detection (search vs actual inventory) ---
+  // Requires access to inventory data — import at call site
+  const searchQueries: { query: string; count: number; sessions: number }[] = [];
+  const querySessionMap = new Map<string, Set<string>>();
+  for (const [sessionId, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "search" && e.metadata.query) {
+        const q = String(e.metadata.query).toLowerCase().trim();
+        if (!querySessionMap.has(q)) querySessionMap.set(q, new Set());
+        querySessionMap.get(q)!.add(sessionId);
+      }
+    }
+  }
+  for (const [query, sessions] of querySessionMap) {
+    searchQueries.push({ query, count: sessions.size, sessions: sessions.size });
+  }
+
+  // Extract demand signals from search queries
+  if (searchQueries.length > 0) {
+    const demandSignals = new Map<string, { queries: string[]; total_searches: number }>();
+
+    for (const sq of searchQueries) {
+      // Extract make/model/body style/fuel type patterns
+      const tokens = sq.query.split(/\s+/);
+      for (const token of tokens) {
+        const normalized = token.replace(/[^a-z0-9]/g, "");
+        if (normalized.length < 2) continue;
+        // Match against known categories
+        const categories = [
+          { pattern: /^(suv|truck|sedan|coupe|van|convertible|hatchback|wagon|crossover|pickup)$/, type: "body_style" },
+          { pattern: /^(electric|hybrid|ev|diesel|gasoline)$/, type: "fuel_type" },
+          { pattern: /^(awd|4wd|4x4|fwd|rwd)$/, type: "drivetrain" },
+          { pattern: /^(honda|toyota|ford|chevrolet|chevy|bmw|tesla|mazda|hyundai|kia|nissan|subaru|volkswagen|audi|mercedes|lexus|jeep|ram|dodge|gmc|cadillac|rivian|porsche)$/, type: "make" },
+        ];
+        for (const cat of categories) {
+          if (cat.pattern.test(normalized)) {
+            const key = `${cat.type}:${normalized}`;
+            const entry = demandSignals.get(key) ?? { queries: [], total_searches: 0 };
+            entry.queries.push(sq.query);
+            entry.total_searches += sq.count;
+            demandSignals.set(key, entry);
+          }
+        }
+
+        // Detect price range demands ("under 30k", "below 25000")
+        const priceMatch = sq.query.match(/(?:under|below|less\s*than|max|budget)\s*\$?([\d,]+k?)/i);
+        if (priceMatch) {
+          let priceLimit = priceMatch[1].replace(/,/g, "");
+          if (priceLimit.endsWith("k")) priceLimit = priceLimit.slice(0, -1) + "000";
+          const key = `price_ceiling:${priceLimit}`;
+          const entry = demandSignals.get(key) ?? { queries: [], total_searches: 0 };
+          entry.queries.push(sq.query);
+          entry.total_searches += sq.count;
+          demandSignals.set(key, entry);
+        }
+      }
+    }
+
+    if (demandSignals.size > 0) {
+      const ranked = [...demandSignals.entries()]
+        .map(([key, data]) => ({ category: key, ...data }))
+        .sort((a, b) => b.total_searches - a.total_searches);
+
+      insights.push({
+        id: `inventory_demand_${Date.now()}`,
+        insight: `Market demand signals from search queries: ${ranked.slice(0, 8).map((r) => `${r.category.replace(":", " ")} (${r.total_searches} searches from queries: "${r.queries.slice(0, 2).join('", "')}")`).join("; ")}. Cross-reference with current inventory to identify gaps — vehicles matching high-demand categories that aren't in stock represent missed revenue.`,
+        category: "search",
+        confidence: Math.min(ranked[0].total_searches / 10, 1),
+        sample_size: searchQueries.reduce((a, sq) => a + sq.count, 0),
+        generated_at: now,
+        data: { demand_signals: ranked.slice(0, 20), raw_queries: searchQueries.slice(0, 50) },
+      });
+    }
+
+    // Zero-result searches are the strongest gap signal
+    const zeroResultSearches = searchQueries.filter((sq) => {
+      const events = [...buffer.sessions.values()].flat();
+      return events.some(
+        (e) => e.event_type === "search" &&
+          String(e.metadata.query).toLowerCase().trim() === sq.query &&
+          (e.metadata.result_count === 0 || e.metadata.result_count === undefined),
+      );
+    });
+
+    if (zeroResultSearches.length > 0) {
+      insights.push({
+        id: `inventory_gaps_${Date.now()}`,
+        insight: `INVENTORY GAPS: ${zeroResultSearches.length} search queries returned ZERO results: ${zeroResultSearches.slice(0, 5).map((sq) => `"${sq.query}" (${sq.sessions} users)`).join(", ")}. These users wanted something you don't have — consider acquiring these vehicle types or adding them to your wish list.`,
+        category: "search",
+        confidence: Math.min(zeroResultSearches.length / 5, 1),
+        sample_size: zeroResultSearches.reduce((a, sq) => a + sq.sessions, 0),
+        generated_at: now,
+        data: { zero_result_queries: zeroResultSearches },
+      });
+    }
+  }
+
+  // --- Insight 25: Photo Engagement Score (per-vehicle composite) ---
+  const vehicleEngagement = new Map<string, {
+    vin: string;
+    views: number;
+    totalDwell: number;
+    orientationChanges: number;
+    pinchZooms: number;
+    copies: number;
+    scrollDepth: number;
+    sessions: Set<string>;
+  }>();
+
+  for (const [sessionId, events] of buffer.sessions) {
+    for (const e of events) {
+      // Collect per-vehicle signals
+      const vin = String(e.metadata.vin ?? "");
+      const page = String(e.metadata.page ?? e.page ?? "");
+      const isVehiclePage = page.match(/\/inventory\/([A-Z0-9]+)/i);
+      const vehicleId = vin || (isVehiclePage ? isVehiclePage[1] : "");
+      if (!vehicleId) continue;
+
+      if (!vehicleEngagement.has(vehicleId)) {
+        vehicleEngagement.set(vehicleId, {
+          vin: vehicleId, views: 0, totalDwell: 0, orientationChanges: 0,
+          pinchZooms: 0, copies: 0, scrollDepth: 0, sessions: new Set(),
+        });
+      }
+      const v = vehicleEngagement.get(vehicleId)!;
+      v.sessions.add(sessionId);
+
+      if (e.event_type === "vehicle_view") v.views++;
+      if (e.event_type === "time_on_page" && isVehiclePage) v.totalDwell += (e.metadata.duration_ms as number) ?? 0;
+      if (e.event_type === "device_orientation" && isVehiclePage) v.orientationChanges++;
+      if (e.event_type === "touch_gesture" && e.action === "pinch_zoom" && isVehiclePage) v.pinchZooms++;
+      if (e.event_type === "copy_paste" && e.action === "copy" && isVehiclePage) v.copies++;
+      if (e.event_type === "scroll" && isVehiclePage) v.scrollDepth = Math.max(v.scrollDepth, (e.metadata.depth as number) ?? 0);
+    }
+  }
+
+  if (vehicleEngagement.size > 0) {
+    const scored = [...vehicleEngagement.values()].map((v) => {
+      // Composite score: weight each signal
+      let score = 0;
+      const avgDwell = v.views > 0 ? v.totalDwell / v.views : 0;
+      score += Math.min(avgDwell / 30000, 30); // dwell time: up to 30 pts (30s avg = max)
+      score += Math.min(v.orientationChanges * 10, 20); // orientation: up to 20 pts
+      score += Math.min(v.pinchZooms * 8, 20); // pinch-zoom: up to 20 pts
+      score += Math.min(v.copies * 10, 15); // copies (VIN/price): up to 15 pts
+      score += Math.min(v.scrollDepth / 100 * 15, 15); // scroll depth: up to 15 pts
+      return { ...v, score: Math.round(Math.min(score, 100)), avg_dwell_ms: Math.round(avgDwell), sessions_count: v.sessions.size };
+    }).sort((a, b) => b.score - a.score);
+
+    // Find low-engagement vehicles (get views but low interaction)
+    const lowEngagement = scored.filter((v) => v.views >= 2 && v.score < 30);
+    const highEngagement = scored.filter((v) => v.score >= 60);
+
+    if (scored.length >= 2) {
+      const avgScore = Math.round(scored.reduce((a, v) => a + v.score, 0) / scored.length);
+      insights.push({
+        id: `photo_engagement_${Date.now()}`,
+        insight: `Vehicle Photo Engagement Scores (avg ${avgScore}/100): TOP — ${highEngagement.slice(0, 3).map((v) => `${v.vin} (${v.score}/100, ${v.avg_dwell_ms}ms dwell, ${v.pinchZooms} zooms)`).join(", ") || "none yet"}. ${lowEngagement.length > 0 ? `NEEDS ATTENTION — ${lowEngagement.slice(0, 3).map((v) => `${v.vin} (${v.score}/100, ${v.views} views but low interaction)`).join(", ")}. These vehicles attract views but fail to engage — likely need better photos, descriptions, or pricing.` : "All vehicles showing healthy engagement."}`,
+        category: "engagement",
+        confidence: Math.min(scored.length / 5, 1),
+        sample_size: scored.reduce((a, v) => a + v.views, 0),
+        generated_at: now,
+        data: { vehicles: scored.slice(0, 20), avg_score: avgScore, low_engagement: lowEngagement.slice(0, 10) },
+      });
+    }
+  }
+
+  // --- Insight 26: Cross-Session Buyer Lifecycle ---
+  const lifecycleProfiles = new Map<string, {
+    fingerprint: string;
+    visit_count: number;
+    days_active: number;
+    stage: string;
+    is_narrowing: boolean;
+    vehicles_viewed: number;
+    searches: number;
+  }>();
+
+  for (const [, events] of buffer.sessions) {
+    const le = events.find((e) => e.event_type === "buyer_lifecycle");
+    if (!le) continue;
+    const fp = String(le.metadata.fingerprint ?? le.user_fingerprint ?? "");
+    if (!fp || lifecycleProfiles.has(fp)) continue;
+
+    lifecycleProfiles.set(fp, {
+      fingerprint: fp.slice(0, 12),
+      visit_count: (le.metadata.visit_count as number) ?? 1,
+      days_active: (le.metadata.days_since_first_visit as number) ?? 0,
+      stage: String(le.metadata.lifecycle_stage ?? "awareness"),
+      is_narrowing: (le.metadata.is_narrowing as boolean) ?? false,
+      vehicles_viewed: (le.metadata.total_vehicles_viewed as number) ?? 0,
+      searches: (le.metadata.total_searches as number) ?? 0,
+    });
+  }
+
+  if (lifecycleProfiles.size > 0) {
+    const profiles = [...lifecycleProfiles.values()];
+    const stageCount = new Map<string, number>();
+    for (const p of profiles) {
+      stageCount.set(p.stage, (stageCount.get(p.stage) ?? 0) + 1);
+    }
+
+    const narrowing = profiles.filter((p) => p.is_narrowing);
+    const returning = profiles.filter((p) => p.visit_count > 1);
+
+    insights.push({
+      id: `buyer_lifecycle_${Date.now()}`,
+      insight: `Buyer lifecycle across ${profiles.length} tracked users: ${[...stageCount.entries()].map(([s, c]) => `${s}: ${c}`).join(", ")}. ${returning.length} returning visitors (avg ${returning.length > 0 ? Math.round(returning.reduce((a, p) => a + p.visit_count, 0) / returning.length) : 0} visits). ${narrowing.length} users are NARROWING their search (exploring fewer makes/models per visit) — these are your warmest pre-conversion leads.`,
+      category: "conversion",
+      confidence: Math.min(profiles.length / 10, 1),
+      sample_size: profiles.length,
+      generated_at: now,
+      data: { stages: Object.fromEntries(stageCount), narrowing_count: narrowing.length, returning_count: returning.length, profiles: profiles.slice(0, 20) },
+    });
+  }
+
+  // --- Insight 27: Performance → Conversion Correlation ---
+  const perfBuckets = new Map<string, { sessions: number; conversions: number; avg_load_ms: number; total_load_ms: number }>();
+
+  for (const [sessionId, events] of buffer.sessions) {
+    const perfEvent = events.find((e) => e.event_type === "page_performance" && e.action === "timing_measured");
+    if (!perfEvent) continue;
+
+    const loadMs = (perfEvent.metadata.load_time_ms as number) ?? 0;
+    if (loadMs <= 0) continue;
+
+    // Bucket: <1s, 1-2s, 2-3s, 3-5s, 5s+
+    const bucket = loadMs < 1000 ? "<1s" :
+      loadMs < 2000 ? "1-2s" :
+        loadMs < 3000 ? "2-3s" :
+          loadMs < 5000 ? "3-5s" : "5s+";
+
+    const entry = perfBuckets.get(bucket) ?? { sessions: 0, conversions: 0, avg_load_ms: 0, total_load_ms: 0 };
+    entry.sessions++;
+    entry.total_load_ms += loadMs;
+    entry.avg_load_ms = Math.round(entry.total_load_ms / entry.sessions);
+
+    const summary = buildSessionSummary(sessionId);
+    if (summary?.converted) entry.conversions++;
+
+    perfBuckets.set(bucket, entry);
+  }
+
+  if (perfBuckets.size >= 2) {
+    const buckets = [...perfBuckets.entries()]
+      .map(([range, data]) => ({
+        range,
+        ...data,
+        conversion_rate: data.sessions > 0 ? data.conversions / data.sessions : 0,
+      }))
+      .sort((a, b) => a.avg_load_ms - b.avg_load_ms);
+
+    const fastest = buckets[0];
+    const slowest = buckets[buckets.length - 1];
+    const convDrop = fastest.conversion_rate > 0 && slowest.conversion_rate < fastest.conversion_rate
+      ? Math.round((1 - slowest.conversion_rate / fastest.conversion_rate) * 100)
+      : 0;
+
+    insights.push({
+      id: `perf_conversion_${Date.now()}`,
+      insight: `Page speed → conversion correlation: ${buckets.map((b) => `${b.range}: ${(b.conversion_rate * 100).toFixed(1)}% conversion (${b.sessions} sessions, avg ${b.avg_load_ms}ms)`).join(" | ")}. ${convDrop > 0 ? `Users on slow connections convert ${convDrop}% LESS than fast ones. Every second of load time costs you leads.` : "Not enough conversion data yet for speed impact analysis."}`,
+      category: "conversion",
+      confidence: Math.min(buckets.reduce((a, b) => a + b.sessions, 0) / 30, 1),
+      sample_size: buckets.reduce((a, b) => a + b.sessions, 0),
+      generated_at: now,
+      data: { buckets, conversion_drop_pct: convDrop },
+    });
+  }
+
+  // --- Insight 28: CTA Visibility Gap ---
+  const ctaStats = new Map<string, {
+    text: string;
+    position_pct: number;
+    times_visible: number;
+    times_clicked: number;
+    avg_visible_ms: number;
+    total_visible_ms: number;
+    page: string;
+  }>();
+
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "cta_visibility") {
+        const text = String(e.metadata.cta_text ?? "").trim();
+        if (!text) continue;
+        const key = `${e.metadata.page}:${text}`;
+        const entry = ctaStats.get(key) ?? {
+          text,
+          position_pct: (e.metadata.position_pct as number) ?? 0,
+          times_visible: 0,
+          times_clicked: 0,
+          avg_visible_ms: 0,
+          total_visible_ms: 0,
+          page: String(e.metadata.page ?? "/"),
+        };
+        entry.times_visible++;
+        entry.total_visible_ms += (e.metadata.visible_duration_ms as number) ?? 0;
+        entry.avg_visible_ms = Math.round(entry.total_visible_ms / entry.times_visible);
+        ctaStats.set(key, entry);
+      }
+    }
+
+    // Cross-reference: check if CTA text was clicked
+    for (const e of events) {
+      if (e.event_type === "click") {
+        const clickText = String(e.metadata.text ?? "").trim();
+        for (const [key, cta] of ctaStats) {
+          if (cta.text === clickText || clickText.includes(cta.text)) {
+            cta.times_clicked++;
+          }
+        }
+      }
+    }
+  }
+
+  // Also cross-reference with scroll depth data to find visibility gaps
+  const pageScrollDepths = new Map<string, number[]>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "scroll" && typeof e.metadata.depth === "number") {
+        const page = String(e.metadata.page ?? e.page ?? "/");
+        const depths = pageScrollDepths.get(page) ?? [];
+        depths.push(e.metadata.depth as number);
+        pageScrollDepths.set(page, depths);
+      }
+    }
+  }
+
+  if (ctaStats.size > 0) {
+    const ctas = [...ctaStats.values()].sort((a, b) => b.times_visible - a.times_visible);
+    const gaps: string[] = [];
+
+    for (const cta of ctas) {
+      const scrollDepths = pageScrollDepths.get(cta.page) ?? [];
+      if (scrollDepths.length === 0) continue;
+
+      const reachPct = Math.round(
+        (scrollDepths.filter((d) => d >= cta.position_pct).length / scrollDepths.length) * 100,
+      );
+
+      if (reachPct < 50 && cta.position_pct > 40) {
+        gaps.push(`"${cta.text.slice(0, 30)}" on ${cta.page} is at ${cta.position_pct}% scroll depth but only ${reachPct}% of users scroll that far`);
+      }
+    }
+
+    const ctaClickRates = ctas
+      .filter((c) => c.times_visible >= 3)
+      .map((c) => ({
+        ...c,
+        click_rate: c.times_visible > 0 ? c.times_clicked / c.times_visible : 0,
+      }))
+      .sort((a, b) => a.click_rate - b.click_rate);
+
+    insights.push({
+      id: `cta_visibility_${Date.now()}`,
+      insight: `CTA Performance: ${ctaClickRates.slice(0, 5).map((c) => `"${c.text.slice(0, 25)}" on ${c.page} — seen ${c.times_visible}x, clicked ${c.times_clicked}x (${(c.click_rate * 100).toFixed(0)}% CTR, position ${c.position_pct}%)`).join("; ")}. ${gaps.length > 0 ? `VISIBILITY GAPS: ${gaps.slice(0, 3).join("; ")}. Move these CTAs higher on the page to increase exposure.` : "All CTAs are within scroll reach for most users."}`,
+      category: "conversion",
+      confidence: Math.min(ctas.reduce((a, c) => a + c.times_visible, 0) / 20, 1),
+      sample_size: ctas.reduce((a, c) => a + c.times_visible, 0),
+      generated_at: now,
+      data: { ctas: ctaClickRates.slice(0, 15), visibility_gaps: gaps },
+    });
+  }
+
+  // ================================================================
+  // CROSS-REFERENCE IMPROVEMENTS (enhance existing insights)
+  // ================================================================
+
+  // --- Cross-ref 1: Network quality × conversion (slow network = different behavior) ---
+  const networkBuckets = new Map<string, { sessions: number; conversions: number; avg_dwell_ms: number; total_dwell_ms: number }>();
+  for (const [sessionId, events] of buffer.sessions) {
+    const netEvent = events.find((e) => e.event_type === "network_quality");
+    if (!netEvent) continue;
+    const type = String(netEvent.metadata.effective_type ?? "unknown");
+    const entry = networkBuckets.get(type) ?? { sessions: 0, conversions: 0, avg_dwell_ms: 0, total_dwell_ms: 0 };
+    entry.sessions++;
+    const summary = buildSessionSummary(sessionId);
+    if (summary?.converted) entry.conversions++;
+    if (summary) { entry.total_dwell_ms += summary.duration_ms; entry.avg_dwell_ms = Math.round(entry.total_dwell_ms / entry.sessions); }
+    networkBuckets.set(type, entry);
+  }
+  if (networkBuckets.size >= 2) {
+    const nets = [...networkBuckets.entries()].map(([type, data]) => ({
+      type, ...data, conversion_rate: data.sessions > 0 ? data.conversions / data.sessions : 0,
+    })).sort((a, b) => b.conversion_rate - a.conversion_rate);
+    insights.push({
+      id: `network_conversion_${Date.now()}`,
+      insight: `Network quality impact: ${nets.map((n) => `${n.type}: ${n.sessions} sessions, ${(n.conversion_rate * 100).toFixed(1)}% conversion, avg ${Math.round(n.avg_dwell_ms / 1000)}s dwell`).join(" | ")}. ${nets[nets.length - 1].conversion_rate < nets[0].conversion_rate * 0.5 ? `Users on ${nets[nets.length - 1].type} connections convert ${Math.round((1 - nets[nets.length - 1].conversion_rate / (nets[0].conversion_rate || 1)) * 100)}% less — optimize page weight for mobile users.` : "Network quality shows minimal conversion impact — good mobile optimization."}`,
+      category: "conversion",
+      confidence: Math.min(nets.reduce((a, n) => a + n.sessions, 0) / 20, 1),
+      sample_size: nets.reduce((a, n) => a + n.sessions, 0),
+      generated_at: now,
+      data: { network_types: nets },
+    });
+  }
+
+  // --- Cross-ref 2: Exit intent × lead temperature (are HOT leads leaving?) ---
+  const exitTemperatures: { temperature: number; page: string }[] = [];
+  for (const [sessionId, events] of buffer.sessions) {
+    const hasExitIntent = events.some((e) => e.event_type === "exit_intent");
+    if (!hasExitIntent) continue;
+
+    // Find or calculate this session's temperature from our insights
+    const tempInsight = insights.find(
+      (i) => i.id.startsWith("lead_temperature_") && i.data.session_id === sessionId,
+    );
+    if (tempInsight) {
+      const exitPage = events.find((e) => e.event_type === "exit_intent");
+      exitTemperatures.push({
+        temperature: tempInsight.data.temperature as number,
+        page: String(exitPage?.metadata.page ?? "/"),
+      });
+    }
+  }
+
+  if (exitTemperatures.length > 0) {
+    const hotExits = exitTemperatures.filter((e) => e.temperature >= 50);
+    if (hotExits.length > 0) {
+      const exitPages = new Map<string, number>();
+      for (const e of hotExits) exitPages.set(e.page, (exitPages.get(e.page) ?? 0) + 1);
+      const topExitPages = [...exitPages.entries()].sort((a, b) => b[1] - a[1]);
+
+      insights.push({
+        id: `hot_lead_exit_${Date.now()}`,
+        insight: `WARNING: ${hotExits.length} warm/hot leads (temperature 50+) are showing exit intent. They're leaving from: ${topExitPages.slice(0, 3).map(([p, c]) => `${p} (${c}x)`).join(", ")}. These are your highest-value visitors about to walk away — consider targeted retention: chat prompts, special offers, or scheduling CTAs on these exit pages.`,
+        category: "conversion",
+        confidence: Math.min(hotExits.length / 5, 1),
+        sample_size: exitTemperatures.length,
+        generated_at: now,
+        data: { hot_exits: hotExits.length, total_exits: exitTemperatures.length, exit_pages: topExitPages },
+      });
+    }
+  }
+
+  // --- Cross-ref 3: Rage clicks × lead temperature (frustrated buyers are the worst to lose) ---
+  const frustratedBuyers: { temperature: number; element: string }[] = [];
+  for (const [sessionId, events] of buffer.sessions) {
+    const hasRageClicks = events.some((e) => e.event_type === "rage_click");
+    if (!hasRageClicks) continue;
+
+    const tempInsight = insights.find(
+      (i) => i.id.startsWith("lead_temperature_") && i.data.session_id === sessionId,
+    );
+    if (tempInsight && (tempInsight.data.temperature as number) >= 40) {
+      const rageEvent = events.find((e) => e.event_type === "rage_click");
+      frustratedBuyers.push({
+        temperature: tempInsight.data.temperature as number,
+        element: String(rageEvent?.metadata.element_text ?? rageEvent?.metadata.element ?? "unknown"),
+      });
+    }
+  }
+
+  if (frustratedBuyers.length > 0) {
+    insights.push({
+      id: `frustrated_buyers_${Date.now()}`,
+      insight: `CRITICAL UX ISSUE: ${frustratedBuyers.length} engaged leads (temp ${Math.round(frustratedBuyers.reduce((a, f) => a + f.temperature, 0) / frustratedBuyers.length)}+ avg) are rage-clicking on: ${[...new Set(frustratedBuyers.map((f) => `"${f.element.slice(0, 30)}"`))].slice(0, 3).join(", ")}. These are people trying to buy from you but getting blocked by broken or slow UI elements. Fix these immediately — each frustrated buyer is lost revenue.`,
+      category: "ux_friction",
+      confidence: Math.min(frustratedBuyers.length / 3, 1),
+      sample_size: frustratedBuyers.length,
+      generated_at: now,
+      data: { frustrated_buyers: frustratedBuyers },
+    });
+  }
+
+  // ================================================================
+  // TIER 4 — FEATURE-CONNECTED INSIGHTS (from wired components)
+  // ================================================================
+
+  // --- Insight 29: Vehicle Comparison Patterns ---
+  const comparisonPairs = new Map<string, number>();
+  const compareActions = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    const compared: string[] = [];
+    for (const e of events) {
+      if (e.event_type === "vehicle_comparison") {
+        if (e.action === "added_to_compare" && e.metadata.vin) {
+          compared.push(String(e.metadata.vin));
+        }
+        if (e.action === "compare_initiated" && Array.isArray(e.metadata.vins)) {
+          // Record the exact comparison set
+          const vins = (e.metadata.vins as string[]).sort();
+          for (let i = 0; i < vins.length; i++) {
+            for (let j = i + 1; j < vins.length; j++) {
+              const pair = `${vins[i]}|${vins[j]}`;
+              comparisonPairs.set(pair, (comparisonPairs.get(pair) ?? 0) + 1);
+            }
+          }
+        }
+        const action = String(e.action);
+        compareActions.set(action, (compareActions.get(action) ?? 0) + 1);
+      }
+    }
+  }
+
+  if (comparisonPairs.size > 0) {
+    const topPairs = [...comparisonPairs.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([pair, count]) => ({ vehicles: pair.split("|"), count }));
+
+    const totalCompares = compareActions.get("compare_initiated") ?? 0;
+    const totalAdds = compareActions.get("added_to_compare") ?? 0;
+
+    insights.push({
+      id: `comparison_patterns_${Date.now()}`,
+      insight: `Vehicle comparison behavior: ${totalAdds} vehicles added to compare, ${totalCompares} comparisons viewed. Most compared pairs: ${topPairs.slice(0, 3).map((p) => `${p.vehicles.join(" vs ")} (${p.count}x)`).join(", ")}. These pairings reveal which vehicles buyers see as substitutes -- position them accordingly in marketing and lot placement.`,
+      category: "engagement",
+      confidence: Math.min(totalCompares / 5, 1),
+      sample_size: totalAdds + totalCompares,
+      generated_at: now,
+      data: { top_pairs: topPairs, total_compares: totalCompares, total_adds: totalAdds },
+    });
+  }
+
+  // --- Insight 30: Financing Intent Profile ---
+  const financingProfiles = new Map<string, {
+    mode_preferences: { loan: number; lease: number };
+    monthly_ranges: Map<string, number>;
+    down_ranges: Map<string, number>;
+    term_preferences: Map<number, number>;
+    interactions: number;
+  }>();
+
+  for (const [sessionId, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "calculator_input" && e.action === "calc_interaction") {
+        if (!financingProfiles.has(sessionId)) {
+          financingProfiles.set(sessionId, {
+            mode_preferences: { loan: 0, lease: 0 },
+            monthly_ranges: new Map(),
+            down_ranges: new Map(),
+            term_preferences: new Map(),
+            interactions: 0,
+          });
+        }
+        const profile = financingProfiles.get(sessionId)!;
+        profile.interactions++;
+
+        const mode = String(e.metadata.mode ?? "loan");
+        if (mode === "lease") profile.mode_preferences.lease++;
+        else profile.mode_preferences.loan++;
+
+        const monthly = String(e.metadata.target_monthly_range ?? "unknown");
+        profile.monthly_ranges.set(monthly, (profile.monthly_ranges.get(monthly) ?? 0) + 1);
+
+        const down = String(e.metadata.down_payment_range ?? "unknown");
+        profile.down_ranges.set(down, (profile.down_ranges.get(down) ?? 0) + 1);
+
+        const term = (e.metadata.term_months as number) ?? 60;
+        profile.term_preferences.set(term, (profile.term_preferences.get(term) ?? 0) + 1);
+      }
+    }
+  }
+
+  if (financingProfiles.size > 0) {
+    let totalLoan = 0, totalLease = 0;
+    const allMonthly = new Map<string, number>();
+    const allTerms = new Map<number, number>();
+    let totalInteractions = 0;
+
+    for (const profile of financingProfiles.values()) {
+      totalLoan += profile.mode_preferences.loan;
+      totalLease += profile.mode_preferences.lease;
+      totalInteractions += profile.interactions;
+      for (const [range, count] of profile.monthly_ranges) allMonthly.set(range, (allMonthly.get(range) ?? 0) + count);
+      for (const [term, count] of profile.term_preferences) allTerms.set(term, (allTerms.get(term) ?? 0) + count);
+    }
+
+    const topMonthly = [...allMonthly.entries()].sort((a, b) => b[1] - a[1]);
+    const topTerms = [...allTerms.entries()].sort((a, b) => b[1] - a[1]);
+    const leaseRatio = totalLease / (totalLoan + totalLease || 1);
+
+    insights.push({
+      id: `financing_intent_${Date.now()}`,
+      insight: `Financing behavior: ${financingProfiles.size} users interacted with the calculator (${totalInteractions} total adjustments). ${(leaseRatio * 100).toFixed(0)}% explored leasing. Target monthly payment distribution: ${topMonthly.slice(0, 3).map(([r, c]) => `${r}: ${c}`).join(", ")}. Preferred terms: ${topTerms.slice(0, 3).map(([t, c]) => `${t}mo: ${c}`).join(", ")}. ${leaseRatio > 0.3 ? "Significant lease interest -- ensure lease specials are prominent." : "Users prefer financing -- highlight low APR offers."}`,
+      category: "conversion",
+      confidence: Math.min(financingProfiles.size / 5, 1),
+      sample_size: totalInteractions,
+      generated_at: now,
+      data: {
+        users: financingProfiles.size,
+        loan_vs_lease: { loan: totalLoan, lease: totalLease, lease_ratio: leaseRatio },
+        monthly_distribution: Object.fromEntries(allMonthly),
+        term_distribution: Object.fromEntries(allTerms),
+        total_interactions: totalInteractions,
+      },
+    });
+  }
+
+  // --- Insight 31: Gallery Engagement (enriches Photo Engagement Score) ---
+  const galleryStats = new Map<string, {
+    lightbox_opens: number;
+    total_dwell_ms: number;
+    photos_viewed_counts: number[];
+    viewed_all_count: number;
+    thumbnail_clicks: number;
+  }>();
+
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "gallery_interaction") {
+        const vehicle = String(e.metadata.alt ?? "unknown");
+        if (!galleryStats.has(vehicle)) {
+          galleryStats.set(vehicle, {
+            lightbox_opens: 0, total_dwell_ms: 0, photos_viewed_counts: [],
+            viewed_all_count: 0, thumbnail_clicks: 0,
+          });
+        }
+        const stats = galleryStats.get(vehicle)!;
+
+        if (e.action === "lightbox_opened") stats.lightbox_opens++;
+        if (e.action === "lightbox_closed") {
+          stats.total_dwell_ms += (e.metadata.dwell_ms as number) ?? 0;
+          stats.photos_viewed_counts.push((e.metadata.photos_viewed as number) ?? 0);
+          if (e.metadata.viewed_all === true) stats.viewed_all_count++;
+        }
+        if (e.action === "thumbnail_click") stats.thumbnail_clicks++;
+      }
+    }
+  }
+
+  if (galleryStats.size > 0) {
+    const ranked = [...galleryStats.entries()]
+      .map(([vehicle, stats]) => ({
+        vehicle,
+        ...stats,
+        avg_dwell_ms: stats.lightbox_opens > 0 ? Math.round(stats.total_dwell_ms / stats.lightbox_opens) : 0,
+        avg_photos_viewed: stats.photos_viewed_counts.length > 0
+          ? Math.round(stats.photos_viewed_counts.reduce((a, b) => a + b, 0) / stats.photos_viewed_counts.length)
+          : 0,
+      }))
+      .sort((a, b) => b.lightbox_opens - a.lightbox_opens);
+
+    insights.push({
+      id: `gallery_engagement_${Date.now()}`,
+      insight: `Photo gallery engagement: ${ranked.slice(0, 5).map((r) => `"${r.vehicle}" -- ${r.lightbox_opens} lightbox opens, avg ${Math.round(r.avg_dwell_ms / 1000)}s dwell, ${r.avg_photos_viewed} photos viewed, ${r.viewed_all_count} viewed all`).join("; ")}. ${ranked.some((r) => r.avg_photos_viewed < 2 && r.lightbox_opens > 2) ? "Some vehicles have low photo browse-through -- consider reordering photos (best angle first) or adding more angles." : "Gallery engagement is healthy across listings."}`,
+      category: "engagement",
+      confidence: Math.min(ranked.reduce((a, r) => a + r.lightbox_opens, 0) / 10, 1),
+      sample_size: ranked.reduce((a, r) => a + r.lightbox_opens + r.thumbnail_clicks, 0),
+      generated_at: now,
+      data: { vehicles: ranked.slice(0, 20) },
+    });
+  }
+
+  // --- Insight 32: UTM Campaign Attribution ---
+  const campaignMap = new Map<string, { visits: number; conversions: number; leads: number; sessions: Set<string> }>();
+
+  for (const [sessionId, events] of buffer.sessions) {
+    const firstEvent = events[0];
+    const utmSource = String(firstEvent?.metadata?.utm_source ?? "");
+    const utmMedium = String(firstEvent?.metadata?.utm_medium ?? "");
+    const utmCampaign = String(firstEvent?.metadata?.utm_campaign ?? "");
+
+    if (!utmSource && !utmCampaign) continue;
+
+    const key = [utmSource, utmMedium, utmCampaign].filter(Boolean).join(" / ") || "unknown";
+    if (!campaignMap.has(key)) campaignMap.set(key, { visits: 0, conversions: 0, leads: 0, sessions: new Set() });
+    const camp = campaignMap.get(key)!;
+    camp.visits++;
+    camp.sessions.add(sessionId);
+
+    for (const e of events) {
+      if (CONVERSION_ACTIONS.has(e.action)) camp.conversions++;
+      if (e.action === "submit_lead_form" || e.action === "submit_contact_form") camp.leads++;
+    }
+  }
+
+  if (campaignMap.size > 0) {
+    const ranked = [...campaignMap.entries()]
+      .map(([campaign, stats]) => ({
+        campaign,
+        visits: stats.visits,
+        conversions: stats.conversions,
+        leads: stats.leads,
+        conversion_rate: stats.visits > 0 ? Math.round((stats.conversions / stats.visits) * 100) : 0,
+      }))
+      .sort((a, b) => b.leads - a.leads || b.conversions - a.conversions);
+
+    insights.push({
+      id: `utm_campaign_attribution_${Date.now()}`,
+      insight: `Campaign attribution: ${ranked.slice(0, 5).map((c) => `"${c.campaign}" → ${c.visits} visits, ${c.leads} leads, ${c.conversion_rate}% conversion`).join("; ")}. ${ranked.find((c) => c.visits > 10 && c.leads === 0) ? "Some campaigns drive traffic but zero leads — review ad targeting or landing pages." : ""}`,
+      category: "marketing",
+      confidence: Math.min(ranked.reduce((a, c) => a + c.visits, 0) / 50, 1),
+      sample_size: ranked.reduce((a, c) => a + c.visits, 0),
+      generated_at: now,
+      data: { campaigns: ranked.slice(0, 20) },
+    });
+  }
+
+  // --- Insight 33: Retargeting Signals ---
+  const retargetCandidates: Array<{ fingerprint: string; vehicle_views: number; sessions: number; last_seen: string; top_vehicle: string }> = [];
+
+  const userVehicleViews = new Map<string, Map<string, number>>();
+  const userSessionCounts = new Map<string, { sessions: Set<string>; last_seen: string }>();
+
+  for (const [sessionId, events] of buffer.sessions) {
+    for (const e of events) {
+      const fp = e.user_fingerprint;
+      if (!userSessionCounts.has(fp)) userSessionCounts.set(fp, { sessions: new Set(), last_seen: e.timestamp });
+      userSessionCounts.get(fp)!.sessions.add(sessionId);
+      if (e.timestamp > userSessionCounts.get(fp)!.last_seen) userSessionCounts.get(fp)!.last_seen = e.timestamp;
+
+      if (e.event_type === "vehicle_view" || (e.event_type === "click" && e.metadata.vin)) {
+        if (!userVehicleViews.has(fp)) userVehicleViews.set(fp, new Map());
+        const vin = String(e.metadata.vin ?? e.metadata.vehicle ?? "unknown");
+        userVehicleViews.get(fp)!.set(vin, (userVehicleViews.get(fp)!.get(vin) ?? 0) + 1);
+      }
+    }
+  }
+
+  for (const [fp, vehicles] of userVehicleViews) {
+    const totalViews = [...vehicles.values()].reduce((a, b) => a + b, 0);
+    const hasConversion = [...buffer.sessions.values()].some((events) =>
+      events.some((e) => e.user_fingerprint === fp && CONVERSION_ACTIONS.has(e.action))
+    );
+
+    if (totalViews >= 3 && !hasConversion) {
+      const topVehicle = [...vehicles.entries()].sort((a, b) => b[1] - a[1])[0];
+      retargetCandidates.push({
+        fingerprint: fp,
+        vehicle_views: totalViews,
+        sessions: userSessionCounts.get(fp)?.sessions.size ?? 1,
+        last_seen: userSessionCounts.get(fp)?.last_seen ?? now,
+        top_vehicle: topVehicle[0],
+      });
+    }
+  }
+
+  if (retargetCandidates.length > 0) {
+    retargetCandidates.sort((a, b) => b.vehicle_views - a.vehicle_views);
+    insights.push({
+      id: `retargeting_signals_${Date.now()}`,
+      insight: `${retargetCandidates.length} visitors viewed vehicles 3+ times without converting — prime retargeting candidates. Top: ${retargetCandidates.slice(0, 3).map((c) => `${c.vehicle_views} views across ${c.sessions} sessions, most interested in ${c.top_vehicle}`).join("; ")}.`,
+      category: "marketing",
+      confidence: Math.min(retargetCandidates.length / 10, 1),
+      sample_size: retargetCandidates.reduce((a, c) => a + c.vehicle_views, 0),
+      generated_at: now,
+      data: { candidates: retargetCandidates.slice(0, 50) },
+    });
+  }
+
+  // --- Insight 34: Seasonal Demand Patterns ---
+  const monthlyDemand = new Map<string, Map<string, number>>();
+
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "search" || e.event_type === "vehicle_view") {
+        const month = e.timestamp.slice(0, 7); // YYYY-MM
+        const category = String(
+          e.metadata.body_style ?? e.metadata.category ?? e.metadata.query ?? "other"
+        ).toLowerCase();
+
+        if (!monthlyDemand.has(month)) monthlyDemand.set(month, new Map());
+        monthlyDemand.get(month)!.set(category, (monthlyDemand.get(month)!.get(category) ?? 0) + 1);
+      }
+    }
+  }
+
+  if (monthlyDemand.size > 1) {
+    const trends: Array<{ month: string; top_categories: Array<{ category: string; count: number }> }> = [];
+
+    for (const [month, categories] of [...monthlyDemand.entries()].sort()) {
+      const top = [...categories.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([category, count]) => ({ category, count }));
+      trends.push({ month, top_categories: top });
+    }
+
+    const latestMonth = trends[trends.length - 1];
+    const topNow = latestMonth.top_categories[0]?.category ?? "unknown";
+
+    insights.push({
+      id: `seasonal_demand_${Date.now()}`,
+      insight: `Seasonal demand: "${topNow}" is the most searched category this period. ${trends.length > 1 ? `Trends over ${trends.length} months: ${trends.map((t) => `${t.month}: top is "${t.top_categories[0]?.category}"`).join(", ")}.` : ""} Stock inventory to match demand curves.`,
+      category: "marketing",
+      confidence: Math.min([...monthlyDemand.values()].reduce((a, m) => a + [...m.values()].reduce((b, c) => b + c, 0), 0) / 100, 1),
+      sample_size: [...monthlyDemand.values()].reduce((a, m) => a + [...m.values()].reduce((b, c) => b + c, 0), 0),
+      generated_at: now,
+      data: { trends },
+    });
+  }
+
+  // --- Insight 35: Chat-to-Conversion Attribution ---
+  let chatConvSessions = 0;
+  let chatConvCount = 0;
+  for (const [, events] of buffer.sessions) {
+    const hasChat = events.some((e) => e.event_type === "chat_message");
+    if (!hasChat) continue;
+    chatConvSessions++;
+    if (events.some((e) => CONVERSION_ACTIONS.has(e.action))) chatConvCount++;
+  }
+  if (chatConvSessions > 0) {
+    const rate = Math.round((chatConvCount / chatConvSessions) * 100);
+    insights.push({
+      id: `chat_conversion_${Date.now()}`,
+      insight: `Chat-to-conversion: ${chatConvCount}/${chatConvSessions} chat sessions led to a conversion (${rate}%). ${rate > 20 ? "Chat is effectively closing deals." : rate > 5 ? "Chat assists but rarely closes — consider adding CTAs within chat." : "Chat isn't driving conversions — review chat responses and add scheduling/contact prompts."}`,
+      category: "chat",
+      confidence: Math.min(chatConvSessions / 20, 1),
+      sample_size: chatConvSessions,
+      generated_at: now,
+      data: { chat_sessions: chatConvSessions, conversions: chatConvCount, rate },
+    });
+  }
+
+  // --- Insight 36: Chat Topic Demand ---
+  const topicCounts = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "chat_message" && e.metadata.role === "user") {
+        const msg = String(e.metadata.message ?? "").toLowerCase();
+        const topics = [
+          ["financing", "finance", "payment", "apr", "loan", "credit"],
+          ["trade-in", "trade in", "tradein", "my car"],
+          ["availability", "available", "in stock", "do you have"],
+          ["test drive", "schedule", "appointment", "come in"],
+          ["warranty", "certified", "cpo", "guarantee"],
+          ["price", "cost", "how much", "deal", "negotiate"],
+        ];
+        for (const [keyword, ...aliases] of topics) {
+          if ([keyword, ...aliases].some((k) => msg.includes(k))) {
+            topicCounts.set(keyword, (topicCounts.get(keyword) ?? 0) + 1);
+          }
+        }
+      }
+    }
+  }
+  if (topicCounts.size > 0) {
+    const ranked = [...topicCounts.entries()].sort((a, b) => b[1] - a[1]);
+    insights.push({
+      id: `chat_topic_demand_${Date.now()}`,
+      insight: `Chat topics: ${ranked.map(([t, c]) => `"${t}" (${c}x)`).join(", ")}. ${ranked[0] ? `"${ranked[0][0]}" is the #1 question — ensure this info is prominent on your site.` : ""}`,
+      category: "chat",
+      confidence: Math.min(ranked.reduce((a, [, c]) => a + c, 0) / 20, 1),
+      sample_size: ranked.reduce((a, [, c]) => a + c, 0),
+      generated_at: now,
+      data: { topics: ranked },
+    });
+  }
+
+  // --- Insight 37: Slow Page Bounce Correlation ---
+  const pagePerfBounce = new Map<string, { slow_visits: number; slow_bounces: number; fast_visits: number; fast_bounces: number }>();
+  for (const [, events] of buffer.sessions) {
+    const pageViews = events.filter((e) => e.event_type === "page_view");
+    const isBounce = pageViews.length === 1;
+    for (const e of pageViews) {
+      const loadMs = Number(e.metadata.load_time_ms ?? e.metadata.duration_ms ?? 0);
+      const page = e.page;
+      if (!pagePerfBounce.has(page)) pagePerfBounce.set(page, { slow_visits: 0, slow_bounces: 0, fast_visits: 0, fast_bounces: 0 });
+      const stats = pagePerfBounce.get(page)!;
+      if (loadMs > 3000) { stats.slow_visits++; if (isBounce) stats.slow_bounces++; }
+      else { stats.fast_visits++; if (isBounce) stats.fast_bounces++; }
+    }
+  }
+  const slowBouncePages = [...pagePerfBounce.entries()]
+    .filter(([, s]) => s.slow_visits >= 3 && s.slow_bounces / s.slow_visits > 0.5)
+    .map(([page, s]) => ({ page, slow_bounce_rate: Math.round((s.slow_bounces / s.slow_visits) * 100), fast_bounce_rate: s.fast_visits > 0 ? Math.round((s.fast_bounces / s.fast_visits) * 100) : 0 }))
+    .sort((a, b) => b.slow_bounce_rate - a.slow_bounce_rate);
+  if (slowBouncePages.length > 0) {
+    insights.push({
+      id: `slow_page_bounce_${Date.now()}`,
+      insight: `Slow pages losing visitors: ${slowBouncePages.slice(0, 3).map((p) => `"${p.page}" — ${p.slow_bounce_rate}% bounce when slow vs ${p.fast_bounce_rate}% when fast`).join("; ")}. Speed improvements here directly recover lost leads.`,
+      category: "ux_friction",
+      confidence: Math.min(slowBouncePages.reduce((a, p) => a + p.slow_bounce_rate, 0) / 200, 1),
+      sample_size: [...pagePerfBounce.values()].reduce((a, s) => a + s.slow_visits, 0),
+      generated_at: now,
+      data: { pages: slowBouncePages },
+    });
+  }
+
+  // --- Insight 38: Mobile Pinch-Zoom Detection ---
+  const pinchPages = new Map<string, number>();
+  for (const [, events] of buffer.sessions) {
+    for (const e of events) {
+      if (e.event_type === "pinch_zoom" || (e.event_type === "gesture" && e.action === "pinch_zoom")) {
+        pinchPages.set(e.page, (pinchPages.get(e.page) ?? 0) + 1);
+      }
+    }
+  }
+  if (pinchPages.size > 0) {
+    const ranked = [...pinchPages.entries()].sort((a, b) => b[1] - a[1]);
+    insights.push({
+      id: `pinch_zoom_${Date.now()}`,
+      insight: `Mobile pinch-zoom detected on: ${ranked.slice(0, 5).map(([p, c]) => `"${p}" (${c}x)`).join(", ")}. Users are zooming because text or buttons are too small — increase font sizes and tap targets on these pages.`,
+      category: "ux_friction",
+      confidence: Math.min(ranked.reduce((a, [, c]) => a + c, 0) / 15, 1),
+      sample_size: ranked.reduce((a, [, c]) => a + c, 0),
+      generated_at: now,
+      data: { pages: ranked },
+    });
+  }
+
   return insights;
 }
 
@@ -1217,6 +2217,13 @@ export async function runAggregationPipeline(): Promise<{
   for (const [sessionId] of buffer.sessions) {
     const queries = buildGraphQueries(sessionId);
     allGraphQueries.push(...queries);
+  }
+
+  // Execute graph queries against Neo4j (fire-and-forget, non-blocking)
+  if (allGraphQueries.length > 0) {
+    executeNeo4jQueries(allGraphQueries).catch((err) => {
+      console.error("[analytics] Neo4j graph write error:", err);
+    });
   }
 
   return {

@@ -154,6 +154,263 @@ export function customerConfirmationHTML(dealer: Dealer, lead: Lead): string {
 }
 
 // ---------------------------------------------------------------------------
+// New Lead Alert (for dealer staff via notification dispatcher)
+// ---------------------------------------------------------------------------
+
+export function newLeadHTML(params: {
+  name: string;
+  email: string;
+  phone: string | null;
+  vehicle: string;
+  source: string;
+  timestamp: string;
+}): string {
+  const { name, email, phone, vehicle, source, timestamp } = params;
+
+  return wrapInLayout({
+    headerBg: "#1a1a2e",
+    headerTitle: "New Lead Alert",
+    body: `
+      <p style="margin:0 0 16px;font-size:15px;color:#333;">A new lead has been submitted on your website.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;">
+        <tr><td style="padding:12px 16px 4px;font-weight:600;color:#1a1a2e;font-size:14px;">Contact Information</td></tr>
+        <tr>
+          <td style="padding:4px 16px;color:#666;font-size:13px;width:140px;">Name</td>
+          <td style="padding:4px 16px;font-size:13px;font-weight:600;">${escapeHtml(name)}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 16px;color:#666;font-size:13px;">Email</td>
+          <td style="padding:4px 16px;font-size:13px;"><a href="mailto:${escapeHtml(email)}" style="color:#e94560;">${escapeHtml(email)}</a></td>
+        </tr>
+        ${phone ? `<tr><td style="padding:4px 16px;color:#666;font-size:13px;">Phone</td><td style="padding:4px 16px;font-size:13px;"><a href="tel:${escapeHtml(phone)}" style="color:#e94560;">${escapeHtml(phone)}</a></td></tr>` : ""}
+        <tr><td colspan="2" style="padding:12px 16px 4px;font-weight:600;color:#1a1a2e;font-size:14px;">Inquiry</td></tr>
+        <tr>
+          <td style="padding:4px 16px;color:#666;font-size:13px;">Vehicle</td>
+          <td style="padding:4px 16px;font-size:13px;">${escapeHtml(vehicle)}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 16px;color:#666;font-size:13px;">Source</td>
+          <td style="padding:4px 16px;font-size:13px;">${escapeHtml(formatSource(source))}</td>
+        </tr>
+      </table>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="mailto:${escapeHtml(email)}?subject=${encodeURIComponent("Re: Your vehicle inquiry")}"
+           style="display:inline-block;padding:12px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">
+          Reply to This Lead
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:12px;color:#999;text-align:center;">Received ${escapeHtml(timestamp)}</p>
+    `,
+    footerText: "Wolfpack Auto Platform",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Contact Form Submission (for dealer staff)
+// ---------------------------------------------------------------------------
+
+export function contactSubmissionHTML(params: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}): string {
+  const { name, email, subject, message } = params;
+
+  return wrapInLayout({
+    headerBg: "#1a1a2e",
+    headerTitle: "New Contact Form Submission",
+    body: `
+      <p style="margin:0 0 16px;font-size:15px;color:#333;">A visitor submitted a message through your contact form.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;">
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;width:140px;">Name</td>
+          <td style="padding:8px 16px;font-size:13px;font-weight:600;">${escapeHtml(name)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;">Email</td>
+          <td style="padding:8px 16px;font-size:13px;"><a href="mailto:${escapeHtml(email)}" style="color:#e94560;">${escapeHtml(email)}</a></td>
+        </tr>
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;">Subject</td>
+          <td style="padding:8px 16px;font-size:13px;">${escapeHtml(subject)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;vertical-align:top;">Message</td>
+          <td style="padding:8px 16px;font-size:13px;line-height:1.5;">${escapeHtml(message)}</td>
+        </tr>
+      </table>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="mailto:${escapeHtml(email)}?subject=${encodeURIComponent(`Re: ${subject}`)}"
+           style="display:inline-block;padding:12px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">
+          Reply to Message
+        </a>
+      </div>
+    `,
+    footerText: "Wolfpack Auto Platform",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Customer Confirmation (sent to customer after lead/contact submission)
+// ---------------------------------------------------------------------------
+
+export function genericCustomerConfirmationHTML(params: {
+  customerName: string;
+  dealerName: string;
+  type: "lead" | "contact";
+}): string {
+  const { customerName, dealerName, type } = params;
+  const greeting = customerName ? `Hi ${escapeHtml(customerName)},` : "Hi,";
+  const typeLabel = type === "lead" ? "vehicle inquiry" : "message";
+
+  return wrapInLayout({
+    headerBg: "#1a1a2e",
+    headerTitle: escapeHtml(dealerName),
+    body: `
+      <h2 style="margin:0 0 16px;font-size:18px;color:#1a1a2e;">We Received Your Inquiry</h2>
+      <p style="margin:0 0 12px;font-size:15px;color:#333;line-height:1.6;">
+        ${greeting}
+      </p>
+      <p style="margin:0 0 12px;font-size:15px;color:#333;line-height:1.6;">
+        Thank you for your ${typeLabel}. A member of our team will get back to you <strong>within 1 business hour</strong>.
+      </p>
+      <p style="margin:0 0 24px;font-size:15px;color:#333;line-height:1.6;">
+        If you need immediate assistance, don't hesitate to call us directly.
+      </p>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="#"
+           style="display:inline-block;padding:12px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">
+          Browse Our Inventory
+        </a>
+      </div>
+      <p style="margin:16px 0 0;font-size:13px;color:#999;text-align:center;">
+        You are receiving this email because you submitted a ${typeLabel} at ${escapeHtml(dealerName)}.
+      </p>
+    `,
+    footerText: `${escapeHtml(dealerName)} &mdash; Wolfpack Auto Platform`,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Lead Assigned (sent to specific staff member)
+// ---------------------------------------------------------------------------
+
+export function leadAssignedHTML(params: {
+  leadName: string;
+  assignedTo: string;
+  vehicle: string;
+}): string {
+  const { leadName, assignedTo, vehicle } = params;
+
+  return wrapInLayout({
+    headerBg: "#1a1a2e",
+    headerTitle: "Lead Assigned to You",
+    body: `
+      <p style="margin:0 0 16px;font-size:15px;color:#333;">
+        A lead has been assigned to you. Please follow up promptly.
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;">
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;width:140px;">Lead Name</td>
+          <td style="padding:8px 16px;font-size:13px;font-weight:600;">${escapeHtml(leadName)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;">Vehicle Interest</td>
+          <td style="padding:8px 16px;font-size:13px;">${escapeHtml(vehicle)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;">Assigned To</td>
+          <td style="padding:8px 16px;font-size:13px;">${escapeHtml(assignedTo)}</td>
+        </tr>
+      </table>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="#"
+           style="display:inline-block;padding:12px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">
+          View Lead in Dashboard
+        </a>
+      </div>
+    `,
+    footerText: "Wolfpack Auto Platform",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Inventory Alert (for managers)
+// ---------------------------------------------------------------------------
+
+export function inventoryAlertHTML(params: {
+  alertType: string;
+  details: string;
+  actionUrl: string;
+}): string {
+  const { alertType, details, actionUrl } = params;
+
+  return wrapInLayout({
+    headerBg: "#92400e",
+    headerTitle: "Inventory Alert",
+    body: `
+      <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:16px;margin:0 0 16px;">
+        <p style="margin:0;font-size:14px;font-weight:600;color:#92400e;">${escapeHtml(alertType)}</p>
+      </div>
+      <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.6;">
+        ${escapeHtml(details)}
+      </p>
+      <div style="text-align:center;margin:24px 0 8px;">
+        <a href="${escapeHtml(actionUrl)}"
+           style="display:inline-block;padding:12px 32px;background:#e94560;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">
+          Review Inventory
+        </a>
+      </div>
+    `,
+    footerText: "Wolfpack Auto Platform",
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Shared layout wrapper
+// ---------------------------------------------------------------------------
+
+function wrapInLayout(params: {
+  headerBg: string;
+  headerTitle: string;
+  body: string;
+  footerText: string;
+}): string {
+  const { headerBg, headerTitle, body, footerText } = params;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f8;">
+    <tr><td align="center" style="padding:24px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+        <!-- Header -->
+        <tr><td style="background:${headerBg};padding:24px 32px;text-align:center;">
+          <div style="width:48px;height:48px;margin:0 auto 12px;background:rgba(255,255,255,.15);border-radius:50%;line-height:48px;font-size:20px;color:#fff;">W</div>
+          <div style="color:#fff;font-size:20px;font-weight:700;">${headerTitle}</div>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="padding:24px 32px;">
+          ${body}
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #eee;text-align:center;font-size:11px;color:#aaa;">
+          ${footerText}
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 

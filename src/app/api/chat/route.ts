@@ -333,9 +333,72 @@ function matchRuleIntent(message: string): ChatResponse | null {
 /* ---------- Vehicle search response builders ---------- */
 
 async function handleVehicleSearch(message: string): Promise<ChatResponse> {
-  const result: VehicleSearchResult = await searchVehiclesByQuery(message, 3);
-  const cards = result.vehicles.map(vehicleToCard);
-  const formatted = formatVehicleCards(result.vehicles);
+  const lower = message.toLowerCase();
+
+  // Extract price constraints so we can post-filter vector results
+  let maxPrice: number | null = null;
+  let minPrice: number | null = null;
+  const maxMatch = lower.match(
+    /(?:under|below|less\s*than|up\s*to|max)\s*\$?([\d,]+)\s*k?\b/,
+  );
+  if (maxMatch) {
+    let val = parseInt(maxMatch[1].replace(/,/g, ""), 10);
+    if (val < 1000) val *= 1000;
+    maxPrice = val;
+  }
+  const minMatch = lower.match(
+    /(?:over|above|more\s*than|at\s*least|min)\s*\$?([\d,]+)\s*k?\b/,
+  );
+  if (minMatch) {
+    let val = parseInt(minMatch[1].replace(/,/g, ""), 10);
+    if (val < 1000) val *= 1000;
+    minPrice = val;
+  }
+
+  // Fetch extra results when price filtering to avoid empty sets
+  const fetchLimit = maxPrice || minPrice ? 10 : 5;
+  const result: VehicleSearchResult = await searchVehiclesByQuery(
+    message,
+    fetchLimit,
+  );
+
+  // Apply price post-filter on vector results (keyword search already handles this)
+  let filtered = result.vehicles;
+  if (result.source === "vector") {
+    if (maxPrice !== null) {
+      filtered = filtered.filter((v) => v.price <= maxPrice!);
+    }
+    if (minPrice !== null) {
+      filtered = filtered.filter((v) => v.price >= minPrice!);
+    }
+  }
+
+  // If vector search had results but price filter eliminated them, try keyword
+  if (filtered.length === 0 && result.source === "vector") {
+    const { keywordSearchVehicles } = await import("@/lib/vehicle-search");
+    const { placeholderVehicles } = await import("@/lib/placeholder-data");
+    filtered = keywordSearchVehicles(message, placeholderVehicles, 5);
+  }
+
+  // Cap display to 5
+  filtered = filtered.slice(0, 5);
+
+  const cards = filtered.map(vehicleToCard);
+  const formatted = formatVehicleCards(filtered);
+
+  if (filtered.length === 0) {
+    return {
+      response:
+        "I couldn't find exact matches for that query, but we have a great selection! " +
+        "[Browse our full inventory](/inventory) or try adjusting your search.",
+      suggested_actions: [
+        "Browse inventory",
+        "Financing options",
+        "Contact us",
+      ],
+      search_source: result.source,
+    };
+  }
 
   return {
     response: `Here are some vehicles that match what you're looking for:\n\n${formatted}\n\n[Browse our full inventory](/inventory) to see all available vehicles, or tell me more about what you need!`,

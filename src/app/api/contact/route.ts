@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { trackServerEvent } from "@/lib/analytics";
+import { encryptPII } from "@/lib/crypto";
+import { auditLog } from "@/lib/audit-log";
+
+/** Strip HTML tags and escape remaining special characters to prevent stored XSS. */
+function sanitizeInput(str: string): string {
+  return str
+    .replace(/<[^>]*>/g, "") // strip HTML tags
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -87,7 +100,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const data = parsed.data;
+  const raw = parsed.data;
+
+  // Sanitize all string fields to prevent stored XSS
+  const data = {
+    ...raw,
+    first_name: sanitizeInput(raw.first_name),
+    last_name: sanitizeInput(raw.last_name),
+    subject: sanitizeInput(raw.subject),
+    message: sanitizeInput(raw.message),
+    phone: raw.phone ? sanitizeInput(raw.phone) : raw.phone,
+    // email is validated by zod as a proper email; don't mangle it
+    email: raw.email,
+  };
 
   // Rate limit: 3 per email per hour
   const rateCheck = checkContactRateLimit(data.email);
@@ -108,6 +133,12 @@ export async function POST(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
 
+      // Encrypt PII fields before storage
+      const encryptedEmail = encryptPII(data.email.toLowerCase());
+      const encryptedPhone = data.phone?.trim()
+        ? encryptPII(data.phone.trim())
+        : null;
+
       const result = await query<{ id: string; created_at: string }>(
         `INSERT INTO leads (
           dealer_id, first_name, last_name, email, phone,
@@ -122,8 +153,8 @@ export async function POST(request: NextRequest) {
           dealerId,
           data.first_name.trim(),
           data.last_name.trim(),
-          data.email.toLowerCase(),
-          data.phone?.trim() || null,
+          encryptedEmail,
+          encryptedPhone,
           data.subject, // vehicle_interest stores subject for contact form leads
           `[Contact Form] ${data.message}`,
         ],
@@ -131,37 +162,53 @@ export async function POST(request: NextRequest) {
 
       const created = result.rows[0];
 
-      // Fire-and-forget: email notification
+      // Audit log: record PII access event (fire-and-forget)
+      const clientIp =
+        request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        request.headers.get("x-real-ip") ??
+        undefined;
+      void auditLog(
+        "lead.create",
+        {
+          lead_id: created.id,
+          source: "contact_form",
+          subject: data.subject,
+          pii_encrypted: !!process.env.PII_ENCRYPTION_KEY,
+        },
+        undefined,
+        dealerId,
+        clientIp,
+      );
+
+      // Fire-and-forget: email notifications via notification dispatcher
       void (async () => {
         try {
-          const { sendLeadNotification } = await import("@/lib/email");
-          const dealerResult = await query<Record<string, unknown>>(
-            `SELECT * FROM dealers WHERE id = $1`,
-            [dealerId],
-          );
-          if (dealerResult.rows[0]) {
-            const dealer = dealerResult.rows[0] as unknown as import("@/types/dealer").Dealer;
-            const fullLead = {
-              id: created.id,
-              dealer_id: dealerId,
+          const { notifyContactFormSubmission, sendCustomerConfirmation } =
+            await import("@/lib/notifications");
+
+          // Notify dealer staff
+          void notifyContactFormSubmission(
+            {
               first_name: data.first_name.trim(),
               last_name: data.last_name.trim(),
               email: data.email.toLowerCase(),
-              phone: data.phone?.trim() || null,
-              vehicle_id: null,
-              vehicle_interest: data.subject,
-              source: "website_form" as const,
-              status: "new" as const,
-              notes: `[Contact Form] ${data.message}`,
-              utm_source: null,
-              utm_medium: null,
-              utm_campaign: null,
-              referrer_url: null,
-              created_at: created.created_at,
-              updated_at: created.created_at,
-            };
-            void sendLeadNotification(dealer, fullLead);
-          }
+              subject: data.subject,
+              message: data.message,
+            },
+            dealerId,
+          );
+
+          // Send confirmation to the customer
+          const dealerResult = await query<{ name: string }>(
+            `SELECT name FROM dealers WHERE id = $1 LIMIT 1`,
+            [dealerId],
+          );
+          const dealerName = dealerResult.rows[0]?.name ?? "Our Dealership";
+          void sendCustomerConfirmation(
+            data.email.toLowerCase(),
+            "contact",
+            dealerName,
+          );
         } catch (emailErr) {
           console.error("[api/contact] Email notification failed:", emailErr);
         }

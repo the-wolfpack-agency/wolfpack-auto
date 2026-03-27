@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wolfpack Auto — Platform Intelligence Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232736;
+    --border: #2d3148;
+    --text: #e4e7f1;
+    --text-dim: #8b90a5;
+    --engagement: #3b82f6;
+    --conversion: #22c55e;
+    --search: #f97316;
+    --chat: #a855f7;
+    --ux-friction: #ef4444;
+    --navigation: #14b8a6;
+    --marketing: #eab308;
+    --seo: #ec4899;
+    --pipeline: #06b6d4;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { overflow-x:hidden; }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; overflow-x:hidden; max-width:100vw; }
+
+  /* HEADER */
+  .demo-banner {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f1117 100%);
+    border-bottom: 2px solid var(--engagement);
+    padding: 20px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .demo-banner h1 { font-size:1.4rem; font-weight:700; }
+  .demo-banner h1 span { color: var(--engagement); }
+  .demo-banner .subtitle { color: var(--text-dim); font-size:0.85rem; }
+  .demo-banner-source { text-align:right; flex-shrink:0; }
+  .demo-banner > div { min-width:0; }
+
+  /* LEGEND */
+  .legend {
+    display:flex; flex-wrap:wrap; gap:12px; padding:16px 40px;
+    background:var(--surface); border-bottom:1px solid var(--border);
+  }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--text-dim); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* MAIN LAYOUT */
+  .main { display:flex; flex-direction:row; min-height:100vh; }
+  .site-mock { flex:1; padding:30px; min-width:0; }
+  .sidebar { width:340px; flex-shrink:0; background:var(--surface); border-left:1px solid var(--border); padding:24px; overflow-y:auto; }
+
+  /* ANNOTATION BADGES */
+  .badge {
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:0.65rem; font-weight:600; padding:3px 8px;
+    border-radius:10px; color:#fff;
+    text-transform:uppercase; letter-spacing:0.5px;
+  }
+  .badge-engagement { background: var(--engagement); }
+  .badge-conversion { background: var(--conversion); }
+  .badge-search { background: var(--search); }
+  .badge-chat { background: var(--chat); }
+  .badge-ux_friction { background: var(--ux-friction); }
+  .badge-navigation { background: var(--navigation); }
+  .badge-marketing { background: var(--marketing); }
+  .badge-seo { background: var(--seo); }
+  .badge-pipeline { background: var(--pipeline); }
+
+  /* ANNOTATED SECTION */
+  .annotated {
+    position:relative; border:1px dashed var(--border);
+    border-radius:12px; padding:20px; margin-bottom:24px;
+    background:var(--surface);
+  }
+  .annotated:hover { border-color: var(--engagement); }
+  .annotation-row {
+    display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;
+    padding-top:10px; border-top:1px solid var(--border);
+  }
+  .annotation-detail {
+    font-size:0.72rem; color:var(--text-dim); margin-top:6px; line-height:1.6;
+    overflow-wrap:break-word; word-break:break-word;
+  }
+  .annotation-detail code, .sidebar code {
+    word-break:break-all;
+  }
+  .section-label {
+    font-size:0.7rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:1px; color:var(--text-dim); margin-bottom:12px;
+  }
+
+  /* MOCK SITE ELEMENTS */
+  .mock-nav {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 20px; background:var(--surface2); border-radius:8px; margin-bottom:16px;
+  }
+  .mock-nav .logo { font-weight:800; font-size:1.1rem; }
+  .mock-nav .links { display:flex; gap:16px; font-size:0.8rem; color:var(--text-dim); }
+
+  .mock-hero {
+    background: linear-gradient(135deg, #1e3a5f, #2d1b4e);
+    border-radius:12px; padding:50px 30px; text-align:center; margin-bottom:0;
+  }
+  .mock-hero h2 { font-size:1.8rem; font-weight:800; margin-bottom:8px; }
+  .mock-hero p { color:var(--text-dim); }
+
+  .mock-search {
+    display:flex; gap:10px; margin-top:20px; justify-content:center;
+  }
+  .mock-search input {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:10px 16px; color:var(--text); width:260px; font-size:16px;
+  }
+  .mock-search button {
+    background:var(--engagement); color:#fff; border:none; border-radius:8px;
+    padding:10px 20px; font-weight:600; cursor:pointer; font-size:0.85rem;
+  }
+
+  .vehicle-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:0; }
+  .vehicle-card {
+    background:var(--surface2); border-radius:10px; overflow:hidden; border:1px solid var(--border);
+  }
+  .vehicle-img { height:120px; background:linear-gradient(135deg,#2a2d3e,#1e2030); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:0.75rem; }
+  .vehicle-info { padding:12px; }
+  .vehicle-info h4 { font-size:0.85rem; margin-bottom:4px; }
+  .vehicle-info .price { color:var(--conversion); font-weight:700; font-size:0.95rem; }
+  .vehicle-info .cta { display:inline-block; margin-top:8px; background:var(--conversion); color:#fff; padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:600; text-decoration:none; }
+
+  .mock-chat {
+    background:var(--surface2); border-radius:10px; padding:16px; border:1px solid var(--border);
+  }
+  .chat-bubble { background:var(--surface); padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:0.8rem; }
+  .chat-input { display:flex; gap:8px; margin-top:10px; }
+  .chat-input input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 12px; color:var(--text); font-size:16px; }
+  .chat-input button { background:var(--chat); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:0.8rem; font-weight:600; }
+
+  .mock-form {
+    display:grid; gap:10px;
+  }
+  .mock-form input, .mock-form textarea {
+    background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+    padding:10px 14px; color:var(--text); font-size:16px; font-family:inherit;
+  }
+  .mock-form textarea { height:70px; resize:none; }
+  .mock-form button {
+    background:var(--conversion); color:#fff; border:none; border-radius:6px;
+    padding:10px 20px; font-weight:600; cursor:pointer; font-size:0.85rem;
+  }
+
+  .mock-footer {
+    background:var(--surface2); border-radius:8px; padding:20px; text-align:center;
+    color:var(--text-dim); font-size:0.75rem;
+  }
+
+  /* SIDEBAR */
+  .sidebar h3 { font-size:0.9rem; font-weight:700; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:10px; }
+  .pipeline-step {
+    display:flex; align-items:flex-start; gap:10px; margin-bottom:14px;
+    padding:10px; background:var(--surface2); border-radius:8px;
+  }
+  .pipeline-num {
+    width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:0.7rem; font-weight:700; flex-shrink:0;
+  }
+  .pipeline-step .detail { font-size:0.72rem; }
+  .pipeline-step .detail strong { display:block; font-size:0.78rem; margin-bottom:2px; }
+
+  .insight-list { list-style:none; }
+  .insight-list li {
+    font-size:0.7rem; padding:5px 0; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:6px;
+  }
+  .insight-list li:last-child { border:none; }
+  .insight-num { color:var(--text-dim); font-weight:600; min-width:18px; }
+
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+  .stat-box { background:var(--surface2); border-radius:8px; padding:10px; text-align:center; }
+  .stat-box .num { font-size:1.3rem; font-weight:800; }
+  .stat-box .label { font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; }
+
+  .seo-list { list-style:none; }
+  .seo-list li { font-size:0.72rem; padding:4px 0; display:flex; align-items:center; gap:6px; }
+  .seo-list li::before { content:"→"; color:var(--seo); font-weight:700; }
+
+  .section-divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+
+  /* TRACKING FUNCTIONS TABLE */
+  .track-table { width:100%; border-collapse:collapse; font-size:0.7rem; }
+  .track-table th { text-align:left; color:var(--text-dim); font-weight:600; padding:4px 0; border-bottom:1px solid var(--border); }
+  .track-table td { padding:4px 0; border-bottom:1px solid rgba(45,49,72,0.5); }
+  .track-table td:first-child { font-family:monospace; color:var(--pipeline); word-break:break-all; }
+
+  /* ARCHITECTURE FOOTER */
+  .arch-footer { background:var(--surface); border-top:2px solid var(--pipeline); padding:30px 20px; }
+  .arch-flow { display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; font-size:0.8rem; }
+  .arch-box { background:var(--surface2); padding:12px 18px; border-radius:8px; text-align:center; min-width:0; }
+  .arch-arrow { color:var(--pipeline); font-weight:700; }
+  .arch-stores { display:flex; flex-direction:column; gap:6px; }
+  .arch-store { background:var(--surface2); padding:8px 14px; border-radius:6px; font-size:0.75rem; }
+
+  /* ===== TABLET ===== */
+  @media (max-width:900px) {
+    .main { flex-direction:column; }
+    .sidebar { width:100%; border-left:none; border-top:1px solid var(--border); }
+    .vehicle-grid { grid-template-columns:1fr 1fr; }
+    .demo-banner { flex-direction:column; gap:10px; padding:16px 20px; }
+    .demo-banner div:last-child { text-align:left; }
+    .legend { padding:12px 20px; }
+  }
+
+  /* ===== MOBILE ===== */
+  @media (max-width:600px) {
+    /* Layout */
+    .main { flex-direction:column; }
+    .sidebar { width:100%; padding:16px; }
+    .site-mock { padding:14px; }
+
+    /* Banner — stack cleanly, all left-aligned */
+    .demo-banner { padding:16px; flex-direction:column; gap:8px; align-items:flex-start; }
+    .demo-banner h1 { font-size:1.1rem; line-height:1.3; }
+    .demo-banner .subtitle { font-size:0.75rem; }
+    .demo-banner-source { text-align:left; font-size:0.7rem; margin-top:2px; }
+
+    /* Legend — match banner padding */
+    .legend { gap:8px; padding:12px 16px; }
+    .legend-item { font-size:0.68rem; }
+
+    /* Consistent left padding across all sections */
+    .annotated { margin-left:0; margin-right:0; }
+
+    /* Sections */
+    .annotated { padding:14px; margin-bottom:16px; }
+    .annotation-row { gap:5px; }
+    .badge { font-size:0.6rem; padding:3px 7px; white-space:nowrap; }
+    .annotation-detail { font-size:0.7rem; }
+
+    /* Mock nav */
+    .mock-nav { flex-direction:column; gap:8px; padding:12px; }
+    .mock-nav .links { flex-wrap:wrap; gap:10px; justify-content:center; font-size:0.75rem; }
+
+    /* Hero */
+    .mock-hero { padding:28px 16px; }
+    .mock-hero h2 { font-size:1.4rem; }
+    .mock-search { flex-direction:column; }
+    .mock-search input { width:100%; }
+
+    /* Vehicle grid — single column */
+    .vehicle-grid { grid-template-columns:1fr; }
+
+    /* Sidebar content */
+    .stat-grid { grid-template-columns:1fr 1fr; gap:6px; }
+    .pipeline-step { flex-direction:column; gap:4px; }
+    .track-table { font-size:0.65rem; }
+    .insight-list li { font-size:0.67rem; }
+    .seo-list li { font-size:0.67rem; }
+
+    /* Architecture footer */
+    .arch-flow { flex-direction:column; gap:8px; }
+    .arch-box { width:100%; }
+    .arch-stores { width:100%; }
+    .arch-store { width:100%; }
+    .arch-arrow { transform:rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== DEMO BANNER ==================== -->
+<div class="demo-banner">
+  <div>
+    <h1>Wolfpack Auto — <span>Platform Intelligence Demo</span></h1>
+    <div class="subtitle">Every element on this page is instrumented. Colored badges reveal what's happening behind the scenes.</div>
+    <div class="subtitle" style="margin-top:6px;">Source-verified from <strong>analytics-engine.ts</strong> &bull; <strong>seo-engine.ts</strong> &bull; <strong>EventCollector.tsx</strong></div>
+  </div>
+</div>
+
+<!-- ==================== LEGEND ==================== -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--engagement)"></div> Engagement (13 insights)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--conversion)"></div> Conversion (13 insights)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--search)"></div> Search (2 insights)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--chat)"></div> Chat (3 insights)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--ux-friction)"></div> UX Friction (4 insights)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--navigation)"></div> Navigation</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--marketing)"></div> Marketing (4 insights)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--seo)"></div> SEO Engine</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--pipeline)"></div> Data Pipeline</div>
+</div>
+
+<!-- ==================== MAIN LAYOUT ==================== -->
+<div class="main">
+
+<!-- ==================== SITE MOCK ==================== -->
+<div class="site-mock">
+
+  <!-- NAV -->
+  <div class="annotated">
+    <div class="mock-nav">
+      <div class="logo">🐺 Wolfpack Motors</div>
+      <div class="links">
+        <span>Home</span> <span>Inventory</span> <span>Financing</span> <span>About</span> <span>Contact</span>
+      </div>
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-navigation">Navigation</span>
+      <span class="badge badge-engagement">page_view</span>
+      <span class="badge badge-seo">generateMetaTags()</span>
+      <span class="badge badge-marketing">Referrer Correlation</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Insight #13:</strong> Cross-page journey patterns — builds ordered JourneyNode sequences stored in Neo4j.<br>
+      <strong>Insight #21:</strong> Referrer behavior correlation — segments behavior by traffic source (organic, paid, social, direct).<br>
+      <strong>SEO:</strong> Every page load calls <code>generateMetaTags()</code> for dynamic title, description, canonical URL, and Open Graph tags.<br>
+      <strong>Tracking:</strong> <code>trackEvent('page_view')</code> fires on every navigation via EventCollector.tsx.
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="annotated">
+    <div class="mock-hero">
+      <h2>Find Your Perfect Vehicle</h2>
+      <p>Premium pre-owned vehicles with transparent pricing</p>
+      <div class="mock-search">
+        <input type="text" placeholder="Search make, model, or keyword...">
+        <button>Search Inventory</button>
+      </div>
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-search">Search Behavior</span>
+      <span class="badge badge-engagement">Time-to-First-Interaction</span>
+      <span class="badge badge-engagement">Scroll Behavior</span>
+      <span class="badge badge-conversion">Exit Intent</span>
+      <span class="badge badge-engagement">Viewport Attention</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Insight #3:</strong> Search behavior — tracks queries, clicks, zero-result searches, and time-to-first-click.<br>
+      <strong>Insight #11:</strong> Time-to-first-interaction — classifies users as "focused" (&lt;3s), "browsing" (3-10s), or "hesitant" (&gt;10s).<br>
+      <strong>Insight #10:</strong> Scroll behavior classification — "skimmer" (&lt;25%), "reader" (25-75%), "deep-diver" (&gt;75%).<br>
+      <strong>Insight #22:</strong> Viewport attention — measures what content users actually read via intersection observer.<br>
+      <strong>Insight #18:</strong> Exit intent — detects mouse-to-top-of-page pattern before user leaves.<br>
+      <strong>Insight #24:</strong> Inventory Gap Detection — compares search terms against actual inventory to find missed opportunities.
+    </div>
+  </div>
+
+  <!-- VEHICLE GRID -->
+  <div class="annotated">
+    <div class="section-label">Inventory Grid</div>
+    <div class="vehicle-grid">
+      <div class="vehicle-card">
+        <div class="vehicle-img">📸 2024 BMW X5</div>
+        <div class="vehicle-info">
+          <h4>2024 BMW X5 xDrive40i</h4>
+          <div class="price">$52,900</div>
+          <a class="cta" href="#">Schedule Test Drive</a>
+        </div>
+      </div>
+      <div class="vehicle-card">
+        <div class="vehicle-img">📸 2023 Mercedes GLC</div>
+        <div class="vehicle-info">
+          <h4>2023 Mercedes-Benz GLC 300</h4>
+          <div class="price">$41,500</div>
+          <a class="cta" href="#">Schedule Test Drive</a>
+        </div>
+      </div>
+      <div class="vehicle-card">
+        <div class="vehicle-img">📸 2024 Audi Q7</div>
+        <div class="vehicle-info">
+          <h4>2024 Audi Q7 Premium Plus</h4>
+          <div class="price">$58,200</div>
+          <a class="cta" href="#">Schedule Test Drive</a>
+        </div>
+      </div>
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-engagement">Vehicle Interest</span>
+      <span class="badge badge-engagement">Photo Engagement</span>
+      <span class="badge badge-conversion">Micro-Hesitation</span>
+      <span class="badge badge-conversion">Comparison Shopping</span>
+      <span class="badge badge-conversion">Price Trajectory</span>
+      <span class="badge badge-conversion">CTA Visibility Gap</span>
+      <span class="badge badge-seo">JSON-LD Schema</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Insight #4:</strong> Vehicle interest — tracks which VINs get views, time spent, and return visits.<br>
+      <strong>Insight #25:</strong> Photo Engagement Score — per-vehicle composite of gallery views, zoom, swipe, time on photos.<br>
+      <strong>Insight #31:</strong> Gallery Engagement — enriches #25 with detailed photo interaction data.<br>
+      <strong>Insight #7:</strong> Micro-hesitation patterns — detects hover-without-click, repeated views, price-check-then-leave.<br>
+      <strong>Insight #8:</strong> Comparison shopping detection — user viewing 3+ vehicles in one session = comparison behavior.<br>
+      <strong>Insight #19:</strong> Price trajectory — tracks which price ranges users gravitate toward over time (buyer psychology).<br>
+      <strong>Insight #28:</strong> CTA Visibility Gap — detects if "Schedule Test Drive" buttons are below fold / never seen.<br>
+      <strong>Insight #29:</strong> Vehicle Comparison Patterns — which vehicles get compared together most often.<br>
+      <strong>SEO:</strong> <code>generateStructuredData()</code> outputs JSON-LD Vehicle schema for each listing (make, model, price, mileage, VIN).<br>
+      <strong>Tracking:</strong> <code>trackVehicleView(vin)</code> on every card click; <code>trackEvent('click')</code> on CTA buttons.
+    </div>
+  </div>
+
+  <!-- CHAT WIDGET -->
+  <div class="annotated">
+    <div class="section-label">AI Chat Widget</div>
+    <div class="mock-chat">
+      <div class="chat-bubble">👋 Hi! I'm the Wolfpack assistant. Ask me about any vehicle, financing, or scheduling.</div>
+      <div class="chat-bubble" style="margin-left:40px;background:var(--chat);color:#fff;">Do you have any SUVs under $45k?</div>
+      <div class="chat-bubble">Great question! We have 12 SUVs in that range. Here are the top 3 by value...</div>
+      <div class="chat-input">
+        <input type="text" placeholder="Ask about vehicles, financing, trade-ins...">
+        <button>Send</button>
+      </div>
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-chat">Chat Engagement</span>
+      <span class="badge badge-conversion">Lead Temperature</span>
+      <span class="badge badge-engagement">Session Momentum</span>
+      <span class="badge badge-pipeline">RAG Embeddings</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Insight #5:</strong> Chat engagement — tracks message count, topics discussed, response satisfaction, and whether chat leads to conversion.<br>
+      <strong>Insight #23:</strong> Lead Temperature Score — composite of ALL signals: pages viewed, time on site, vehicles checked, chat engagement, form interactions. Outputs hot/warm/cool/cold classification.<br>
+      <strong>Insight #20:</strong> Session momentum — is user engagement accelerating or decelerating within the session?<br>
+      <strong>Tracking:</strong> <code>trackChat(message, role)</code> on every message; <code>trackChatEvent()</code> for server-side analytics.<br>
+      <strong>Pipeline:</strong> Chat queries are embedded via <code>embeddings.ts</code> and matched against vehicle inventory in Qdrant for RAG-powered responses.
+    </div>
+  </div>
+
+  <!-- CONTACT FORM -->
+  <div class="annotated">
+    <div class="section-label">Lead Capture Form</div>
+    <div class="mock-form">
+      <input type="text" placeholder="Full Name">
+      <input type="email" placeholder="Email Address">
+      <input type="tel" placeholder="Phone Number">
+      <textarea placeholder="I'm interested in the 2024 BMW X5..."></textarea>
+      <button>Submit Inquiry</button>
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-conversion">Form Abandonment</span>
+      <span class="badge badge-conversion">submit_contact_form</span>
+      <span class="badge badge-conversion">Financing Intent</span>
+      <span class="badge badge-ux_friction">Rage Clicks</span>
+      <span class="badge badge-ux_friction">Dead Clicks</span>
+      <span class="badge badge-engagement">Copy Behavior</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Insight #17:</strong> Form abandonment attribution — which field did the user stop at? How long did they spend? Did they rage-click?<br>
+      <strong>Insight #30:</strong> Financing Intent Profile — detects users researching payments, trade-in, credit — even without explicit form submission.<br>
+      <strong>Insight #15:</strong> Rage clicks — 3+ clicks in same 50px area within 1 second = UX frustration signal.<br>
+      <strong>Insight #16:</strong> Dead clicks — clicks on non-interactive elements = missing functionality or confusing UI.<br>
+      <strong>Insight #9:</strong> Copy behavior — what users copy reveals intent (copying VIN = serious buyer, copying price = comparison shopping).<br>
+      <strong>Conversion:</strong> <code>submit_contact_form</code> is a tracked conversion action. Also tracks: <code>click_call_button</code>, <code>click_email_button</code>, <code>schedule_test_drive</code>, <code>start_financing_application</code>.
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="annotated">
+    <div class="mock-footer">
+      <p><strong>Wolfpack Motors</strong> &bull; 123 Auto Drive, Providence, RI &bull; (401) 555-0199</p>
+      <p style="margin-top:6px;">© 2026 Wolfpack Motors. All rights reserved.</p>
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-engagement">Peak Hours</span>
+      <span class="badge badge-conversion">Return Visit Stickiness</span>
+      <span class="badge badge-conversion">Cross-Session Lifecycle</span>
+      <span class="badge badge-seo">Sitemap Generation</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Insight #6:</strong> Peak hours — identifies highest-traffic times for optimal ad scheduling and staffing.<br>
+      <strong>Insight #12:</strong> Return visit "sticky pages" — which pages bring users back? Informs content investment.<br>
+      <strong>Insight #26:</strong> Cross-Session Buyer Lifecycle — tracks users across multiple visits: awareness → consideration → decision → purchase intent.<br>
+      <strong>Insight #27:</strong> Performance → Conversion Correlation — measures if slow page loads actually hurt conversions (data-driven perf investment).<br>
+      <strong>SEO:</strong> <code>generateSitemap()</code> for XML sitemap; <code>generateBehaviorOptimizedSitemap()</code> weights pages by actual user engagement data.
+    </div>
+  </div>
+
+  <!-- A/B TESTING -->
+  <div class="annotated" style="border-color:var(--marketing);">
+    <div class="section-label" style="color:var(--marketing);">Invisible Layer: A/B Testing &amp; Experiments</div>
+    <div style="font-size:0.82rem; color:var(--text-dim); padding:8px 0;">
+      The platform runs A/B experiments on CTAs, layouts, and messaging — users never see them, but every variant is measured.
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-marketing">trackImpression()</span>
+      <span class="badge badge-conversion">trackConversion()</span>
+      <span class="badge badge-engagement">ABTest Component</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>A/B Framework:</strong> <code>ABTest.tsx</code> component wraps any element. <code>ab-testing.ts</code> manages experiment assignment and persistence.<br>
+      <strong>Tracking:</strong> <code>trackImpression(experimentId, variant)</code> on render; <code>trackConversion(experimentId, variant)</code> on success action.<br>
+      <strong>Insight #14:</strong> Device orientation — on mobile, detects landscape mode for photo galleries (engagement signal).
+    </div>
+  </div>
+
+  <!-- SHADOW HARDENING -->
+  <div class="annotated" style="border-color:var(--cyan);">
+    <div class="section-label" style="color:var(--cyan);">Invisible Layer: Shadow Hardening (Production Safety)</div>
+    <div style="font-size:0.82rem; color:var(--text-dim); padding:8px 0;">
+      Before any change reaches this site, an identical copy is built and hit with 244 automated tests. If anything fails, the change is blocked. Customers never see a broken page.
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-ux_friction">Security</span>
+      <span class="badge badge-seo">SEO</span>
+      <span class="badge badge-navigation">Links</span>
+      <span class="badge badge-ux_friction">XSS</span>
+      <span class="badge badge-engagement">Performance</span>
+      <span class="badge badge-chat">Accessibility</span>
+      <span class="badge badge-search">Mobile</span>
+      <span class="badge badge-pipeline">APIs</span>
+      <span class="badge badge-conversion">Forms</span>
+      <span class="badge badge-engagement">Analytics</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>10 test categories</strong> run on desktop + mobile viewports against a production-identical clone.<br>
+      <strong>Zero downtime deployments.</strong> Every change is proven safe before it goes live.
+    </div>
+  </div>
+
+  <!-- COMPLIANCE -->
+  <div class="annotated" style="border-color:var(--red);">
+    <div class="section-label" style="color:var(--red);">Invisible Layer: Compliance &amp; Security</div>
+    <div style="font-size:0.82rem; color:var(--text-dim); padding:8px 0;">
+      Every page request passes through security and compliance checks — invisible to customers, protecting the business.
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-ux_friction">CSRF Protection</span>
+      <span class="badge badge-ux_friction">Security Headers</span>
+      <span class="badge badge-ux_friction">PII Encryption</span>
+      <span class="badge badge-pipeline">Audit Logging</span>
+      <span class="badge badge-navigation">Cookie Consent</span>
+      <span class="badge badge-conversion">FTC Disclosures</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Security:</strong> HSTS, CSP, X-Frame-Options, CSRF tokens on forms, brute-force login protection, 30-min idle timeout.<br>
+      <strong>Privacy:</strong> GDPR + CCPA compliant. Cookie consent with opt-out. PII encrypted with AES-256-GCM. Data deletion API.<br>
+      <strong>FTC:</strong> Buyer's Guide disclosures, CARS Rule compliance, Reg Z financing disclaimers on every vehicle listing.<br>
+      <strong>AI:</strong> Chat and generated content labeled as AI-assisted. Full transparency with customers.
+    </div>
+  </div>
+
+</div><!-- end site-mock -->
+
+<!-- ==================== SIDEBAR ==================== -->
+<div class="sidebar">
+
+  <!-- STATS -->
+  <h3>Platform Intelligence Stats</h3>
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="num" style="color:var(--engagement)">38</div>
+      <div class="label">Insight Generators</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" style="color:var(--search)">13</div>
+      <div class="label">Event Types</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" style="color:var(--conversion)">6</div>
+      <div class="label">Conversion Actions</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" style="color:var(--seo)">7</div>
+      <div class="label">SEO Functions</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- DATA PIPELINE -->
+  <h3>Triple-Write Data Pipeline</h3>
+  <div class="pipeline-step">
+    <div class="pipeline-num" style="background:var(--pipeline);color:#fff;">1</div>
+    <div class="detail">
+      <strong>In-Memory Buffer</strong>
+      Events collected in browser via EventCollector.tsx. Batched and flushed to server.
+    </div>
+  </div>
+  <div class="pipeline-step">
+    <div class="pipeline-num" style="background:var(--conversion);color:#fff;">2</div>
+    <div class="detail">
+      <strong>PostgreSQL (Raw Events)</strong>
+      Every event stored with full metadata — timestamp, session, user, page, device, referrer.
+    </div>
+  </div>
+  <div class="pipeline-step">
+    <div class="pipeline-num" style="background:var(--chat);color:#fff;">3</div>
+    <div class="detail">
+      <strong>Qdrant (Vector Embeddings)</strong>
+      Events and content embedded for semantic search. Powers chat RAG and similar-vehicle recommendations.
+    </div>
+  </div>
+  <div class="pipeline-step">
+    <div class="pipeline-num" style="background:var(--navigation);color:#fff;">4</div>
+    <div class="detail">
+      <strong>Neo4j (Journey Graph)</strong>
+      <code>buildGraphQueries()</code> generates Cypher queries. Each session becomes a connected journey graph.
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SESSION ANALYSIS -->
+  <h3>Session Analysis Output</h3>
+  <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:12px;">
+    <code>buildSessionSummary()</code> produces:
+  </div>
+  <ul style="font-size:0.72rem; color:var(--text-dim); padding-left:16px; margin-bottom:12px;">
+    <li>Pages visited + order</li>
+    <li>Total duration</li>
+    <li>Conversion events</li>
+    <li>Search queries</li>
+    <li>Vehicles viewed (VINs)</li>
+    <li>Chat message count</li>
+    <li>Max scroll depth</li>
+  </ul>
+  <div style="font-size:0.72rem; color:var(--text-dim);">
+    <code>buildJourney()</code> → ordered <code>JourneyNode[]</code><br>
+    <code>buildGraphQueries()</code> → Neo4j Cypher inserts
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SEO ENGINE -->
+  <h3 style="color:var(--seo)">SEO Engine Functions</h3>
+  <ul class="seo-list">
+    <li><code>generateMetaTags()</code> — dynamic meta for every page</li>
+    <li><code>generateStructuredData()</code> — JSON-LD Vehicle schema</li>
+    <li><code>generateSitemap()</code> — XML sitemap</li>
+    <li><code>trackPagePerformance()</code> — Core Web Vitals</li>
+    <li><code>getHighValuePages()</code> — analytics-informed priorities</li>
+    <li><code>getPopularSearchTerms()</code> — content optimization</li>
+    <li><code>generateBehaviorOptimizedSitemap()</code> — behavior-weighted sitemap</li>
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- TRACKING FUNCTIONS -->
+  <h3>Tracking Functions</h3>
+  <table class="track-table">
+    <tr><th>Function</th><th>Source</th></tr>
+    <tr><td>trackEvent()</td><td>Analytics.tsx</td></tr>
+    <tr><td>trackChat()</td><td>ChatWidget.tsx</td></tr>
+    <tr><td>trackServerEvent()</td><td>analytics-engine.ts</td></tr>
+    <tr><td>trackConversion()</td><td>ab-testing.ts</td></tr>
+    <tr><td>trackImpression()</td><td>ab-testing.ts</td></tr>
+    <tr><td>trackPageMetrics()</td><td>seo-engine.ts</td></tr>
+    <tr><td>trackPagePerformance()</td><td>seo-engine.ts</td></tr>
+    <tr><td>trackChatEvent()</td><td>chat/route.ts</td></tr>
+  </table>
+
+  <hr class="section-divider">
+
+  <!-- EVENT TYPES -->
+  <h3>Event Types (13)</h3>
+  <div style="display:flex; flex-wrap:wrap; gap:4px;">
+    <span class="badge badge-engagement">page_view</span>
+    <span class="badge badge-engagement">click</span>
+    <span class="badge badge-engagement">scroll</span>
+    <span class="badge badge-conversion">form_submit</span>
+    <span class="badge badge-chat">chat_message</span>
+    <span class="badge badge-engagement">vehicle_view</span>
+    <span class="badge badge-search">search</span>
+    <span class="badge badge-engagement">time_on_page</span>
+    <span class="badge badge-engagement">copy</span>
+    <span class="badge badge-ux_friction">rage_click</span>
+    <span class="badge badge-ux_friction">dead_click</span>
+    <span class="badge badge-conversion">exit_intent</span>
+    <span class="badge badge-conversion">comparison</span>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- CONVERSION ACTIONS -->
+  <h3 style="color:var(--conversion)">Conversion Actions (6)</h3>
+  <div style="display:flex; flex-direction:column; gap:3px; font-size:0.72rem;">
+    <span>✅ submit_contact_form</span>
+    <span>✅ submit_lead_form</span>
+    <span>✅ click_call_button</span>
+    <span>✅ click_email_button</span>
+    <span>✅ schedule_test_drive</span>
+    <span>✅ start_financing_application</span>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ALL 31 INSIGHTS -->
+  <h3>All 31 Insight Generators</h3>
+  <ol class="insight-list">
+    <li><span class="insight-num">1</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Page engagement ranking</li>
+    <li><span class="insight-num">2</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Conversion paths</li>
+    <li><span class="insight-num">3</span> <span class="badge badge-search" style="font-size:0.55rem">S</span> Search behavior</li>
+    <li><span class="insight-num">4</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Vehicle interest</li>
+    <li><span class="insight-num">5</span> <span class="badge badge-chat" style="font-size:0.55rem">Ch</span> Chat engagement</li>
+    <li><span class="insight-num">6</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Peak hours</li>
+    <li><span class="insight-num">7</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Micro-hesitation patterns</li>
+    <li><span class="insight-num">8</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Comparison shopping detection</li>
+    <li><span class="insight-num">9</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Copy behavior</li>
+    <li><span class="insight-num">10</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Scroll behavior classification</li>
+    <li><span class="insight-num">11</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Time-to-first-interaction</li>
+    <li><span class="insight-num">12</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Return visit sticky pages</li>
+    <li><span class="insight-num">13</span> <span class="badge badge-navigation" style="font-size:0.55rem">N</span> Cross-page journey patterns</li>
+    <li><span class="insight-num">14</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Device orientation</li>
+    <li><span class="insight-num">15</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Rage clicks</li>
+    <li><span class="insight-num">16</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Dead clicks</li>
+    <li><span class="insight-num">17</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Form abandonment attribution</li>
+    <li><span class="insight-num">18</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Exit intent patterns</li>
+    <li><span class="insight-num">19</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Price trajectory</li>
+    <li><span class="insight-num">20</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Session momentum</li>
+    <li><span class="insight-num">21</span> <span class="badge badge-marketing" style="font-size:0.55rem">M</span> Referrer behavior correlation</li>
+    <li><span class="insight-num">22</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Viewport attention</li>
+    <li><span class="insight-num">23</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Lead Temperature Score</li>
+    <li><span class="insight-num">24</span> <span class="badge badge-search" style="font-size:0.55rem">S</span> Inventory Gap Detection</li>
+    <li><span class="insight-num">25</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Photo Engagement Score</li>
+    <li><span class="insight-num">26</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Cross-Session Buyer Lifecycle</li>
+    <li><span class="insight-num">27</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Performance → Conversion</li>
+    <li><span class="insight-num">28</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> CTA Visibility Gap</li>
+    <li><span class="insight-num">29</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Vehicle Comparison Patterns</li>
+    <li><span class="insight-num">30</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Financing Intent Profile</li>
+    <li><span class="insight-num">31</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Gallery Engagement</li>
+  </ol>
+
+</div><!-- end sidebar -->
+</div><!-- end main -->
+
+<!-- ==================== ARCHITECTURE FOOTER ==================== -->
+<div class="arch-footer">
+  <div style="text-align:center; margin-bottom:20px;">
+    <h3 style="font-size:1.1rem;">End-to-End Architecture</h3>
+    <p style="color:var(--text-dim); font-size:0.8rem;">Every user interaction flows through this pipeline — zero data loss, real-time insights</p>
+  </div>
+  <div class="arch-flow">
+    <div class="arch-box" style="border:1px solid var(--engagement);">
+      <div style="font-weight:700; color:var(--engagement);">Browser</div>
+      <div style="font-size:0.7rem; color:var(--text-dim);">EventCollector.tsx<br>Analytics.tsx</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box" style="border:1px solid var(--pipeline);">
+      <div style="font-weight:700; color:var(--pipeline);">API Routes</div>
+      <div style="font-size:0.7rem; color:var(--text-dim);">/api/analytics<br>/api/chat<br>/api/leads</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box" style="border:1px solid var(--conversion);">
+      <div style="font-weight:700; color:var(--conversion);">Analytics Engine</div>
+      <div style="font-size:0.7rem; color:var(--text-dim);">31 Insight Generators<br>Session Analysis<br>Lead Scoring</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-stores">
+      <div class="arch-store" style="border:1px solid var(--conversion);">
+        <span style="color:var(--conversion); font-weight:600;">PostgreSQL</span> <span style="color:var(--text-dim);">— raw events</span>
+      </div>
+      <div class="arch-store" style="border:1px solid var(--chat);">
+        <span style="color:var(--chat); font-weight:600;">Qdrant</span> <span style="color:var(--text-dim);">— vector embeddings</span>
+      </div>
+      <div class="arch-store" style="border:1px solid var(--navigation);">
+        <span style="color:var(--navigation); font-weight:600;">Neo4j</span> <span style="color:var(--text-dim);">— journey graphs</span>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-top:24px; color:var(--text-dim); font-size:0.7rem;">
+    Built by Wolfpack Agency Engineering &bull; Source: analytics-engine.ts (1,847 lines) &bull; seo-engine.ts (380 lines)
+  </div>
+</div>
+
+</body>
+</html>

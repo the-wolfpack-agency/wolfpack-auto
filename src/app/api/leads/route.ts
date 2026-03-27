@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { encryptPII } from "@/lib/crypto";
+import { auditLog } from "@/lib/audit-log";
 
 /**
  * Lead submission schema — strict validation.
@@ -111,6 +113,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Encrypt PII fields before storage
+    const encryptedEmail = encryptPII(lead.email.toLowerCase());
+    const encryptedPhone = lead.phone?.trim()
+      ? encryptPII(lead.phone.trim())
+      : null;
+
     // Insert into PostgreSQL with parameterised query
     const result = await query<{ id: string; created_at: string }>(
       `INSERT INTO leads (
@@ -128,8 +136,8 @@ export async function POST(request: NextRequest) {
         lead.dealer_id,
         lead.first_name,
         lead.last_name,
-        lead.email.toLowerCase(),
-        lead.phone,
+        encryptedEmail,
+        encryptedPhone,
         lead.vehicle_id,
         lead.vehicle_interest,
         lead.source,
@@ -143,16 +151,23 @@ export async function POST(request: NextRequest) {
 
     const created = result.rows[0];
 
+    // Audit log: record lead creation (fire-and-forget)
+    void auditLog("lead.create", {
+      lead_id: created.id,
+      source: lead.source,
+      pii_encrypted: !!process.env.PII_ENCRYPTION_KEY,
+    }).catch(() => {});
+
     // Invalidate any cached lead-related data for this dealer
     void cacheInvalidate(`leads:dealer:${lead.dealer_id}:*`);
 
     // Fire-and-forget email notifications — never block the response
     void (async () => {
       try {
+        // Legacy branded emails (dealer-specific templates)
         const { sendLeadNotification, sendLeadConfirmation } = await import(
           "@/lib/email"
         );
-        // Fetch dealer record for branding / contact info
         const dealerResult = await query<Record<string, unknown>>(
           `SELECT * FROM dealers WHERE id = $1`,
           [lead.dealer_id],
@@ -163,6 +178,12 @@ export async function POST(request: NextRequest) {
             ...lead,
             id: created.id,
             status: "new" as const,
+            temperature: "warm" as const,
+            structured_notes: [],
+            assigned_to: null,
+            message: "",
+            follow_up_date: null,
+            activity: [],
             created_at: created.created_at,
             updated_at: created.created_at,
           } satisfies import("@/types/lead").Lead;
@@ -170,6 +191,41 @@ export async function POST(request: NextRequest) {
           void sendLeadNotification(dealer, fullLead);
           void sendLeadConfirmation(dealer, fullLead);
         }
+
+        // New notification dispatcher (broadcasts to all enabled staff)
+        const { notifyNewLead } = await import("@/lib/notifications");
+        void notifyNewLead(
+          {
+            name: `${lead.first_name} ${lead.last_name}`,
+            email: lead.email.toLowerCase(),
+            phone: lead.phone ?? undefined,
+            vehicle_interest: lead.vehicle_interest,
+            source: lead.source,
+          },
+          lead.dealer_id,
+        );
+
+        // CRM / webhook integrations
+        const { dispatchWebhook } = await import("@/lib/webhooks");
+        void dispatchWebhook(
+          "lead.created",
+          {
+            lead_id: created.id,
+            first_name: lead.first_name,
+            last_name: lead.last_name,
+            name: `${lead.first_name} ${lead.last_name}`,
+            email: lead.email.toLowerCase(),
+            phone: lead.phone,
+            vehicle_interest: lead.vehicle_interest,
+            source: lead.source,
+            notes: lead.notes,
+            utm_source: lead.utm_source,
+            utm_medium: lead.utm_medium,
+            utm_campaign: lead.utm_campaign,
+            created_at: created.created_at,
+          },
+          lead.dealer_id,
+        );
       } catch (emailErr) {
         console.error("[api/leads] Email notification failed:", emailErr);
       }

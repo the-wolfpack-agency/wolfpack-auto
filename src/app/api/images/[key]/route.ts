@@ -60,10 +60,11 @@ function negotiateFormat(
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { key: string } },
+  { params }: { params: Promise<{ key: string }> },
 ) {
   try {
-    const rawKey = decodeURIComponent(params.key);
+    const { key } = await params;
+    const rawKey = decodeURIComponent(key);
     const accept = req.headers.get("accept");
     const resolvedKey = negotiateFormat(accept, rawKey);
 

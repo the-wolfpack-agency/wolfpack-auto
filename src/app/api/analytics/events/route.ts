@@ -7,6 +7,84 @@ import {
 } from "@/lib/analytics-engine";
 
 /* ------------------------------------------------------------------ */
+/*  PostgreSQL event persistence (fire-and-forget)                     */
+/* ------------------------------------------------------------------ */
+
+let pgMigrationDone = false;
+
+async function ensureEventsTable(): Promise<void> {
+  if (pgMigrationDone) return;
+  try {
+    const { query } = await import("@/lib/db");
+    await query(`
+      CREATE TABLE IF NOT EXISTS analytics_events (
+        id                BIGSERIAL    PRIMARY KEY,
+        event_type        TEXT         NOT NULL,
+        action            TEXT         NOT NULL,
+        page              TEXT         NOT NULL,
+        session_id        TEXT         NOT NULL,
+        user_fingerprint  TEXT         NOT NULL,
+        timestamp         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+        metadata          JSONB        NOT NULL DEFAULT '{}'
+      )
+    `);
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_analytics_events_session
+        ON analytics_events (session_id)
+    `);
+    await query(`
+      CREATE INDEX IF NOT EXISTS idx_analytics_events_type
+        ON analytics_events (event_type)
+    `);
+    pgMigrationDone = true;
+  } catch (err) {
+    console.error("[analytics-events] PG migration check failed:", err);
+  }
+}
+
+/**
+ * Persist a batch of events to PostgreSQL.
+ * Fire-and-forget — callers should not await this.
+ */
+async function persistEventsToPg(events: AnalyticsEvent[]): Promise<void> {
+  if (!process.env.DATABASE_URL) return;
+  try {
+    await ensureEventsTable();
+    const { query } = await import("@/lib/db");
+
+    // Build a single multi-row INSERT for efficiency
+    const values: unknown[] = [];
+    const rows: string[] = [];
+    let idx = 1;
+
+    for (const e of events) {
+      rows.push(
+        `($${idx}, $${idx + 1}, $${idx + 2}, $${idx + 3}, $${idx + 4}, $${idx + 5}, $${idx + 6})`,
+      );
+      values.push(
+        e.event_type,
+        e.action,
+        e.page,
+        e.session_id,
+        e.user_fingerprint,
+        e.timestamp || new Date().toISOString(),
+        JSON.stringify(e.metadata ?? {}),
+      );
+      idx += 7;
+    }
+
+    await query(
+      `INSERT INTO analytics_events
+         (event_type, action, page, session_id, user_fingerprint, timestamp, metadata)
+       VALUES ${rows.join(", ")}`,
+      values,
+    );
+  } catch (err) {
+    console.error("[analytics-events] PG write failed:", err);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Rate limiter (in-memory, per-process)                              */
 /* ------------------------------------------------------------------ */
 
@@ -66,9 +144,12 @@ export async function POST(request: NextRequest) {
     // Cap batch size
     const capped = events.slice(0, 50);
 
-    // Ingest
+    // Ingest into in-memory buffer
     const result = ingestEvents(capped);
     eventsSinceLastAggregation += result.accepted;
+
+    // Persist to PostgreSQL (fire-and-forget — don't block the response)
+    void persistEventsToPg(capped);
 
     // Trigger aggregation pipeline when threshold reached
     let aggregation = null;

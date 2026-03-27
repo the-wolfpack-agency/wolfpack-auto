@@ -4,6 +4,10 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  env: {
+    DEMO_MODE: process.env.DEMO_MODE || "",
+  },
+
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24, // 24 hours
