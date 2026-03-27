@@ -787,3 +787,73 @@ test.describe("Admin inventory list page", () => {
     expect(code).toContain("edit");
   });
 });
+
+// ---------------------------------------------------------------------------
+// 22. Inventory spotlight endpoint (auto-detected via static analysis)
+// ---------------------------------------------------------------------------
+
+test.describe("Inventory spotlight endpoint", () => {
+  test("spotlight route exists", () => {
+    expect(exists("src/app/api/inventory/spotlight/route.ts")).toBe(true);
+  });
+
+  test("spotlight route exports GET handler", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    expect(code).toContain("export async function GET");
+  });
+
+  test("spotlight route validates dealer_id is required", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    expect(code).toContain("dealer_id");
+    expect(code).toContain("400");
+  });
+
+  test("spotlight route validates UUID format", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    expect(code).toMatch(/UUID|uuid|UUID_RE/i);
+  });
+
+  test("spotlight route validates limit bounds (max 12)", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    expect(code).toContain("12");
+    expect(code).toContain("400");
+  });
+
+  test("spotlight route has sample data fallback (DB unavailable)", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    expect(code).toContain("sample");
+    expect(code).toContain("catch");
+  });
+
+  test("spotlight response shape has vehicles, total, source fields", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    expect(code).toContain("vehicles:");
+    expect(code).toContain("total:");
+    expect(code).toContain("source:");
+  });
+
+  test("spotlight uses parameterized queries (no SQL injection)", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    expect(code).toMatch(/\$1|\$2/);
+    // Must not use template literal with user input in SQL
+    expect(code).not.toMatch(/`.*\$\{dealerId\}.*`/s);
+  });
+
+  test("spotlight filters by dealer_id (no cross-tenant leakage)", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    // The WHERE clause must include dealer_id to prevent cross-tenant data leaks
+    expect(code).toMatch(/WHERE.*dealer_id|dealer_id.*WHERE/s);
+  });
+
+  test("spotlight does not expose internal cost fields", () => {
+    const code = read("src/app/api/inventory/spotlight/route.ts");
+    // dealer_cost must never appear (not fetched, not stripped — completely absent)
+    expect(code).not.toContain("dealer_cost");
+    // internal_cost is allowed to appear ONLY in a destructuring strip pattern
+    // (e.g. { internal_cost: _ic, ...safe }) — it must never be in the SELECT
+    if (code.includes("internal_cost")) {
+      // Must be in a strip/omit pattern, not in SELECT
+      expect(code).not.toMatch(/SELECT[\s\S]*internal_cost[\s\S]*FROM/);
+    }
+  });
+});
