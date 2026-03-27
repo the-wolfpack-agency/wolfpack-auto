@@ -325,7 +325,7 @@ export default function TradeInWizard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          year: data.year,
+          year: Number(data.year),
           make: data.make,
           model: data.model,
           trim: data.trim,
@@ -333,7 +333,7 @@ export default function TradeInWizard() {
           condition: data.condition,
           accidentHistory: data.accidentHistory,
           titleStatus: data.titleStatus,
-          previousOwners: data.previousOwners,
+          previousOwners: data.previousOwners === "3+" ? 3 : Number(data.previousOwners),
         }),
       });
       if (!res.ok) {

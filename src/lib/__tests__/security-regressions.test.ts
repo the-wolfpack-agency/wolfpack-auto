@@ -342,6 +342,34 @@ describe("BUG-004: next.config.mjs disables lint/TS checks that break Vercel bui
 });
 
 /* -------------------------------------------------------------------------- */
+/* BUG-005: Trade-in wizard must coerce types before sending to API           */
+/* -------------------------------------------------------------------------- */
+
+describe("BUG-005: trade-in wizard coerces year/previousOwners to numbers", () => {
+  it("year is wrapped in Number() before being sent to the API", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    // Must send Number(data.year), not the raw string data.year
+    expect(src).toMatch(/year:\s*Number\(data\.year\)/);
+  });
+
+  it("previousOwners handles '3+' string by mapping to 3", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/TradeInWizard.tsx"),
+      "utf-8",
+    );
+    // Must not send raw string — API requires a number
+    expect(src).toMatch(/previousOwners.*3\+.*3.*Number|Number.*previousOwners/s);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
 /* ANA-001: Trade-in wizard must track all key events (GA4 + platform)       */
 /* -------------------------------------------------------------------------- */
 
