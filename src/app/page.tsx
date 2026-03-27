@@ -305,6 +305,42 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Trade-In Banner */}
+      <section aria-labelledby="trade-in-heading" className="bg-gray-50 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center gap-8 sm:flex-row sm:justify-between">
+            <div className="max-w-xl">
+              <h2 id="trade-in-heading" className="text-3xl font-bold tracking-tight text-gray-900">
+                What&apos;s Your Car Worth?
+              </h2>
+              <p className="mt-3 text-lg text-gray-600">
+                Get an instant trade-in estimate in under 2 minutes — no obligation, no pressure. See your vehicle&apos;s real market value today.
+              </p>
+              <ul className="mt-4 space-y-1.5 text-sm text-gray-600">
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  Instant estimate — no waiting, no sales calls
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  Based on real market data, not guesswork
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  Apply your trade-in value toward any vehicle
+                </li>
+              </ul>
+            </div>
+            <a
+              href="/trade-in"
+              className="shrink-0 rounded-lg bg-brand-600 px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:bg-brand-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+            >
+              Get My Trade-In Value &rarr;
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Financing Banner */}
       <section
         aria-labelledby="financing-heading"
