@@ -1,8 +1,17 @@
 
 
+import { fileURLToPath } from "url";
+import path from "path";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Pin the tracing root to this package so Next.js doesn't infer the wrong
+  // workspace root when multiple lockfiles exist in parent directories.
+  experimental: {
+    outputFileTracingRoot: __dirname,
+  },
 
   env: {
     DEMO_MODE: process.env.DEMO_MODE || "",
