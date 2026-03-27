@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { trackEvent } from "@/components/Analytics";
+import { useAnalytics } from "@/components/EventCollector";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                  */
@@ -292,6 +293,9 @@ export default function TradeInWizard() {
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Dealer analytics platform
+  const { track, trackConversion } = useAnalytics();
+
   // Animate transitions — toggle visibility class
   const [visible, setVisible] = useState(true);
 
@@ -302,7 +306,10 @@ export default function TradeInWizard() {
       setError(null);
       setVisible(true);
     }, 180);
+    // GA4 event
     trackEvent("trade_in_step", { step: next });
+    // Dealer analytics platform
+    track("trade_in", `step_${next}`, { step: next, make: data.make, year: data.year });
   }
 
   const step1Valid = !!data.year && !!data.make && !!data.model.trim();
@@ -339,6 +346,15 @@ export default function TradeInWizard() {
         year: Number(data.year),
         condition: data.condition,
         estimated_mid: result.estimatedMid,
+      });
+      // Dealer analytics platform tracking
+      track("trade_in", "estimate_received", {
+        make: data.make,
+        year: data.year,
+        condition: data.condition,
+        estimatedMid: result.estimatedMid,
+        estimatedLow: result.estimatedLow,
+        estimatedHigh: result.estimatedHigh,
       });
       animateToStep(4);
     } catch (err) {
@@ -383,6 +399,16 @@ export default function TradeInWizard() {
         make: data.make,
         year: Number(data.year),
         estimated_mid: estimate?.estimatedMid ?? 0,
+      });
+      // Dealer analytics platform — conversion event
+      trackConversion("trade_in_lead", {
+        make: data.make,
+        year: data.year,
+        model: data.model,
+        condition: data.condition,
+        estimatedMid: estimate?.estimatedMid,
+        estimatedLow: estimate?.estimatedLow,
+        estimatedHigh: estimate?.estimatedHigh,
       });
     } catch (err) {
       setSubmitError(

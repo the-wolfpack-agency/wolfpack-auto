@@ -119,6 +119,7 @@ export default async function RootLayout({
                 { label: "Home", href: "/" },
                 { label: "Inventory", href: "/inventory" },
                 { label: "Financing", href: "/financing" },
+                { label: "Trade-In", href: "/trade-in" },
                 { label: "About", href: "/about" },
                 { label: "Contact", href: "/contact" },
               ].map((link) => (
@@ -212,7 +213,7 @@ export default async function RootLayout({
                     { label: "Financing Options", href: "/financing" },
                     { label: "About Us", href: "/about" },
                     { label: "Contact Us", href: "/contact" },
-                    { label: "Sell Your Car", href: "#" },
+                    { label: "Value My Trade-In", href: "/trade-in" },
                   ].map((link) => (
                     <li key={link.label}>
                       <a href={link.href} className="text-sm transition-colors hover:text-white">
