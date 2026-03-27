@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 
@@ -27,14 +28,19 @@ const NAV_ITEMS = [
 export default function AdminSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Hide sidebar on the login page
   if (pathname === "/admin/login") return null;
 
-  return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-sidebar-width flex-col border-r border-gray-800 bg-gray-900 lg:relative">
+  const isAnalyticsPage =
+    pathname.startsWith("/admin/analytics") &&
+    !pathname.startsWith("/admin/analytics-brain");
+
+  const navContent = (
+    <>
       {/* Dealer branding */}
-      <div className="flex h-header-height items-center gap-3 border-b border-gray-800 px-5">
+      <div className="flex h-16 items-center gap-3 border-b border-gray-800 px-5">
         <span
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white"
           aria-hidden="true"
@@ -44,6 +50,17 @@ export default function AdminSidebar() {
         <span className="text-base font-semibold text-white">
           Wolfpack Auto
         </span>
+        {/* Close button — mobile only */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white lg:hidden"
+          aria-label="Close menu"
+        >
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       {/* Navigation */}
@@ -51,13 +68,18 @@ export default function AdminSidebar() {
         <ul className="space-y-1" role="list">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isAnalytics = href === "/admin/analytics";
-            const onAnalyticsPage = pathname.startsWith("/admin/analytics") && !pathname.startsWith("/admin/analytics-brain");
+            const isActive =
+              href === "/admin"
+                ? pathname === href
+                : pathname.startsWith(href) &&
+                  !(isAnalytics && !isAnalyticsPage);
             return (
               <li key={href}>
                 <a
                   href={href}
+                  onClick={() => setMobileOpen(false)}
                   className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    (href === "/admin" ? pathname === href : pathname.startsWith(href)) && !(isAnalytics && pathname !== "/admin/analytics" && !onAnalyticsPage)
+                    isActive
                       ? "bg-gray-800 text-white"
                       : "text-gray-300 hover:bg-gray-800 hover:text-white"
                   }`}
@@ -66,12 +88,13 @@ export default function AdminSidebar() {
                   {label}
                 </a>
                 {/* Analytics sub-navigation */}
-                {isAnalytics && onAnalyticsPage && (
+                {isAnalytics && isAnalyticsPage && (
                   <ul className="ml-8 mt-1 space-y-0.5" role="list">
                     {ANALYTICS_CHILDREN.map((child) => (
                       <li key={child.href}>
                         <a
                           href={child.href}
+                          onClick={() => setMobileOpen(false)}
                           className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
                             pathname === child.href
                               ? "font-semibold text-brand-400"
@@ -126,7 +149,59 @@ export default function AdminSidebar() {
           </button>
         )}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ------------------------------------------------------------------ */}
+      {/* Mobile: hamburger button (top bar) + slide-in drawer               */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-gray-800 bg-gray-900 px-4 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          aria-label="Open menu"
+          aria-expanded={mobileOpen}
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <span className="text-sm font-semibold text-white">Wolfpack Auto</span>
+      </div>
+
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          aria-hidden="true"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-800 bg-gray-900 transition-transform duration-200 lg:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        aria-label="Admin navigation"
+      >
+        {navContent}
+      </aside>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Desktop: always-visible sidebar                                     */}
+      {/* ------------------------------------------------------------------ */}
+      <aside
+        aria-label="Admin navigation desktop"
+        className="hidden lg:flex lg:w-sidebar-width lg:flex-col lg:border-r lg:border-gray-800 lg:bg-gray-900"
+      >
+        {navContent}
+      </aside>
+    </>
   );
 }
 

@@ -18,19 +18,35 @@ export default function AdminLayout({
 }) {
   return (
     <AuthProvider>
-      <div className="flex min-h-screen">
-        {/* ---------------------------------------------------------------- */}
-        {/* Sidebar (client component with session awareness)                */}
-        {/* ---------------------------------------------------------------- */}
-        <AdminSidebar />
+      {/*
+        Hide the root layout's public chrome (top bar, nav header, footer,
+        chat bubble, cookie banner) on all admin pages. The admin layout
+        provides its own chrome via AdminSidebar.
+      */}
+      <style>{`
+        #wolfpack-top-bar,
+        header[role="banner"],
+        footer[role="contentinfo"],
+        #wolfpack-chat,
+        #wolfpack-cookie {
+          display: none !important;
+        }
+        main#main-content {
+          padding: 0 !important;
+        }
+      `}</style>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Main content area — offset by sidebar width since sidebar is    */}
-        {/* fixed-position on all viewports                                 */}
-        {/* ---------------------------------------------------------------- */}
+      {/*
+        Mobile:  sidebar is a slide-over overlay → main takes full width,
+                 needs pt-14 to clear the fixed mobile top bar.
+        Desktop: sidebar is static in the flex row → main takes remaining
+                 width naturally, no top padding needed.
+      */}
+      <div className="flex min-h-[100dvh]">
+        <AdminSidebar />
         <main
-          id="main-content"
-          className="flex-1 bg-surface-muted ml-sidebar-width"
+          id="admin-main-content"
+          className="flex-1 bg-surface-muted pt-14 lg:pt-0"
         >
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             {children}

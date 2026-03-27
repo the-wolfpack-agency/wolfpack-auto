@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
 import "./globals.css";
 import MobileMenu from "@/components/MobileMenu";
 import ChatWidget from "@/components/ChatWidget";
@@ -43,31 +42,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = await headers();
-  const isAdmin = headersList.get("x-is-admin") === "1";
-
   const dealer = await getDealerConfig();
   const fullAddress = `${dealer.address}, ${dealer.city}, ${dealer.state} ${dealer.zip}`;
   const phoneHref = `tel:+1${dealer.phone.replace(/\D/g, "")}`;
-
-  // Admin routes get bare html/body — the admin layout provides its own chrome
-  if (isAdmin) {
-    return (
-      <html lang="en">
-        <head>
-          <Analytics />
-        </head>
-        <body className="min-h-screen bg-surface text-gray-900 antialiased">
-          <DealerProvider config={dealer}>
-            <EventCollector>
-              {children}
-            </EventCollector>
-          </DealerProvider>
-        </body>
-      </html>
-    );
-  }
-
   return (
     <html lang="en">
       <head>
@@ -85,7 +62,7 @@ export default async function RootLayout({
         </a>
 
         {/* Top Bar */}
-        <div className="hidden bg-brand-950 sm:block">
+        <div id="wolfpack-top-bar" className="hidden bg-brand-950 sm:block">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
             <div className="flex items-center gap-4 text-xs text-brand-300">
               <span className="flex items-center gap-1">
@@ -307,8 +284,8 @@ export default async function RootLayout({
         </footer>
 
         {/* AI Chat Assistant — appears on every page */}
-        <ChatWidget />
-        <CookieConsent />
+        <div id="wolfpack-chat"><ChatWidget /></div>
+        <div id="wolfpack-cookie"><CookieConsent /></div>
         </EventCollector>
         </DealerProvider>
       </body>

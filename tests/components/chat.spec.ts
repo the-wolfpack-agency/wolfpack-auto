@@ -1,223 +1,98 @@
 import { test, expect } from "@playwright/test";
 
+/**
+ * Chat Widget tests.
+ *
+ * Uses the stable aria-label "Open chat assistant" to locate the bubble
+ * rather than scanning buttons in reverse order.
+ */
+
+async function openChat(page: import("@playwright/test").Page) {
+  const bubble = page.locator('button[aria-label="Open chat assistant"]');
+  await expect(bubble).toBeVisible({ timeout: 8_000 });
+  // Use tap on mobile (webkit), click on desktop — both work via .click()
+  // but we scroll into view first to ensure it's not obscured.
+  await bubble.scrollIntoViewIfNeeded();
+  await bubble.click({ force: true });
+  // Wait for the chat panel — the panel has a unique aria-label
+  const panel = page.locator("div[role='dialog']").filter({
+    has: page.locator('button[aria-label="Close chat"]'),
+  });
+  await expect(panel).toBeVisible({ timeout: 8_000 });
+  return panel;
+}
+
 test.describe("Chat Widget", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    // Allow hydration
-    await page.waitForTimeout(500);
+    // Pre-accept cookies so the consent banner never blocks the chat bubble
+    await page.addInitScript(() => {
+      localStorage.setItem("cookie_consent", "essential");
+    });
+    // Use load (not domcontentloaded) so React hydration is complete before tests run
+    await page.goto("/", { waitUntil: "load" });
+    await page.waitForTimeout(300);
   });
 
   test("chat bubble visible on page load", async ({ page }) => {
-    // The ChatBubble component renders a fixed button at bottom-right
-    // Look for any button in the chat area
-    const bubble = page.locator("button").filter({
-      has: page.locator("svg"),
-    });
-    // At least one button should be visible (the chat bubble)
-    const count = await bubble.count();
-    expect(count).toBeGreaterThan(0);
+    const bubble = page.locator('button[aria-label="Open chat assistant"]');
+    await expect(bubble).toBeVisible({ timeout: 5_000 });
   });
 
   test("click opens chat panel with welcome message", async ({ page }) => {
-    // Find and click the chat bubble (last floating button)
-    // The bubble is rendered by ChatBubble component
-    const buttons = page.locator("button");
-    const allButtons = await buttons.all();
-
-    // Click the last button that is not inside the header/footer
-    // Look for a button that opens the chat dialog
-    let chatOpened = false;
-
-    for (let i = allButtons.length - 1; i >= 0; i--) {
-      const btn = allButtons[i];
-      const isVisible = await btn.isVisible();
-      if (!isVisible) continue;
-
-      const ariaLabel = await btn.getAttribute("aria-label");
-      const text = await btn.textContent();
-
-      // Skip nav/form buttons
-      if (
-        text?.includes("Send") ||
-        text?.includes("Apply") ||
-        text?.includes("Browse") ||
-        ariaLabel?.includes("navigation")
-      ) {
-        continue;
-      }
-
-      await btn.click();
-
-      // Check if chat dialog appeared
-      const dialog = page.locator("[role='dialog']");
-      if (await dialog.isVisible({ timeout: 2000 }).catch(() => false)) {
-        chatOpened = true;
-        break;
-      }
-    }
-
-    if (!chatOpened) {
-      // Try direct approach - find the ChatBubble button
-      // It should be a fixed-position element near the bottom
-      test.skip(true, "Chat bubble not found via button scan");
-      return;
-    }
-
-    // Chat panel should be open
-    const chatPanel = page.locator("[role='dialog']");
-    await expect(chatPanel).toBeVisible();
-
-    // Welcome message should appear
-    await expect(
-      chatPanel.getByText(/Wolfpack Motors assistant/i),
-    ).toBeVisible();
+    const panel = await openChat(page);
+    // Header h2 always contains "Wolfpack Motors" — most reliable signal
+    await expect(panel.locator("h2")).toContainText(/Wolfpack Motors/i);
   });
 
   test("type message and get response", async ({ page }) => {
-    // Open chat first
-    const buttons = page.locator("button");
-    const allButtons = await buttons.all();
+    const panel = await openChat(page);
 
-    for (let i = allButtons.length - 1; i >= 0; i--) {
-      const btn = allButtons[i];
-      if (!(await btn.isVisible())) continue;
-      const text = await btn.textContent();
-      if (
-        text?.includes("Send") ||
-        text?.includes("Apply") ||
-        text?.includes("Browse")
-      )
-        continue;
-
-      await btn.click();
-      const dialog = page.locator("[role='dialog']");
-      if (await dialog.isVisible({ timeout: 2000 }).catch(() => false)) break;
-    }
-
-    const chatPanel = page.locator("[role='dialog']");
-    if (!(await chatPanel.isVisible({ timeout: 2000 }).catch(() => false))) {
-      test.skip(true, "Could not open chat panel");
-      return;
-    }
-
-    // Type a message
-    const input = chatPanel.locator("#chat-input");
+    const input = panel.locator("#chat-input");
     await expect(input).toBeVisible();
     await input.fill("hello");
 
-    // Send
-    const sendBtn = chatPanel.locator("button[aria-label='Send message']");
+    const sendBtn = panel.locator("button[aria-label='Send message']");
     await sendBtn.click();
 
-    // Wait for response (typing indicator then response)
-    await page.waitForTimeout(2000);
+    // Wait for response (typing indicator then assistant message)
+    await page.waitForTimeout(3_000);
 
-    // Should have a response from the assistant
-    const messages = chatPanel.locator("[role='log']");
-    await expect(messages).toBeVisible();
+    const log = panel.locator("[role='log']");
+    await expect(log).toBeVisible();
   });
 
   test("close button closes panel", async ({ page }) => {
-    // Open chat
-    const buttons = page.locator("button");
-    const allButtons = await buttons.all();
+    const panel = await openChat(page);
 
-    for (let i = allButtons.length - 1; i >= 0; i--) {
-      const btn = allButtons[i];
-      if (!(await btn.isVisible())) continue;
-      const text = await btn.textContent();
-      if (
-        text?.includes("Send") ||
-        text?.includes("Apply") ||
-        text?.includes("Browse")
-      )
-        continue;
-
-      await btn.click();
-      const dialog = page.locator("[role='dialog']");
-      if (await dialog.isVisible({ timeout: 2000 }).catch(() => false)) break;
-    }
-
-    const chatPanel = page.locator("[role='dialog']");
-    if (!(await chatPanel.isVisible({ timeout: 2000 }).catch(() => false))) {
-      test.skip(true, "Could not open chat panel");
-      return;
-    }
-
-    // Click close button
-    const closeBtn = chatPanel.locator("button[aria-label='Close chat']");
+    const closeBtn = panel.locator("button[aria-label='Close chat']");
     await expect(closeBtn).toBeVisible();
     await closeBtn.click();
 
-    // Panel should disappear
-    await expect(chatPanel).not.toBeVisible();
+    await expect(panel).not.toBeVisible({ timeout: 3_000 });
   });
 
   test("escape key closes panel", async ({ page }) => {
-    // Open chat
-    const buttons = page.locator("button");
-    const allButtons = await buttons.all();
-
-    for (let i = allButtons.length - 1; i >= 0; i--) {
-      const btn = allButtons[i];
-      if (!(await btn.isVisible())) continue;
-      const text = await btn.textContent();
-      if (
-        text?.includes("Send") ||
-        text?.includes("Apply") ||
-        text?.includes("Browse")
-      )
-        continue;
-
-      await btn.click();
-      const dialog = page.locator("[role='dialog']");
-      if (await dialog.isVisible({ timeout: 2000 }).catch(() => false)) break;
-    }
-
-    const chatPanel = page.locator("[role='dialog']");
-    if (!(await chatPanel.isVisible({ timeout: 2000 }).catch(() => false))) {
-      test.skip(true, "Could not open chat panel");
-      return;
-    }
-
-    // Press Escape
+    const panel = await openChat(page);
     await page.keyboard.press("Escape");
-
-    // Panel should close
-    await expect(chatPanel).not.toBeVisible();
+    await expect(panel).not.toBeVisible({ timeout: 3_000 });
   });
 
   test("chat input has correct attributes", async ({ page }) => {
-    // Open chat
-    const buttons = page.locator("button");
-    const allButtons = await buttons.all();
+    const panel = await openChat(page);
 
-    for (let i = allButtons.length - 1; i >= 0; i--) {
-      const btn = allButtons[i];
-      if (!(await btn.isVisible())) continue;
-      const text = await btn.textContent();
-      if (
-        text?.includes("Send") ||
-        text?.includes("Apply") ||
-        text?.includes("Browse")
-      )
-        continue;
-
-      await btn.click();
-      const dialog = page.locator("[role='dialog']");
-      if (await dialog.isVisible({ timeout: 2000 }).catch(() => false)) break;
-    }
-
-    const chatPanel = page.locator("[role='dialog']");
-    if (!(await chatPanel.isVisible({ timeout: 2000 }).catch(() => false))) {
-      test.skip(true, "Could not open chat panel");
-      return;
-    }
-
-    const input = chatPanel.locator("#chat-input");
+    const input = panel.locator("#chat-input");
     await expect(input).toBeVisible();
     await expect(input).toHaveAttribute("maxlength", "500");
     await expect(input).toHaveAttribute("autocomplete", "off");
     await expect(input).toHaveAttribute("placeholder", "Type a message...");
+  });
+
+  test("chat panel does not appear on admin pages", async ({ page }) => {
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(500);
+
+    // ChatWidget is not rendered in admin — bubble must not exist
+    const bubble = page.locator('button[aria-label="Open chat assistant"]');
+    await expect(bubble).not.toBeVisible({ timeout: 3_000 });
   });
 });

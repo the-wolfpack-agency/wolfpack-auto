@@ -195,3 +195,124 @@ test.describe("Admin workflow: reports page", () => {
     await expect(exportButton.first()).toBeVisible({ timeout: 5_000 });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Layout regression tests — these prevent the double-header + sidebar overlap
+// bugs from recurring. If either assertion fails, the admin layout is broken.
+// ---------------------------------------------------------------------------
+
+test.describe("Admin layout regression: no double header or sidebar overlap", () => {
+  const ADMIN_ROUTES = [
+    "/admin",
+    "/admin/inventory",
+    "/admin/leads",
+    "/admin/analytics",
+    "/admin/settings",
+  ];
+
+  for (const route of ADMIN_ROUTES) {
+    test(`${route}: no public site nav visible`, async ({ page }) => {
+      const ok = await safeNavigate(page, route);
+      if (!ok) {
+        test.info().annotations.push({
+          type: "skip",
+          description: `${route} returned error — skipping layout check`,
+        });
+        return;
+      }
+
+      // The public header nav links (Home, Inventory, Financing, About, Contact)
+      // must NOT appear on admin pages. Their presence means the root layout
+      // is incorrectly injecting the public header.
+      const publicNav = page.locator("header[role='banner']");
+      await expect(publicNav).not.toBeVisible({ timeout: 3_000 });
+
+      // The public top bar (dark bar with hours/address) must also be absent
+      const topBar = page.locator(
+        'a[href="/inventory"]:not([class*="admin"]), nav[aria-label="Primary navigation"]'
+      );
+      await expect(topBar).not.toBeVisible({ timeout: 3_000 });
+    });
+
+    test(`${route}: desktop sidebar renders and content not overlapped`, async ({
+      page,
+      browserName,
+    }) => {
+      // webkit project uses iPhone 13 (isMobile:true) — desktop layout test
+      // doesn't apply; covered by the mobile test below.
+      test.skip(browserName === "webkit", "Mobile browser project — see mobile test");
+
+      const ok = await safeNavigate(page, route);
+      if (!ok) {
+        test.info().annotations.push({
+          type: "skip",
+          description: `${route} returned error — skipping layout check`,
+        });
+        return;
+      }
+      await page.waitForTimeout(300);
+
+      // On desktop the hamburger must NOT be visible (sidebar always shown)
+      const hamburger = page.locator('button[aria-label="Open menu"]');
+      await expect(hamburger).not.toBeVisible({ timeout: 5_000 });
+
+      // Desktop sidebar (identified by aria-label) must be visible
+      const sidebar = page.locator('[aria-label="Admin navigation desktop"]');
+      await expect(sidebar).toBeVisible({ timeout: 5_000 });
+
+      // Main content must start to the right of the sidebar
+      const sidebarBox = await sidebar.boundingBox();
+      const mainContent = page.locator("main#main-content");
+      await expect(mainContent).toBeVisible({ timeout: 5_000 });
+      const mainBox = await mainContent.boundingBox();
+
+      if (sidebarBox && mainBox) {
+        // Allow 8px tolerance for borders
+        expect(mainBox.x).toBeGreaterThanOrEqual(sidebarBox.x + sidebarBox.width - 8);
+      }
+    });
+
+    test(`${route}: mobile shows hamburger, sidebar is a drawer`, async ({
+      page,
+      browserName,
+    }) => {
+      // Only run on the webkit (iPhone 13) project which has genuine mobile
+      // device emulation. Desktop projects would need a separate viewport.
+      test.skip(browserName !== "webkit", "Desktop browser project — see desktop test");
+
+      const ok = await safeNavigate(page, route);
+      if (!ok) {
+        test.info().annotations.push({
+          type: "skip",
+          description: `${route} returned error — skipping mobile check`,
+        });
+        return;
+      }
+      await page.waitForTimeout(300);
+
+      // Hamburger button must be visible on mobile
+      const hamburger = page.locator('button[aria-label="Open menu"]');
+      await expect(hamburger).toBeVisible({ timeout: 5_000 });
+
+      // Mobile drawer must be off-screen (closed) — check it's translated left
+      // We verify the hamburger label says "Open menu" (not close) meaning sidebar is closed
+      await expect(hamburger).toHaveAttribute("aria-expanded", "false");
+
+      // Main content must take full width (start near left edge — no sidebar offset)
+      const mainContent = page.locator("main#main-content");
+      await expect(mainContent).toBeVisible({ timeout: 5_000 });
+      const mainBox = await mainContent.boundingBox();
+      if (mainBox) {
+        expect(mainBox.x).toBeLessThan(20); // starts at/near left edge
+      }
+    });
+  }
+
+  test("admin pages: no chat bubble rendered", async ({ page }) => {
+    await safeNavigate(page, "/admin");
+    await page.waitForTimeout(500);
+
+    const bubble = page.locator('button[aria-label="Open chat assistant"]');
+    await expect(bubble).not.toBeVisible({ timeout: 3_000 });
+  });
+});
