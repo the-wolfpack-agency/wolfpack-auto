@@ -516,6 +516,29 @@
     </div>
   </div>
 
+  <!-- TRADE-IN TOOL -->
+  <div class="annotated" style="border-color:var(--conversion);">
+    <div class="section-label" style="color:var(--conversion);">Value My Trade-In — Fully Instrumented</div>
+    <div style="font-size:0.82rem; color:var(--text-dim); padding:8px 0;">
+      A 4-step guided wizard (vehicle info → condition → estimate → contact) with every step, estimate, and lead submission tracked through the full analytics pipeline.
+    </div>
+    <div class="annotation-row">
+      <span class="badge badge-conversion">trade_in_step</span>
+      <span class="badge badge-conversion">trade_in_estimate_received</span>
+      <span class="badge badge-conversion">trade_in_lead</span>
+      <span class="badge badge-pipeline">GA4 + Dealer Platform</span>
+    </div>
+    <div class="annotation-detail">
+      <strong>Step tracking:</strong> <code>track("trade_in", "step_N", { make, year })</code> fires on every wizard step — shows exactly where users drop off.<br>
+      <strong>Estimate received:</strong> <code>track("trade_in", "estimate_received", { estimatedLow, estimatedMid, estimatedHigh })</code> — full price range captured.<br>
+      <strong>Conversion:</strong> <code>trackConversion("trade_in_lead", { make, model, condition, estimatedMid })</code> when contact form is submitted.<br>
+      <strong>Dual tracking:</strong> Every event fires both GA4 (<code>trackEvent()</code>) and the dealer analytics platform (<code>useAnalytics()</code>) — zero data loss across systems.<br>
+      <strong>Insight #32:</strong> Trade-In Funnel Analysis — step-by-step drop-off rates across the 4-step wizard.<br>
+      <strong>Insight #33:</strong> Estimate Value Distribution — tracks estimated vehicle values across makes/conditions to inform pricing strategy.<br>
+      <strong>Insight #34:</strong> Trade-In → Purchase Journey — correlates trade-in submissions with subsequent inventory views and lead submissions.
+    </div>
+  </div>
+
   <!-- COMPLIANCE -->
   <div class="annotated" style="border-color:var(--red);">
     <div class="section-label" style="color:var(--red);">Invisible Layer: Compliance &amp; Security</div>
@@ -529,9 +552,11 @@
       <span class="badge badge-pipeline">Audit Logging</span>
       <span class="badge badge-navigation">Cookie Consent</span>
       <span class="badge badge-conversion">FTC Disclosures</span>
+      <span class="badge badge-ux_friction">MFA (Admin)</span>
     </div>
     <div class="annotation-detail">
-      <strong>Security:</strong> HSTS, CSP, X-Frame-Options, CSRF tokens on forms, brute-force login protection, 30-min idle timeout.<br>
+      <strong>Security:</strong> HSTS, CSP, X-Frame-Options, CSRF tokens on forms, Redis-backed brute-force protection (5 attempts / 15 min), 30-min idle timeout.<br>
+      <strong>Admin MFA:</strong> Two-step login — password + TOTP (Google Authenticator / Authy). Backup codes. Sessions invalidated on idle.<br>
       <strong>Privacy:</strong> GDPR + CCPA compliant. Cookie consent with opt-out. PII encrypted with AES-256-GCM. Data deletion API.<br>
       <strong>FTC:</strong> Buyer's Guide disclosures, CARS Rule compliance, Reg Z financing disclaimers on every vehicle listing.<br>
       <strong>AI:</strong> Chat and generated content labeled as AI-assisted. Full transparency with customers.
@@ -547,15 +572,15 @@
   <h3>Platform Intelligence Stats</h3>
   <div class="stat-grid">
     <div class="stat-box">
-      <div class="num" style="color:var(--engagement)">38</div>
+      <div class="num" style="color:var(--engagement)">41</div>
       <div class="label">Insight Generators</div>
     </div>
     <div class="stat-box">
-      <div class="num" style="color:var(--search)">13</div>
+      <div class="num" style="color:var(--search)">16</div>
       <div class="label">Event Types</div>
     </div>
     <div class="stat-box">
-      <div class="num" style="color:var(--conversion)">6</div>
+      <div class="num" style="color:var(--conversion)">8</div>
       <div class="label">Conversion Actions</div>
     </div>
     <div class="stat-box">
@@ -651,7 +676,7 @@
   <hr class="section-divider">
 
   <!-- EVENT TYPES -->
-  <h3>Event Types (13)</h3>
+  <h3>Event Types (16)</h3>
   <div style="display:flex; flex-wrap:wrap; gap:4px;">
     <span class="badge badge-engagement">page_view</span>
     <span class="badge badge-engagement">click</span>
@@ -666,12 +691,15 @@
     <span class="badge badge-ux_friction">dead_click</span>
     <span class="badge badge-conversion">exit_intent</span>
     <span class="badge badge-conversion">comparison</span>
+    <span class="badge badge-conversion">trade_in_step</span>
+    <span class="badge badge-conversion">trade_in_estimate</span>
+    <span class="badge badge-conversion">trade_in_lead</span>
   </div>
 
   <hr class="section-divider">
 
   <!-- CONVERSION ACTIONS -->
-  <h3 style="color:var(--conversion)">Conversion Actions (6)</h3>
+  <h3 style="color:var(--conversion)">Conversion Actions (8)</h3>
   <div style="display:flex; flex-direction:column; gap:3px; font-size:0.72rem;">
     <span>✅ submit_contact_form</span>
     <span>✅ submit_lead_form</span>
@@ -679,12 +707,14 @@
     <span>✅ click_email_button</span>
     <span>✅ schedule_test_drive</span>
     <span>✅ start_financing_application</span>
+    <span>✅ trade_in_estimate_received</span>
+    <span>✅ trade_in_lead</span>
   </div>
 
   <hr class="section-divider">
 
-  <!-- ALL 31 INSIGHTS -->
-  <h3>All 31 Insight Generators</h3>
+  <!-- ALL 41 INSIGHTS -->
+  <h3>All 41 Insight Generators</h3>
   <ol class="insight-list">
     <li><span class="insight-num">1</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Page engagement ranking</li>
     <li><span class="insight-num">2</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Conversion paths</li>
@@ -717,10 +747,177 @@
     <li><span class="insight-num">29</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Vehicle Comparison Patterns</li>
     <li><span class="insight-num">30</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Financing Intent Profile</li>
     <li><span class="insight-num">31</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Gallery Engagement</li>
+    <li><span class="insight-num">32</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Trade-In Funnel Drop-Off</li>
+    <li><span class="insight-num">33</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Trade-In Estimate Distribution</li>
+    <li><span class="insight-num">34</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Trade-In → Purchase Journey</li>
+    <li><span class="insight-num">35</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Admin Pricing Recommendation Uptake</li>
+    <li><span class="insight-num">36</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Inventory Status Distribution (Admin)</li>
+    <li><span class="insight-num">37</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Lead Response Time Analysis</li>
+    <li><span class="insight-num">38</span> <span class="badge badge-pipeline" style="font-size:0.55rem">P</span> Admin → Analytics Feedback Loop</li>
+    <li><span class="insight-num">39</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Price Change → Conversion Correlation</li>
+    <li><span class="insight-num">40</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Dealer Admin Session Patterns</li>
+    <li><span class="insight-num">41</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Lead Quality by Channel (Admin Dashboard)</li>
   </ol>
 
 </div><!-- end sidebar -->
 </div><!-- end main -->
+
+<!-- ==================== ADMIN PORTAL SECTION ==================== -->
+<div style="background:#0d1117; border-top:2px solid var(--conversion); padding:32px 24px; margin-top:0;">
+  <div style="max-width:1100px; margin:0 auto;">
+    <div style="text-align:center; margin-bottom:24px;">
+      <h2 style="font-size:1.3rem; color:var(--conversion); margin-bottom:6px;">Admin Portal — System Dataflow Map</h2>
+      <p style="color:var(--text-dim); font-size:0.82rem;">Every admin action writes to the same data pipeline that powers the public site. No siloed data — admin decisions feed the learning loop.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px;">
+
+      <!-- DASHBOARD -->
+      <div class="annotated" style="border-color:var(--conversion); margin:0;">
+        <div class="section-label" style="color:var(--conversion);">/admin — Command Center</div>
+        <div class="annotation-row">
+          <span class="badge badge-conversion">KPI Cards</span>
+          <span class="badge badge-pipeline">Live DB Queries</span>
+          <span class="badge badge-engagement">Recent Leads</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>Data sources:</strong> <code>GET /api/admin/stats</code> → vehicles table (total/available/sold), leads table (new/qualified/total), avg days on lot, conversion rate.<br>
+          <strong>Audit:</strong> Every admin login → <code>audit_log</code> table with timestamp, IP, session ID.<br>
+          <strong>MFA gate:</strong> JWT must have <code>mfa_verified=true</code> or access is blocked at middleware.
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div class="annotated" style="border-color:var(--engagement); margin:0;">
+        <div class="section-label" style="color:var(--engagement);">/admin/inventory — Vehicle Management</div>
+        <div class="annotation-row">
+          <span class="badge badge-engagement">vehicles table</span>
+          <span class="badge badge-pipeline">VIN Decode API</span>
+          <span class="badge badge-pipeline">Audit Log</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>Reads:</strong> <code>SELECT</code> from vehicles WHERE dealer_id (RLS enforced).<br>
+          <strong>Writes:</strong> <code>PATCH /api/admin/inventory/[vin]</code> — price, status, photos → <code>audit_log("inventory.update")</code>.<br>
+          <strong>Quick-add:</strong> <code>POST /api/admin/quick-add</code> decodes VIN, pre-fills make/model/year from NHTSA API.<br>
+          <strong>Image upload:</strong> <code>POST /api/images/upload</code> — session dealer_id enforced (no client-supplied IDs). Stores to S3-compatible Blob.
+        </div>
+      </div>
+
+      <!-- LEADS -->
+      <div class="annotated" style="border-color:var(--chat); margin:0;">
+        <div class="section-label" style="color:var(--chat);">/admin/leads — Lead Pipeline</div>
+        <div class="annotation-row">
+          <span class="badge badge-chat">leads table</span>
+          <span class="badge badge-conversion">Lead Scoring ML</span>
+          <span class="badge badge-pipeline">Audit Log</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>Reads:</strong> <code>GET /api/admin/leads</code> — filter by status/source/date, full PII decrypted server-side (AES-256-GCM).<br>
+          <strong>Status changes:</strong> <code>PATCH /api/admin/leads/[id]</code> → <code>audit_log("lead.status_change")</code> — full immutable history.<br>
+          <strong>Lead Score:</strong> <code>POST /api/admin/leads/score-all</code> — ML model re-scores all leads by predicted conversion probability. Scores stored back to DB.<br>
+          <strong>Bulk ops:</strong> <code>POST /api/admin/leads/bulk</code> — assign/archive/tag multiple leads in one transaction.
+        </div>
+      </div>
+
+      <!-- ANALYTICS DASHBOARD -->
+      <div class="annotated" style="border-color:var(--seo); margin:0;">
+        <div class="section-label" style="color:var(--seo);">/admin/analytics — Intelligence Dashboard</div>
+        <div class="annotation-row">
+          <span class="badge badge-seo">analytics_events</span>
+          <span class="badge badge-conversion">Funnel Metrics</span>
+          <span class="badge badge-conversion">Trade-In KPIs</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>Source:</strong> <code>GET /api/admin/analytics/dashboard</code> — aggregates analytics_events, leads, trade_in_estimates tables.<br>
+          <strong>Trade-in funnel:</strong> estimates last 30 days, leads converted, conversion rate, avg estimated value — all live from DB.<br>
+          <strong>Custom queries:</strong> <code>POST /api/admin/analytics/query</code> — natural-language-to-SQL via AI (dealer asks "which vehicles had the most VDP views this week?").<br>
+          <strong>Feedback loop:</strong> Admin actions (price changes, lead dispositions) write events that feed Insight #39 — price change → conversion correlation.
+        </div>
+      </div>
+
+      <!-- PRICING -->
+      <div class="annotated" style="border-color:var(--marketing); margin:0;">
+        <div class="section-label" style="color:var(--marketing);">/admin/pricing — AI Pricing Recommendations</div>
+        <div class="annotation-row">
+          <span class="badge badge-marketing">pricing_recommendations</span>
+          <span class="badge badge-conversion">Apply / Dismiss</span>
+          <span class="badge badge-pipeline">Market Data</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>Source:</strong> <code>pricing_recommendations</code> table — generated_at, recommended_price, confidence, reasoning.<br>
+          <strong>Apply:</strong> <code>PATCH /api/admin/pricing/[vehicleId]</code> with action="apply" → updates vehicles.price + marks rec applied_at. Insight #35 tracks uptake rate.<br>
+          <strong>Dismiss:</strong> action="dismiss" → marks dismissed_at. Dismissal patterns train future recommendation confidence.<br>
+          <strong>Insight #39:</strong> After price change, system correlates days-to-sale and VDP view velocity — proving or disproving each recommendation.
+        </div>
+      </div>
+
+      <!-- TRADE-IN ADMIN -->
+      <div class="annotated" style="border-color:var(--conversion); margin:0;">
+        <div class="section-label" style="color:var(--conversion);">/admin/trade-in — Trade-In Pipeline</div>
+        <div class="annotation-row">
+          <span class="badge badge-conversion">trade_in_estimates</span>
+          <span class="badge badge-conversion">Lead Conversion</span>
+          <span class="badge badge-pipeline">Analytics Bridge</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>Source:</strong> <code>trade_in_estimates</code> table — all estimates with vehicle info, condition, price range, submitted_at.<br>
+          <strong>Funnel view:</strong> Step drop-off rates (step 1→2→3→4→submitted) — shows exactly where customers abandon.<br>
+          <strong>Lead bridge:</strong> Estimates that convert to leads (contact form submitted) are linked by estimate_id — Insight #34 maps the journey.<br>
+          <strong>AgenticQA:</strong> <code>scripts/ingest_trade_in_data.py</code> ingests trade-in metrics into the learning system — platform improves estimate accuracy over time.
+        </div>
+      </div>
+
+      <!-- COMPLIANCE -->
+      <div class="annotated" style="border-color:var(--red); margin:0;">
+        <div class="section-label" style="color:var(--red);">/admin/compliance — Regulatory Dashboard</div>
+        <div class="annotation-row">
+          <span class="badge badge-ux_friction">FTC CARS Rule</span>
+          <span class="badge badge-ux_friction">Reg Z</span>
+          <span class="badge badge-pipeline">Audit Trail</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>Source:</strong> <code>GET /api/admin/compliance</code> — checks all vehicles for required disclosures (Buyer's Guide, price advertising, financing terms).<br>
+          <strong>Audit log:</strong> Every compliance-relevant action is immutable — deal.signed, lead.status_change, settings.update all timestamped with actor.<br>
+          <strong>PII handling:</strong> Customer PII (phone, email, SSN-adjacent fields) stored AES-256-GCM encrypted. Admin decrypts on-demand, access logged.<br>
+          <strong>Data deletion:</strong> <code>POST /api/privacy/delete-data</code> — GDPR/CCPA right-to-erasure, full audit trail preserved without PII.
+        </div>
+      </div>
+
+      <!-- SETTINGS + MFA -->
+      <div class="annotated" style="border-color:var(--ux_friction, #ef4444); margin:0;">
+        <div class="section-label" style="color:#ef4444;">/admin/settings — Dealer Config + Security</div>
+        <div class="annotation-row">
+          <span class="badge badge-ux_friction">MFA Enrollment</span>
+          <span class="badge badge-ux_friction">Rate Limiting</span>
+          <span class="badge badge-pipeline">Session Control</span>
+        </div>
+        <div class="annotation-detail">
+          <strong>MFA:</strong> <code>POST /api/admin/mfa/setup</code> — generates TOTP secret, QR code, 10 backup codes. <code>POST /api/admin/mfa/verify</code> enables MFA on account.<br>
+          <strong>Login protection:</strong> Redis-backed rate limiter — 5 failed attempts triggers 15-min lockout. Resets on success. Falls back to in-memory for dev.<br>
+          <strong>Session:</strong> JWT sessions max 8 hours, 30-min idle timeout enforced in middleware. MFA-pending sessions can only access <code>/api/admin/mfa/verify</code>.<br>
+          <strong>Audit:</strong> <code>PATCH /api/admin/settings</code> → <code>audit_log("dealer.settings.update")</code> — every config change attributed to actor + session.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ADMIN DATA FLOW DIAGRAM -->
+    <div style="margin-top:24px; text-align:center;">
+      <h3 style="font-size:0.95rem; color:var(--text-dim); margin-bottom:16px;">Admin Action → Data Pipeline Flow</h3>
+      <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; font-size:0.72rem;">
+        <div style="background:#1a2332; border:1px solid var(--conversion); border-radius:6px; padding:8px 12px; color:var(--conversion);">Admin Action<br><span style="color:var(--text-dim);">price change / lead update / setting</span></div>
+        <div style="color:var(--text-dim);">→</div>
+        <div style="background:#1a2332; border:1px solid var(--pipeline); border-radius:6px; padding:8px 12px; color:var(--pipeline);">Auth Guard<br><span style="color:var(--text-dim);">requireAuth() + dealer_id</span></div>
+        <div style="color:var(--text-dim);">→</div>
+        <div style="background:#1a2332; border:1px solid var(--seo); border-radius:6px; padding:8px 12px; color:var(--seo);">PostgreSQL<br><span style="color:var(--text-dim);">vehicles / leads / audit_log</span></div>
+        <div style="color:var(--text-dim);">→</div>
+        <div style="background:#1a2332; border:1px solid var(--engagement); border-radius:6px; padding:8px 12px; color:var(--engagement);">Analytics Engine<br><span style="color:var(--text-dim);">41 insight generators update</span></div>
+        <div style="color:var(--text-dim);">→</div>
+        <div style="background:#1a2332; border:1px solid var(--chat); border-radius:6px; padding:8px 12px; color:var(--chat);">AgenticQA<br><span style="color:var(--text-dim);">learning loop improves platform</span></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ==================== ARCHITECTURE FOOTER ==================== -->
 <div class="arch-footer">
@@ -736,12 +933,12 @@
     <div class="arch-arrow">→</div>
     <div class="arch-box" style="border:1px solid var(--pipeline);">
       <div style="font-weight:700; color:var(--pipeline);">API Routes</div>
-      <div style="font-size:0.7rem; color:var(--text-dim);">/api/analytics<br>/api/chat<br>/api/leads</div>
+      <div style="font-size:0.7rem; color:var(--text-dim);">/api/analytics<br>/api/chat<br>/api/leads<br>/api/trade-in</div>
     </div>
     <div class="arch-arrow">→</div>
     <div class="arch-box" style="border:1px solid var(--conversion);">
       <div style="font-weight:700; color:var(--conversion);">Analytics Engine</div>
-      <div style="font-size:0.7rem; color:var(--text-dim);">31 Insight Generators<br>Session Analysis<br>Lead Scoring</div>
+      <div style="font-size:0.7rem; color:var(--text-dim);">41 Insight Generators<br>Session Analysis<br>Lead Scoring</div>
     </div>
     <div class="arch-arrow">→</div>
     <div class="arch-stores">
