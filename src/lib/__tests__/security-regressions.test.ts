@@ -237,6 +237,16 @@ describe("BUG-001: trade-in route exists as a specific Next.js page", () => {
     expect(notFoundCalls).toBe(0);
   });
 
+  it("trade-in page uses force-dynamic to prevent Vercel static generation 404", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/trade-in/page.tsx"),
+      "utf-8",
+    );
+    expect(src).toContain('dynamic = "force-dynamic"');
+  });
+
   it("[...slug] catch-all does NOT include trade-in in its PAGES registry (avoiding interception)", () => {
     const { readFileSync } = require("fs");
     const { join } = require("path");

@@ -31,6 +31,7 @@ const PAGES: PageConfig[] = [
   { path: "/inventory", titleFragment: "Inventory" },
   { path: "/inventory/1HGCV1F34PA000001", titleFragment: "Honda" },
   { path: "/financing", titleFragment: "Financing" },
+  { path: "/trade-in", titleFragment: "Trade" },
   { path: "/about", titleFragment: "About" },
   { path: "/contact", titleFragment: "Contact" },
   // Dealer sub-pages — must have ALL the same features as main pages
