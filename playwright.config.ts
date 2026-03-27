@@ -45,7 +45,11 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    // Always reuse an existing server on :3000 — avoids port-race timeouts
+    // when another process is already running (e.g. a live dev server).
+    // In CI, set PORT=3000 explicitly before running tests to guarantee the
+    // right server is listening.
+    reuseExistingServer: true,
     timeout: 120_000,
   },
 });
