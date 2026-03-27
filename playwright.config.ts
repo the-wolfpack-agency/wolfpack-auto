@@ -44,11 +44,10 @@ export default defineConfig({
 
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:3000",
-    // Always reuse an existing server on :3000 — avoids port-race timeouts
-    // when another process is already running (e.g. a live dev server).
-    // In CI, set PORT=3000 explicitly before running tests to guarantee the
-    // right server is listening.
+    // Use /inventory for the readiness probe — the root / can return 500
+    // during cold-start if DB is unreachable, but /inventory is static-safe.
+    // Playwright considers the server ready when this URL returns < 400.
+    url: "http://localhost:3000/inventory",
     reuseExistingServer: true,
     timeout: 120_000,
   },
