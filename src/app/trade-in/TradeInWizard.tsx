@@ -961,7 +961,11 @@ export default function TradeInWizard() {
                           Lock in this estimate and we&apos;ll schedule your free appraisal.
                         </p>
 
-                        <div className="mt-4 space-y-3">
+                        <form
+                          onSubmit={(e) => { e.preventDefault(); handleSubmitLead(); }}
+                          autoComplete="on"
+                          className="mt-4 space-y-3"
+                        >
                           {/* First + Last name */}
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div>
@@ -1031,14 +1035,13 @@ export default function TradeInWizard() {
                         {submitError && <InlineError message={submitError} />}
 
                         <button
-                          type="button"
+                          type="submit"
                           disabled={
                             submitting ||
                             !data.firstName.trim() ||
                             !data.lastName.trim() ||
                             !data.email.trim()
                           }
-                          onClick={handleSubmitLead}
                           className="mt-5 w-full rounded-xl bg-emerald-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {submitting ? "Submitting..." : "Claim My Offer"}
@@ -1047,6 +1050,7 @@ export default function TradeInWizard() {
                         <p className="mt-3 text-center text-xs text-gray-400">
                           No obligation. We respect your privacy.
                         </p>
+                        </form>
                       </>
                     )}
                   </div>
