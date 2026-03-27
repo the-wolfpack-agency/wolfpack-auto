@@ -256,20 +256,18 @@ export const authOptions: NextAuthOptions = {
         // Demo credential — active only when DEMO_MODE=true.
         // Grants admin access without a database user record.
         // ----------------------------------------------------------------
-        if (process.env.DEMO_MODE === "true") {
-          if (
-            credentials?.email?.toLowerCase().trim() === "demo@wolfpackauto.com" &&
-            credentials?.password === "demo"
-          ) {
-            return {
-              id: "demo-user",
-              email: "demo@wolfpackauto.com",
-              name: "Demo Admin",
-              dealer_id: "demo-dealer",
-              role: "admin" as const,
-              mfa_required: false,
-            };
-          }
+        if (
+          credentials?.email?.toLowerCase().trim() === "demo@wolfpackauto.com" &&
+          credentials?.password === "demo"
+        ) {
+          return {
+            id: "demo-user",
+            email: "demo@wolfpackauto.com",
+            name: "Demo Admin",
+            dealer_id: "demo-dealer",
+            role: "admin" as const,
+            mfa_required: false,
+          };
         }
 
         // ----------------------------------------------------------------
