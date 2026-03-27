@@ -26,6 +26,7 @@ export default function InventoryFilters({
   const currentCondition = searchParams.get("condition") ?? "";
   const currentSort = searchParams.get("sort") ?? "";
   const currentQuery = searchParams.get("q") ?? "";
+  const currentEvOnly = searchParams.get("ev_only") === "true";
 
   const updateParam = useCallback(
     (key: string, value: string) => {
@@ -252,6 +253,27 @@ export default function InventoryFilters({
                 </option>
               ))}
             </select>
+          </div>
+        </fieldset>
+
+        {/* EV Only toggle */}
+        <fieldset>
+          <legend className="text-sm font-semibold text-gray-700">Electric Vehicles</legend>
+          <div className="mt-2">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={currentEvOnly}
+              onClick={() => updateParam("ev_only", currentEvOnly ? "" : "true")}
+              className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                currentEvOnly
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                  : "border-surface-border bg-white text-gray-600 hover:bg-surface-subtle"
+              }`}
+            >
+              <span aria-hidden="true">&#x26A1;</span>
+              EVs Only
+            </button>
           </div>
         </fieldset>
 

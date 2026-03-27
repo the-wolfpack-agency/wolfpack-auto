@@ -1,10 +1,10 @@
 /**
- * Data access layer with graceful fallback to placeholder data.
+ * Data access layer with graceful fallback chain:
+ *   Elasticsearch → PostgreSQL → placeholder data
  *
- * Every public function tries the real database first.  If the DB
- * connection fails (no DATABASE_URL, Docker not running, etc.) it
- * silently falls back to the placeholder dataset so the site still
- * renders on Vercel or in local dev without infrastructure.
+ * Every public function tries the fastest/richest backend first.
+ * If a tier fails (service down, no env var, etc.) it silently
+ * falls back to the next tier so the site always renders.
  */
 
 import { query } from "@/lib/db";
@@ -26,7 +26,7 @@ import type { InventoryFilters } from "@/types/vehicle";
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-type DataSource = "database" | "placeholder";
+type DataSource = "elasticsearch" | "database" | "placeholder";
 
 interface WithSource<T> {
   data: T;
@@ -38,6 +38,63 @@ const DEALER_ID = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001
 /** Return true when there is no DATABASE_URL configured at all. */
 function dbUnavailable(): boolean {
   return !process.env.DATABASE_URL;
+}
+
+/** Return true when there is no Elasticsearch URL configured. */
+function esUnavailable(): boolean {
+  return !process.env.ELASTICSEARCH_URL;
+}
+
+// ---------------------------------------------------------------------------
+// Elasticsearch inventory search (Tier 1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Try to fulfil an inventory search via Elasticsearch.
+ * Returns null (rather than throwing) on any failure so callers can
+ * fall through to the DB tier without extra try/catch nesting.
+ */
+async function searchInventoryFromES(
+  filters?: { make?: string; condition?: string; sort?: string; q?: string },
+): Promise<WithSource<InventoryVehicle[]> | null> {
+  if (esUnavailable()) return null;
+
+  try {
+    const { searchVehicles } = await import("@/lib/inventory-search");
+    const esFilters: InventoryFilters = {
+      make: filters?.make,
+      condition: filters?.condition as InventoryFilters["condition"],
+      sort_by: filters?.sort as InventoryFilters["sort_by"],
+    };
+    const result = await searchVehicles(DEALER_ID, esFilters, filters?.q);
+
+    const vehicles: InventoryVehicle[] = result.vehicles.map((hit) => ({
+      vin: hit.vin,
+      year: hit.year,
+      make: hit.make,
+      model: hit.model,
+      trim: hit.trim ?? "",
+      price: hit.price,
+      msrp: hit.price, // ES index does not expose msrp separately
+      mileage: hit.mileage,
+      fuel: "Gasoline",
+      transmission: "Automatic",
+      gradient: "from-brand-400 to-brand-600",
+      condition: hit.condition ?? "used",
+      bodyStyle: hit.body_style ?? "Sedan",
+      photo: hit.photo_url ?? "",
+      // ES index does not expose EV fields
+      is_ev: false,
+      ev_range_miles: null,
+      ev_drivetrain: null,
+      federal_tax_credit_eligible: false,
+      federal_tax_credit_amount: 0,
+    }));
+
+    return { data: vehicles, source: "elasticsearch" };
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -59,9 +116,22 @@ export interface InventoryVehicle {
   condition: string;
   bodyStyle: string;
   photo: string;
+  // EV fields
+  is_ev: boolean;
+  ev_range_miles: number | null;
+  ev_drivetrain: string | null;
+  federal_tax_credit_eligible: boolean;
+  federal_tax_credit_amount: number;
 }
 
 function toInventoryVehicle(p: PlaceholderVehicle): InventoryVehicle {
+  const pe = p as PlaceholderVehicle & {
+    is_ev?: boolean;
+    ev_range_miles?: number | null;
+    ev_drivetrain?: string | null;
+    federal_tax_credit_eligible?: boolean;
+    federal_tax_credit_amount?: number;
+  };
   return {
     vin: p.vin,
     year: p.year,
@@ -77,12 +147,26 @@ function toInventoryVehicle(p: PlaceholderVehicle): InventoryVehicle {
     condition: p.condition,
     bodyStyle: p.bodyStyle,
     photo: p.photo,
+    is_ev: pe.is_ev ?? false,
+    ev_range_miles: pe.ev_range_miles ?? null,
+    ev_drivetrain: pe.ev_drivetrain ?? null,
+    federal_tax_credit_eligible: pe.federal_tax_credit_eligible ?? false,
+    federal_tax_credit_amount: pe.federal_tax_credit_amount ?? 0,
   };
 }
 
+type InventoryFilterParams = {
+  make?: string;
+  condition?: string;
+  sort?: string;
+  q?: string;
+  ev_only?: boolean;
+  ev_range_min?: number;
+};
+
 function applyPlaceholderFilters(
   vehicles: PlaceholderVehicle[],
-  filters?: { make?: string; condition?: string; sort?: string; q?: string },
+  filters?: InventoryFilterParams,
 ): PlaceholderVehicle[] {
   let result = [...vehicles];
 
@@ -109,6 +193,20 @@ function applyPlaceholderFilters(
     );
   }
 
+  if (filters?.ev_only) {
+    result = result.filter(
+      (v) => (v as PlaceholderVehicle & { is_ev?: boolean }).is_ev === true,
+    );
+  }
+
+  if (filters?.ev_range_min != null && filters.ev_range_min > 0) {
+    const minRange = filters.ev_range_min;
+    result = result.filter((v) => {
+      const range = (v as PlaceholderVehicle & { ev_range_miles?: number | null }).ev_range_miles;
+      return range != null && range >= minRange;
+    });
+  }
+
   switch (filters?.sort) {
     case "price_asc":
       result.sort((a, b) => a.price - b.price);
@@ -132,10 +230,19 @@ function applyPlaceholderFilters(
 
 /**
  * Get inventory vehicles with optional filters.
+ *
+ * Fallback chain: Elasticsearch → PostgreSQL → placeholder.
  */
 export async function getInventoryVehicles(
-  filters?: { make?: string; condition?: string; sort?: string; q?: string },
+  filters?: InventoryFilterParams,
 ): Promise<WithSource<InventoryVehicle[]>> {
+  // ── Tier 1: Elasticsearch ─────────────────────────────────────────────────
+  const esResult = await searchInventoryFromES(filters);
+  if (esResult !== null) {
+    return esResult;
+  }
+
+  // ── Tier 2: PostgreSQL full-text / ILIKE search ───────────────────────────
   if (dbUnavailable()) {
     return {
       data: applyPlaceholderFilters(placeholderVehicles, filters).map(
@@ -157,6 +264,26 @@ export async function getInventoryVehicles(
     if (filters?.condition) {
       conditions.push(`condition = $${idx++}`);
       params.push(filters.condition.toLowerCase());
+    }
+
+    if (filters?.ev_only) {
+      conditions.push(`is_ev = true`);
+    }
+
+    if (filters?.ev_range_min != null && filters.ev_range_min > 0) {
+      conditions.push(`ev_range_miles >= $${idx++}`);
+      params.push(filters.ev_range_min);
+    }
+
+    // Full-text / ILIKE search when a query string is provided and ES is down
+    if (filters?.q) {
+      conditions.push(
+        `(make ILIKE $${idx} OR model ILIKE $${idx} OR trim ILIKE $${idx} OR
+          to_tsvector('english', COALESCE(make,'') || ' ' || COALESCE(model,'') || ' ' || COALESCE(trim,''))
+            @@ plainto_tsquery('english', $${idx}))`,
+      );
+      params.push(`%${filters.q}%`);
+      idx++;
     }
 
     const where = conditions.join(" AND ");
@@ -181,7 +308,12 @@ export async function getInventoryVehicles(
       `SELECT vin, year, make, model, trim, price,
               COALESCE(msrp, price) AS msrp, mileage,
               fuel_type AS fuel, transmission, condition, body_style,
-              exterior_color
+              exterior_color,
+              COALESCE(is_ev, false) AS is_ev,
+              ev_range_miles,
+              ev_drivetrain,
+              COALESCE(federal_tax_credit_eligible, false) AS federal_tax_credit_eligible,
+              COALESCE(federal_tax_credit_amount, 0) AS federal_tax_credit_amount
        FROM vehicles
        WHERE ${where}
        ORDER BY ${orderBy}
@@ -204,11 +336,18 @@ export async function getInventoryVehicles(
       condition: r.condition ?? "used",
       bodyStyle: r.body_style ?? "Sedan",
       photo: r.photo_url ?? "",
+      is_ev: Boolean(r.is_ev),
+      ev_range_miles: r.ev_range_miles != null ? Number(r.ev_range_miles) : null,
+      ev_drivetrain: r.ev_drivetrain ?? null,
+      federal_tax_credit_eligible: Boolean(r.federal_tax_credit_eligible),
+      federal_tax_credit_amount: Number(r.federal_tax_credit_amount ?? 0),
     }));
 
     return { data: vehicles, source: "database" };
   } catch (err) {
-    console.error("[data] getInventoryVehicles DB error, falling back:", err);
+    console.error("[data] getInventoryVehicles DB error, falling back to placeholder:", err);
+
+    // ── Tier 3: placeholder ────────────────────────────────────────────────
     return {
       data: applyPlaceholderFilters(placeholderVehicles, filters).map(
         toInventoryVehicle,
@@ -254,6 +393,15 @@ export interface VehicleDetail {
     vin: string;
     photo: string;
   }[];
+  // EV fields (null when not an EV or data unavailable)
+  is_ev: boolean;
+  ev_range_miles: number | null;
+  ev_battery_kwh: number | null;
+  ev_charge_time_l2_hours: number | null;
+  ev_charge_time_dc_minutes: number | null;
+  ev_drivetrain: string | null;
+  federal_tax_credit_eligible: boolean;
+  federal_tax_credit_amount: number;
 }
 
 export async function getVehicleByVin(
@@ -311,6 +459,15 @@ export async function getVehicleByVin(
       photo: row.photo_url ?? "",
       thumbnail: row.thumbnail_url ?? "",
       similarVehicles: placeholderSimilarVehicles,
+      // EV fields
+      is_ev: Boolean(row.is_ev),
+      ev_range_miles: row.ev_range_miles != null ? Number(row.ev_range_miles) : null,
+      ev_battery_kwh: row.ev_battery_kwh != null ? Number(row.ev_battery_kwh) : null,
+      ev_charge_time_l2_hours: row.ev_charge_time_l2_hours != null ? Number(row.ev_charge_time_l2_hours) : null,
+      ev_charge_time_dc_minutes: row.ev_charge_time_dc_minutes != null ? Number(row.ev_charge_time_dc_minutes) : null,
+      ev_drivetrain: row.ev_drivetrain ?? null,
+      federal_tax_credit_eligible: Boolean(row.federal_tax_credit_eligible),
+      federal_tax_credit_amount: Number(row.federal_tax_credit_amount ?? 0),
     };
 
     return { data: detail, source: "database" };
@@ -348,6 +505,15 @@ function placeholderToDetail(p: PlaceholderVehicle): VehicleDetail {
     photo: p.photo,
     thumbnail: p.thumbnail,
     similarVehicles: placeholderSimilarVehicles,
+    // EV fields — placeholder data does not include EV details
+    is_ev: (p as PlaceholderVehicle & { is_ev?: boolean }).is_ev ?? false,
+    ev_range_miles: (p as PlaceholderVehicle & { ev_range_miles?: number | null }).ev_range_miles ?? null,
+    ev_battery_kwh: (p as PlaceholderVehicle & { ev_battery_kwh?: number | null }).ev_battery_kwh ?? null,
+    ev_charge_time_l2_hours: (p as PlaceholderVehicle & { ev_charge_time_l2_hours?: number | null }).ev_charge_time_l2_hours ?? null,
+    ev_charge_time_dc_minutes: (p as PlaceholderVehicle & { ev_charge_time_dc_minutes?: number | null }).ev_charge_time_dc_minutes ?? null,
+    ev_drivetrain: (p as PlaceholderVehicle & { ev_drivetrain?: string | null }).ev_drivetrain ?? null,
+    federal_tax_credit_eligible: (p as PlaceholderVehicle & { federal_tax_credit_eligible?: boolean }).federal_tax_credit_eligible ?? false,
+    federal_tax_credit_amount: (p as PlaceholderVehicle & { federal_tax_credit_amount?: number }).federal_tax_credit_amount ?? 0,
   };
 }
 

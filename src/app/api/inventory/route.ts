@@ -22,6 +22,13 @@ const searchParamsSchema = z.object({
     .optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(100).default(24),
+  /** EV filter: pass ev_only=true to return only electric vehicles */
+  ev_only: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
+  /** Minimum EV range in miles */
+  ev_range_min: z.coerce.number().int().min(0).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -42,11 +49,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { make, condition, sort } = parsed.data;
+  const { make, condition, sort, ev_only, ev_range_min } = parsed.data;
 
   try {
     const [inventoryResult, facetsResult] = await Promise.all([
-      getInventoryVehicles({ make, condition, sort }),
+      getInventoryVehicles({
+        make,
+        condition,
+        sort,
+        ev_only: ev_only || undefined,
+        ev_range_min,
+      }),
       getVehicleFacets(),
     ]);
 

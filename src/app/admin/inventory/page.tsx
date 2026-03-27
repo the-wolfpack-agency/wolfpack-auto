@@ -24,6 +24,7 @@ interface InventoryVehicle {
   photo_url: string | null;
   created_at: string;
   days_on_lot: number;
+  is_ev: boolean;
 }
 
 interface PageProps {
@@ -86,7 +87,8 @@ async function getInventory(params: {
            v.price, v.status, v.exterior_color,
            (v.photos->0->>'url') AS photo_url,
            v.created_at,
-           EXTRACT(EPOCH FROM (now() - v.created_at))::int / 86400 AS days_on_lot
+           EXTRACT(EPOCH FROM (now() - v.created_at))::int / 86400 AS days_on_lot,
+           COALESCE(v.is_ev, false) AS is_ev
          FROM vehicles v
          WHERE ${where}
          ORDER BY ${sortCol} ${sortDir}
@@ -224,7 +226,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Vehicle
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 sm:table-cell">
                   VIN
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -240,7 +242,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Status
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
                   <a href={sortUrl("days")} className="inline-flex items-center gap-1 hover:text-gray-700" aria-label="Sort by days on lot">
                     Days on Lot
                     {params.sort === "days" && (
@@ -250,7 +252,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                     )}
                   </a>
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
                   <a href={sortUrl("date")} className="inline-flex items-center gap-1 hover:text-gray-700" aria-label="Sort by date added">
                     Added
                     {params.sort === "date" && (
@@ -305,19 +307,29 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 font-mono text-sm text-gray-700">
+                    <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-sm text-gray-700 sm:table-cell">
                       {v.vin}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900">
                       ${v.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <StatusBadge status={v.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={v.status} />
+                        {v.is_ev && (
+                          <span
+                            title="Electric Vehicle"
+                            className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700"
+                          >
+                            &#x26A1; EV
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 md:table-cell">
                       {v.days_on_lot}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
                       {formatDate(v.created_at)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm">

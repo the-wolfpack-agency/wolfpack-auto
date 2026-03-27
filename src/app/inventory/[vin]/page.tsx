@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getVehicleByVin } from "@/lib/data";
+import { calculateFederalTaxCredit } from "@/lib/ev-utils";
 import PaymentCalculator from "@/components/PaymentCalculator";
 import PhotoGallery from "@/components/PhotoGallery";
 import VehicleDisclosures from "@/components/VehicleDisclosures";
 import FinancingDisclaimer from "@/components/FinancingDisclaimer";
 import CARSRuleDisclosures from "@/components/CARSRuleDisclosures";
+import EVTaxCreditBadge from "@/components/EVTaxCreditBadge";
+import EVRangeCalculator from "@/components/EVRangeCalculator";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +27,9 @@ export async function generateMetadata({ params }: VDPParams): Promise<Metadata>
   return {
     title: `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim}`,
     description: `View details, photos, and pricing for the ${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.trim}. ${vehicle.mileage.toLocaleString()} miles, $${vehicle.price.toLocaleString()}.`,
+    alternates: {
+      canonical: `/inventory/${vehicle.vin}`,
+    },
   };
 }
 
@@ -37,8 +43,54 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
 
   const v = vehicle;
 
+  const vehicleCondition =
+    v.condition === "new"
+      ? "https://schema.org/NewCondition"
+      : "https://schema.org/UsedCondition";
+
+  const vehicleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Vehicle",
+    name: `${v.year} ${v.make} ${v.model}`,
+    vehicleModelDate: String(v.year),
+    brand: { "@type": "Brand", name: v.make },
+    model: v.model,
+    mileageFromOdometer: {
+      "@type": "QuantitativeValue",
+      value: v.mileage,
+      unitCode: "SMI",
+    },
+    vehicleCondition,
+    offers: {
+      "@type": "Offer",
+      price: v.price,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "/" },
+      { "@type": "ListItem", position: 2, name: "Inventory", item: "/inventory" },
+      { "@type": "ListItem", position: 3, name: `${v.year} ${v.make} ${v.model}` },
+    ],
+  };
+
   return (
     <div className="bg-surface-muted min-h-screen">
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(vehicleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+
       {/* Header bar */}
       <div className="bg-white border-b border-surface-border">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
@@ -135,6 +187,16 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
               </ul>
             </section>
 
+            {/* EV Range & Charging Calculator */}
+            {v.is_ev && v.ev_range_miles != null && (
+              <EVRangeCalculator
+                rangeMiles={v.ev_range_miles}
+                chargeTimeL2Hours={v.ev_charge_time_l2_hours}
+                chargeTimeDCMinutes={v.ev_charge_time_dc_minutes}
+                batteryKwh={v.ev_battery_kwh}
+              />
+            )}
+
             {/* FTC Vehicle Disclosures */}
             <VehicleDisclosures vehicle={v} showFull />
 
@@ -168,6 +230,25 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
                   </svg>
                   You Save ${(v.msrp - v.price).toLocaleString()}
                 </div>
+
+                {/* EV federal tax credit badge */}
+                {v.is_ev && (() => {
+                  const credit = calculateFederalTaxCredit({
+                    is_ev: v.is_ev,
+                    ev_drivetrain: v.ev_drivetrain,
+                    msrp: v.msrp,
+                    make: v.make,
+                    year: v.year,
+                    condition: v.condition,
+                  });
+                  return (
+                    <EVTaxCreditBadge
+                      eligible={credit.eligible}
+                      amount={credit.amount}
+                      condition={v.condition}
+                    />
+                  );
+                })()}
               </div>
 
               <div className="mt-6 space-y-3">
