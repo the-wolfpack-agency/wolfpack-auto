@@ -25,11 +25,12 @@ export default function AdminLayout({
         <AdminSidebar />
 
         {/* ---------------------------------------------------------------- */}
-        {/* Main content area                                                */}
+        {/* Main content area — offset by sidebar width since sidebar is    */}
+        {/* fixed-position on all viewports                                 */}
         {/* ---------------------------------------------------------------- */}
         <main
           id="main-content"
-          className="flex-1 bg-surface-muted lg:ml-0"
+          className="flex-1 bg-surface-muted ml-sidebar-width"
         >
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             {children}

@@ -149,7 +149,10 @@ export async function middleware(request: NextRequest) {
 
   // Unauthenticated admin routes (login page, auth API) bypass tenant resolution
   if (isAdminRoute(pathname) || isAuthApi) {
-    return applyHeaders(NextResponse.next(), hostname, request);
+    const adminReqHeaders = new Headers(request.headers);
+    adminReqHeaders.set("x-is-admin", "1");
+    const adminResponse = NextResponse.next({ request: { headers: adminReqHeaders } });
+    return applyHeaders(adminResponse, hostname, request);
   }
 
   const tenantSlug = extractTenantSlug(hostname);

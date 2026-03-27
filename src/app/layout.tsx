@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import MobileMenu from "@/components/MobileMenu";
 import ChatWidget from "@/components/ChatWidget";
@@ -42,9 +43,31 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const isAdmin = headersList.get("x-is-admin") === "1";
+
   const dealer = await getDealerConfig();
   const fullAddress = `${dealer.address}, ${dealer.city}, ${dealer.state} ${dealer.zip}`;
   const phoneHref = `tel:+1${dealer.phone.replace(/\D/g, "")}`;
+
+  // Admin routes get bare html/body — the admin layout provides its own chrome
+  if (isAdmin) {
+    return (
+      <html lang="en">
+        <head>
+          <Analytics />
+        </head>
+        <body className="min-h-screen bg-surface text-gray-900 antialiased">
+          <DealerProvider config={dealer}>
+            <EventCollector>
+              {children}
+            </EventCollector>
+          </DealerProvider>
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="en">
       <head>
