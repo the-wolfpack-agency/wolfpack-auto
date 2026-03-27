@@ -259,7 +259,7 @@ export const authOptions: NextAuthOptions = {
         if (process.env.DEMO_MODE === "true") {
           if (
             credentials?.email?.toLowerCase().trim() === "demo@wolfpackauto.com" &&
-            credentials?.password === "WolfpackDemo2026!"
+            credentials?.password === "demo"
           ) {
             return {
               id: "demo-user",
