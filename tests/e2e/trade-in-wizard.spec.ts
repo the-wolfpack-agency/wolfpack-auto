@@ -496,4 +496,37 @@ test.describe("API: /api/trade-in/estimate — input safety", () => {
     const response = await request.get("/api/trade-in/estimate");
     expect([404, 405]).toContain(response.status());
   });
+
+  // Regression: wizard was sending year as string, previousOwners as "3+" string
+  test("rejects year as string type", async ({ request }) => {
+    const response = await request.post("/api/trade-in/estimate", {
+      data: {
+        year: "2020",           // string — must be rejected
+        make: "Toyota",
+        model: "Camry",
+        mileage: 40000,
+        condition: "good",
+        accidentHistory: "none",
+        titleStatus: "clean",
+        previousOwners: 1,
+      },
+    });
+    expect(response.status()).toBe(400);
+  });
+
+  test("rejects previousOwners as '3+' string", async ({ request }) => {
+    const response = await request.post("/api/trade-in/estimate", {
+      data: {
+        year: 2020,
+        make: "Toyota",
+        model: "Camry",
+        mileage: 40000,
+        condition: "good",
+        accidentHistory: "none",
+        titleStatus: "clean",
+        previousOwners: "3+",   // string with + — must be rejected
+      },
+    });
+    expect(response.status()).toBe(400);
+  });
 });
