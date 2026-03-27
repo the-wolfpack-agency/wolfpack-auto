@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 /**
  * POST /api/admin/analytics/query
@@ -160,6 +161,9 @@ function matchQuery(question: string): QueryResult | null {
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   let body: { question?: string };
 
   try {
@@ -170,9 +174,15 @@ export async function POST(request: NextRequest) {
 
   const question = body.question?.trim();
 
-  if (!question) {
+  if (typeof body.question !== "string" || !question) {
     return NextResponse.json(
-      { error: "Missing required field: question" },
+      { error: "question is required" },
+      { status: 422 },
+    );
+  }
+  if (body.question.length > 2000) {
+    return NextResponse.json(
+      { error: "question must be 2000 characters or fewer" },
       { status: 422 },
     );
   }

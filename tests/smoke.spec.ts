@@ -34,6 +34,7 @@ const PAGES: PageConfig[] = [
   { path: "/trade-in", titleFragment: "Trade" },
   { path: "/about", titleFragment: "About" },
   { path: "/contact", titleFragment: "Contact" },
+  { path: "/walkaround", titleFragment: "Walkaround" },
   // Dealer sub-pages — must have ALL the same features as main pages
   { path: "/dealers/summit-auto", titleFragment: "Summit Auto" },
   { path: "/dealers/mile-high-motors", titleFragment: "Mile High" },
