@@ -132,6 +132,12 @@ export default function AccountingDashboard() {
           >
             Commissions
           </a>
+          <a
+            href="/admin/accounting/export"
+            className="rounded-lg border border-brand-600 px-3 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50"
+          >
+            Export / GL
+          </a>
         </div>
       </div>
 

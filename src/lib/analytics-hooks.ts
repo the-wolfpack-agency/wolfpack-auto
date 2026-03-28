@@ -30,6 +30,7 @@ export type ServiceEvent =
   | "service.appointment_created"
   | "service.appointment_completed"
   | "service.appointment_no_show"
+  | "service.self_scheduled"
   | "service.ro_created"
   | "service.ro_completed"
   | "service.part_ordered"
@@ -46,7 +47,10 @@ export type CommsEvent =
 
 export type AccountingEvent =
   | "accounting.sale_logged"
-  | "accounting.commission_paid";
+  | "accounting.commission_paid"
+  | "accounting.floor_plan_added"
+  | "accounting.floor_plan_payoff"
+  | "accounting.exported";
 
 export type ReviewEvent =
   | "review.received"
@@ -62,6 +66,26 @@ export type CustomerEvent =
   | "customer.viewed_360"
   | "customer.ltv_milestone";
 
+export type LenderEvent =
+  | "lender.created"
+  | "lender.updated"
+  | "deal.lender_submitted"
+  | "deal.lender_response";
+
+export type CreditEvent =
+  | "credit.pulled"
+  | "credit.consent_recorded";
+
+export type ComplianceEvent =
+  | "compliance.check_run"
+  | "compliance.check_reviewed"
+  | "compliance.check_overridden";
+
+export type DocumentEvent =
+  | "document.uploaded"
+  | "document.signed"
+  | "document.deleted";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -69,7 +93,11 @@ export type PlatformEvent =
   | AccountingEvent
   | ReviewEvent
   | RetailEvent
-  | CustomerEvent;
+  | CustomerEvent
+  | LenderEvent
+  | CreditEvent
+  | ComplianceEvent
+  | DocumentEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -174,4 +202,48 @@ export function trackCustomer(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "customer", ...meta });
+}
+
+/**
+ * Track a lender portal event.
+ */
+export function trackLender(
+  event: LenderEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "lender", ...meta });
+}
+
+/**
+ * Track a credit bureau event.
+ */
+export function trackCredit(
+  event: CreditEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "credit", ...meta });
+}
+
+/**
+ * Track a compliance / red-flags / OFAC event.
+ */
+export function trackCompliance(
+  event: ComplianceEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "compliance", ...meta });
+}
+
+/**
+ * Track a document vault event.
+ */
+export function trackDocument(
+  event: DocumentEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "documents", ...meta });
 }

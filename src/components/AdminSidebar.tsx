@@ -31,6 +31,7 @@ const COMMS_CHILDREN = [
 const ACCOUNTING_CHILDREN = [
   { href: "/admin/accounting", label: "Dashboard" },
   { href: "/admin/accounting/commissions", label: "Commissions" },
+  { href: "/admin/accounting/export", label: "Export / GL" },
 ] as const;
 
 /** Sub-items shown under Service when on an /admin/service page. */
@@ -53,12 +54,17 @@ const NAV_ITEMS = [
   { href: "/admin/good-faith", label: "Good Faith", icon: GoodFaithIcon },
   { href: "/admin/deals", label: "Deal Desking", icon: DealDeskingIcon },
   { href: "/admin/fi-products", label: "F&I Products", icon: FiProductsIcon },
+  { href: "/admin/lenders", label: "Lenders", icon: LendersIcon },
+  { href: "/admin/credit", label: "Credit Bureau", icon: CreditIcon },
+  { href: "/admin/documents", label: "Documents", icon: DocumentsIcon },
   { href: "/admin/trade-in", label: "Trade-Ins", icon: TradeInIcon },
   { href: "/admin/service", label: "Service & Parts", icon: ServiceIcon },
+  { href: "/admin/floor-plan", label: "Floor Plan", icon: FloorPlanIcon },
   { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
   { href: "/admin/digital-retail", label: "Digital Retail", icon: DigitalRetailIcon },
   { href: "/admin/reviews", label: "Reviews", icon: ReviewsIcon },
   { href: "/admin/customers", label: "Customers", icon: CustomersIcon },
+  { href: "/admin/compliance/checks", label: "Compliance Checks", icon: ComplianceChecksIcon },
   { href: "/admin/tasks", label: "Tasks", icon: TasksIcon },
   { href: "/admin/comms", label: "Comms", icon: CommsIcon },
   { href: "/admin/rewards", label: "Rewards", icon: RewardsIcon },
@@ -631,6 +637,46 @@ function CustomersIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+    </svg>
+  );
+}
+
+function LendersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
+    </svg>
+  );
+}
+
+function CreditIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+    </svg>
+  );
+}
+
+function DocumentsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+    </svg>
+  );
+}
+
+function FloorPlanIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3H21m-3.75 3H21" />
+    </svg>
+  );
+}
+
+function ComplianceChecksIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
     </svg>
   );
 }

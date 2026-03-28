@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackRetail } from "@/lib/analytics-hooks";
 
 /**
  * GET  /api/admin/digital-retail/credit-app — list credit applications
@@ -123,6 +124,8 @@ export async function POST(request: NextRequest) {
   }
 
   const appId = `ca-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  try { trackRetail("retail.credit_app_submitted", "demo-dealer", { vehicle_interest: String(body.vehicle_interest ?? ""), annual_income: Number(body.annual_income ?? 0) }); } catch {}
 
   return NextResponse.json(
     {

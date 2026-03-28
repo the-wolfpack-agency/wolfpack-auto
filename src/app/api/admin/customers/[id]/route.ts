@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackCustomer } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -211,6 +212,8 @@ export async function GET(
   if (!isAuthenticated(authResult)) return authResult;
 
   const { id } = await params;
+
+  try { trackCustomer("customer.viewed_360", DEALER_ID, { customer_id: id }); } catch {}
 
   if (process.env.DATABASE_URL) {
     try {
