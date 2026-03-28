@@ -55,6 +55,13 @@ export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      domain: { id: "dom-shadow-1", domain: "demo.example.com", status: "pending_verification", dns_txt_record: "wolfpack-verify-demo123" },
+      verification: { type: "DNS TXT", host: "_wolfpack-verify.demo.example.com", value: "wolfpack-verify-demo123", instructions: "Shadow mode — no database configured." },
+    }, { status: 201 });
+  }
+
   try {
     const body = await request.json();
     const { dealerId, domain } = body as {
@@ -131,6 +138,10 @@ export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ dealerId: "shadow", domains: [], count: 0 });
+  }
+
   const { searchParams } = request.nextUrl;
   const dealerId = searchParams.get("dealerId");
 
@@ -165,6 +176,10 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ deleted: true, domainId: "shadow" });
+  }
 
   const { searchParams } = request.nextUrl;
   const domainId = searchParams.get("domainId");

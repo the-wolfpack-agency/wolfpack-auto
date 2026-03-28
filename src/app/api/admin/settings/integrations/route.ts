@@ -32,6 +32,14 @@ export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      configs: [
+        { id: "wh-demo-1", provider: "hubspot", url: "https://hooks.example.com/hubspot", events: ["lead.created", "lead.status_changed"], active: true },
+      ],
+    });
+  }
+
   try {
     const configs = await getWebhookConfigs(DEALER_ID);
     return NextResponse.json({ configs });
@@ -78,6 +86,10 @@ export async function POST(request: NextRequest) {
     ...parsed.data,
     dealer_id: DEALER_ID,
   };
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ success: true, config });
+  }
 
   try {
     await saveWebhookConfig(config);

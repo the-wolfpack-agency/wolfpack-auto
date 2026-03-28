@@ -20,6 +20,14 @@ export async function POST(): Promise<NextResponse> {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      qrDataUrl: "data:image/png;base64,shadow-mode-placeholder",
+      secret: "SHADOW_MODE_SECRET",
+      backupCodes: ["SHAD-0001", "SHAD-0002", "SHAD-0003", "SHAD-0004", "SHAD-0005"],
+    });
+  }
+
   const { user } = authResult;
 
   try {

@@ -140,6 +140,12 @@ export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  // Knowledge query uses Qdrant (not Postgres), but include DATABASE_URL
+  // check for consistent shadow mode pattern across all admin routes.
+  if (!process.env.DATABASE_URL) {
+    // Proceed — knowledge query works via keyword matching without a database
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();

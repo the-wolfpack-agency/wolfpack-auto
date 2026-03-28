@@ -25,6 +25,15 @@ export async function POST(request: NextRequest) {
   // --- Authentication ---
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      success: true,
+      summary: { total_received: 0, total_normalized: 0, created: 0, updated: 0, skipped: 0, errored: 0 },
+      message: "Shadow mode — no database configured. Intake not processed.",
+    });
+  }
+
   const sessionDealerId = authResult.user.dealer_id;
 
   try {

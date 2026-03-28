@@ -26,6 +26,12 @@ export async function GET(
   // --- Authentication ---
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    const { vin } = await context.params;
+    return NextResponse.json({ id: "shadow", vin: vin?.toUpperCase() ?? "UNKNOWN", year: 2024, make: "Demo", model: "Vehicle", price: 0, status: "available" });
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {
@@ -80,6 +86,12 @@ export async function PUT(
   // --- Authentication ---
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    const { vin } = await context.params;
+    return NextResponse.json({ id: "shadow", vin: vin?.toUpperCase() ?? "UNKNOWN", updated: true, message: "Shadow mode — no database configured." });
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {

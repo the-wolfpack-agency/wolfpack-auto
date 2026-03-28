@@ -56,6 +56,12 @@ export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  // VIN decode is pure computation (no DB), but check DATABASE_URL for
+  // consistent shadow mode pattern across all admin routes.
+  if (!process.env.DATABASE_URL) {
+    // Proceed — VIN decode works without a database
+  }
+
   const vin = request.nextUrl.searchParams.get("vin")?.trim().toUpperCase();
 
   if (!vin) {

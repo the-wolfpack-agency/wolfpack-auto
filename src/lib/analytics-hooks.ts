@@ -127,6 +127,14 @@ export type SecurityEvent =
   | "security.finding_resolved"
   | "security.rate_limit_triggered";
 
+export type SystemEvent =
+  | "system.circuit_breaker_opened"
+  | "system.circuit_breaker_closed"
+  | "system.health_check"
+  | "system.health_degraded"
+  | "system.health_critical"
+  | "system.auto_rollback";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -140,7 +148,8 @@ export type PlatformEvent =
   | ComplianceEvent
   | DocumentEvent
   | KnowledgeEvent
-  | SecurityEvent;
+  | SecurityEvent
+  | SystemEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -315,4 +324,15 @@ export function trackSecurity(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "security", ...meta });
+}
+
+/**
+ * Track a system infrastructure event (circuit breaker, health, rollback).
+ */
+export function trackSystem(
+  event: SystemEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "system", ...meta });
 }

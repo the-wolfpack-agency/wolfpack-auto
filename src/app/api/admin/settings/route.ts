@@ -19,6 +19,11 @@ const PHONE_DIGIT = /\d{7,}/;
 export async function GET(_req: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json(DEFAULT_CONFIG);
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {
@@ -70,6 +75,11 @@ export async function GET(_req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ ...DEFAULT_CONFIG, updated: true });
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {

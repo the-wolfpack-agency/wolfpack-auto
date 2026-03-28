@@ -15,6 +15,14 @@ export async function POST(req: NextRequest) {
   // Authentication
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json(
+      { id: "shadow-vehicle", vin: "SHADOW00000000000", status: "available", message: "Shadow mode — no database configured." },
+      { status: 201 },
+    );
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {

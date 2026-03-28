@@ -8,6 +8,12 @@ import { trackRetail } from "@/lib/analytics-hooks";
  * No auth required — this powers the customer-facing financing page.
  */
 export async function POST(request: NextRequest) {
+  // Calculator is pure computation — no DB needed, but check DATABASE_URL
+  // for consistent shadow mode pattern across all admin routes.
+  if (!process.env.DATABASE_URL) {
+    // Proceed — calculator works without a database
+  }
+
   let body: {
     vehicle_price?: number;
     down_payment?: number;

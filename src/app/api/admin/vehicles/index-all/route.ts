@@ -16,6 +16,17 @@ export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      success: true,
+      message: "Shadow mode — no database configured. Reindex skipped.",
+      indexed: 0,
+      failed: 0,
+      total: 0,
+      source: "shadow",
+    });
+  }
+
   // Rate limit: 5 full reindex operations per IP per hour
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

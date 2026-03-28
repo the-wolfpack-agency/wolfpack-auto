@@ -12,6 +12,10 @@ export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json(buildAnalyticsSummary());
+  }
+
   try {
     const data = buildAnalyticsSummary();
     return NextResponse.json(data);

@@ -125,6 +125,16 @@ export async function POST(request: NextRequest) {
   // --- Authentication ---
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      success: true,
+      vehicle: { id: "shadow-vehicle-1", vin: "SHADOW00000000000", year: 2024, make: "Demo", model: "Vehicle", price: 29999, status: "available" },
+      meta: { vin_decoded: false, listing_generated: false, photos_processed: 0, qdrant_indexed: false },
+      message: "Shadow mode — no database configured.",
+    });
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {

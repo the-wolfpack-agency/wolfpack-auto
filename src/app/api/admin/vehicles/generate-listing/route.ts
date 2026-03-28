@@ -255,6 +255,19 @@ export async function POST(req: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    // Pure computation — no DB needed, but shadow check ensures consistency
+    try {
+      const body = (await req.json()) as ListingInput;
+      if (!body.make || !body.model) {
+        return NextResponse.json({ error: "make and model are required" }, { status: 400 });
+      }
+      return NextResponse.json(generateFromTemplate(body));
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+  }
+
   try {
     const body = (await req.json()) as ListingInput;
 

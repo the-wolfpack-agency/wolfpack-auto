@@ -4,7 +4,9 @@ import type { LeadStatus, LeadTemperature } from "@/types/lead";
 import { auditLog } from "@/lib/audit-log";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+/** Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */
+const DEALER_ID =
+  process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 /* -------------------------------------------------------------------------- */
 /* Validation                                                                 */

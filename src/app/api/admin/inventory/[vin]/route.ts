@@ -18,6 +18,11 @@ interface RouteContext {
 export async function PUT(req: NextRequest, context: RouteContext) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ id: "shadow", vin: "SHADOW", updated: true, message: "Shadow mode — no database configured." });
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {
@@ -108,6 +113,11 @@ export async function PUT(req: NextRequest, context: RouteContext) {
 export async function DELETE(_req: NextRequest, context: RouteContext) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ deleted: true, vin: "SHADOW" });
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {

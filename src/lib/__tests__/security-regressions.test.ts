@@ -812,3 +812,249 @@ describe("DATA-003: analytics health check endpoint", () => {
     expect(src).toContain("healthy");
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* AVAIL-003: Circuit breaker module exists with all three states              */
+/* -------------------------------------------------------------------------- */
+
+describe("AVAIL-003: circuit breaker with OPEN/CLOSED/HALF_OPEN states", () => {
+  it("circuit-breaker.ts exists and exports all three states", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../circuit-breaker.ts"), "utf-8");
+    expect(src).toContain("CLOSED");
+    expect(src).toContain("OPEN");
+    expect(src).toContain("HALF_OPEN");
+    expect(src).toContain("CircuitBreakerState");
+    expect(src).toContain("recordSuccess");
+    expect(src).toContain("recordFailure");
+    expect(src).toContain("isOpen");
+  });
+
+  it("circuit breaker opens after configured failure threshold", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../circuit-breaker.ts"), "utf-8");
+    expect(src).toContain("failureThreshold");
+    expect(src).toContain("cooldownMs");
+    // Must track consecutive failures
+    expect(src).toContain("consecutiveFailures");
+  });
+
+  it("circuit breaker logs state transitions", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../circuit-breaker.ts"), "utf-8");
+    expect(src).toMatch(/console\.log.*circuit-breaker/);
+  });
+
+  it("circuit breaker tracks analytics events", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../circuit-breaker.ts"), "utf-8");
+    expect(src).toContain("system.circuit_breaker_opened");
+    expect(src).toContain("system.circuit_breaker_closed");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* AVAIL-004: Safe-fetch module with AbortController timeout                   */
+/* -------------------------------------------------------------------------- */
+
+describe("AVAIL-004: safe-fetch with AbortController timeout", () => {
+  it("safe-fetch.ts exists with AbortController and timeout", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../safe-fetch.ts"), "utf-8");
+    expect(src).toContain("AbortController");
+    expect(src).toContain("timeoutMs");
+    expect(src).toContain("TimeoutError");
+    expect(src).toContain("export async function safeFetch");
+  });
+
+  it("safe-fetch retries on network error but not on HTTP errors", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../safe-fetch.ts"), "utf-8");
+    expect(src).toContain("retries");
+    expect(src).toContain("NetworkError");
+    // Must have retry loop
+    expect(src).toMatch(/for.*attempt.*<=.*retries/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* AVAIL-005: System health endpoint exists                                    */
+/* -------------------------------------------------------------------------- */
+
+describe("AVAIL-005: system health endpoint", () => {
+  it("health route exists and returns comprehensive status", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/system/health/route.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("export async function GET");
+    expect(src).toContain("circuitBreakerState");
+    expect(src).toContain("db_connected");
+    expect(src).toContain("healthy");
+    expect(src).toContain("degraded");
+    expect(src).toContain("critical");
+    // Must return 503 on critical
+    expect(src).toMatch(/503/);
+  });
+
+  it("health route probes database with circuit breaker awareness", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/system/health/route.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("circuitBreaker");
+    expect(src).toContain("probeDatabase");
+    expect(src).toContain("recordSuccess");
+    expect(src).toContain("recordFailure");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* AVAIL-001: All admin routes have DATABASE_URL shadow mode check             */
+/* -------------------------------------------------------------------------- */
+
+describe("AVAIL-001: all admin API routes have DATABASE_URL shadow mode check", () => {
+  it("every admin route.ts file references DATABASE_URL", () => {
+    const { readdirSync, readFileSync, statSync } = require("fs");
+    const { join } = require("path");
+
+    const adminApiDir = join(__dirname, "../../app/api/admin");
+
+    function findRouteFiles(dir: string): string[] {
+      const files: string[] = [];
+      for (const entry of readdirSync(dir)) {
+        const fullPath = join(dir, entry);
+        const stat = statSync(fullPath);
+        if (stat.isDirectory()) {
+          files.push(...findRouteFiles(fullPath));
+        } else if (entry === "route.ts") {
+          files.push(fullPath);
+        }
+      }
+      return files;
+    }
+
+    const routeFiles = findRouteFiles(adminApiDir);
+
+    // Sanity check — we expect a significant number of admin routes
+    expect(routeFiles.length).toBeGreaterThanOrEqual(20);
+
+    const missing: string[] = [];
+    for (const file of routeFiles) {
+      const src = readFileSync(file, "utf-8");
+      if (!src.includes("DATABASE_URL")) {
+        // Extract relative path for readable error message
+        const relPath = file.replace(adminApiDir, "admin");
+        missing.push(relPath);
+      }
+    }
+
+    expect(missing).toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* AVAIL-002: Schema migration 031 exists with temperature column              */
+/* -------------------------------------------------------------------------- */
+
+describe("AVAIL-002: migration 031 adds missing leads columns", () => {
+  it("031_schema_fixes.sql exists", () => {
+    const { existsSync } = require("fs");
+    const { join } = require("path");
+    expect(
+      existsSync(join(__dirname, "../../db/migrations/031_schema_fixes.sql")),
+    ).toBe(true);
+  });
+
+  it("migration adds temperature column to leads", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../db/migrations/031_schema_fixes.sql"),
+      "utf-8",
+    );
+    expect(src).toMatch(/ALTER TABLE leads ADD COLUMN IF NOT EXISTS temperature/);
+    expect(src).toContain("DEFAULT 'warm'");
+  });
+
+  it("migration adds assigned_to column to leads", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../db/migrations/031_schema_fixes.sql"),
+      "utf-8",
+    );
+    expect(src).toMatch(/ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_to/);
+  });
+
+  it("migration adds follow_up_date column to leads", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../db/migrations/031_schema_fixes.sql"),
+      "utf-8",
+    );
+    expect(src).toMatch(/ALTER TABLE leads ADD COLUMN IF NOT EXISTS follow_up_date/);
+  });
+
+  it("migration adds message column to leads", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../db/migrations/031_schema_fixes.sql"),
+      "utf-8",
+    );
+    expect(src).toMatch(/ALTER TABLE leads ADD COLUMN IF NOT EXISTS message/);
+  });
+
+  it("migration is wrapped in a transaction", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../db/migrations/031_schema_fixes.sql"),
+      "utf-8",
+    );
+    expect(src).toContain("BEGIN;");
+    expect(src).toContain("COMMIT;");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* AVAIL-006: Leads routes use valid UUID fallback, not "default" string       */
+/* -------------------------------------------------------------------------- */
+
+describe("AVAIL-006: leads routes use UUID fallback for dealer_id", () => {
+  it("leads/route.ts does not use \"default\" as dealer_id fallback", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/leads/route.ts"),
+      "utf-8",
+    );
+    // Must NOT fall back to the string "default" — it breaks UUID casts
+    expect(src).not.toMatch(/DEALER_ID\s*=\s*.*\?\?\s*["']default["']/);
+    // Must use a valid UUID pattern as fallback
+    expect(src).toMatch(/00000000-0000-4000-a000-000000000001/);
+  });
+
+  it("leads/[id]/route.ts does not use \"default\" as dealer_id fallback", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/leads/[id]/route.ts"),
+      "utf-8",
+    );
+    expect(src).not.toMatch(/DEALER_ID\s*=\s*.*\?\?\s*["']default["']/);
+    expect(src).toMatch(/00000000-0000-4000-a000-000000000001/);
+  });
+});

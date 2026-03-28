@@ -13,6 +13,10 @@ export async function GET(): Promise<NextResponse> {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ mfa_enabled: false });
+  }
+
   const { user } = authResult;
 
   try {

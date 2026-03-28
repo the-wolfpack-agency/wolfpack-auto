@@ -52,3 +52,30 @@ export async function query<T extends Record<string, any>>(
   const result = await pool.query<T>(text, params);
   return result;
 }
+
+/**
+ * Safe query wrapper that respects the circuit breaker.
+ *
+ * When the DB circuit breaker is OPEN, returns empty rows with
+ * `fromCache: true` instead of attempting a query that will fail.
+ * On success/failure, records the outcome to the circuit breaker.
+ */
+export async function safeQuery<T>(
+  text: string,
+  params?: unknown[],
+): Promise<{ rows: T[]; fromCache: boolean }> {
+  const { circuitBreaker } = await import("@/lib/circuit-breaker");
+
+  if (circuitBreaker.isOpen()) {
+    return { rows: [], fromCache: true };
+  }
+
+  try {
+    const result = await query(text, params);
+    circuitBreaker.recordSuccess();
+    return { rows: result.rows as T[], fromCache: false };
+  } catch (err) {
+    circuitBreaker.recordFailure();
+    throw err;
+  }
+}

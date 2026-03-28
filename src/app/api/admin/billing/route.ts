@@ -6,6 +6,17 @@ import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      subscription_status: "trial",
+      subscription_plan: "starter",
+      trial_ends_at: null,
+      stripe_customer_id: null,
+      billing_email: null,
+    });
+  }
+
   const dealerId = authResult.user.dealer_id;
 
   try {

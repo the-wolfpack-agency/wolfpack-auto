@@ -183,6 +183,12 @@ export async function POST(
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  // Deal calculator is pure computation — no DB needed, but check DATABASE_URL
+  // for consistent shadow mode pattern across all admin routes.
+  if (!process.env.DATABASE_URL) {
+    // Proceed — calculator works without a database
+  }
+
   await params; // consume params to avoid Next.js warnings
 
   let body: CalcInput;

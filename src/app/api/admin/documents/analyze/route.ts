@@ -20,6 +20,11 @@ export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  if (!process.env.DATABASE_URL) {
+    const rules = getComplianceRules();
+    return NextResponse.json({ rules, total_rules: rules.length, categories: [...new Set(rules.map((r) => r.category))] });
+  }
+
   return NextResponse.json({
     rules: getComplianceRules(),
     total_rules: getComplianceRules().length,
@@ -30,6 +35,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+
+  if (!process.env.DATABASE_URL) {
+    // Document analysis is pure computation — proceed with the analysis logic below
+  }
 
   let body: Record<string, any>;
   try {

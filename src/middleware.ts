@@ -226,6 +226,18 @@ function applyHeaders(
   response.headers.delete("X-Powered-By");
   response.headers.delete("Server");
 
+  // Graceful degradation: set X-Request-Timeout header
+  response.headers.set("X-Request-Timeout", "30000");
+
+  // If the DB circuit breaker is open, let clients know data may be stale.
+  // NOTE: Edge middleware cannot import Node.js modules directly, so we
+  // check the header set by the health endpoint or a previous request.
+  // Server components and API routes read circuitBreaker.isOpen() directly.
+  // This header is set as a hint for CDN / client caching strategies.
+  if (request?.headers.get("x-shadow-mode") === "true") {
+    response.headers.set("X-Shadow-Mode", "true");
+  }
+
   // Propagate OEM ID as a response header so server components can read it.
   // The request-side header is set above; this ensures it surfaces on the
   // response object as well (useful for debugging and Edge->Node handoff).
