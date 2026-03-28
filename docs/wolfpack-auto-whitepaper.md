@@ -83,7 +83,7 @@ The platform is built on modern, proven infrastructure:
 - **Playwright** with 800+ automated tests covering every page, form, API route, and user flow
 - **GitHub Actions** running a 4-phase CI pipeline on every commit: preflight validation, security scanning, quality testing, and shadow mode verification
 
-A nightly mutation testing suite intentionally injects 6 different types of code defects, verifies the test suite catches each one, and reports whether the safety net is intact. This means the team knows, every morning, that the deploy pipeline is functioning correctly.
+A nightly mutation testing suite intentionally injects 6 different types of code defects, verifies the test suite catches each one, and reports whether the safety net is intact. The engineering team knows, every morning, that the deploy pipeline is functioning correctly.
 
 ---
 
@@ -128,9 +128,9 @@ Additional revenue from:
 
 ## Team
 
-The Wolfpack Auto platform was built using AgenticQA, a proprietary multi-agent software development and quality assurance system. AgenticQA orchestrates specialized AI agents (security, compliance, performance, testing, full-stack development) to build, test, and harden software at a pace that traditional development teams cannot match.
+The Wolfpack Auto platform was developed using a proprietary multi-agent software engineering pipeline that orchestrates specialized AI agents for security analysis, compliance verification, performance testing, and full-stack development. This approach enables the team to build, test, and harden software at a pace that traditional development teams cannot match.
 
-This is not just a technology advantage for building the platform. It is an ongoing operational advantage: every new feature, every bug fix, every compliance update goes through the same rigorous multi-agent pipeline that built the original system. The platform improves continuously without scaling the engineering team linearly.
+Every new feature, every bug fix, and every compliance update goes through a rigorous automated pipeline before reaching production. The platform improves continuously without scaling the engineering team linearly.
 
 ---
 
