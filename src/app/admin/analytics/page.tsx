@@ -52,7 +52,7 @@ export default function AnalyticsDashboardPage() {
   useEffect(() => {
     fetch("/api/admin/analytics/dashboard")
       .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((json) => setData(json))

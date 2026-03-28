@@ -190,7 +190,7 @@ export default function MarketingPage() {
     async function load() {
       try {
         const res = await fetch("/api/admin/marketing");
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = (await res.json()) as { campaigns: Campaign[] };
         setCampaigns(data.campaigns ?? []);
       } catch (err) {

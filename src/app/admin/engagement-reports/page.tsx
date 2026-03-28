@@ -146,7 +146,7 @@ export default function EngagementReportsPage() {
     try {
       const params = filter !== "all" ? `?outcome=${filter}` : "";
       const res = await fetch(`/api/admin/engagement-reports${params}`);
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       setReports(data.reports ?? []);
     } catch (err) {

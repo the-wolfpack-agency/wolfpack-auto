@@ -13,6 +13,7 @@ export default function AddVehiclePage() {
       body: JSON.stringify(data),
     });
 
+        if (res.status === 401 || res.status === 403) return;
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: "Failed to create vehicle" }));
       throw new Error(err.error ?? `HTTP ${res.status}`);

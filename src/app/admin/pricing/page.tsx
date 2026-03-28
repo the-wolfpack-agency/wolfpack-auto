@@ -324,6 +324,7 @@ export default function PricingIntelligencePage() {
     setError(null);
     try {
       const res = await fetch("/api/admin/pricing");
+        if (res.status === 401 || res.status === 403) return;
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((body as any).error ?? `HTTP ${res.status}`);
@@ -342,6 +343,7 @@ export default function PricingIntelligencePage() {
     setError(null);
     try {
       const res = await fetch("/api/admin/pricing", { method: "POST" });
+        if (res.status === 401 || res.status === 403) return;
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((body as any).error ?? `HTTP ${res.status}`);
@@ -365,6 +367,7 @@ export default function PricingIntelligencePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "apply", new_price: newPrice }),
       });
+        if (res.status === 401 || res.status === 403) return;
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((body as any).error ?? `HTTP ${res.status}`);
@@ -392,6 +395,7 @@ export default function PricingIntelligencePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "dismiss" }),
       });
+        if (res.status === 401 || res.status === 403) return;
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((body as any).error ?? `HTTP ${res.status}`);

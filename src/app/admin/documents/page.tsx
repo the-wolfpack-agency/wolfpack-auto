@@ -122,7 +122,7 @@ export default function DocumentsPage() {
       if (filterType) params.set("doc_type", filterType);
       if (filterDeal) params.set("deal_id", filterDeal);
       const res = await fetch(`/api/admin/documents?${params}`);
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = (await res.json()) as { documents: Document[] };
       setDocuments(data.documents ?? []);
     } catch (err) {

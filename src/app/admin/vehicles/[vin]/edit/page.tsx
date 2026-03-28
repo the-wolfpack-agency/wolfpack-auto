@@ -18,6 +18,7 @@ export default function EditVehiclePage() {
     async function load() {
       try {
         const res = await fetch(`/api/admin/vehicles/${vin}`);
+        if (res.status === 401 || res.status === 403) return;
         if (!res.ok) {
           if (res.status === 404) {
             setError("Vehicle not found");
@@ -72,6 +73,7 @@ export default function EditVehiclePage() {
       body: JSON.stringify(data),
     });
 
+        if (res.status === 401 || res.status === 403) return;
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: "Failed to update vehicle" }));
       throw new Error(err.error ?? `HTTP ${res.status}`);

@@ -133,7 +133,7 @@ export default function GoodFaithPage() {
     setError(null);
     try {
       const res = await fetch("/api/admin/good-faith");
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const json = await res.json();
       setData(json);
     } catch (err) {

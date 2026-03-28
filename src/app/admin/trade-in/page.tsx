@@ -84,7 +84,7 @@ export default function TradeInAdminPage() {
     async function load() {
       try {
         const res = await fetch("/api/admin/trade-in");
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = await res.json();
         setSubmissions(data.submissions ?? data.estimates ?? []);
       } catch (err) {

@@ -222,7 +222,7 @@ export default function CompliancePage() {
     setError(null);
     try {
       const res = await fetch("/api/admin/compliance");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as ComplianceData;
       setData(json);
     } catch (err) {

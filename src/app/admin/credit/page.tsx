@@ -146,7 +146,7 @@ export default function CreditPage() {
     async function load() {
       try {
         const res = await fetch("/api/admin/credit/history");
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = (await res.json()) as { pulls: CreditPull[] };
         setPulls(data.pulls ?? []);
       } catch (err) {

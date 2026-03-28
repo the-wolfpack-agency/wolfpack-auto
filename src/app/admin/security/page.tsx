@@ -73,7 +73,7 @@ export default function SecurityPage() {
   const fetchScan = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/security/scan");
-      if (!res.ok) throw new Error(`${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       setScan(data.scan);
     } catch (err) {
@@ -92,7 +92,7 @@ export default function SecurityPage() {
     setError(null);
     try {
       const res = await fetch("/api/admin/security/scan", { method: "POST" });
-      if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Scan failed: ${res.status}`);
       const data = await res.json();
       setScan(data.scan);
     } catch (err) {

@@ -134,7 +134,7 @@ export default function CompetitivePage() {
     async function load() {
       try {
         const res = await fetch("/api/admin/competitive");
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = (await res.json()) as { competitors: Competitor[] };
         const list = data.competitors ?? [];
         setCompetitors(list);

@@ -65,7 +65,7 @@ export default function ReportsPage() {
       if (leadDateTo) params.set("date_to", leadDateTo);
 
       const res = await fetch(`/api/admin/export/leads?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -95,7 +95,7 @@ export default function ReportsPage() {
     setAnalyticsError(null);
     try {
       const res = await fetch("/api/admin/export/analytics");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: AnalyticsSummary = await res.json();
       setAnalyticsData(data);
     } catch (err: any) {

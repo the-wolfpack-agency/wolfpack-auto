@@ -275,10 +275,11 @@ export default function FunnelHealthPage() {
   const loadData = useCallback(() => {
     fetch("/api/admin/funnel-health")
       .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<FunnelHealthMetrics>;
       })
       .then((json) => {
+        if (!json) return;
         setData(json);
         setLastRefreshed(new Date());
         setError(null);
