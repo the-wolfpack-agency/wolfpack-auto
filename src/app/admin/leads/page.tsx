@@ -420,7 +420,7 @@ export default function LeadsManagementPage() {
       {/* Table */}
       <div className="overflow-hidden rounded-card border border-surface-border bg-white shadow-card">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-surface-border">
+          <table className="w-full divide-y divide-surface-border">
             <caption className="sr-only">Lead management table</caption>
             <thead className="bg-surface-muted">
               <tr>
