@@ -34,6 +34,18 @@
     display: flex;
     flex-direction: column;
   }
+
+  /* iOS Safari renders time/date text at the top of the input.
+     Force vertical centering with flexbox and strip native chrome. */
+  input[type="time"],
+  input[type="date"] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 2.5rem; /* 40px — matches py-2 + text + border */
+  }
 }
 
 /* Prevent iOS Safari auto-zoom on form inputs (triggers when font-size < 16px) */
