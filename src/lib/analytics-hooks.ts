@@ -92,6 +92,11 @@ export type KnowledgeEvent =
   | "knowledge.document_ingested"
   | "knowledge.queried";
 
+export type SecurityEvent =
+  | "security.scan_completed"
+  | "security.finding_resolved"
+  | "security.rate_limit_triggered";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -104,7 +109,8 @@ export type PlatformEvent =
   | CreditEvent
   | ComplianceEvent
   | DocumentEvent
-  | KnowledgeEvent;
+  | KnowledgeEvent
+  | SecurityEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -264,4 +270,15 @@ export function trackKnowledge(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "knowledge", ...meta });
+}
+
+/**
+ * Track a security-related event (scans, findings, rate limit triggers).
+ */
+export function trackSecurity(
+  event: SecurityEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "security", ...meta });
 }

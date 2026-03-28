@@ -150,7 +150,14 @@ const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 /* -------------------------------------------------------------------------- */
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-change-in-production",
+  secret: process.env.NEXTAUTH_SECRET || (() => {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "NEXTAUTH_SECRET must be set in production. Add it to your Vercel environment variables.",
+      );
+    }
+    return "wolfpack-dev-secret-do-not-use-in-production";
+  })(),
 
   session: {
     strategy: "jwt",

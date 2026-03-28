@@ -458,3 +458,107 @@ describe("ANA-001: trade-in wizard analytics events are wired", () => {
     expect(src).toMatch(/trackConversion\("trade_in_lead"/);
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* SEC-001: NEXTAUTH_SECRET must throw in production if unset                 */
+/* -------------------------------------------------------------------------- */
+
+describe("SEC-001: NEXTAUTH_SECRET hardened fallback", () => {
+  it("auth.ts throws in production when NEXTAUTH_SECRET is missing", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../auth.ts"), "utf-8");
+    // Old insecure pattern must be gone
+    expect(src).not.toMatch(
+      /NEXTAUTH_SECRET\s*\|\|\s*["']wolfpack-dev-secret-change-in-production["']/,
+    );
+    // New pattern: IIFE that throws in production
+    expect(src).toContain("NEXTAUTH_SECRET must be set in production");
+    expect(src).toContain("wolfpack-dev-secret-do-not-use-in-production");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* SEC-002: Rate limiting on all high-risk routes                            */
+/* -------------------------------------------------------------------------- */
+
+describe("SEC-002: rate limiting on high-risk mutation routes", () => {
+  const routes = [
+    { file: "../../app/api/admin/deals/route.ts", name: "deals" },
+    { file: "../../app/api/admin/service/appointments/route.ts", name: "service-appts" },
+    { file: "../../app/api/admin/service/repair-orders/route.ts", name: "repair-orders" },
+    { file: "../../app/api/admin/comms/send/route.ts", name: "comms-send" },
+    { file: "../../app/api/admin/credit/pull/route.ts", name: "credit-pull" },
+    { file: "../../app/api/admin/documents/route.ts", name: "documents" },
+    { file: "../../app/api/admin/compliance/checks/route.ts", name: "compliance" },
+    { file: "../../app/api/admin/lenders/route.ts", name: "lenders" },
+  ];
+
+  for (const { file, name } of routes) {
+    it(`${name} route imports and uses checkRateLimit`, () => {
+      const { readFileSync } = require("fs");
+      const { join } = require("path");
+      const src = readFileSync(join(__dirname, file), "utf-8");
+      expect(src).toMatch(/checkRateLimit/);
+      expect(src).toMatch(/status:\s*429/);
+    });
+  }
+});
+
+/* -------------------------------------------------------------------------- */
+/* SEC-003: Request body size guard module exists                             */
+/* -------------------------------------------------------------------------- */
+
+describe("SEC-003: request body size guard", () => {
+  it("request-guard.ts exports parseBody with PayloadTooLargeError", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../request-guard.ts"), "utf-8");
+    expect(src).toContain("export async function parseBody");
+    expect(src).toContain("PayloadTooLargeError");
+    expect(src).toContain("content-length");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* SEC-004: Security hardening scanner module exists                          */
+/* -------------------------------------------------------------------------- */
+
+describe("SEC-004: security hardening scanner", () => {
+  it("scanner module exports runSecurityScan with 10 categories", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../security-hardening-scanner.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("export function runSecurityScan");
+    // All 10 categories
+    expect(src).toContain("hardcoded_secrets");
+    expect(src).toContain("rate_limiting");
+    expect(src).toContain("input_validation");
+    expect(src).toContain("shadow_mode");
+    expect(src).toContain("ssrf");
+    expect(src).toContain("auth_guard");
+    expect(src).toContain("csrf");
+    expect(src).toContain("content_length");
+    expect(src).toContain("sql_injection");
+    expect(src).toContain("sensitive_data");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* SEC-005: Analytics tracks security events                                  */
+/* -------------------------------------------------------------------------- */
+
+describe("SEC-005: analytics tracks security events", () => {
+  it("analytics-hooks.ts has SecurityEvent type and trackSecurity", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../analytics-hooks.ts"), "utf-8");
+    expect(src).toContain("SecurityEvent");
+    expect(src).toContain("security.scan_completed");
+    expect(src).toContain("security.rate_limit_triggered");
+    expect(src).toContain("export function trackSecurity");
+  });
+});

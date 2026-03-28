@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-import { trackComms } from "@/lib/analytics-hooks";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { trackComms, trackSecurity } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -12,6 +13,12 @@ export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
   const { user } = authResult;
+
+  const rl = await checkRateLimit(`comms-send:${authResult.user.dealer_id}`, 30, 60);
+  if (!rl.allowed) {
+    try { trackSecurity("security.rate_limit_triggered", authResult.user.dealer_id, { route: "comms-send", remaining: 0 }); } catch {}
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
 
   let body: {
     channel: "email" | "sms";

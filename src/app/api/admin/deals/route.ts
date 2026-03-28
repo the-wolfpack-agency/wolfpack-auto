@@ -4,7 +4,8 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-import { trackDeal } from "@/lib/analytics-hooks";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { trackDeal, trackSecurity } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock data                                                           */
@@ -277,6 +278,12 @@ export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
   const dealerId = authResult.user.dealer_id;
+
+  const rl = await checkRateLimit(`deals:${dealerId}`, 10, 60);
+  if (!rl.allowed) {
+    try { trackSecurity("security.rate_limit_triggered", dealerId, { route: "deals", remaining: 0 }); } catch {}
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
 
   let body: Record<string, unknown>;
   try {
