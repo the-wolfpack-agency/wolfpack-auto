@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 /**
  * GET /api/admin/export/analytics
@@ -8,6 +9,9 @@ import { NextResponse } from "next/server";
  * the analytics dashboard.
  */
 export async function GET() {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   try {
     const data = buildAnalyticsSummary();
     return NextResponse.json(data);

@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { indexAllVehicles } from "@/lib/intake/vehicle-indexer";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 /**
  * POST /api/admin/vehicles/index-all
@@ -10,7 +12,23 @@ import { indexAllVehicles } from "@/lib/intake/vehicle-indexer";
  *
  * No auth required in demo mode.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
+  // Rate limit: 5 full reindex operations per IP per hour
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "anonymous";
+  const rateCheck = await checkRateLimit(`admin:vehicles:index-all:${ip}`, 5, 3600);
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded", retryAfter: rateCheck.resetAt },
+      { status: 429 },
+    );
+  }
+
   try {
     const dealerId =
       process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";

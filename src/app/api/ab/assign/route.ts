@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getVariant, trackImpression } from "@/lib/ab-testing";
 
 /**
@@ -9,6 +10,12 @@ import { getVariant, trackImpression } from "@/lib/ab-testing";
  * (the client should persist it as a cookie).
  */
 export async function GET(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await checkRateLimit(`ab-assign:${ip}`, 100, 3600);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   const { searchParams } = request.nextUrl;
   const testName = searchParams.get("test");
 

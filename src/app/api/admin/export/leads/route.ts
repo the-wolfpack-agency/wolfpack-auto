@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Lead, LeadStatus, LeadTemperature } from "@/types/lead";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -149,6 +150,9 @@ const VALID_TEMPS: LeadTemperature[] = ["hot", "warm", "cool", "cold"];
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   const { searchParams } = new URL(request.url);
 
   const statusFilter = searchParams.get("status") as LeadStatus | null;

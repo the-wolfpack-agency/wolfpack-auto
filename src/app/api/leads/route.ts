@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { encryptPII } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit-log";
+import { scoreLeadIntent, extractEmailDomain } from "@/lib/lead-scorer";
 
 /**
  * Lead submission schema — strict validation.
@@ -150,6 +151,42 @@ export async function POST(request: NextRequest) {
     );
 
     const created = result.rows[0];
+
+    // Score the lead immediately so it appears scored from first view
+    void (async () => {
+      try {
+        const now = new Date();
+        const leadScore = scoreLeadIntent({
+          source: lead.source,
+          vehicleInterest: lead.vehicle_interest,
+          hasPhone: !!lead.phone?.trim(),
+          messageLength: lead.notes?.length ?? 0,
+          emailDomain: extractEmailDomain(lead.email),
+          submittedHour: now.getUTCHours(),
+          submittedDayOfWeek: now.getUTCDay(),
+        });
+
+        await query(
+          `UPDATE leads
+              SET intent_score            = $1,
+                  score_factors           = $2,
+                  recommended_followup_at = $3,
+                  scored_at               = NOW(),
+                  temperature             = $4,
+                  updated_at              = NOW()
+            WHERE id = $5`,
+          [
+            leadScore.score,
+            JSON.stringify(leadScore.factors),
+            leadScore.recommendedFollowupAt.toISOString(),
+            leadScore.tier,
+            created.id,
+          ],
+        );
+      } catch (scoreErr) {
+        console.error("[api/leads] Lead scoring failed:", scoreErr);
+      }
+    })();
 
     // Audit log: record lead creation (fire-and-forget)
     void auditLog("lead.create", {

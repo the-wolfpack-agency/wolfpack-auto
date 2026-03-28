@@ -140,8 +140,13 @@ interface NHTSAResult {
 }
 
 async function decodeViaNHTSA(vin: string): Promise<DecodedVIN | null> {
+  // Validate VIN is exactly 17 alphanumeric chars (no I, O, Q per ISO 3779)
+  // before interpolating into URL to prevent path traversal / injection.
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(vin)) return null;
+
   try {
-    const url = `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`;
+    const safeVin = encodeURIComponent(vin.toUpperCase());
+    const url = `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${safeVin}?format=json`;
     const res = await fetch(url, {
       signal: AbortSignal.timeout(10_000),
       headers: { "User-Agent": "WolfpackAuto-VINDecoder/1.0" },

@@ -19,6 +19,29 @@ const OEM_CHILDREN = [
   { href: "/admin/oem/analytics", label: "Cross-Dealer Analytics" },
 ] as const;
 
+/** Sub-items shown under Comms when on an /admin/comms page. */
+const COMMS_CHILDREN = [
+  { href: "/admin/comms", label: "Overview" },
+  { href: "/admin/comms/templates", label: "Templates" },
+  { href: "/admin/comms/sequences", label: "Sequences" },
+  { href: "/admin/comms/log", label: "Message Log" },
+] as const;
+
+/** Sub-items shown under Accounting when on an /admin/accounting page. */
+const ACCOUNTING_CHILDREN = [
+  { href: "/admin/accounting", label: "Dashboard" },
+  { href: "/admin/accounting/commissions", label: "Commissions" },
+] as const;
+
+/** Sub-items shown under Service when on an /admin/service page. */
+const SERVICE_CHILDREN = [
+  { href: "/admin/service", label: "Dashboard" },
+  { href: "/admin/service/appointments", label: "Appointments" },
+  { href: "/admin/service/repair-orders", label: "Repair Orders" },
+  { href: "/admin/service/parts", label: "Parts" },
+  { href: "/admin/service/technicians", label: "Technicians" },
+] as const;
+
 /** Navigation items for the admin sidebar. */
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: DashboardIcon },
@@ -28,7 +51,14 @@ const NAV_ITEMS = [
   { href: "/admin/leads", label: "Leads", icon: LeadsIcon },
   { href: "/admin/engagement-reports", label: "Engagement Reports", icon: EngagementReportsIcon },
   { href: "/admin/good-faith", label: "Good Faith", icon: GoodFaithIcon },
+  { href: "/admin/deals", label: "Deal Desking", icon: DealDeskingIcon },
+  { href: "/admin/fi-products", label: "F&I Products", icon: FiProductsIcon },
   { href: "/admin/trade-in", label: "Trade-Ins", icon: TradeInIcon },
+  { href: "/admin/service", label: "Service & Parts", icon: ServiceIcon },
+  { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
+  { href: "/admin/digital-retail", label: "Digital Retail", icon: DigitalRetailIcon },
+  { href: "/admin/reviews", label: "Reviews", icon: ReviewsIcon },
+  { href: "/admin/customers", label: "Customers", icon: CustomersIcon },
   { href: "/admin/tasks", label: "Tasks", icon: TasksIcon },
   { href: "/admin/comms", label: "Comms", icon: CommsIcon },
   { href: "/admin/rewards", label: "Rewards", icon: RewardsIcon },
@@ -62,6 +92,9 @@ export default function AdminSidebar() {
     !pathname.startsWith("/admin/analytics-brain");
 
   const isOemPage = pathname.startsWith("/admin/oem");
+  const isServicePage = pathname.startsWith("/admin/service");
+  const isCommsPage = pathname.startsWith("/admin/comms");
+  const isAccountingPage = pathname.startsWith("/admin/accounting");
 
   const navContent = (
     <>
@@ -95,6 +128,9 @@ export default function AdminSidebar() {
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const isAnalytics = href === "/admin/analytics";
             const isOem = href === "/admin/oem";
+            const isService = href === "/admin/service";
+            const isComms = href === "/admin/comms";
+            const isAccounting = href === "/admin/accounting";
             const isActive =
               href === "/admin"
                 ? pathname === href
@@ -139,6 +175,66 @@ export default function AdminSidebar() {
                 {isOem && isOemPage && (
                   <ul className="ml-8 mt-1 space-y-0.5" role="list">
                     {OEM_CHILDREN.map((child) => (
+                      <li key={child.href}>
+                        <a
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                            pathname === child.href
+                              ? "font-semibold text-brand-400"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Service sub-navigation */}
+                {isService && isServicePage && (
+                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
+                    {SERVICE_CHILDREN.map((child) => (
+                      <li key={child.href}>
+                        <a
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                            pathname === child.href
+                              ? "font-semibold text-brand-400"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Comms sub-navigation */}
+                {isComms && isCommsPage && (
+                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
+                    {COMMS_CHILDREN.map((child) => (
+                      <li key={child.href}>
+                        <a
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                            pathname === child.href
+                              ? "font-semibold text-brand-400"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Accounting sub-navigation */}
+                {isAccounting && isAccountingPage && (
+                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
+                    {ACCOUNTING_CHILDREN.map((child) => (
                       <li key={child.href}>
                         <a
                           href={child.href}
@@ -478,6 +574,63 @@ function ComplianceIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+    </svg>
+  );
+}
+
+function ServiceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75a4.5 4.5 0 0 1-4.884 4.484c-1.076-.091-2.264.071-2.95.904l-7.152 8.684a2.548 2.548 0 1 1-3.586-3.586l8.684-7.152c.833-.686.995-1.874.904-2.95a4.5 4.5 0 0 1 6.336-4.486l-3.276 3.276a3.004 3.004 0 0 0 2.25 2.25l3.276-3.276c.256.565.398 1.192.398 1.852Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.867 19.125h.008v.008h-.008v-.008Z" />
+    </svg>
+  );
+}
+
+function DealDeskingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+  );
+}
+
+function FiProductsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z" />
+    </svg>
+  );
+}
+
+function AccountingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+    </svg>
+  );
+}
+
+function DigitalRetailIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+    </svg>
+  );
+}
+
+function ReviewsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+    </svg>
+  );
+}
+
+function CustomersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
     </svg>
   );
 }

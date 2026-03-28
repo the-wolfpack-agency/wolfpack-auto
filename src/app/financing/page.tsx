@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PaymentCalculator from "@/components/PaymentCalculator";
 
 export const metadata: Metadata = {
   title: "Financing",
@@ -152,6 +153,16 @@ export default function FinancingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Interactive Payment Calculator */}
+      <section aria-labelledby="interactive-calc-heading" className="bg-surface-muted py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <h2 id="interactive-calc-heading" className="mb-8 text-center text-3xl font-bold tracking-tight text-gray-900">
+            Calculate Your Payment
+          </h2>
+          <PaymentCalculator vehiclePrice={25000} />
         </div>
       </section>
 

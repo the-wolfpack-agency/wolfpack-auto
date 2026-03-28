@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { generateDealerSlug } from "@/lib/dealer-onboarding";
 import crypto from "node:crypto";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 /* -------------------------------------------------------------------------- */
 /* Zod schema                                                                 */
@@ -50,14 +51,8 @@ const onboardingSchema = z.object({
 
 export async function POST(request: NextRequest) {
   // --- Auth check -----------------------------------------------------------
-  // In production this reads from the session/JWT. For now we check the header.
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 },
-    );
-  }
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
 
   // --- Parse body -----------------------------------------------------------
   let body: unknown;

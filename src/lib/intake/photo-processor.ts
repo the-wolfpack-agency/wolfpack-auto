@@ -44,10 +44,47 @@ const WEBP_QUALITY = 80;
 /* ------------------------------------------------------------------ */
 
 /**
+ * Guard against SSRF: reject private/loopback IPs and non-http(s) schemes.
+ * DMS feeds supply external CDN URLs — internal network addresses are never valid.
+ */
+function isSafePhotoUrl(raw: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return false;
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+
+  const host = parsed.hostname.toLowerCase();
+
+  // Block loopback
+  if (host === "localhost" || host === "127.0.0.1" || host === "::1") return false;
+
+  // Block link-local (AWS metadata, Azure IMDS, GCP metadata)
+  if (host.startsWith("169.254.")) return false;
+
+  // Block RFC-1918 private ranges
+  if (
+    host.startsWith("10.") ||
+    host.startsWith("192.168.") ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+  ) return false;
+
+  // Block IPv6 loopback/ULA
+  if (host === "[::1]" || host.startsWith("[fc") || host.startsWith("[fd")) return false;
+
+  return true;
+}
+
+/**
  * Download an image from an external URL.
  * Returns the raw buffer and detected extension, or null on failure.
  */
 async function downloadPhoto(url: string): Promise<{ buffer: Buffer; ext: string } | null> {
+  if (!isSafePhotoUrl(url)) return null;
+
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),

@@ -7,11 +7,15 @@
 
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 // TODO: Replace with authenticated dealer ID from session
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
 export async function GET() {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   try {
     const [vehicleStats, leadStats, avgDaysResult, recentLeadsResult] =
       await Promise.all([

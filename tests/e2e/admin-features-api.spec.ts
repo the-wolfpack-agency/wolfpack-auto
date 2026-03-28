@@ -26,6 +26,11 @@ const ADMIN_GET_ROUTES = [
   { path: "/api/admin/rewards", label: "Rewards & Recognition" },
   { path: "/api/admin/training", label: "Training Tracker" },
   { path: "/api/admin/resources", label: "Resource Center" },
+  // H-4: OEM portal API routes
+  { path: "/api/admin/oem", label: "OEM Network Overview" },
+  { path: "/api/admin/oem/dealers", label: "OEM Dealer Network" },
+  { path: "/api/admin/oem/programs", label: "OEM Programs" },
+  { path: "/api/admin/oem/analytics", label: "OEM Cross-Dealer Analytics" },
 ];
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -14,6 +16,22 @@ const bulkSchema = z.object({
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
+  // Rate limit: 10 bulk lead operations per IP per hour
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "anonymous";
+  const rateCheck = await checkRateLimit(`admin:leads:bulk:${ip}`, 10, 3600);
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded", retryAfter: rateCheck.resetAt },
+      { status: 429 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

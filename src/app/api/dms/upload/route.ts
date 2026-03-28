@@ -7,6 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-guard";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { processFeed } from "@/lib/dms/feed-processor";
 import { DMSProvider } from "@/lib/dms/types";
 import type { DMSVehicleRecord } from "@/lib/dms/types";
@@ -188,7 +190,25 @@ function mapColumns(rows: Record<string, string>[]): DMSVehicleRecord[] {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const dealerId = request.headers.get("x-dealer-id");
+  // Auth guard — only authenticated dealer staff may upload inventory CSVs
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
+
+  // Rate limit: 10 uploads per authenticated user per hour to prevent abuse
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await checkRateLimit(`dms-upload:${ip}`, 10, 3600);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.resetAt - Math.floor(Date.now() / 1000)) },
+      },
+    );
+  }
+
+  // Use dealer_id from session (trusted) or header fallback
+  const dealerId = request.headers.get("x-dealer-id") ?? authResult.user.dealer_id;
 
   if (!dealerId) {
     return NextResponse.json(

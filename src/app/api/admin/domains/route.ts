@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import {
   addDomain,
   getDomains,
@@ -51,6 +52,9 @@ function isValidDomain(value: string): boolean {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   try {
     const body = await request.json();
     const { dealerId, domain } = body as {
@@ -124,6 +128,9 @@ export async function POST(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   const { searchParams } = request.nextUrl;
   const dealerId = searchParams.get("dealerId");
 
@@ -156,6 +163,9 @@ export async function GET(request: NextRequest) {
 // ---------------------------------------------------------------------------
 
 export async function DELETE(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   const { searchParams } = request.nextUrl;
   const domainId = searchParams.get("domainId");
   const dealerId = searchParams.get("dealerId");

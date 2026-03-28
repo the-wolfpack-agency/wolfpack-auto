@@ -171,7 +171,7 @@ test.describe("Customer journey: inventory browsing with filters", () => {
       const tagName = await el.evaluate((e) => e.tagName.toLowerCase());
       if (tagName === "select") {
         // Select Honda (known to be in placeholder data)
-        await el.selectOption({ label: /honda/i }).catch(() => {
+        await el.selectOption({ label: "Honda" }).catch(() => {
           // If exact label doesn't match, just pick the second option
           return el.selectOption({ index: 1 });
         });

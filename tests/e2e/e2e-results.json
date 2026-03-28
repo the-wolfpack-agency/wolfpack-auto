@@ -1,0 +1,4952 @@
+{
+  "config": {
+    "configFile": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/e2e/playwright.e2e.config.ts",
+    "rootDir": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "e2e-chromium",
+        "name": "e2e-chromium",
+        "testDir": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json",
+        {
+          "outputFile": "e2e-results.json"
+        }
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.2",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "admin-crud-contract.spec.ts",
+      "file": "admin-crud-contract.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "GET /api/health returns 200 or 503 with status field",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "e2e-chromium",
+              "projectName": "e2e-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ef6891e61c11b6593623-2b9262ab539dfb17bb78",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 387,
+          "column": 5
+        }
+      ],
+      "suites": [
+        {
+          "title": "Auth enforcement on new admin API routes",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 28,
+          "column": 6,
+          "specs": [
+            {
+              "title": "POST /api/admin/inventory rejects unauthenticated request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-1e3479227f06224eb1dd",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "PUT /api/admin/inventory/1G1ZD5ST0JF123456 rejects unauthenticated request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-96652e5776c88b1761f3",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "DELETE /api/admin/inventory/1G1ZD5ST0JF123456 rejects unauthenticated request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-5dbe8c2dba69af4b8ff0",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "GET /api/admin/settings rejects unauthenticated request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-5bad89b40fd0a70b103d",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "PUT /api/admin/settings rejects unauthenticated request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-aa462bea62da9a0b7ce3",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "GET /api/admin/billing rejects unauthenticated request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-af8fbc7176b4840a88bb",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 39,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Admin pages load without server errors",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 76,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/billing does not return application error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-46d0b013f01da676d06e",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 87,
+              "column": 9
+            },
+            {
+              "title": "/admin/settings does not return application error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-45eaf9afe4b190a3b4d0",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 87,
+              "column": 9
+            },
+            {
+              "title": "/admin/inventory/add does not return application error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-d4e3a3fd358b1d6ffa64",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 87,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "POST /api/admin/inventory — validation contract",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 118,
+          "column": 6,
+          "specs": [
+            {
+              "title": "returns 400/401/403 or 404 (not-built) when body is empty",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-5ac4da62e02cd25edd77",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 119,
+              "column": 7
+            },
+            {
+              "title": "does not return 200 for empty body (never silently succeed)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-a54a1d85fa9134f2fdf1",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 125,
+              "column": 7
+            },
+            {
+              "title": "does not return 500 for malformed JSON body",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-21b624a6c0a32aa812d3",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 132,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "POST /api/webhooks/stripe — unconfigured safety",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 146,
+          "column": 6,
+          "specs": [
+            {
+              "title": "returns 400, 503, or 404 (not-built) — never 200 on bad signature",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-2ced84064587807d3816",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 147,
+              "column": 7
+            },
+            {
+              "title": "does not return 500 on bad payload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-3289fafa5bcc6cdad154",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 161,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Admin login page",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 177,
+          "column": 6,
+          "specs": [
+            {
+              "title": "renders login form at /admin/login",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-32a4ba24e518b52afb84",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 178,
+              "column": 7
+            },
+            {
+              "title": "login page has password field",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-6a90bdbbfa53cf961e5d",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 190,
+              "column": 7
+            },
+            {
+              "title": "login page has submit button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-1d04cc801100f7043a8f",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 196,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Public pages regression guard",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 207,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Home (/) loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-4fc260a59d6c82988bec",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 217,
+              "column": 9
+            },
+            {
+              "title": "Inventory (/inventory) loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-a30999c0e5ae87a80e5a",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 217,
+              "column": 9
+            },
+            {
+              "title": "Financing (/financing) loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-ce174be86dc5a6d63431",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 217,
+              "column": 9
+            },
+            {
+              "title": "About (/about) loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-27f0ef501273a45af935",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 217,
+              "column": 9
+            },
+            {
+              "title": "Contact (/contact) loads successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-edfa36eecd1d24e57168",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 217,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "GET /api/admin/settings — response shape",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 232,
+          "column": 6,
+          "specs": [
+            {
+              "title": "returns non-500 (auth or data)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-eaf986260f087dbe27ee",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 233,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "GET /api/admin/billing — graceful fallback",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 244,
+          "column": 6,
+          "specs": [
+            {
+              "title": "returns 401 or graceful JSON (never 500)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-6e6a098ac18b0cbc61d5",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 245,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Security headers on new admin endpoints",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 255,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/api/admin/billing returns X-Content-Type-Options header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-9fc47c0585ed344afe35",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 263,
+              "column": 9
+            },
+            {
+              "title": "/api/admin/settings returns X-Content-Type-Options header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-d4e3077a6c71ea66a776",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 263,
+              "column": 9
+            },
+            {
+              "title": "/api/admin/inventory returns X-Content-Type-Options header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-7a86c8d7e13e80d7c208",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 263,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Admin inventory list — Add Vehicle entry point",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 277,
+          "column": 6,
+          "specs": [
+            {
+              "title": "inventory list redirects to login or shows Add Vehicle button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-f9c0c8fbf47587395596",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 278,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "VDP regression guard",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 315,
+          "column": 6,
+          "specs": [
+            {
+              "title": "VDP route /inventory/[slug] does not 500 for an invalid slug",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-7b9f5d10ea50609d9d96",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 316,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Contact API regression after email changes",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 329,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET /api/contact returns 405 (method not allowed), not 500",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-8a4e3c4db5b87ba90ed9",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 330,
+              "column": 7
+            },
+            {
+              "title": "POST /api/contact with missing fields returns non-200 error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-5b11af48e6526f2a1289",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 338,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Leads API regression after email changes",
+          "file": "admin-crud-contract.spec.ts",
+          "line": 355,
+          "column": 6,
+          "specs": [
+            {
+              "title": "POST /api/leads with invalid data returns 400 or 422, not 500",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-2c67a3c27bed587f3865",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 356,
+              "column": 7
+            },
+            {
+              "title": "POST /api/leads with valid data returns 201",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "ef6891e61c11b6593623-9d2548e0ec668c34640d",
+              "file": "admin-crud-contract.spec.ts",
+              "line": 366,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "admin-workflow.spec.ts",
+      "file": "admin-workflow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Admin workflow: inventory and leads overview",
+          "file": "admin-workflow.spec.ts",
+          "line": 25,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Admin views inventory and leads tables",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-a9e3a406b049cbe73d1f",
+              "file": "admin-workflow.spec.ts",
+              "line": 26,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Admin workflow: Quick Add vehicle",
+          "file": "admin-workflow.spec.ts",
+          "line": 61,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Admin enters VIN and sees decoded data",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-35c9c7ab03d49e7fd868",
+              "file": "admin-workflow.spec.ts",
+              "line": 62,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Admin workflow: analytics dashboard",
+          "file": "admin-workflow.spec.ts",
+          "line": 110,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Admin views analytics and asks a question",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-92adbbd1dcd1c73e3670",
+              "file": "admin-workflow.spec.ts",
+              "line": 111,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Admin workflow: reports page",
+          "file": "admin-workflow.spec.ts",
+          "line": 170,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Admin views reports and export controls",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-0643bf3c63636d24db7b",
+              "file": "admin-workflow.spec.ts",
+              "line": 171,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Admin layout regression: no double header or sidebar overlap",
+          "file": "admin-workflow.spec.ts",
+          "line": 204,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin: no public site nav visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-19ddb4c53ed5d5b868f8",
+              "file": "admin-workflow.spec.ts",
+              "line": 214,
+              "column": 9
+            },
+            {
+              "title": "/admin: desktop sidebar renders and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-0f1e7f5852471439c098",
+              "file": "admin-workflow.spec.ts",
+              "line": 237,
+              "column": 9
+            },
+            {
+              "title": "/admin: mobile shows hamburger, sidebar is a drawer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-768fc4bf891680deff18",
+              "file": "admin-workflow.spec.ts",
+              "line": 275,
+              "column": 9
+            },
+            {
+              "title": "/admin/inventory: no public site nav visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-0718607e55de200f5de8",
+              "file": "admin-workflow.spec.ts",
+              "line": 214,
+              "column": 9
+            },
+            {
+              "title": "/admin/inventory: desktop sidebar renders and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-0b7608c909197e4af53a",
+              "file": "admin-workflow.spec.ts",
+              "line": 237,
+              "column": 9
+            },
+            {
+              "title": "/admin/inventory: mobile shows hamburger, sidebar is a drawer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-3028816f8aaab30b0b08",
+              "file": "admin-workflow.spec.ts",
+              "line": 275,
+              "column": 9
+            },
+            {
+              "title": "/admin/leads: no public site nav visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-326129c7168b7aa80d71",
+              "file": "admin-workflow.spec.ts",
+              "line": 214,
+              "column": 9
+            },
+            {
+              "title": "/admin/leads: desktop sidebar renders and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-ccf934e14f93dec39e92",
+              "file": "admin-workflow.spec.ts",
+              "line": 237,
+              "column": 9
+            },
+            {
+              "title": "/admin/leads: mobile shows hamburger, sidebar is a drawer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-57cd0749be2a83076262",
+              "file": "admin-workflow.spec.ts",
+              "line": 275,
+              "column": 9
+            },
+            {
+              "title": "/admin/analytics: no public site nav visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-81469dd5a3e78595d889",
+              "file": "admin-workflow.spec.ts",
+              "line": 214,
+              "column": 9
+            },
+            {
+              "title": "/admin/analytics: desktop sidebar renders and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-ae4fb0cf519c82d59534",
+              "file": "admin-workflow.spec.ts",
+              "line": 237,
+              "column": 9
+            },
+            {
+              "title": "/admin/analytics: mobile shows hamburger, sidebar is a drawer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-2560f79883bd63c9e3fb",
+              "file": "admin-workflow.spec.ts",
+              "line": 275,
+              "column": 9
+            },
+            {
+              "title": "/admin/settings: no public site nav visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-ab7d4c8863614af54864",
+              "file": "admin-workflow.spec.ts",
+              "line": 214,
+              "column": 9
+            },
+            {
+              "title": "/admin/settings: desktop sidebar renders and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-aec1d6efabb8d675b50b",
+              "file": "admin-workflow.spec.ts",
+              "line": 237,
+              "column": 9
+            },
+            {
+              "title": "/admin/settings: mobile shows hamburger, sidebar is a drawer",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-bb116ad486e7a858f5d3",
+              "file": "admin-workflow.spec.ts",
+              "line": 275,
+              "column": 9
+            },
+            {
+              "title": "admin pages: no chat bubble rendered",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-0706a66a064ed14d594e",
+              "file": "admin-workflow.spec.ts",
+              "line": 311,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Admin API: leads endpoint shape and filtering",
+          "file": "admin-workflow.spec.ts",
+          "line": 324,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Admin leads endpoint returns correct response shape",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-fbf993b93ab8761271b7",
+              "file": "admin-workflow.spec.ts",
+              "line": 325,
+              "column": 7
+            },
+            {
+              "title": "Admin leads pagination: page_size=5 returns at most 5 leads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-9ae91352a731aec1ebb0",
+              "file": "admin-workflow.spec.ts",
+              "line": 357,
+              "column": 7
+            },
+            {
+              "title": "Admin leads pagination: page=2 returns a different set from page=1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-4dcd78647c9646302c09",
+              "file": "admin-workflow.spec.ts",
+              "line": 372,
+              "column": 7
+            },
+            {
+              "title": "Admin leads status filter: ?status=new returns only new leads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-d5d24faf52bfbba2b593",
+              "file": "admin-workflow.spec.ts",
+              "line": 395,
+              "column": 7
+            },
+            {
+              "title": "Admin leads status filter: ?status=contacted returns only contacted leads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-874d56c22294c3325309",
+              "file": "admin-workflow.spec.ts",
+              "line": 411,
+              "column": 7
+            },
+            {
+              "title": "Admin leads: each lead in response has required fields",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-ef9fb23d97ffd7d04aef",
+              "file": "admin-workflow.spec.ts",
+              "line": 425,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Admin API: health endpoint",
+          "file": "admin-workflow.spec.ts",
+          "line": 444,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET /api/health returns 200 or 503 with status and checks fields",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-d6d32d54aa13d396c022",
+              "file": "admin-workflow.spec.ts",
+              "line": 445,
+              "column": 7
+            },
+            {
+              "title": "GET /api/health checks object has postgres and redis keys",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "93e90d6a018238a0cca4-be5b60ad9754b52c44b1",
+              "file": "admin-workflow.spec.ts",
+              "line": 462,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "auth-flow.spec.ts",
+      "file": "auth-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Auth flow: admin login page",
+          "file": "auth-flow.spec.ts",
+          "line": 21,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Admin login page renders and has email/password form",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-589236329bfc665dd755",
+              "file": "auth-flow.spec.ts",
+              "line": 22,
+              "column": 7
+            },
+            {
+              "title": "Admin login page has a submit button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-66682f0479f2866cdf02",
+              "file": "auth-flow.spec.ts",
+              "line": 45,
+              "column": 7
+            },
+            {
+              "title": "Admin login page title or heading references login or sign in",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-06fb09096ee05c77f52c",
+              "file": "auth-flow.spec.ts",
+              "line": 54,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Auth flow: admin API route protection",
+          "file": "auth-flow.spec.ts",
+          "line": 76,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET /api/admin/leads without auth returns 401 or 200 (never 500)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-e488f5ccaa186040fced",
+              "file": "auth-flow.spec.ts",
+              "line": 80,
+              "column": 7
+            },
+            {
+              "title": "GET /api/admin/stats without auth returns 401, 200, or 500 (DB-dependent)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-404a84165fba38873f68",
+              "file": "auth-flow.spec.ts",
+              "line": 87,
+              "column": 7
+            },
+            {
+              "title": "GET /api/admin/billing without auth returns 401 or 200 (never 500 from unhandled auth)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-7673bfa81466e31ac1f6",
+              "file": "auth-flow.spec.ts",
+              "line": 95,
+              "column": 7
+            },
+            {
+              "title": "GET /api/admin/settings without auth returns 401 or 200 (never unhandled)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-1dc97d113c59bc6e51ed",
+              "file": "auth-flow.spec.ts",
+              "line": 104,
+              "column": 7
+            },
+            {
+              "title": "None of the protected admin API routes return an unhandled 502 or 504",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-90e2d84498c5dfd7d054",
+              "file": "auth-flow.spec.ts",
+              "line": 111,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Auth flow: login with wrong credentials",
+          "file": "auth-flow.spec.ts",
+          "line": 133,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Submitting wrong credentials shows error feedback in the UI",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-576bf05c3c773b17aaea",
+              "file": "auth-flow.spec.ts",
+              "line": 134,
+              "column": 7
+            },
+            {
+              "title": "POST to NextAuth credentials endpoint with wrong password returns error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-5f77479b01307672ea9c",
+              "file": "auth-flow.spec.ts",
+              "line": 188,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Auth flow: unauthenticated /admin access",
+          "file": "auth-flow.spec.ts",
+          "line": 225,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Unauthenticated GET /admin redirects to login or loads in demo mode",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-4c51a2b2186b320049bc",
+              "file": "auth-flow.spec.ts",
+              "line": 226,
+              "column": 7
+            },
+            {
+              "title": "GET /admin never returns a raw 500 error to the browser",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "df6b40174562c70df515-2fd04ba064faba977efd",
+              "file": "auth-flow.spec.ts",
+              "line": 252,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "buyer-journey.spec.ts",
+      "file": "buyer-journey.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Buyer journey: browse inventory → VDP → lead submission",
+          "file": "buyer-journey.spec.ts",
+          "line": 46,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Vehicle inventory page renders vehicle cards",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-df8a20e7a79a091a00fe",
+              "file": "buyer-journey.spec.ts",
+              "line": 47,
+              "column": 7
+            },
+            {
+              "title": "Clicking a vehicle card loads the vehicle detail page with price",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-3a2f539f57977f7fda76",
+              "file": "buyer-journey.spec.ts",
+              "line": 61,
+              "column": 7
+            },
+            {
+              "title": "Lead POST with valid payload returns 201",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-64b3e18c04a56edf5d1f",
+              "file": "buyer-journey.spec.ts",
+              "line": 87,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Buyer journey: filter inventory by make",
+          "file": "buyer-journey.spec.ts",
+          "line": 106,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET /api/inventory?make=Toyota returns only Toyota vehicles (or empty)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-c6c1477d44325ecc2220",
+              "file": "buyer-journey.spec.ts",
+              "line": 107,
+              "column": 7
+            },
+            {
+              "title": "GET /api/inventory?make=Ford returns only Ford vehicles (or empty)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-4bc261116ce5d43f9a31",
+              "file": "buyer-journey.spec.ts",
+              "line": 127,
+              "column": 7
+            },
+            {
+              "title": "GET /api/inventory?year_min=2023&year_max=2025 respects year range",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-3fbd75e03a0542705f13",
+              "file": "buyer-journey.spec.ts",
+              "line": 143,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Buyer journey: search inventory",
+          "file": "buyer-journey.spec.ts",
+          "line": 166,
+          "column": 6,
+          "specs": [
+            {
+              "title": "GET /api/inventory?q=Camry returns search results without 500",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-7be74d70feaf42bd593d",
+              "file": "buyer-journey.spec.ts",
+              "line": 167,
+              "column": 7
+            },
+            {
+              "title": "GET /api/inventory response always has required shape",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-900e377eb60c92343b12",
+              "file": "buyer-journey.spec.ts",
+              "line": 180,
+              "column": 7
+            },
+            {
+              "title": "GET /api/inventory?condition=new filters by condition",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-90d6b161f2546a3b8b48",
+              "file": "buyer-journey.spec.ts",
+              "line": 198,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Buyer journey: contact form submission",
+          "file": "buyer-journey.spec.ts",
+          "line": 219,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Contact form POST with valid data returns 201 when CSRF bypassed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-839562fb65d6a80bce1d",
+              "file": "buyer-journey.spec.ts",
+              "line": 220,
+              "column": 7
+            },
+            {
+              "title": "Contact form POST without CSRF token returns 403 or 201 (demo mode)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-fcf60255c03937ba59e0",
+              "file": "buyer-journey.spec.ts",
+              "line": 238,
+              "column": 7
+            },
+            {
+              "title": "Contact form with CSRF cookie+header flow returns 201",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-7afa4799202ab7031b20",
+              "file": "buyer-journey.spec.ts",
+              "line": 250,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Buyer journey: contact form validation",
+          "file": "buyer-journey.spec.ts",
+          "line": 283,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Contact form with only first_name returns 422",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-aba38ed667669c132a85",
+              "file": "buyer-journey.spec.ts",
+              "line": 284,
+              "column": 7
+            },
+            {
+              "title": "Contact form with empty body returns 422 or 400",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-c1fb274f0fd497649dc7",
+              "file": "buyer-journey.spec.ts",
+              "line": 302,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Buyer journey: financing page",
+          "file": "buyer-journey.spec.ts",
+          "line": 316,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Financing page loads without server error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-dad3759d9b21bedb12e9",
+              "file": "buyer-journey.spec.ts",
+              "line": 317,
+              "column": 7
+            },
+            {
+              "title": "Financing page has main heading",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-99481352ddfc8fa0b18c",
+              "file": "buyer-journey.spec.ts",
+              "line": 330,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Buyer journey: lead validation — invalid email",
+          "file": "buyer-journey.spec.ts",
+          "line": 352,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Lead POST with invalid email returns 422",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-3d0798231abaa79973ca",
+              "file": "buyer-journey.spec.ts",
+              "line": 353,
+              "column": 7
+            },
+            {
+              "title": "Lead POST with empty email returns 422",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-31ca80654dab61b4f225",
+              "file": "buyer-journey.spec.ts",
+              "line": 370,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Buyer journey: lead validation — invalid source",
+          "file": "buyer-journey.spec.ts",
+          "line": 383,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Lead POST with source='telepathy' returns 422",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-35ea5e447d773465837a",
+              "file": "buyer-journey.spec.ts",
+              "line": 384,
+              "column": 7
+            },
+            {
+              "title": "Lead POST with source='social_media' returns 422 (not an allowed enum)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-d0258e421de238a0671d",
+              "file": "buyer-journey.spec.ts",
+              "line": 401,
+              "column": 7
+            },
+            {
+              "title": "Lead POST with missing dealer_id returns 422",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "0f9e5943776840956fb7-9b24d159a0d712d43d54",
+              "file": "buyer-journey.spec.ts",
+              "line": 411,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "customer-journey.spec.ts",
+      "file": "customer-journey.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Customer journey: search, view, inquire",
+          "file": "customer-journey.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Customer searches inventory, views a vehicle, and submits an inquiry",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d02c3ad9dd9290a81fec-a3f5b6c7557a065a0db2",
+              "file": "customer-journey.spec.ts",
+              "line": 11,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Customer journey: chat widget",
+          "file": "customer-journey.spec.ts",
+          "line": 87,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Customer uses chat to find a vehicle",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d02c3ad9dd9290a81fec-56c981276317cb1f276a",
+              "file": "customer-journey.spec.ts",
+              "line": 88,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Customer journey: inventory browsing with filters",
+          "file": "customer-journey.spec.ts",
+          "line": 133,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Customer browses inventory and applies filters",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d02c3ad9dd9290a81fec-b0c3b5b0491daabb72fa",
+              "file": "customer-journey.spec.ts",
+              "line": 134,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Customer journey: legal and compliance pages",
+          "file": "customer-journey.spec.ts",
+          "line": 190,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Customer views privacy policy and terms",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "d02c3ad9dd9290a81fec-c36c400fa87bdbf98f2b",
+              "file": "customer-journey.spec.ts",
+              "line": 191,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "data-integrity.spec.ts",
+      "file": "data-integrity.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Data integrity: contact form submission",
+          "file": "data-integrity.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Contact form POST creates a record and returns success",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-d0b73ef25cb46385d9d7",
+              "file": "data-integrity.spec.ts",
+              "line": 13,
+              "column": 7
+            },
+            {
+              "title": "Contact form rejects invalid data with 422",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-65ac5dfba50febf4a82e",
+              "file": "data-integrity.spec.ts",
+              "line": 34,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data integrity: leads API",
+          "file": "data-integrity.spec.ts",
+          "line": 50,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Lead submission creates a record",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-6b2ac83c2d0ae2c8415c",
+              "file": "data-integrity.spec.ts",
+              "line": 51,
+              "column": 7
+            },
+            {
+              "title": "Lead submission rejects invalid data",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-f237313668361bbaa6bf",
+              "file": "data-integrity.spec.ts",
+              "line": 72,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data integrity: inventory API consistency",
+          "file": "data-integrity.spec.ts",
+          "line": 86,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Inventory API returns consistent vehicle data",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-c2a00116d10dbda32e87",
+              "file": "data-integrity.spec.ts",
+              "line": 87,
+              "column": 7
+            },
+            {
+              "title": "Inventory API total count matches vehicles array length",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-d7afba8ab5640527332a",
+              "file": "data-integrity.spec.ts",
+              "line": 120,
+              "column": 7
+            },
+            {
+              "title": "Inventory API accepts filter parameters",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-5c127fc6d7d565c7253a",
+              "file": "data-integrity.spec.ts",
+              "line": 128,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data integrity: analytics events",
+          "file": "data-integrity.spec.ts",
+          "line": 139,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Analytics events endpoint accepts and buffers events",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-77406457cea412634fd0",
+              "file": "data-integrity.spec.ts",
+              "line": 140,
+              "column": 7
+            },
+            {
+              "title": "Analytics events rejects empty batch",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-ed8b7d5f4f3bd5beb782",
+              "file": "data-integrity.spec.ts",
+              "line": 177,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data integrity: chat API",
+          "file": "data-integrity.spec.ts",
+          "line": 191,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Chat API returns vehicle results for search queries",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-5de7cda119d1751697a4",
+              "file": "data-integrity.spec.ts",
+              "line": 192,
+              "column": 7
+            },
+            {
+              "title": "Chat API handles rule-based intents",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-e76aa7e30cd27e429928",
+              "file": "data-integrity.spec.ts",
+              "line": 218,
+              "column": 7
+            },
+            {
+              "title": "Chat API rejects empty messages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-7cbd97a54a6906cbfa32",
+              "file": "data-integrity.spec.ts",
+              "line": 232,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Data integrity: admin export endpoints",
+          "file": "data-integrity.spec.ts",
+          "line": 243,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Leads export endpoint responds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-bbefae34294ad8cf8831",
+              "file": "data-integrity.spec.ts",
+              "line": 244,
+              "column": 7
+            },
+            {
+              "title": "Analytics export endpoint responds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "51536f82a4e94609ae84-353b233687f73a1f25e0",
+              "file": "data-integrity.spec.ts",
+              "line": 264,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "oem-portal.spec.ts",
+      "file": "oem-portal.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "OEM portal: route health",
+          "file": "oem-portal.spec.ts",
+          "line": 52,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem returns 200 and has correct title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ec5b3f9d68511bffbc97",
+              "file": "oem-portal.spec.ts",
+              "line": 54,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers returns 200 and has correct title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-39f7c29ff49e4e9b1dc5",
+              "file": "oem-portal.spec.ts",
+              "line": 54,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs returns 200 and has correct title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-e43c7bc668584e62fbab",
+              "file": "oem-portal.spec.ts",
+              "line": 54,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics returns 200 and has correct title",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-1cde8a382b991dd66408",
+              "file": "oem-portal.spec.ts",
+              "line": 54,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: page headings",
+          "file": "oem-portal.spec.ts",
+          "line": 87,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem renders correct H1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-456f17b88e2b2aeceb7e",
+              "file": "oem-portal.spec.ts",
+              "line": 89,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers renders correct H1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-5bdf7cfd85f28a140f1f",
+              "file": "oem-portal.spec.ts",
+              "line": 89,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs renders correct H1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ef2b13fd6063ffc960a1",
+              "file": "oem-portal.spec.ts",
+              "line": 89,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics renders correct H1",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-4e2488d6057353e99758",
+              "file": "oem-portal.spec.ts",
+              "line": 89,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: migration-pending notice",
+          "file": "oem-portal.spec.ts",
+          "line": 108,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem renders migration notice or live data (never blank)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ba2ac70268ea0cc79397",
+              "file": "oem-portal.spec.ts",
+              "line": 110,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers renders migration notice or live data (never blank)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-f7485c30d3a8f99f5d23",
+              "file": "oem-portal.spec.ts",
+              "line": 110,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs renders migration notice or live data (never blank)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-c9dcb50f077b4ac2dabc",
+              "file": "oem-portal.spec.ts",
+              "line": 110,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics renders migration notice or live data (never blank)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-f55b8f0de566f0ee508e",
+              "file": "oem-portal.spec.ts",
+              "line": 110,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: overview page structure",
+          "file": "oem-portal.spec.ts",
+          "line": 139,
+          "column": 6,
+          "specs": [
+            {
+              "title": "renders 5 KPI stat cards",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-330b107aff02534db8e4",
+              "file": "oem-portal.spec.ts",
+              "line": 140,
+              "column": 7
+            },
+            {
+              "title": "renders 4 quick-nav tiles with correct links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-5e322c8bf82843280b7b",
+              "file": "oem-portal.spec.ts",
+              "line": 156,
+              "column": 7
+            },
+            {
+              "title": "renders enrollment activity section",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-63c91fe2f6a1d5560017",
+              "file": "oem-portal.spec.ts",
+              "line": 174,
+              "column": 7
+            },
+            {
+              "title": "\"Manage Programs\" button links to /admin/oem/programs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-3ccb01ee84d9e991227a",
+              "file": "oem-portal.spec.ts",
+              "line": 187,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: dealers page",
+          "file": "oem-portal.spec.ts",
+          "line": 204,
+          "column": 6,
+          "specs": [
+            {
+              "title": "breadcrumb links back to OEM overview",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-3efa919c6d4955ae9779",
+              "file": "oem-portal.spec.ts",
+              "line": 205,
+              "column": 7
+            },
+            {
+              "title": "renders data table or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-b666472ee18a57e54fa7",
+              "file": "oem-portal.spec.ts",
+              "line": 217,
+              "column": 7
+            },
+            {
+              "title": "\"Manage Programs\" header button links correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-2429becc640e9d632c97",
+              "file": "oem-portal.spec.ts",
+              "line": 233,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: programs page",
+          "file": "oem-portal.spec.ts",
+          "line": 250,
+          "column": 6,
+          "specs": [
+            {
+              "title": "breadcrumb links back to OEM overview",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-34dab7eca9ca37db0ef3",
+              "file": "oem-portal.spec.ts",
+              "line": 251,
+              "column": 7
+            },
+            {
+              "title": "renders program cards or migration notice (never blank)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ad6b4992ff2dcd0ea993",
+              "file": "oem-portal.spec.ts",
+              "line": 263,
+              "column": 7
+            },
+            {
+              "title": "all 5 program type templates visible in empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-0f7c24762b990df9725a",
+              "file": "oem-portal.spec.ts",
+              "line": 285,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: analytics page",
+          "file": "oem-portal.spec.ts",
+          "line": 318,
+          "column": 6,
+          "specs": [
+            {
+              "title": "breadcrumb links back to OEM overview",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-cf6d1ccf4f21eafd348e",
+              "file": "oem-portal.spec.ts",
+              "line": 319,
+              "column": 7
+            },
+            {
+              "title": "renders 4 network KPI cards",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-6dc08d84c8e552ec1223",
+              "file": "oem-portal.spec.ts",
+              "line": 331,
+              "column": 7
+            },
+            {
+              "title": "renders dealer benchmark table or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-4f6145a943f6898525d2",
+              "file": "oem-portal.spec.ts",
+              "line": 350,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: sidebar navigation",
+          "file": "oem-portal.spec.ts",
+          "line": 372,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem: sidebar shows \"OEM Network\" nav item",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-58e35fd6147bc81cbfb7",
+              "file": "oem-portal.spec.ts",
+              "line": 376,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem: OEM sub-nav expands with 4 child links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-aab56e9f7dfa8e53b128",
+              "file": "oem-portal.spec.ts",
+              "line": 393,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: sidebar shows \"OEM Network\" nav item",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-78e3aa015d31d34640ab",
+              "file": "oem-portal.spec.ts",
+              "line": 376,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: OEM sub-nav expands with 4 child links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-7628ad1e126b9a40484b",
+              "file": "oem-portal.spec.ts",
+              "line": 393,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: sidebar shows \"OEM Network\" nav item",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-77f369ca7c639f8639dc",
+              "file": "oem-portal.spec.ts",
+              "line": 376,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: OEM sub-nav expands with 4 child links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-cb10cb923a46ad09bf11",
+              "file": "oem-portal.spec.ts",
+              "line": 393,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: sidebar shows \"OEM Network\" nav item",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-9f659bbea41c34a07305",
+              "file": "oem-portal.spec.ts",
+              "line": 376,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: OEM sub-nav expands with 4 child links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-c8573ba69ab1f619be33",
+              "file": "oem-portal.spec.ts",
+              "line": 393,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: admin chrome isolation",
+          "file": "oem-portal.spec.ts",
+          "line": 424,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem: no public site header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-7fa6ef9fc3844c83a681",
+              "file": "oem-portal.spec.ts",
+              "line": 426,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem: no chat bubble",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-8f8a6dd618fc633e57de",
+              "file": "oem-portal.spec.ts",
+              "line": 438,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: no public site header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-2a655a720ca61d549928",
+              "file": "oem-portal.spec.ts",
+              "line": 426,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: no chat bubble",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-39adc825de1d7f2abd13",
+              "file": "oem-portal.spec.ts",
+              "line": 438,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: no public site header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-de13c79c103c3dc475c9",
+              "file": "oem-portal.spec.ts",
+              "line": 426,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: no chat bubble",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-cdbc0a32ea046acb4eed",
+              "file": "oem-portal.spec.ts",
+              "line": 438,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: no public site header",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-e77ecd27f8a9b3ba9339",
+              "file": "oem-portal.spec.ts",
+              "line": 426,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: no chat bubble",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-3aafe4d1f2c7dd7792e2",
+              "file": "oem-portal.spec.ts",
+              "line": 438,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: desktop layout",
+          "file": "oem-portal.spec.ts",
+          "line": 457,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem: sidebar visible and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-680c9713748e1ce399c1",
+              "file": "oem-portal.spec.ts",
+              "line": 461,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem: no horizontal overflow at 1280px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-36dca960fc6068f02051",
+              "file": "oem-portal.spec.ts",
+              "line": 489,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: sidebar visible and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-d6b7066e1578672a593c",
+              "file": "oem-portal.spec.ts",
+              "line": 461,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: no horizontal overflow at 1280px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-bab4a83b5ce349d20488",
+              "file": "oem-portal.spec.ts",
+              "line": 489,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: sidebar visible and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-f7bbaf33f7f1e1becd65",
+              "file": "oem-portal.spec.ts",
+              "line": 461,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: no horizontal overflow at 1280px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-3599760cf897d3adec08",
+              "file": "oem-portal.spec.ts",
+              "line": 489,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: sidebar visible and content not overlapped",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-d9d2e76a6ff027a8ffd5",
+              "file": "oem-portal.spec.ts",
+              "line": 461,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: no horizontal overflow at 1280px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-d64518519e0fb5f9da8f",
+              "file": "oem-portal.spec.ts",
+              "line": 489,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: mobile layout",
+          "file": "oem-portal.spec.ts",
+          "line": 508,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem: hamburger visible, sidebar closed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ada233a963f21cec36d5",
+              "file": "oem-portal.spec.ts",
+              "line": 512,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem: mobile drawer opens and shows OEM Network link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-5d8828db709d2cd4ae2d",
+              "file": "oem-portal.spec.ts",
+              "line": 537,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: hamburger visible, sidebar closed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-a17524c37336bd5a2a67",
+              "file": "oem-portal.spec.ts",
+              "line": 512,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: mobile drawer opens and shows OEM Network link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-e78ba2c1ca5962d72ae4",
+              "file": "oem-portal.spec.ts",
+              "line": 537,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: hamburger visible, sidebar closed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ef99f544bac2f27461ba",
+              "file": "oem-portal.spec.ts",
+              "line": 512,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: mobile drawer opens and shows OEM Network link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-c90b77ecead84e468c00",
+              "file": "oem-portal.spec.ts",
+              "line": 537,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: hamburger visible, sidebar closed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-5ed78b1544f4ce02c472",
+              "file": "oem-portal.spec.ts",
+              "line": 512,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: mobile drawer opens and shows OEM Network link",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-d4ad4edfd048a19ade84",
+              "file": "oem-portal.spec.ts",
+              "line": 537,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: responsive — no overflow",
+          "file": "oem-portal.spec.ts",
+          "line": 567,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem: no horizontal scroll at 375px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-db59bcaae4b5e8867252",
+              "file": "oem-portal.spec.ts",
+              "line": 571,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: no horizontal scroll at 375px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-2fe4638d8c5147e70367",
+              "file": "oem-portal.spec.ts",
+              "line": 571,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: no horizontal scroll at 375px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-1aadac487ac69d65b430",
+              "file": "oem-portal.spec.ts",
+              "line": 571,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: no horizontal scroll at 375px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ff3078a7c8b373d5a967",
+              "file": "oem-portal.spec.ts",
+              "line": 571,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: no JavaScript errors",
+          "file": "oem-portal.spec.ts",
+          "line": 591,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/oem: no unhandled JS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-ebfb4ec6830fc2bfe7ea",
+              "file": "oem-portal.spec.ts",
+              "line": 595,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/dealers: no unhandled JS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-296b93ad143181c32f7e",
+              "file": "oem-portal.spec.ts",
+              "line": 595,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/programs: no unhandled JS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-883da86e5eed6be1f221",
+              "file": "oem-portal.spec.ts",
+              "line": 595,
+              "column": 9
+            },
+            {
+              "title": "/admin/oem/analytics: no unhandled JS errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-f04f134a9c697cb2f9e9",
+              "file": "oem-portal.spec.ts",
+              "line": 595,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "OEM portal: inter-page navigation",
+          "file": "oem-portal.spec.ts",
+          "line": 632,
+          "column": 6,
+          "specs": [
+            {
+              "title": "overview → dealers navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-c217353b18b85e51f63e",
+              "file": "oem-portal.spec.ts",
+              "line": 635,
+              "column": 7
+            },
+            {
+              "title": "overview → programs navigation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-d029f8fc4a30350383f3",
+              "file": "oem-portal.spec.ts",
+              "line": 651,
+              "column": 7
+            },
+            {
+              "title": "dealers → overview breadcrumb",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87180f5879af5b0c3ea2-cf2c9d089d234188c24a",
+              "file": "oem-portal.spec.ts",
+              "line": 667,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "public-flows.spec.ts",
+      "file": "public-flows.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Cookie consent banner",
+          "file": "public-flows.spec.ts",
+          "line": 38,
+          "column": 6,
+          "specs": [
+            {
+              "title": "banner appears on first visit (no prior consent)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-b1d6ee4790b42160e109",
+              "file": "public-flows.spec.ts",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "accepting consent hides the banner",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-3af22fca0674e1d66c62",
+              "file": "public-flows.spec.ts",
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "consent is persisted after page reload",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-8b3e1ad0530bd7bf536d",
+              "file": "public-flows.spec.ts",
+              "line": 74,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Chat widget: public pages",
+          "file": "public-flows.spec.ts",
+          "line": 99,
+          "column": 6,
+          "specs": [
+            {
+              "title": "chat bubble visible on all public pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-473edfc1e3f5671754f5",
+              "file": "public-flows.spec.ts",
+              "line": 109,
+              "column": 7
+            },
+            {
+              "title": "chat opens, sends message, and closes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-fede859fae02c659e3fc",
+              "file": "public-flows.spec.ts",
+              "line": 120,
+              "column": 7
+            },
+            {
+              "title": "Escape key closes chat panel",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-880d56bfeaff517f3751",
+              "file": "public-flows.spec.ts",
+              "line": 158,
+              "column": 7
+            },
+            {
+              "title": "chat input attributes correct",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-ac117ae3f7c1810ef4a2",
+              "file": "public-flows.spec.ts",
+              "line": 175,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Top info bar",
+          "file": "public-flows.spec.ts",
+          "line": 198,
+          "column": 6,
+          "specs": [
+            {
+              "title": "visible on desktop, hidden on mobile",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-e509f1193dc75fb89698",
+              "file": "public-flows.spec.ts",
+              "line": 201,
+              "column": 7
+            },
+            {
+              "title": "top bar contains phone number and address",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-f458a48051ce8d410e8c",
+              "file": "public-flows.spec.ts",
+              "line": 217,
+              "column": 7
+            },
+            {
+              "title": "top bar does not appear on admin pages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-4dbbcf98b539c5706876",
+              "file": "public-flows.spec.ts",
+              "line": 234,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "VDP payment calculator",
+          "file": "public-flows.spec.ts",
+          "line": 246,
+          "column": 6,
+          "specs": [
+            {
+              "title": "calculator shows estimated payment after interaction",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-053f190045f214a1d77a",
+              "file": "public-flows.spec.ts",
+              "line": 249,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Financing calculator",
+          "file": "public-flows.spec.ts",
+          "line": 279,
+          "column": 6,
+          "specs": [
+            {
+              "title": "calculator updates on input change",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-7d11a7650617d6aabcc7",
+              "file": "public-flows.spec.ts",
+              "line": 282,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Contact form: full submission",
+          "file": "public-flows.spec.ts",
+          "line": 312,
+          "column": 6,
+          "specs": [
+            {
+              "title": "valid submission shows success state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-28a9077827ef3a4b44a9",
+              "file": "public-flows.spec.ts",
+              "line": 315,
+              "column": 7
+            },
+            {
+              "title": "empty form submission shows all required field errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-7ed74cececa4c521d208",
+              "file": "public-flows.spec.ts",
+              "line": 334,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Navigation: links from all pages",
+          "file": "public-flows.spec.ts",
+          "line": 351,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/: all nav links reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-e2903a3e6629d313c76e",
+              "file": "public-flows.spec.ts",
+              "line": 357,
+              "column": 9
+            },
+            {
+              "title": "/inventory: all nav links reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-79b267c7c198561cd345",
+              "file": "public-flows.spec.ts",
+              "line": 357,
+              "column": 9
+            },
+            {
+              "title": "/financing: all nav links reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-cd429488adb8c2746ae4",
+              "file": "public-flows.spec.ts",
+              "line": 357,
+              "column": 9
+            },
+            {
+              "title": "/about: all nav links reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-1b28176ef9935c24cf1b",
+              "file": "public-flows.spec.ts",
+              "line": 357,
+              "column": 9
+            },
+            {
+              "title": "/contact: all nav links reachable",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-a95059bdad7ac2872942",
+              "file": "public-flows.spec.ts",
+              "line": 357,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "404 page",
+          "file": "public-flows.spec.ts",
+          "line": 384,
+          "column": 6,
+          "specs": [
+            {
+              "title": "returns 404 status",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-7e7e3b11554b7cd8786d",
+              "file": "public-flows.spec.ts",
+              "line": 387,
+              "column": 7
+            },
+            {
+              "title": "404 page has content and link back home",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-fa48281f0182d97cef42",
+              "file": "public-flows.spec.ts",
+              "line": 394,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Privacy and Terms pages",
+          "file": "public-flows.spec.ts",
+          "line": 412,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/privacy: loads with relevant content",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-05b919bce9eab34651c0",
+              "file": "public-flows.spec.ts",
+              "line": 419,
+              "column": 9
+            },
+            {
+              "title": "/terms: loads with relevant content",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-e9c04574a44954ccc9c1",
+              "file": "public-flows.spec.ts",
+              "line": 419,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Inventory compare page",
+          "file": "public-flows.spec.ts",
+          "line": 439,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/inventory/compare loads without error",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-10d4cda96ac53f251574",
+              "file": "public-flows.spec.ts",
+              "line": 442,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Customer journey: search → VDP → lead",
+          "file": "public-flows.spec.ts",
+          "line": 459,
+          "column": 6,
+          "specs": [
+            {
+              "title": "homepage → inventory search → vehicle detail page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-2e1d1b11c1d27b4df816",
+              "file": "public-flows.spec.ts",
+              "line": 462,
+              "column": 7
+            },
+            {
+              "title": "inventory → sort → results reorder",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-265e300522d481727da7",
+              "file": "public-flows.spec.ts",
+              "line": 499,
+              "column": 7
+            },
+            {
+              "title": "VDP breadcrumb → back to inventory",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-df61a8af664feddb8972",
+              "file": "public-flows.spec.ts",
+              "line": 521,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Mobile hamburger nav: all public pages",
+          "file": "public-flows.spec.ts",
+          "line": 539,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Homepage: hamburger opens nav with all links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-91482618c1472fcbbdb7",
+              "file": "public-flows.spec.ts",
+              "line": 551,
+              "column": 9
+            },
+            {
+              "title": "Inventory: hamburger opens nav with all links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-422d7241b95a89a1371a",
+              "file": "public-flows.spec.ts",
+              "line": 551,
+              "column": 9
+            },
+            {
+              "title": "Financing: hamburger opens nav with all links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-a87777d053d13c54e190",
+              "file": "public-flows.spec.ts",
+              "line": 551,
+              "column": 9
+            },
+            {
+              "title": "About: hamburger opens nav with all links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-7d895c9cf16690591f1a",
+              "file": "public-flows.spec.ts",
+              "line": 551,
+              "column": 9
+            },
+            {
+              "title": "Contact: hamburger opens nav with all links",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "e2e-chromium",
+                  "projectName": "e2e-chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "03f5c5e74d1afd05a3f5-6fb0bfad48c88178b7a2",
+              "file": "public-flows.spec.ts",
+              "line": 551,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-03-27T14:49:02.076Z",
+    "duration": 196.79699999999997,
+    "expected": 0,
+    "skipped": 213,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { trackConversion } from "@/lib/ab-testing";
 
 /**
@@ -9,6 +10,12 @@ import { trackConversion } from "@/lib/ab-testing";
  * Records a conversion for the visitor's assigned variant.
  */
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rl = await checkRateLimit(`ab-convert:${ip}`, 50, 3600);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();

@@ -1,0 +1,23 @@
+repos:
+  # 1. Gitleaks — detect hardcoded secrets (API keys, DB passwords, tokens)
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
+
+  # 2. detect-secrets — secondary secret detection with maintained baseline
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+
+  # 3. Custom route coverage gate — warns when staged routes lack tests
+  - repo: local
+    hooks:
+      - id: sdet-coverage-gate
+        name: SDET Coverage Gate — no new uncovered routes
+        entry: python scripts/check_coverage_gate.py
+        language: python
+        types: [python, ts]
+        pass_filenames: false

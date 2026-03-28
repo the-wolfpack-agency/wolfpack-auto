@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import {
   getWebhookConfigs,
   saveWebhookConfig,
@@ -28,6 +29,9 @@ const webhookConfigSchema = z.object({
 /* -------------------------------------------------------------------------- */
 
 export async function GET() {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   try {
     const configs = await getWebhookConfigs(DEALER_ID);
     return NextResponse.json({ configs });
@@ -42,6 +46,9 @@ export async function GET() {
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   let body: unknown;
   try {
     body = await request.json();
