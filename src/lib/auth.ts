@@ -260,10 +260,16 @@ export const authOptions: NextAuthOptions = {
         }
 
         // ----------------------------------------------------------------
-        // Demo credential — active only when DEMO_MODE=true.
-        // Grants admin access without a database user record.
+        // Demo credential — active ONLY when:
+        //   1. DATABASE_URL is NOT set (no real database = shadow/demo mode), OR
+        //   2. DEMO_MODE is explicitly set to "true"
+        //
+        // In production with a real database, demo credentials are DISABLED.
+        // This prevents demo@wolfpackauto.com from being a backdoor in prod.
         // ----------------------------------------------------------------
+        const demoAllowed = !process.env.DATABASE_URL || process.env.DEMO_MODE === "true";
         if (
+          demoAllowed &&
           credentials?.email?.toLowerCase().trim() === "demo@wolfpackauto.com" &&
           credentials?.password === "demo"
         ) {

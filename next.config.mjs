@@ -3,6 +3,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   // ESLint 8 + eslint-config-next 15 are incompatible (removed options).
   // TypeScript already enforces correctness; skip lint + TS during builds.
   eslint: {

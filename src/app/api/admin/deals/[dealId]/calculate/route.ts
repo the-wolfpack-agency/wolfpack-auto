@@ -192,11 +192,29 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!body.selling_price || body.selling_price <= 0) {
+  if (!body.selling_price || typeof body.selling_price !== "number" || body.selling_price <= 0) {
     return NextResponse.json(
       { error: "selling_price is required and must be > 0" },
       { status: 422 },
     );
+  }
+
+  // Validate optional numeric fields — reject negative/extreme values
+  if (body.down_payment !== undefined && (typeof body.down_payment !== "number" || body.down_payment < 0)) {
+    return NextResponse.json({ error: "down_payment must be >= 0" }, { status: 422 });
+  }
+
+  if (body.apr !== undefined && (typeof body.apr !== "number" || body.apr < 0 || body.apr > 30)) {
+    return NextResponse.json({ error: "apr must be between 0 and 30" }, { status: 422 });
+  }
+
+  const VALID_TERMS = [12, 24, 36, 48, 60, 72, 84];
+  if (body.term_months !== undefined && (typeof body.term_months !== "number" || !VALID_TERMS.includes(body.term_months))) {
+    return NextResponse.json({ error: `term_months must be one of: ${VALID_TERMS.join(", ")}` }, { status: 422 });
+  }
+
+  if (body.residual_pct !== undefined && (typeof body.residual_pct !== "number" || body.residual_pct < 0 || body.residual_pct > 100)) {
+    return NextResponse.json({ error: "residual_pct must be between 0 and 100" }, { status: 422 });
   }
 
   const dealType = body.deal_type || "retail";

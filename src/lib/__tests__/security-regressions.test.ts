@@ -562,3 +562,175 @@ describe("SEC-005: analytics tracks security events", () => {
     expect(src).toContain("export function trackSecurity");
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* PEN-001: Demo credential only works without DATABASE_URL                   */
+/* -------------------------------------------------------------------------- */
+
+describe("PEN-001: Demo credential guard — DATABASE_URL gate", () => {
+  it("auth.ts defines demoAllowed based on DATABASE_URL", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../auth.ts"), "utf-8");
+
+    // Must define the guard variable
+    expect(src).toContain("const demoAllowed");
+    // Must check DATABASE_URL
+    expect(src).toContain("!process.env.DATABASE_URL");
+    // demoAllowed must gate the demo credential check
+    expect(src).toMatch(/demoAllowed[\s\S]{0,20}&&[\s\S]{0,100}demo@wolfpackauto\.com/);
+  });
+
+  it("demo credential check is NOT unconditional", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../auth.ts"), "utf-8");
+
+    // The demoAllowed variable must be defined before being used in the if-condition.
+    // Specifically, "const demoAllowed" must appear before "demoAllowed &&".
+    const constDemoAllowed = src.indexOf("const demoAllowed");
+    const demoAllowedUsage = src.indexOf("demoAllowed &&");
+    expect(constDemoAllowed).toBeGreaterThan(-1);
+    expect(demoAllowedUsage).toBeGreaterThan(-1);
+    expect(constDemoAllowed).toBeLessThan(demoAllowedUsage);
+    // The if-block must use demoAllowed as a gate before checking the email
+    expect(src).toMatch(/if\s*\(\s*\n?\s*demoAllowed\s*&&/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* PEN-002: Calculator validates negative/extreme values                     */
+/* -------------------------------------------------------------------------- */
+
+describe("PEN-002: Calculator input validation", () => {
+  it("public calculator validates down_payment >= 0", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/digital-retail/calculator/route.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("down_payment");
+    expect(src).toMatch(/down_payment.*<\s*0|down_payment must be >= 0/);
+  });
+
+  it("public calculator validates apr between 0 and 30", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/digital-retail/calculator/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/apr.*>\s*30|apr must be between 0 and 30/);
+  });
+
+  it("public calculator validates term_months whitelist", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/digital-retail/calculator/route.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("VALID_TERMS");
+    expect(src).toMatch(/12.*24.*36.*48.*60.*72.*84/);
+  });
+
+  it("deal calculator validates selling_price > 0", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/deals/[dealId]/calculate/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/selling_price.*<=\s*0|selling_price.*must be > 0/);
+  });
+
+  it("deal calculator validates optional numeric fields", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/deals/[dealId]/calculate/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/down_payment.*<\s*0|down_payment must be >= 0/);
+    expect(src).toMatch(/apr.*>\s*30|apr must be between 0 and 30/);
+    expect(src).toContain("VALID_TERMS");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* PEN-003: Source maps disabled in production config                         */
+/* -------------------------------------------------------------------------- */
+
+describe("PEN-003: Source maps disabled in production", () => {
+  it("next.config.mjs has productionBrowserSourceMaps: false", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../../../next.config.mjs"), "utf-8");
+    expect(src).toContain("productionBrowserSourceMaps: false");
+  });
+
+  it("Sentry config has hideSourceMaps: true", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../../../next.config.mjs"), "utf-8");
+    expect(src).toContain("hideSourceMaps: true");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* PEN-004: All security headers present in next.config.mjs                  */
+/* -------------------------------------------------------------------------- */
+
+describe("PEN-004: Security headers configured", () => {
+  const requiredHeaders = [
+    { name: "Strict-Transport-Security", pattern: /includeSubDomains/ },
+    { name: "X-Content-Type-Options", pattern: /nosniff/ },
+    { name: "X-Frame-Options", pattern: /DENY/ },
+    { name: "Referrer-Policy", pattern: /strict-origin-when-cross-origin/ },
+    { name: "Content-Security-Policy", pattern: /default-src/ },
+    { name: "X-XSS-Protection", pattern: /1;\s*mode=block/ },
+    { name: "Permissions-Policy", pattern: /camera=\(\)/ },
+  ];
+
+  for (const { name, pattern } of requiredHeaders) {
+    it(`${name} header is configured`, () => {
+      const { readFileSync } = require("fs");
+      const { join } = require("path");
+      const src = readFileSync(join(__dirname, "../../../next.config.mjs"), "utf-8");
+      expect(src).toContain(name);
+      expect(src).toMatch(pattern);
+    });
+  }
+
+  it("security-headers.ts module exports all required headers", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../security-headers.ts"), "utf-8");
+    expect(src).toContain("Strict-Transport-Security");
+    expect(src).toContain("X-Content-Type-Options");
+    expect(src).toContain("X-Frame-Options");
+    expect(src).toContain("Referrer-Policy");
+    expect(src).toContain("Content-Security-Policy");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* PEN-005: x-powered-by disabled (poweredByHeader: false)                   */
+/* -------------------------------------------------------------------------- */
+
+describe("PEN-005: x-powered-by header disabled", () => {
+  it("next.config.mjs has poweredByHeader: false", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../../../next.config.mjs"), "utf-8");
+    expect(src).toContain("poweredByHeader: false");
+  });
+
+  it("middleware strips X-Powered-By header", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../../middleware.ts"), "utf-8");
+    expect(src).toMatch(/headers\.delete.*X-Powered-By/i);
+  });
+});

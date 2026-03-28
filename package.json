@@ -15,6 +15,7 @@
     "test:smoke": "playwright test tests/smoke.spec.ts",
     "test:shadow": "bash scripts/shadow-test.sh",
     "nightly:safety-check": "bash scripts/nightly-safety-net-check.sh",
+    "nightly:pentest": "bash scripts/nightly-pentest.sh",
     "agenticqa:scan": "bash scripts/run-agenticqa-pipeline.sh",
     "predeploy": "bash scripts/predeploy-gate.sh",
     "predeploy:quick": "bash scripts/predeploy-gate.sh --quick",

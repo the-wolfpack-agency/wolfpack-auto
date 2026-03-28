@@ -40,9 +40,39 @@ export async function POST(request: NextRequest) {
 
   try { trackRetail("retail.calculator_used", process.env.DEALER_ID ?? "default", { deal_type, vehicle_price }); } catch {}
 
-  if (vehicle_price <= 0) {
+  // --- Input validation: reject negative/extreme values ---
+  if (typeof vehicle_price !== "number" || vehicle_price <= 0) {
     return NextResponse.json(
-      { error: "vehicle_price must be positive" },
+      { error: "vehicle_price must be a positive number" },
+      { status: 400 },
+    );
+  }
+
+  if (typeof down_payment !== "number" || down_payment < 0) {
+    return NextResponse.json(
+      { error: "down_payment must be >= 0" },
+      { status: 400 },
+    );
+  }
+
+  if (typeof apr !== "number" || apr < 0 || apr > 30) {
+    return NextResponse.json(
+      { error: "apr must be between 0 and 30" },
+      { status: 400 },
+    );
+  }
+
+  const VALID_TERMS = [12, 24, 36, 48, 60, 72, 84];
+  if (typeof term_months !== "number" || !VALID_TERMS.includes(term_months)) {
+    return NextResponse.json(
+      { error: `term_months must be one of: ${VALID_TERMS.join(", ")}` },
+      { status: 400 },
+    );
+  }
+
+  if (deal_type === "lease" && (typeof residual_pct !== "number" || residual_pct < 0 || residual_pct > 100)) {
+    return NextResponse.json(
+      { error: "residual_pct must be between 0 and 100" },
       { status: 400 },
     );
   }
