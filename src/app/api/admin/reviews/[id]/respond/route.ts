@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackReview } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/admin/reviews/[id]/respond                                        */
@@ -14,6 +13,7 @@ export async function POST(
 ) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { id } = await params;
 
@@ -38,14 +38,14 @@ export async function POST(
          SET responded = true, response_text = $1, response_date = $2
          WHERE id = $3 AND dealer_id = $4
          RETURNING *`,
-        [body.response_text.trim(), now, id, DEALER_ID],
+        [body.response_text.trim(), now, id, dealerId],
       );
 
       if ((result.rows as unknown[]).length === 0) {
         return NextResponse.json({ error: "Review not found" }, { status: 404 });
       }
 
-      try { trackReview("review.responded", DEALER_ID, { review_id: id, rating: 0 }); } catch {}
+      try { trackReview("review.responded", dealerId, { review_id: id, rating: 0 }); } catch {}
 
       return NextResponse.json({ success: true, review: result.rows[0] });
     } catch (err) {
@@ -53,7 +53,7 @@ export async function POST(
     }
   }
 
-  try { trackReview("review.responded", DEALER_ID, { review_id: id, rating: 0 }); } catch {}
+  try { trackReview("review.responded", dealerId, { review_id: id, rating: 0 }); } catch {}
 
   // Shadow mode
   return NextResponse.json({

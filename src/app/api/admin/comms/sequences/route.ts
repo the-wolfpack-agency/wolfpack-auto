@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -83,6 +82,7 @@ const MOCK_SEQUENCES: FollowUpSequence[] = [
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (process.env.DATABASE_URL) {
     try {
@@ -102,7 +102,7 @@ export async function GET() {
          WHERE s.dealer_id = $1
          GROUP BY s.id
          ORDER BY s.created_at DESC`,
-        [DEALER_ID],
+        [dealerId],
       );
       return NextResponse.json({ sequences: result.rows });
     } catch (err) {
@@ -121,6 +121,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: {
     name: string;
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
       await query(
         `INSERT INTO follow_up_sequences (id, dealer_id, name, trigger, active, created_at, enrolled_count, completed_count)
          VALUES ($1,$2,$3,$4,$5,$6,0,0)`,
-        [newId, DEALER_ID, body.name, body.trigger, body.active !== false, now],
+        [newId, dealerId, body.name, body.trigger, body.active !== false, now],
       );
 
       for (let i = 0; i < body.steps.length; i++) {

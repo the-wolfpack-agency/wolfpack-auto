@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackAccounting } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock data                                                           */
@@ -17,7 +16,7 @@ const today = new Date().toISOString().slice(0, 10);
 const MOCK_LINES = [
   {
     id: "fp-001",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     vehicle_vin: "1HGCV1F34PA012345",
     vehicle_desc: "2025 Honda Civic Sport — Silver",
     lender: "NextGear Capital",
@@ -35,7 +34,7 @@ const MOCK_LINES = [
   },
   {
     id: "fp-002",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     vehicle_vin: "5TDJZRFH5PS123456",
     vehicle_desc: "2025 Toyota Highlander XLE — Midnight Black",
     lender: "AFC",
@@ -53,7 +52,7 @@ const MOCK_LINES = [
   },
   {
     id: "fp-003",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     vehicle_vin: "1FTFW1E8XPFA78901",
     vehicle_desc: "2025 Ford F-150 XLT — Oxford White",
     lender: "Ally Floor Plan",
@@ -71,7 +70,7 @@ const MOCK_LINES = [
   },
   {
     id: "fp-004",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     vehicle_vin: "WBAJB9C57PB234567",
     vehicle_desc: "2025 BMW 330i — Alpine White",
     lender: "NextGear Capital",
@@ -89,7 +88,7 @@ const MOCK_LINES = [
   },
   {
     id: "fp-005",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     vehicle_vin: "3GNKBKRS1PS345678",
     vehicle_desc: "2025 Chevrolet Equinox LT — Sterling Gray",
     lender: "AFC",
@@ -107,7 +106,7 @@ const MOCK_LINES = [
   },
   {
     id: "fp-006",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     vehicle_vin: "5YJ3E1EA2PF456789",
     vehicle_desc: "2025 Tesla Model 3 Long Range — Pearl White",
     lender: "Ally Floor Plan",
@@ -139,6 +138,7 @@ function enrichLine(line: typeof MOCK_LINES[0]) {
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   // Database path
   if (process.env.DATABASE_URL) {
@@ -207,6 +207,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: {
     vehicle_vin?: string;

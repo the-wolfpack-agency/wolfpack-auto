@@ -128,9 +128,11 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
 
     const vinUpper = vin.toUpperCase();
 
+    // Soft delete — preserve data for audit trail and recovery
     const { rows } = await pool.query(
-      `DELETE FROM vehicles
-       WHERE dealer_id = $1 AND vin = $2
+      `UPDATE vehicles
+       SET deleted_at = NOW()
+       WHERE dealer_id = $1 AND vin = $2 AND deleted_at IS NULL
        RETURNING vin, year, make, model`,
       [dealerId, vinUpper],
     );

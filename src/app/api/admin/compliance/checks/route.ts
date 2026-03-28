@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { trackCompliance, trackSecurity } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock data                                                           */
@@ -12,7 +11,7 @@ const DEALER_ID = process.env.DEALER_ID ?? "default";
 const MOCK_CHECKS = [
   {
     id: "cc-001",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lead_id: "lead-042",
     deal_id: null,
     check_type: "red_flags",
@@ -29,7 +28,7 @@ const MOCK_CHECKS = [
   },
   {
     id: "cc-002",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lead_id: "lead-038",
     deal_id: "deal-019",
     check_type: "ofac",
@@ -46,7 +45,7 @@ const MOCK_CHECKS = [
   },
   {
     id: "cc-003",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lead_id: "lead-051",
     deal_id: null,
     check_type: "red_flags",
@@ -66,7 +65,7 @@ const MOCK_CHECKS = [
   },
   {
     id: "cc-004",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lead_id: null,
     deal_id: "deal-022",
     check_type: "id_verification",
@@ -85,7 +84,7 @@ const MOCK_CHECKS = [
   },
   {
     id: "cc-005",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lead_id: "lead-060",
     deal_id: null,
     check_type: "ofac",
@@ -174,6 +173,7 @@ function simulateCheck(customerName: string, checkType: string) {
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = request.nextUrl;
   const checkType = searchParams.get("check_type");
@@ -220,6 +220,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const rl = await checkRateLimit(`compliance-checks:${authResult.user.dealer_id}`, 10, 60);
   if (!rl.allowed) {

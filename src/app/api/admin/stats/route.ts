@@ -8,13 +8,12 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-
-// TODO: Replace with authenticated dealer ID from session
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({
@@ -35,7 +34,7 @@ export async function GET() {
            FROM vehicles
            WHERE dealer_id = $1
            GROUP BY status`,
-          [DEALER_ID],
+          [dealerId],
         ),
 
         // Lead counts by status
@@ -44,7 +43,7 @@ export async function GET() {
            FROM leads
            WHERE dealer_id = $1
            GROUP BY status`,
-          [DEALER_ID],
+          [dealerId],
         ),
 
         // Average days on lot for available vehicles
@@ -55,7 +54,7 @@ export async function GET() {
            ) AS avg_days
            FROM vehicles
            WHERE dealer_id = $1 AND status = 'available'`,
-          [DEALER_ID],
+          [dealerId],
         ),
 
         // Recent leads (last 10)
@@ -66,7 +65,7 @@ export async function GET() {
            WHERE dealer_id = $1
            ORDER BY created_at DESC
            LIMIT 10`,
-          [DEALER_ID],
+          [dealerId],
         ),
       ]);
 

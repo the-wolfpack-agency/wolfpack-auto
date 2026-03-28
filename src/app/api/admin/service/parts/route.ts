@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -29,7 +28,7 @@ export interface Part {
 const MOCK_PARTS: Part[] = [
   {
     id: "part-001",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "WIX-57356",
     name: "Engine Oil Filter — WIX 57356",
     category: "filters",
@@ -43,7 +42,7 @@ const MOCK_PARTS: Part[] = [
   },
   {
     id: "part-002",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "BW-BC1608",
     name: "Front Ceramic Brake Pads — Wagner QuickStop",
     category: "brakes",
@@ -57,7 +56,7 @@ const MOCK_PARTS: Part[] = [
   },
   {
     id: "part-003",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "MOB1-5W30-5Q",
     name: "Mobil 1 5W-30 Full Synthetic (5 qt)",
     category: "fluids",
@@ -71,7 +70,7 @@ const MOCK_PARTS: Part[] = [
   },
   {
     id: "part-004",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "DEN-234-9127",
     name: "Upstream O2 Sensor — Denso Universal",
     category: "electrical",
@@ -85,7 +84,7 @@ const MOCK_PARTS: Part[] = [
   },
   {
     id: "part-005",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "FRM-CA11476",
     name: "Cabin Air Filter — FRAM Fresh Breeze",
     category: "filters",
@@ -99,7 +98,7 @@ const MOCK_PARTS: Part[] = [
   },
   {
     id: "part-006",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "VAL-V212134",
     name: "Rear Brake Rotor — Pair",
     category: "brakes",
@@ -113,7 +112,7 @@ const MOCK_PARTS: Part[] = [
   },
   {
     id: "part-007",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "PRE-AF5215",
     name: "Engine Air Filter — Premium Guard",
     category: "filters",
@@ -127,7 +126,7 @@ const MOCK_PARTS: Part[] = [
   },
   {
     id: "part-008",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     part_number: "DEX-ATFVI-1G",
     name: "Dexron VI ATF Transmission Fluid (1 gal)",
     category: "fluids",
@@ -148,6 +147,7 @@ const MOCK_PARTS: Part[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search")?.toLowerCase();
@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions: string[] = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
       let idx = 2;
 
       if (search) {
@@ -214,6 +214,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: Partial<Part>;
   try {
@@ -241,7 +242,7 @@ export async function POST(request: NextRequest) {
             qty_on_hand, reorder_point, cost, retail_price, location, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
         [
-          newId, DEALER_ID,
+          newId, dealerId,
           body.part_number, body.name,
           body.category ?? "other", body.manufacturer ?? "",
           body.qty_on_hand ?? 0, body.reorder_point ?? 5,

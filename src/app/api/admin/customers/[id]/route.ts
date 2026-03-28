@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackCustomer } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -210,10 +209,11 @@ export async function GET(
 ) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { id } = await params;
 
-  try { trackCustomer("customer.viewed_360", DEALER_ID, { customer_id: id }); } catch {}
+  try { trackCustomer("customer.viewed_360", dealerId, { customer_id: id }); } catch {}
 
   if (process.env.DATABASE_URL) {
     try {
@@ -226,7 +226,7 @@ export async function GET(
          LEFT JOIN sales_log s ON s.customer_email = c.email AND s.dealer_id = c.dealer_id
          WHERE c.id = $1 AND c.dealer_id = $2
          GROUP BY c.id`,
-        [id, DEALER_ID],
+        [id, dealerId],
       );
 
       if ((custResult.rows as unknown[]).length === 0) {
@@ -240,14 +240,14 @@ export async function GET(
       const purchases = await query(
         `SELECT id, date, vehicle, vin, sale_price, deal_type, salesperson
          FROM sales_log WHERE customer_email = $1 AND dealer_id = $2 ORDER BY date DESC`,
-        [cust.email, DEALER_ID],
+        [cust.email, dealerId],
       );
 
       // Service history
       const services = await query(
         `SELECT id, date, vin, vehicle, description, cost, status
          FROM service_records WHERE customer_id = $1 AND dealer_id = $2 ORDER BY date DESC`,
-        [id, DEALER_ID],
+        [id, dealerId],
       );
 
       // Communications
@@ -257,7 +257,7 @@ export async function GET(
          LEFT JOIN dealer_users u ON u.id = m.sent_by
          WHERE m.lead_id IN (SELECT id FROM leads WHERE email = $1) AND m.dealer_id = $2
          ORDER BY m.sent_at DESC LIMIT 20`,
-        [cust.email, DEALER_ID],
+        [cust.email, dealerId],
       );
 
       return NextResponse.json({

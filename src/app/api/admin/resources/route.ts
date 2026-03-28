@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackServerEvent } from "@/lib/analytics";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -119,11 +120,11 @@ const VALID_CATEGORIES: ResourceCategory[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealer_id = getDealerId(authResult);
 
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      const dealer_id = process.env.DEALER_ID ?? "default";
 
       const result = await query<Resource>(
         `SELECT * FROM resources WHERE dealer_id = $1 ORDER BY last_updated DESC`,
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealer_id = getDealerId(authResult);
 
   let body: {
     title?: string;
@@ -184,7 +186,6 @@ export async function POST(request: NextRequest) {
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      const dealer_id = process.env.DEALER_ID ?? "default";
 
       const result = await query<Resource>(
         `INSERT INTO resources

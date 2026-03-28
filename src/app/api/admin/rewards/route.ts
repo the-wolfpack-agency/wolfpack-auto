@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -59,6 +58,7 @@ function dbAvailable(): boolean {
 export async function GET(_request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (dbAvailable()) {
     try {
@@ -75,7 +75,7 @@ export async function GET(_request: NextRequest) {
            GROUP BY employee_name
            ORDER BY points DESC
            LIMIT 20`,
-          [DEALER_ID],
+          [dealerId],
         ),
         query(
           `SELECT employee_name AS employee, reason AS award, points, badge, created_at AS date
@@ -83,11 +83,11 @@ export async function GET(_request: NextRequest) {
            WHERE dealer_id = $1
            ORDER BY created_at DESC
            LIMIT 10`,
-          [DEALER_ID],
+          [dealerId],
         ),
         query<{ total: string }>(
           `SELECT COALESCE(SUM(points), 0)::text AS total FROM employee_rewards WHERE dealer_id = $1`,
-          [DEALER_ID],
+          [dealerId],
         ),
       ]);
 
@@ -115,6 +115,7 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
   const { user } = authResult;
 
   let body: {
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
           newId,
-          DEALER_ID,
+          dealerId,
           body.employee_name,
           points,
           body.reason,

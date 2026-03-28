@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackService } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { ConcurrentModificationError } from "@/lib/optimistic-lock";
 
 /* -------------------------------------------------------------------------- */
 /* PATCH /api/admin/service/repair-orders/[id]                                */
@@ -14,6 +14,7 @@ export async function PATCH(
 ) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { id } = await params;
 
@@ -35,6 +36,7 @@ export async function PATCH(
     diagnosis?: string;
     recommendations?: string;
     promised_date?: string | null;
+    updated_at?: string;
   };
 
   try {
@@ -100,18 +102,33 @@ export async function PATCH(
         values.push(body.promised_date);
       }
 
-      values.push(id, DEALER_ID);
+      values.push(id, dealerId);
 
-      await query(
+      // Build WHERE with optional optimistic lock
+      let whereClause = `WHERE id = $${idx++} AND dealer_id = $${idx}`;
+      if (body.updated_at) {
+        values.push(body.updated_at);
+        whereClause += ` AND updated_at = $${++idx}`;
+      }
+
+      const result = await query(
         `UPDATE repair_orders
          SET ${sets.join(", ")}
-         WHERE id = $${idx++} AND dealer_id = $${idx}`,
+         ${whereClause}
+         RETURNING id`,
         values,
       );
 
+      if ((result.rows as unknown[]).length === 0 && body.updated_at) {
+        return NextResponse.json(
+          { error: new ConcurrentModificationError("Repair order").message },
+          { status: 409 },
+        );
+      }
+
       try {
         if (body.status === "completed" || body.status === "invoiced" || body.status === "closed") {
-          trackService("service.ro_completed", DEALER_ID, { ro_id: id, grand_total: body.grand_total ?? 0, labor_total: body.labor_total ?? 0, parts_total: body.parts_total ?? 0 });
+          trackService("service.ro_completed", dealerId, { ro_id: id, grand_total: body.grand_total ?? 0, labor_total: body.labor_total ?? 0, parts_total: body.parts_total ?? 0 });
         }
       } catch {}
 
@@ -123,7 +140,7 @@ export async function PATCH(
 
   try {
     if (body.status === "completed" || body.status === "invoiced" || body.status === "closed") {
-      trackService("service.ro_completed", DEALER_ID, { ro_id: id, grand_total: body.grand_total ?? 0, labor_total: body.labor_total ?? 0, parts_total: body.parts_total ?? 0 });
+      trackService("service.ro_completed", dealerId, { ro_id: id, grand_total: body.grand_total ?? 0, labor_total: body.labor_total ?? 0, parts_total: body.parts_total ?? 0 });
     }
   } catch {}
 

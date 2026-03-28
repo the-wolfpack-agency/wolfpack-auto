@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackAccounting } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -203,6 +203,7 @@ const MOCK_SALES: SaleEntry[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");
@@ -212,7 +213,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
       let idx = 2;
 
       if (from) {
@@ -249,6 +250,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: Partial<SaleEntry>;
   try {
@@ -264,6 +266,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Idempotency — prevent duplicate sale entries from retries
+  const iKey = idempotencyKey("/api/admin/accounting/sales-log", body);
+  const cached = checkIdempotency(iKey);
+  if (cached) return NextResponse.json(cached);
+
   const newId = `sale-${Date.now()}`;
 
   if (process.env.DATABASE_URL) {
@@ -274,20 +281,24 @@ export async function POST(request: NextRequest) {
          sale_price, cost, front_gross, back_gross, fi_gross, total_gross, salesperson, fi_manager, deal_type,
          trade_in, trade_allowance)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
-        [newId, DEALER_ID, body.date ?? new Date().toISOString().split("T")[0], body.stock_number, body.vehicle,
+        [newId, dealerId, body.date ?? new Date().toISOString().split("T")[0], body.stock_number, body.vehicle,
          body.vin, body.customer_name, body.customer_email, body.sale_price, body.cost ?? 0,
          body.front_gross ?? 0, body.back_gross ?? 0, body.fi_gross ?? 0, body.total_gross ?? 0,
          body.salesperson, body.fi_manager, body.deal_type ?? "retail", body.trade_in, body.trade_allowance],
       );
-      try { trackAccounting("accounting.sale_logged", DEALER_ID, { front_gross: Number(body.front_gross ?? 0), back_gross: Number(body.back_gross ?? 0), fi_income: Number(body.fi_gross ?? 0), salesperson: String(body.salesperson ?? "") }); } catch {}
+      try { trackAccounting("accounting.sale_logged", dealerId, { front_gross: Number(body.front_gross ?? 0), back_gross: Number(body.back_gross ?? 0), fi_income: Number(body.fi_gross ?? 0), salesperson: String(body.salesperson ?? "") }); } catch {}
 
-      return NextResponse.json({ success: true, id: newId });
+      const resp = { success: true, id: newId };
+      recordIdempotency(iKey, resp);
+      return NextResponse.json(resp);
     } catch (err) {
       console.error("[api/admin/accounting/sales-log] POST DB error:", err);
     }
   }
 
-  try { trackAccounting("accounting.sale_logged", DEALER_ID, { front_gross: Number(body.front_gross ?? 0), back_gross: Number(body.back_gross ?? 0), fi_income: Number(body.fi_gross ?? 0), salesperson: String(body.salesperson ?? "") }); } catch {}
+  try { trackAccounting("accounting.sale_logged", dealerId, { front_gross: Number(body.front_gross ?? 0), back_gross: Number(body.back_gross ?? 0), fi_income: Number(body.fi_gross ?? 0), salesperson: String(body.salesperson ?? "") }); } catch {}
 
-  return NextResponse.json({ success: true, id: newId, mode: "shadow" });
+  const resp = { success: true, id: newId, mode: "shadow" };
+  recordIdempotency(iKey, resp);
+  return NextResponse.json(resp);
 }

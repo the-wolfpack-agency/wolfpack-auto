@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -113,6 +112,7 @@ async function writeAudit(
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type"); // "tasks" | "recognitions" | null = all
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
 
       if (type === "tasks") {
         conditions.push("recognition_note IS NULL");
@@ -160,6 +160,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
   const { user } = authResult;
 
   let body: {
@@ -198,7 +199,7 @@ export async function POST(request: NextRequest) {
            VALUES ($1,$2,$3,$4,$5,$6,$7,'pending',$8,$9,NULL)`,
           [
             newId,
-            DEALER_ID,
+            dealerId,
             body.title ?? "Untitled Task",
             body.description ?? "",
             body.assigned_to ?? "",
@@ -225,7 +226,7 @@ export async function POST(request: NextRequest) {
            VALUES ($1,$2,$3,'','$4',$5,NULL,'completed','low',$6,$7)`,
           [
             newId,
-            DEALER_ID,
+            dealerId,
             `Recognition: ${body.employee_name ?? "Team Member"}`,
             body.employee_name ?? "",
             user.name ?? user.email,
@@ -268,6 +269,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
   const { user } = authResult;
 
   let body: { id: string; status: "pending" | "in_progress" | "completed" };
@@ -287,7 +289,7 @@ export async function PATCH(request: NextRequest) {
       const { query } = await import("@/lib/db");
       await query(
         `UPDATE employee_tasks SET status = $1 WHERE id = $2 AND dealer_id = $3`,
-        [status, id, DEALER_ID],
+        [status, id, dealerId],
       );
 
       await writeAudit(

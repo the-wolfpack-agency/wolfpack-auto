@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
 import {
   getWebhookConfigs,
   saveWebhookConfig,
 } from "@/lib/webhooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
 
 /* -------------------------------------------------------------------------- */
 /* Validation                                                                 */
@@ -31,6 +30,7 @@ const webhookConfigSchema = z.object({
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({
@@ -41,7 +41,7 @@ export async function GET() {
   }
 
   try {
-    const configs = await getWebhookConfigs(DEALER_ID);
+    const configs = await getWebhookConfigs(dealerId);
     return NextResponse.json({ configs });
   } catch (err) {
     console.error("[api/admin/settings/integrations] GET error:", err);
@@ -56,6 +56,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: unknown;
   try {
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
 
   const config = {
     ...parsed.data,
-    dealer_id: DEALER_ID,
+    dealer_id: dealerId,
   };
 
   if (!process.env.DATABASE_URL) {

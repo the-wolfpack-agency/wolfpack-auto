@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /**
  * POST /api/admin/analytics/query
@@ -163,6 +164,7 @@ function matchQuery(question: string): QueryResult | null {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: { question?: string };
 
@@ -190,7 +192,7 @@ export async function POST(request: NextRequest) {
   // Try DB-backed queries first if available
   if (process.env.DATABASE_URL) {
     try {
-      const result = await queryDatabase(question);
+      const result = await queryDatabase(question, dealerId);
       if (result) {
         return NextResponse.json(result);
       }
@@ -224,10 +226,9 @@ export async function POST(request: NextRequest) {
 /* DB-backed queries (when DATABASE_URL is set)                               */
 /* -------------------------------------------------------------------------- */
 
-async function queryDatabase(question: string): Promise<QueryResult | null> {
+async function queryDatabase(question: string, dealerId: string): Promise<QueryResult | null> {
   const q = question.toLowerCase();
   const { query } = await import("@/lib/db");
-  const dealerId = process.env.DEALER_ID ?? "default";
 
   if (q.includes("how many leads") || q.includes("lead count")) {
     if (q.includes("this week") || q.includes("week")) {

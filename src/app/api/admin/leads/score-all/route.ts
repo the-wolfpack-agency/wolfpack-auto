@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { scoreLeadIntent, extractEmailDomain } from "@/lib/lead-scorer";
+import { getDealerId } from "@/lib/get-dealer-id";
 
-const DEALER_ID = process.env.DEALER_ID ?? "default";
 const BATCH_SIZE = 20;
 
 /* -------------------------------------------------------------------------- */
@@ -12,6 +12,7 @@ const BATCH_SIZE = 20;
 export async function POST() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json(
@@ -36,7 +37,7 @@ export async function POST() {
         WHERE dealer_id = $1
           AND scored_at IS NULL
         ORDER BY created_at DESC`,
-      [DEALER_ID],
+      [dealerId],
     );
 
     const rows = unscored.rows as Record<string, unknown>[];

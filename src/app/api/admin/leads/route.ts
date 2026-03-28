@@ -361,7 +361,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
 
-      const conditions: string[] = ["dealer_id = $1"];
+      const conditions: string[] = ["dealer_id = $1", "deleted_at IS NULL"];
       const params: unknown[] = [DEALER_ID];
       let idx = 2;
 

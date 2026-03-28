@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackService } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { ConcurrentModificationError } from "@/lib/optimistic-lock";
 
 /* -------------------------------------------------------------------------- */
 /* PATCH /api/admin/service/appointments/[id]                                 */
@@ -14,6 +14,7 @@ export async function PATCH(
 ) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { id } = await params;
 
@@ -23,6 +24,7 @@ export async function PATCH(
     scheduled_date?: string;
     scheduled_time?: string;
     notes?: string;
+    updated_at?: string;
   };
 
   try {
@@ -64,18 +66,33 @@ export async function PATCH(
         values.push(body.notes);
       }
 
-      values.push(id, DEALER_ID);
+      values.push(id, dealerId);
 
-      await query(
+      // Build WHERE with optional optimistic lock
+      let whereClause = `WHERE id = $${idx++} AND dealer_id = $${idx}`;
+      if (body.updated_at) {
+        values.push(body.updated_at);
+        whereClause += ` AND updated_at = $${++idx}`;
+      }
+
+      const result = await query(
         `UPDATE service_appointments
          SET ${sets.join(", ")}
-         WHERE id = $${idx++} AND dealer_id = $${idx}`,
+         ${whereClause}
+         RETURNING id`,
         values,
       );
 
+      if ((result.rows as unknown[]).length === 0 && body.updated_at) {
+        return NextResponse.json(
+          { error: new ConcurrentModificationError("Appointment").message },
+          { status: 409 },
+        );
+      }
+
       try {
-        if (body.status === "completed") trackService("service.appointment_completed", DEALER_ID, { appointment_id: id });
-        if (body.status === "no_show") trackService("service.appointment_no_show", DEALER_ID, { appointment_id: id });
+        if (body.status === "completed") trackService("service.appointment_completed", dealerId, { appointment_id: id });
+        if (body.status === "no_show") trackService("service.appointment_no_show", dealerId, { appointment_id: id });
       } catch {}
 
       return NextResponse.json({ success: true, id });
@@ -85,8 +102,8 @@ export async function PATCH(
   }
 
   try {
-    if (body.status === "completed") trackService("service.appointment_completed", DEALER_ID, { appointment_id: id });
-    if (body.status === "no_show") trackService("service.appointment_no_show", DEALER_ID, { appointment_id: id });
+    if (body.status === "completed") trackService("service.appointment_completed", dealerId, { appointment_id: id });
+    if (body.status === "no_show") trackService("service.appointment_no_show", dealerId, { appointment_id: id });
   } catch {}
 
   // Shadow mode

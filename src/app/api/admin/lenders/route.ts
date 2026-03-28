@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { trackLender, trackSecurity } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock data                                                           */
@@ -12,7 +11,7 @@ const DEALER_ID = process.env.DEALER_ID ?? "default";
 const MOCK_LENDERS = [
   {
     id: "lndr-001",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lender_name: "Chase Auto Finance",
     lender_code: "CHASE-4821",
     portal: "routeone",
@@ -32,7 +31,7 @@ const MOCK_LENDERS = [
   },
   {
     id: "lndr-002",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lender_name: "Capital One Auto Finance",
     lender_code: "CAPONE-9912",
     portal: "dealertrack",
@@ -52,7 +51,7 @@ const MOCK_LENDERS = [
   },
   {
     id: "lndr-003",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lender_name: "Ally Financial",
     lender_code: "ALLY-3301",
     portal: "routeone",
@@ -71,7 +70,7 @@ const MOCK_LENDERS = [
   },
   {
     id: "lndr-004",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lender_name: "Wells Fargo Dealer Services",
     lender_code: "WF-7744",
     portal: "dealertrack",
@@ -91,7 +90,7 @@ const MOCK_LENDERS = [
   },
   {
     id: "lndr-005",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lender_name: "Credit Union Direct Lending",
     lender_code: "CUDL-2200",
     portal: "cudl",
@@ -110,7 +109,7 @@ const MOCK_LENDERS = [
   },
   {
     id: "lndr-006",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     lender_name: "Southeast Toyota Finance",
     lender_code: "SETF-5500",
     portal: "direct",
@@ -136,6 +135,7 @@ const MOCK_LENDERS = [
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (process.env.DATABASE_URL) {
     try {
@@ -160,6 +160,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const rl = await checkRateLimit(`lenders:${authResult.user.dealer_id}`, 10, 60);
   if (!rl.allowed) {
@@ -194,7 +195,6 @@ export async function POST(request: NextRequest) {
   }
 
   const id = `lndr-${Date.now().toString(36)}`;
-  const dealerId = authResult.user.dealer_id;
 
   if (process.env.DATABASE_URL) {
     try {
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
   // Shadow mode: return realistic created object
   const created = {
     id,
-    dealer_id: dealerId,
+    dealer_id: "demo-dealer",
     lender_name: lender_name.trim(),
     lender_code: lender_code ?? null,
     portal: portal ?? "direct",

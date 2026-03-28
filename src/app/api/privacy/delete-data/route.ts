@@ -1,7 +1,16 @@
+/**
+ * POST /api/privacy/delete-data — CCPA data deletion request
+ *
+ * Accepts a customer email, verifies admin auth, anonymizes all PII
+ * across leads, credit_pulls, message_log, reviews, and deal_worksheets,
+ * then logs the deletion for audit compliance.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createHash } from "crypto";
-import { auditLog } from "@/lib/audit-log";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { deleteCustomerData } from "@/lib/privacy";
+import { trackCompliance } from "@/lib/analytics-hooks";
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -46,6 +55,11 @@ function checkRateLimit(email: string): {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
+  // Require admin authentication
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+  const { dealer_id: dealerId, id: userId } = authResult.user;
+
   // Parse body
   let body: unknown;
   try {
@@ -83,88 +97,39 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let totalRemoved = 0;
+  try {
+    const result = await deleteCustomerData(email, dealerId, userId);
 
-  // If database is available, delete from all relevant tables
-  if (process.env.DATABASE_URL) {
+    // Audit log hash (never log the raw email)
+    const emailHash = createHash("sha256").update(email).digest("hex").slice(0, 16);
+    console.log(
+      `[api/privacy/delete-data] Processed deletion for ${emailHash}: ${result.data_categories_deleted.length} categories`,
+    );
+
+    // Track compliance event — fire-and-forget
     try {
-      const { query } = await import("@/lib/db");
-
-      // Delete from leads table
-      const leadsResult = await query<{ count: string }>(
-        `WITH deleted AS (
-          DELETE FROM leads WHERE LOWER(email) = $1 RETURNING 1
-        ) SELECT COUNT(*)::text AS count FROM deleted`,
-        [email],
-      );
-      totalRemoved += parseInt(leadsResult.rows[0]?.count ?? "0", 10);
-
-      // Delete from contacts table (if it exists)
-      try {
-        const contactsResult = await query<{ count: string }>(
-          `WITH deleted AS (
-            DELETE FROM contacts WHERE LOWER(email) = $1 RETURNING 1
-          ) SELECT COUNT(*)::text AS count FROM deleted`,
-          [email],
-        );
-        totalRemoved += parseInt(contactsResult.rows[0]?.count ?? "0", 10);
-      } catch {
-        // contacts table may not exist — that's fine
-      }
-
-      // Delete analytics sessions linked to this email (if session_emails mapping exists)
-      try {
-        const sessionsResult = await query<{ count: string }>(
-          `WITH deleted AS (
-            DELETE FROM analytics_sessions WHERE LOWER(email) = $1 RETURNING 1
-          ) SELECT COUNT(*)::text AS count FROM deleted`,
-          [email],
-        );
-        totalRemoved += parseInt(sessionsResult.rows[0]?.count ?? "0", 10);
-      } catch {
-        // analytics_sessions table may not exist or have no email column — that's fine
-      }
-
-      console.log(
-        `[api/privacy/delete-data] Deleted ${totalRemoved} records for ${email}`,
-      );
-
-      // Audit log: record data deletion (fire-and-forget)
-      const emailHash = createHash("sha256").update(email).digest("hex").slice(0, 16);
-      void auditLog("data.delete", {
+      trackCompliance("compliance.check_run", dealerId, {
+        action: "data_deletion",
         email_hash: emailHash,
-        records_removed: totalRemoved,
-      }).catch(() => {});
+        categories_deleted: result.data_categories_deleted.length,
+        request_id: result.id,
+      });
+    } catch { /* analytics must never throw */ }
 
-      return NextResponse.json(
-        {
-          status: "deleted",
-          email,
-          records_removed: totalRemoved,
-        },
-        { status: 200 },
-      );
-    } catch (err) {
-      console.error("[api/privacy/delete-data] DB error:", err);
-      return NextResponse.json(
-        { error: "Failed to process deletion request. Please try again." },
-        { status: 500 },
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      deletion: {
+        id: result.id,
+        status: result.status,
+        completed_at: result.completed_at,
+        data_categories_deleted: result.data_categories_deleted,
+      },
+    });
+  } catch (err) {
+    console.error("[api/privacy/delete-data] Error:", err);
+    return NextResponse.json(
+      { error: "Failed to process deletion request" },
+      { status: 500 },
+    );
   }
-
-  // Fallback: no DB configured — acknowledge the request
-  console.log(
-    `[api/privacy/delete-data] Deletion requested for ${email} (no DB configured)`,
-  );
-
-  return NextResponse.json(
-    {
-      status: "deleted",
-      email,
-      records_removed: 0,
-      note: "Request acknowledged. If any data exists, it will be purged within 30 days.",
-    },
-    { status: 200 },
-  );
 }

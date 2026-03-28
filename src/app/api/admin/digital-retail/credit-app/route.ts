@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackRetail } from "@/lib/analytics-hooks";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /**
  * GET  /api/admin/digital-retail/credit-app — list credit applications

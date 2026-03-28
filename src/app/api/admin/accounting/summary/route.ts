@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -31,6 +30,7 @@ interface AccountingSummary {
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const month = searchParams.get("month") ?? "2026-03";
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
            AVG(total_gross) AS avg_deal_gross
          FROM sales_log
          WHERE dealer_id = $1 AND date >= $2 AND date < ($2::date + interval '1 month')::text`,
-        [DEALER_ID, `${month}-01`],
+        [dealerId, `${month}-01`],
       );
 
       const byPerson = await query(
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
          WHERE dealer_id = $1 AND date >= $2 AND date < ($2::date + interval '1 month')::text
          GROUP BY salesperson
          ORDER BY total_gross DESC`,
-        [DEALER_ID, `${month}-01`],
+        [dealerId, `${month}-01`],
       );
 
       const byType = await query(
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
          FROM sales_log
          WHERE dealer_id = $1 AND date >= $2 AND date < ($2::date + interval '1 month')::text
          GROUP BY deal_type`,
-        [DEALER_ID, `${month}-01`],
+        [dealerId, `${month}-01`],
       );
 
       const row = (result.rows as Record<string, number>[])[0];

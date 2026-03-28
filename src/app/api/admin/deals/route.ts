@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { trackDeal, trackSecurity } from "@/lib/analytics-hooks";
+import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock data                                                           */
@@ -218,7 +219,7 @@ export async function GET(request: NextRequest) {
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      const conditions: string[] = ["d.dealer_id = $1"];
+      const conditions: string[] = ["d.dealer_id = $1", "d.deleted_at IS NULL"];
       const params: unknown[] = [dealerId];
       let idx = 2;
 
@@ -291,6 +292,11 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+
+  // Idempotency — prevent duplicate deal creation from double-clicks/retries
+  const iKey = idempotencyKey("/api/admin/deals", body);
+  const cached = checkIdempotency(iKey);
+  if (cached) return NextResponse.json(cached, { status: 201 });
 
   const required = ["customer_name", "vehicle_vin", "selling_price"];
   for (const field of required) {
@@ -366,7 +372,9 @@ export async function POST(request: NextRequest) {
 
       try { trackDeal("deal.created", dealerId, { deal_type: String(body.deal_type || "retail"), selling_price: Number(body.selling_price), vehicle_vin: String(body.vehicle_vin) }); } catch {}
 
-      return NextResponse.json({ deal: result.rows[0], created: true }, { status: 201 });
+      const resp = { deal: result.rows[0], created: true };
+      recordIdempotency(iKey, resp);
+      return NextResponse.json(resp, { status: 201 });
     } catch (err) {
       console.error("[api/admin/deals] DB insert error, falling back to mock:", err);
       /* fall through to mock */
@@ -414,5 +422,7 @@ export async function POST(request: NextRequest) {
 
   try { trackDeal("deal.created", dealerId, { deal_type: String(newDeal.deal_type), selling_price: Number(newDeal.selling_price), vehicle_vin: String(newDeal.vehicle_vin) }); } catch {}
 
-  return NextResponse.json({ deal: newDeal, created: true }, { status: 201 });
+  const resp = { deal: newDeal, created: true };
+  recordIdempotency(iKey, resp);
+  return NextResponse.json(resp, { status: 201 });
 }

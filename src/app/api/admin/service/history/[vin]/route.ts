@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -122,6 +121,7 @@ export async function GET(
 ) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { vin } = await params;
 
@@ -140,7 +140,7 @@ export async function GET(
          WHERE ro.vin = $1 AND ro.dealer_id = $2
          ORDER BY ro.created_at DESC
          LIMIT 50`,
-        [vin.toUpperCase(), DEALER_ID],
+        [vin.toUpperCase(), dealerId],
       );
 
       return NextResponse.json({ vin: vin.toUpperCase(), history: result.rows });

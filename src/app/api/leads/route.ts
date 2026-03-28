@@ -3,6 +3,7 @@ import { z } from "zod";
 import { encryptPII } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit-log";
 import { scoreLeadIntent, extractEmailDomain } from "@/lib/lead-scorer";
+import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
 
 /**
  * Lead submission schema — strict validation.
@@ -80,18 +81,22 @@ export async function POST(request: NextRequest) {
 
   const lead = parsed.data;
 
+  // Idempotency — prevent duplicate lead submissions from double-clicks
+  const iKey = idempotencyKey("/api/leads", { email: lead.email, vehicle_interest: lead.vehicle_interest, dealer_id: lead.dealer_id });
+  const cached = checkIdempotency(iKey);
+  if (cached) return NextResponse.json(cached, { status: 201 });
+
   // Check if database is available
   if (!process.env.DATABASE_URL) {
     // No DB — accept the lead gracefully and indicate it was queued
-    return NextResponse.json(
-      {
-        success: true,
-        lead_id: `queued-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        note: "Lead has been queued for processing. Database is currently unavailable.",
-      },
-      { status: 201 },
-    );
+    const queuedResp = {
+      success: true,
+      lead_id: `queued-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      note: "Lead has been queued for processing. Database is currently unavailable.",
+    };
+    recordIdempotency(iKey, queuedResp);
+    return NextResponse.json(queuedResp, { status: 201 });
   }
 
   try {
@@ -268,26 +273,24 @@ export async function POST(request: NextRequest) {
       }
     })();
 
-    return NextResponse.json(
-      {
-        success: true,
-        lead_id: created.id,
-        created_at: created.created_at,
-      },
-      { status: 201 },
-    );
+    const successResp = {
+      success: true,
+      lead_id: created.id,
+      created_at: created.created_at,
+    };
+    recordIdempotency(iKey, successResp);
+    return NextResponse.json(successResp, { status: 201 });
   } catch (err) {
     console.error("[api/leads] Insert failed:", err);
 
     // Graceful fallback — accept the lead even if DB is down
-    return NextResponse.json(
-      {
-        success: true,
-        lead_id: `queued-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        note: "Lead has been queued for processing. Please allow additional time for follow-up.",
-      },
-      { status: 201 },
-    );
+    const fallbackResp = {
+      success: true,
+      lead_id: `queued-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      note: "Lead has been queued for processing. Please allow additional time for follow-up.",
+    };
+    recordIdempotency(iKey, fallbackResp);
+    return NextResponse.json(fallbackResp, { status: 201 });
   }
 }

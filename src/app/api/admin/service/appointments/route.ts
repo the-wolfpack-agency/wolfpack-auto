@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { trackService, trackSecurity } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -39,7 +38,7 @@ export interface ServiceAppointment {
 const MOCK_APPOINTMENTS: ServiceAppointment[] = [
   {
     id: "appt-001",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     customer_name: "Marcus Johnson",
     customer_phone: "+15551234567",
     customer_email: "marcus.johnson@email.com",
@@ -61,7 +60,7 @@ const MOCK_APPOINTMENTS: ServiceAppointment[] = [
   },
   {
     id: "appt-002",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     customer_name: "Emily Nakamura",
     customer_phone: "+15559876543",
     customer_email: "emily.n@outlook.com",
@@ -83,7 +82,7 @@ const MOCK_APPOINTMENTS: ServiceAppointment[] = [
   },
   {
     id: "appt-003",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     customer_name: "Robert Garcia",
     customer_phone: "+15554567890",
     customer_email: "rgarcia@gmail.com",
@@ -105,7 +104,7 @@ const MOCK_APPOINTMENTS: ServiceAppointment[] = [
   },
   {
     id: "appt-004",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     customer_name: "Aisha Williams",
     customer_phone: "+15553456789",
     customer_email: "aisha.w@yahoo.com",
@@ -127,7 +126,7 @@ const MOCK_APPOINTMENTS: ServiceAppointment[] = [
   },
   {
     id: "appt-005",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     customer_name: "David Kim",
     customer_phone: "+15558765432",
     customer_email: "david.k@email.com",
@@ -149,7 +148,7 @@ const MOCK_APPOINTMENTS: ServiceAppointment[] = [
   },
   {
     id: "appt-006",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     customer_name: "Patricia Hernandez",
     customer_phone: "+15556667788",
     customer_email: "p.hernandez@email.com",
@@ -178,6 +177,7 @@ const MOCK_APPOINTMENTS: ServiceAppointment[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const dateFilter = searchParams.get("date");
@@ -188,7 +188,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions: string[] = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
       let idx = 2;
 
       if (dateFilter) {
@@ -241,6 +241,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
   const { user } = authResult;
 
   const rl = await checkRateLimit(`service-appts:${authResult.user.dealer_id}`, 20, 60);
@@ -278,7 +279,7 @@ export async function POST(request: NextRequest) {
             created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'scheduled',$15,$16,$17,$18,$18)`,
         [
-          newId, DEALER_ID,
+          newId, dealerId,
           body.customer_name, body.customer_phone ?? "", body.customer_email ?? "",
           body.vehicle_year ?? null, body.vehicle_make ?? "", body.vehicle_model ?? "", body.vin ?? "",
           body.service_type ?? "other", body.description ?? "",
@@ -291,7 +292,7 @@ export async function POST(request: NextRequest) {
         ],
       );
 
-      try { trackService("service.appointment_created", DEALER_ID, { service_type: String(body.service_type ?? "other"), vehicle_vin: String(body.vin ?? "") }); } catch {}
+      try { trackService("service.appointment_created", dealerId, { service_type: String(body.service_type ?? "other"), vehicle_vin: String(body.vin ?? "") }); } catch {}
 
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
@@ -299,7 +300,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  try { trackService("service.appointment_created", DEALER_ID, { service_type: String(body.service_type ?? "other"), vehicle_vin: String(body.vin ?? "") }); } catch {}
+  try { trackService("service.appointment_created", dealerId, { service_type: String(body.service_type ?? "other"), vehicle_vin: String(body.vin ?? "") }); } catch {}
 
   // Shadow mode
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });

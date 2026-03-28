@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 const bulkSchema = z.object({
   action: z.enum(["assign", "status"]),
@@ -18,6 +17,7 @@ const bulkSchema = z.object({
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   // Rate limit: 10 bulk lead operations per IP per hour
   const ip =
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
          SET ${column} = $1, updated_at = NOW()
          WHERE id IN (${placeholders}) AND dealer_id = $2
          RETURNING id`,
-        [value, DEALER_ID, ...lead_ids],
+        [value, dealerId, ...lead_ids],
       );
 
       return NextResponse.json({

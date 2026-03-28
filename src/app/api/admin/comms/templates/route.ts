@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackComms } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -89,6 +88,7 @@ const MOCK_TEMPLATES: MessageTemplate[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const channel = searchParams.get("channel");
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
       let idx = 2;
 
       if (channel && ["email", "sms"].includes(channel)) {
@@ -144,6 +144,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: {
     name: string;
@@ -181,9 +182,9 @@ export async function POST(request: NextRequest) {
       await query(
         `INSERT INTO message_templates (id, dealer_id, name, channel, category, subject, body, variables, created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9)`,
-        [newId, DEALER_ID, body.name, body.channel, body.category ?? "general", body.subject ?? null, body.body, variables, now],
+        [newId, dealerId, body.name, body.channel, body.category ?? "general", body.subject ?? null, body.body, variables, now],
       );
-      try { trackComms("comms.template_created", DEALER_ID, { channel: body.channel, category: body.category ?? "general" }); } catch {}
+      try { trackComms("comms.template_created", dealerId, { channel: body.channel, category: body.category ?? "general" }); } catch {}
 
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  try { trackComms("comms.template_created", DEALER_ID, { channel: body.channel, category: body.category ?? "general" }); } catch {}
+  try { trackComms("comms.template_created", dealerId, { channel: body.channel, category: body.category ?? "general" }); } catch {}
 
   // Shadow mode
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });

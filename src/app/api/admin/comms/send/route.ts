@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { trackComms, trackSecurity } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/admin/comms/send                                                  */
@@ -12,6 +12,7 @@ const DEALER_ID = process.env.DEALER_ID ?? "default";
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
   const { user } = authResult;
 
   const rl = await checkRateLimit(`comms-send:${authResult.user.dealer_id}`, 30, 60);
@@ -54,6 +55,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Idempotency — prevent duplicate message sends from retries
+  const iKey = idempotencyKey("/api/admin/comms/send", body);
+  const cached = checkIdempotency(iKey);
+  if (cached) return NextResponse.json(cached);
+
   const messageId = `msg-${Date.now()}`;
   const now = new Date().toISOString();
 
@@ -69,7 +75,7 @@ export async function POST(request: NextRequest) {
       if (body.template_id) {
         const tplResult = await query(
           `SELECT subject, body FROM message_templates WHERE id = $1 AND dealer_id = $2`,
-          [body.template_id, DEALER_ID],
+          [body.template_id, dealerId],
         );
         const tpl = (tplResult.rows as { subject: string | null; body: string }[])[0];
         if (tpl) {
@@ -100,7 +106,7 @@ export async function POST(request: NextRequest) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: process.env.RESEND_FROM_EMAIL ?? `noreply@${DEALER_ID}.wolfpackauto.com`,
+              from: process.env.RESEND_FROM_EMAIL ?? `noreply@${dealerId}.wolfpackauto.com`,
               to: body.recipient,
               subject: messageSubject,
               text: messageBody,
@@ -146,22 +152,24 @@ export async function POST(request: NextRequest) {
       await query(
         `INSERT INTO message_log (id, dealer_id, channel, recipient, subject, body, template_id, lead_id, status, external_id, sent_by, sent_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-        [messageId, DEALER_ID, body.channel, body.recipient, messageSubject, messageBody, body.template_id ?? null, body.lead_id ?? null, status, externalId, user.id, now],
+        [messageId, dealerId, body.channel, body.recipient, messageSubject, messageBody, body.template_id ?? null, body.lead_id ?? null, status, externalId, user.id, now],
       );
 
-      try { trackComms("comms.message_sent", DEALER_ID, { channel: body.channel, template_id: body.template_id ?? "custom" }); } catch {}
+      try { trackComms("comms.message_sent", dealerId, { channel: body.channel, template_id: body.template_id ?? "custom" }); } catch {}
 
-      return NextResponse.json({ success: true, id: messageId, status, external_id: externalId });
+      const resp = { success: true, id: messageId, status, external_id: externalId };
+      recordIdempotency(iKey, resp);
+      return NextResponse.json(resp);
     } catch (err) {
       console.error("[api/admin/comms/send] DB error:", err);
     }
   }
 
-  try { trackComms("comms.message_sent", DEALER_ID, { channel: body.channel, template_id: body.template_id ?? "custom" }); } catch {}
+  try { trackComms("comms.message_sent", dealerId, { channel: body.channel, template_id: body.template_id ?? "custom" }); } catch {}
 
   // Shadow mode — log and return success
   console.info(`[comms/send][shadow] ${body.channel} to ${body.recipient} from ${user.email} at ${now}`);
-  return NextResponse.json({
+  const resp = {
     success: true,
     id: messageId,
     status: "sent",
@@ -169,5 +177,7 @@ export async function POST(request: NextRequest) {
     channel: body.channel,
     recipient: body.recipient,
     sent_at: now,
-  });
+  };
+  recordIdempotency(iKey, resp);
+  return NextResponse.json(resp);
 }

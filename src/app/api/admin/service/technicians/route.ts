@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -28,7 +27,7 @@ export interface Technician {
 const MOCK_TECHNICIANS: Technician[] = [
   {
     id: "tech-001",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     name: "Carlos Rivera",
     employee_id: "EMP-204",
     specialties: ["Engine Diagnostics", "Emissions", "Electrical Systems"],
@@ -41,7 +40,7 @@ const MOCK_TECHNICIANS: Technician[] = [
   },
   {
     id: "tech-002",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     name: "Derek Washington",
     employee_id: "EMP-218",
     specialties: ["Brakes", "Suspension", "Alignment", "Tires"],
@@ -54,7 +53,7 @@ const MOCK_TECHNICIANS: Technician[] = [
   },
   {
     id: "tech-003",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     name: "Maria Santos",
     employee_id: "EMP-231",
     specialties: ["General Maintenance", "Transmission", "Fluid Services"],
@@ -67,7 +66,7 @@ const MOCK_TECHNICIANS: Technician[] = [
   },
   {
     id: "tech-004",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     name: "Tommy Nguyen",
     employee_id: "EMP-245",
     specialties: ["Oil Changes", "Tire Rotation", "Multi-Point Inspections", "Recalls"],
@@ -87,6 +86,7 @@ const MOCK_TECHNICIANS: Technician[] = [
 export async function GET(_request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (process.env.DATABASE_URL) {
     try {
@@ -102,7 +102,7 @@ export async function GET(_request: NextRequest) {
          FROM service_technicians t
          WHERE t.dealer_id = $1
          ORDER BY t.name ASC`,
-        [DEALER_ID],
+        [dealerId],
       );
 
       return NextResponse.json({ technicians: result.rows });
@@ -122,6 +122,7 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: Partial<Technician>;
   try {
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
             hourly_rate, status, phone, hire_date)
          VALUES ($1,$2,$3,$4,$5,$6,$7,'available',$8,$9)`,
         [
-          newId, DEALER_ID,
+          newId, dealerId,
           body.name, body.employee_id ?? "",
           JSON.stringify(body.specialties ?? []),
           JSON.stringify(body.certifications ?? []),
@@ -172,6 +173,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: { id: string; status: "available" | "busy" | "off" };
   try {
@@ -189,7 +191,7 @@ export async function PATCH(request: NextRequest) {
       const { query } = await import("@/lib/db");
       await query(
         `UPDATE service_technicians SET status = $1 WHERE id = $2 AND dealer_id = $3`,
-        [body.status, body.id, DEALER_ID],
+        [body.status, body.id, dealerId],
       );
       return NextResponse.json({ success: true });
     } catch (err) {

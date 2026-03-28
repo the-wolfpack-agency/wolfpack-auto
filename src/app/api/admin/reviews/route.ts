@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackReview } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -131,6 +130,7 @@ const MOCK_REVIEWS: Review[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get("platform");
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
       let idx = 2;
 
       if (platform && ["google", "yelp", "facebook"].includes(platform)) {
@@ -185,6 +185,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: {
     platform: string;
@@ -215,10 +216,10 @@ export async function POST(request: NextRequest) {
       await query(
         `INSERT INTO reviews (id, dealer_id, platform, reviewer_name, rating, text, date, responded, flagged)
          VALUES ($1,$2,$3,$4,$5,$6,$7,false,false)`,
-        [newId, DEALER_ID, body.platform, body.reviewer_name, body.rating, body.text,
+        [newId, dealerId, body.platform, body.reviewer_name, body.rating, body.text,
          body.date ?? new Date().toISOString().split("T")[0]],
       );
-      try { trackReview("review.received", DEALER_ID, { platform: body.platform, rating: body.rating }); } catch {}
+      try { trackReview("review.received", dealerId, { platform: body.platform, rating: body.rating }); } catch {}
 
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
@@ -226,7 +227,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  try { trackReview("review.received", DEALER_ID, { platform: body.platform, rating: body.rating }); } catch {}
+  try { trackReview("review.received", dealerId, { platform: body.platform, rating: body.rating }); } catch {}
 
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }

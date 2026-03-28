@@ -73,6 +73,7 @@ export type CommsEvent =
   | "comms.message_bounced"
   | "comms.sequence_started"
   | "comms.sequence_completed"
+  | "comms.sequence_step_processed"
   | "comms.template_created";
 
 export type AccountingEvent =
@@ -109,7 +110,9 @@ export type CreditEvent =
 export type ComplianceEvent =
   | "compliance.check_run"
   | "compliance.check_reviewed"
-  | "compliance.check_overridden";
+  | "compliance.check_overridden"
+  | "compliance.data_deletion"
+  | "compliance.data_export";
 
 export type DocumentEvent =
   | "document.uploaded"

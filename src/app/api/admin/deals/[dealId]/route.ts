@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackDeal } from "@/lib/analytics-hooks";
+import { ConcurrentModificationError } from "@/lib/optimistic-lock";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock — single deal                                                  */
@@ -159,6 +160,9 @@ export async function PATCH(
     "fi_products", "lender", "lender_status", "notes",
   ]);
 
+  // Optimistic locking: client sends updated_at to prevent lost updates
+  const expectedUpdatedAt = typeof body.updated_at === "string" ? body.updated_at : null;
+
   const updates: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(body)) {
     if (ALLOWED_FIELDS.has(key)) updates[key] = val;
@@ -186,14 +190,37 @@ export async function PATCH(
         }
       }
 
+      // Build WHERE clause with optional optimistic lock
+      let whereClause = `WHERE id = $${idx} AND dealer_id = $${idx + 1}`;
+      const finalParams = [...queryParams, dealId, dealerId];
+
+      if (expectedUpdatedAt) {
+        whereClause += ` AND updated_at = $${idx + 2}`;
+        finalParams.push(expectedUpdatedAt);
+      }
+
       const result = await query(
         `UPDATE deals SET ${setClauses.join(", ")}
-          WHERE id = $${idx} AND dealer_id = $${idx + 1}
+          ${whereClause}
           RETURNING *`,
-        [...queryParams, dealId, dealerId],
+        finalParams,
       );
 
       if ((result.rows as unknown[]).length === 0) {
+        // Distinguish between not-found and concurrent modification
+        if (expectedUpdatedAt) {
+          // Check if the deal exists at all
+          const existsCheck = await query(
+            `SELECT id FROM deals WHERE id = $1 AND dealer_id = $2`,
+            [dealId, dealerId],
+          );
+          if ((existsCheck.rows as unknown[]).length > 0) {
+            return NextResponse.json(
+              { error: new ConcurrentModificationError("Deal").message },
+              { status: 409 },
+            );
+          }
+        }
         return NextResponse.json({ error: "Deal not found" }, { status: 404 });
       }
 

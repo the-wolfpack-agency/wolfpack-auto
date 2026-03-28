@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -46,13 +45,14 @@ const MOCK_TEMPLATES: ResponseTemplate[] = [
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
       const result = await query(
         `SELECT id, name, category, text FROM review_response_templates WHERE dealer_id = $1 ORDER BY name`,
-        [DEALER_ID],
+        [dealerId],
       );
       return NextResponse.json({ templates: result.rows });
     } catch (err) {

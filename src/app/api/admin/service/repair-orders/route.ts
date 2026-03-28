@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { trackService, trackSecurity } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -55,7 +54,7 @@ const MOCK_ROS: RepairOrder[] = [
   {
     id: "ro-001",
     ro_number: "RO-2026-0347",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     appointment_id: "appt-003",
     customer_name: "Robert Garcia",
     customer_phone: "+15554567890",
@@ -100,7 +99,7 @@ const MOCK_ROS: RepairOrder[] = [
   {
     id: "ro-002",
     ro_number: "RO-2026-0346",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     appointment_id: "appt-002",
     customer_name: "Emily Nakamura",
     customer_phone: "+15559876543",
@@ -145,7 +144,7 @@ const MOCK_ROS: RepairOrder[] = [
   {
     id: "ro-003",
     ro_number: "RO-2026-0345",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     appointment_id: null,
     customer_name: "James Kowalski",
     customer_phone: "+15553344556",
@@ -198,7 +197,7 @@ const MOCK_ROS: RepairOrder[] = [
   {
     id: "ro-004",
     ro_number: "RO-2026-0344",
-    dealer_id: DEALER_ID,
+    dealer_id: "demo-dealer",
     appointment_id: null,
     customer_name: "Lauren Okafor",
     customer_phone: "+15551112233",
@@ -257,6 +256,7 @@ const MOCK_ROS: RepairOrder[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const statusFilter = searchParams.get("status") as RepairOrder["status"] | null;
@@ -266,7 +266,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions: string[] = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
       let idx = 2;
 
       if (statusFilter) {
@@ -311,6 +311,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
   const { user } = authResult;
 
   const rl = await checkRateLimit(`repair-orders:${authResult.user.dealer_id}`, 10, 60);
@@ -349,7 +350,7 @@ export async function POST(request: NextRequest) {
             created_at, updated_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'open',$13,$14,$15,0,0,0,0,$16,'','',NULL,$17,$17)`,
         [
-          newId, roNum, DEALER_ID,
+          newId, roNum, dealerId,
           body.appointment_id ?? null,
           body.customer_name, body.customer_phone ?? "", body.customer_email ?? "",
           body.vehicle_year ?? null, body.vehicle_make ?? "", body.vehicle_model ?? "",
@@ -362,7 +363,7 @@ export async function POST(request: NextRequest) {
         ],
       );
 
-      try { trackService("service.ro_created", DEALER_ID, { vehicle_vin: String(body.vin), line_item_count: (body.line_items ?? []).length }); } catch {}
+      try { trackService("service.ro_created", dealerId, { vehicle_vin: String(body.vin), line_item_count: (body.line_items ?? []).length }); } catch {}
 
       return NextResponse.json({ success: true, id: newId, ro_number: roNum });
     } catch (err) {
@@ -370,7 +371,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  try { trackService("service.ro_created", DEALER_ID, { vehicle_vin: String(body.vin), line_item_count: (body.line_items ?? []).length }); } catch {}
+  try { trackService("service.ro_created", dealerId, { vehicle_vin: String(body.vin), line_item_count: (body.line_items ?? []).length }); } catch {}
 
   // Shadow mode
   return NextResponse.json({ success: true, id: newId, ro_number: roNum, mode: "shadow" });

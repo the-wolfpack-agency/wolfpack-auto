@@ -45,7 +45,7 @@ export async function GET(
     try {
       const { query } = await import("@/lib/db");
       const result = await query(
-        `SELECT * FROM leads WHERE id = $1 AND dealer_id = $2`,
+        `SELECT * FROM leads WHERE id = $1 AND dealer_id = $2 AND deleted_at IS NULL`,
         [id, DEALER_ID],
       );
       if ((result.rows as any[]).length === 0) {
@@ -208,7 +208,11 @@ export async function DELETE(
 
   try {
     const { query } = await import("@/lib/db");
-    await query(`DELETE FROM leads WHERE id = $1 AND dealer_id = $2`, [id, DEALER_ID]);
+    // Soft delete — preserve data for audit trail and recovery
+    await query(
+      `UPDATE leads SET deleted_at = NOW() WHERE id = $1 AND dealer_id = $2 AND deleted_at IS NULL`,
+      [id, DEALER_ID],
+    );
     // audit log (fire-and-forget)
     try {
       await query(

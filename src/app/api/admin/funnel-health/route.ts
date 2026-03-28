@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getFunnelHealthMetrics } from "@/lib/funnel-health";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /**
  * GET /api/admin/funnel-health
@@ -13,6 +12,7 @@ const DEALER_ID = process.env.DEALER_ID ?? "default";
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({
@@ -30,7 +30,7 @@ export async function GET() {
   }
 
   try {
-    const metrics = await getFunnelHealthMetrics(DEALER_ID);
+    const metrics = await getFunnelHealthMetrics(dealerId);
 
     return NextResponse.json(metrics, {
       headers: {

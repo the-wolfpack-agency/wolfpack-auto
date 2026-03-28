@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackAccounting } from "@/lib/analytics-hooks";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -114,6 +113,7 @@ const MOCK_COMMISSIONS: CommissionEntry[] = [
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const payPeriod = searchParams.get("pay_period");
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
       let idx = 2;
 
       if (payPeriod) {
@@ -156,6 +156,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: Partial<CommissionEntry> & { action?: "mark_paid"; ids?: string[] };
   try {
@@ -172,16 +173,16 @@ export async function POST(request: NextRequest) {
         const placeholders = body.ids.map((_, i) => `$${i + 3}`).join(",");
         await query(
           `UPDATE commissions SET paid = true, paid_date = $1 WHERE dealer_id = $2 AND id IN (${placeholders})`,
-          [new Date().toISOString().split("T")[0], DEALER_ID, ...body.ids],
+          [new Date().toISOString().split("T")[0], dealerId, ...body.ids],
         );
-        try { for (const cid of body.ids!) { trackAccounting("accounting.commission_paid", DEALER_ID, { commission_id: cid, employee: "" }); } } catch {}
+        try { for (const cid of body.ids!) { trackAccounting("accounting.commission_paid", dealerId, { commission_id: cid, employee: "" }); } } catch {}
 
         return NextResponse.json({ success: true, marked_paid: body.ids.length });
       } catch (err) {
         console.error("[api/admin/accounting/commissions] mark_paid error:", err);
       }
     }
-    try { for (const cid of body.ids!) { trackAccounting("accounting.commission_paid", DEALER_ID, { commission_id: cid, employee: "" }); } } catch {}
+    try { for (const cid of body.ids!) { trackAccounting("accounting.commission_paid", dealerId, { commission_id: cid, employee: "" }); } } catch {}
     return NextResponse.json({ success: true, marked_paid: body.ids.length, mode: "shadow" });
   }
 
@@ -202,11 +203,11 @@ export async function POST(request: NextRequest) {
         `INSERT INTO commissions (id, dealer_id, employee_name, employee_role, sale_id, deal_description,
          gross_basis, rate_percent, amount, pay_period, paid, paid_date)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,false,null)`,
-        [newId, DEALER_ID, body.employee_name, body.employee_role ?? "salesperson", body.sale_id,
+        [newId, dealerId, body.employee_name, body.employee_role ?? "salesperson", body.sale_id,
          body.deal_description ?? "", body.gross_basis ?? 0, body.rate_percent ?? 25,
          body.amount, body.pay_period ?? ""],
       );
-      try { trackAccounting("accounting.commission_paid", DEALER_ID, { employee: String(body.employee_name), amount: Number(body.amount) }); } catch {}
+      try { trackAccounting("accounting.commission_paid", dealerId, { employee: String(body.employee_name), amount: Number(body.amount) }); } catch {}
 
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
@@ -214,7 +215,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  try { trackAccounting("accounting.commission_paid", DEALER_ID, { employee: String(body.employee_name), amount: Number(body.amount) }); } catch {}
+  try { trackAccounting("accounting.commission_paid", dealerId, { employee: String(body.employee_name), amount: Number(body.amount) }); } catch {}
 
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }

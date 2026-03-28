@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -91,6 +90,7 @@ function dbAvailable(): boolean {
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
   const audience = searchParams.get("audience") as Announcement["audience"] | null;
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
       const conditions = ["dealer_id = $1"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [dealerId];
 
       if (audience && ["all", "sales", "service", "management"].includes(audience)) {
         conditions.push(`(audience = $2 OR audience = 'all')`);
@@ -141,6 +141,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
   const { user } = authResult;
 
   let body: {
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest) {
       await query(
         `INSERT INTO announcements (id, dealer_id, title, body, author, audience, pinned, created_at, read_count)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,0)`,
-        [newId, DEALER_ID, body.title, body.body, user.name ?? user.email, body.audience, pinned, now],
+        [newId, dealerId, body.title, body.body, user.name ?? user.email, body.audience, pinned, now],
       );
 
       void auditLog(

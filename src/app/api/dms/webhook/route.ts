@@ -8,10 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { query } from "@/lib/db";
 import { cacheGet, cacheSet } from "@/lib/cache";
 import { processFeed } from "@/lib/dms/feed-processor";
+import { verifyWebhookSignature } from "@/lib/webhook-verify";
 import type { DMSProvider, DMSVehicleRecord } from "@/lib/dms/types";
 
 // ---------------------------------------------------------------------------
@@ -20,31 +20,6 @@ import type { DMSProvider, DMSVehicleRecord } from "@/lib/dms/types";
 
 const RATE_LIMIT_WINDOW_SECONDS = 3600; // 1 hour
 const RATE_LIMIT_MAX_REQUESTS = 100;
-
-// ---------------------------------------------------------------------------
-// HMAC verification
-// ---------------------------------------------------------------------------
-
-function verifyHmacSignature(
-  payload: string,
-  signature: string,
-  secret: string,
-): boolean {
-  const expected = crypto
-    .createHmac("sha256", secret)
-    .update(payload, "utf8")
-    .digest("hex");
-
-  // Constant-time comparison to prevent timing attacks
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(signature, "hex"),
-      Buffer.from(expected, "hex"),
-    );
-  } catch {
-    return false;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Rate limiting
@@ -132,8 +107,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // Verify HMAC signature
-  if (!verifyHmacSignature(rawBody, signature, webhookSecret)) {
+  // Verify HMAC signature using shared verification module
+  if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {
     return NextResponse.json(
       { error: "Invalid webhook signature" },
       { status: 401 },

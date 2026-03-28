@@ -1058,3 +1058,388 @@ describe("AVAIL-006: leads routes use UUID fallback for dealer_id", () => {
     expect(src).toMatch(/00000000-0000-4000-a000-000000000001/);
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* TENANT-001: getDealerId helper exists and reads from authResult            */
+/* -------------------------------------------------------------------------- */
+
+describe("TENANT-001: getDealerId helper exists and reads from authResult", () => {
+  it("get-dealer-id.ts exports getDealerId that accepts authResult", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../get-dealer-id.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("export function getDealerId");
+    expect(src).toContain("authResult");
+    expect(src).toContain("dealer_id");
+  });
+
+  it("getDealerId distinguishes shadow mode from production", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../get-dealer-id.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("DATABASE_URL");
+    expect(src).toContain("demo-dealer");
+    expect(src).toContain("00000000-0000-4000-a000-000000000001");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* TENANT-002: No admin route hardcodes dealer_id as plain "default" string   */
+/* -------------------------------------------------------------------------- */
+
+describe("TENANT-002: no admin route hardcodes dealer_id as 'default'", () => {
+  it("no route file uses const DEALER_ID = process.env.DEALER_ID ?? 'default'", () => {
+    const { readFileSync, readdirSync, statSync } = require("fs");
+    const { join } = require("path");
+
+    function walk(dir: string): string[] {
+      const out: string[] = [];
+      for (const name of readdirSync(dir)) {
+        const p = join(dir, name);
+        if (statSync(p).isDirectory()) out.push(...walk(p));
+        else if (name === "route.ts") out.push(p);
+      }
+      return out;
+    }
+
+    const adminDir = join(__dirname, "../../app/api/admin");
+    const files = walk(adminDir);
+    const violators: string[] = [];
+
+    for (const f of files) {
+      const src = readFileSync(f, "utf-8");
+      if (/const\s+DEALER_ID\s*=\s*process\.env\.DEALER_ID\s*\?\?\s*["']default["']/.test(src)) {
+        violators.push(f.replace(adminDir + "/", ""));
+      }
+    }
+
+    expect(violators).toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* TENANT-003: pagination.ts caps page_size at 100                            */
+/* -------------------------------------------------------------------------- */
+
+describe("TENANT-003: pagination.ts caps page_size at 100", () => {
+  it("pagination.ts exists and exports parsePagination", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../pagination.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("export function parsePagination");
+  });
+
+  it("pagination.ts caps page_size with Math.min(100, ...)", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../pagination.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/Math\.min\(100/);
+  });
+
+  it("pagination.ts floors page at 1 with Math.max(1, ...)", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../pagination.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/Math\.max\(1/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* CCPA-001: privacy.ts exports deleteCustomerData and exportCustomerData     */
+/* -------------------------------------------------------------------------- */
+
+describe("CCPA-001: privacy.ts exports data deletion and export functions", () => {
+  it("privacy.ts exists and exports deleteCustomerData", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../privacy.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export async function deleteCustomerData/);
+  });
+
+  it("privacy.ts exports exportCustomerData", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../privacy.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export async function exportCustomerData/);
+  });
+
+  it("privacy.ts exports DataDeletionRequest interface", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../privacy.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export interface DataDeletionRequest/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* CCPA-002: delete-data route exists with audit logging                      */
+/* -------------------------------------------------------------------------- */
+
+describe("CCPA-002: delete-data route exists with audit logging", () => {
+  it("delete-data route imports deleteCustomerData from privacy.ts", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/privacy/delete-data/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/import.*deleteCustomerData.*from.*privacy/);
+  });
+
+  it("delete-data route requires authentication", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/privacy/delete-data/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/requireAuth/);
+  });
+
+  it("delete-data route tracks compliance event", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/privacy/delete-data/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/trackCompliance/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* LOCK-001: optimistic-lock.ts exists with ConcurrentModificationError      */
+/* -------------------------------------------------------------------------- */
+
+describe("LOCK-001: optimistic-lock.ts exists with ConcurrentModificationError", () => {
+  it("optimistic-lock.ts exports ConcurrentModificationError class", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../optimistic-lock.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export class ConcurrentModificationError extends Error/);
+  });
+
+  it("optimistic-lock.ts exports withOptimisticLock function", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../optimistic-lock.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export function withOptimisticLock/);
+  });
+
+  it("deals route imports ConcurrentModificationError", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/deals/[dealId]/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/import.*ConcurrentModificationError.*from.*optimistic-lock/);
+  });
+
+  it("deals PATCH route checks updated_at for optimistic locking", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/deals/[dealId]/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/expectedUpdatedAt/);
+    expect(src).toMatch(/409/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* SCHED-001: comms-scheduler.ts exists                                       */
+/* -------------------------------------------------------------------------- */
+
+describe("SCHED-001: comms-scheduler.ts exists with processDueSequenceSteps", () => {
+  it("comms-scheduler.ts exports processDueSequenceSteps", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../comms-scheduler.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/export async function processDueSequenceSteps/);
+  });
+
+  it("comms-scheduler.ts has shadow mode fallback", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../comms-scheduler.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/DATABASE_URL/);
+    expect(src).toMatch(/Shadow mode/);
+  });
+
+  it("cron route exists and validates CRON_SECRET", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/cron/process-sequences/route.ts"),
+      "utf-8",
+    );
+    expect(src).toMatch(/CRON_SECRET/);
+    expect(src).toMatch(/processDueSequenceSteps/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* WEBHOOK-001: Webhook signature verification module exists                  */
+/* -------------------------------------------------------------------------- */
+
+describe("WEBHOOK-001: webhook-verify.ts exists with timingSafeEqual", () => {
+  it("webhook-verify.ts exists and uses timingSafeEqual", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../webhook-verify.ts"), "utf-8");
+    expect(src).toContain("timingSafeEqual");
+    expect(src).toContain("export function verifyWebhookSignature");
+    expect(src).toContain("createHmac");
+  });
+
+  it("DMS webhook route uses the shared verifyWebhookSignature module", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/dms/webhook/route.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("verifyWebhookSignature");
+    expect(src).toContain("@/lib/webhook-verify");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* DELETE-001: Soft-delete helper module exists                               */
+/* -------------------------------------------------------------------------- */
+
+describe("DELETE-001: soft-delete.ts exists", () => {
+  it("soft-delete.ts exports softDeleteQuery and NOT_DELETED", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../soft-delete.ts"), "utf-8");
+    expect(src).toContain("export function softDeleteQuery");
+    expect(src).toContain("export const NOT_DELETED");
+    expect(src).toContain("deleted_at IS NULL");
+    expect(src).toContain("deleted_at = NOW()");
+  });
+
+  it("soft-delete.ts validates table names against allow-list", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../soft-delete.ts"), "utf-8");
+    expect(src).toContain("ALLOWED_TABLES");
+    expect(src).toContain("is not in the allow-list");
+  });
+
+  it("migration 032 adds deleted_at to key tables", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../db/migrations/032_soft_delete.sql"),
+      "utf-8",
+    );
+    expect(src).toContain("ALTER TABLE leads ADD COLUMN IF NOT EXISTS deleted_at");
+    expect(src).toContain("ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS deleted_at");
+    expect(src).toContain("ALTER TABLE documents ADD COLUMN IF NOT EXISTS deleted_at");
+    expect(src).toContain("BEGIN;");
+    expect(src).toContain("COMMIT;");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* IDEMP-001: Idempotency module exists with TTL cleanup                      */
+/* -------------------------------------------------------------------------- */
+
+describe("IDEMP-001: idempotency.ts exists with TTL cleanup", () => {
+  it("idempotency.ts exports checkIdempotency, recordIdempotency, idempotencyKey", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../idempotency.ts"), "utf-8");
+    expect(src).toContain("export function checkIdempotency");
+    expect(src).toContain("export function recordIdempotency");
+    expect(src).toContain("export function idempotencyKey");
+  });
+
+  it("idempotency.ts has TTL cleanup logic", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../idempotency.ts"), "utf-8");
+    expect(src).toContain("TTL");
+    expect(src).toContain("recentRequests.delete");
+    expect(src).toContain("Date.now()");
+  });
+
+  it("idempotency.ts uses SHA-256 for key generation", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../idempotency.ts"), "utf-8");
+    expect(src).toContain("sha256");
+    expect(src).toContain("createHash");
+  });
+
+  it("high-risk POST routes import idempotency module", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+
+    const routes = [
+      "../../app/api/admin/deals/route.ts",
+      "../../app/api/admin/accounting/sales-log/route.ts",
+      "../../app/api/admin/comms/send/route.ts",
+      "../../app/api/leads/route.ts",
+    ];
+
+    for (const route of routes) {
+      const src = readFileSync(join(__dirname, route), "utf-8");
+      expect(src).toContain("checkIdempotency");
+      expect(src).toContain("recordIdempotency");
+      expect(src).toContain("idempotencyKey");
+    }
+  });
+});

@@ -8,8 +8,7 @@ import { query } from "@/lib/db";
 import { scoreDealerCompliance } from "@/lib/compliance-scorer";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { SECURITY_HEADERS } from "@/lib/security-headers";
-
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
@@ -37,6 +36,7 @@ function clientIp(req: NextRequest): string {
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
     return withSecurityHeaders(
@@ -51,7 +51,6 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const dealerId = authResult.user.dealer_id ?? DEALER_ID;
 
   try {
     const { rows } = await query<{
@@ -122,6 +121,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
     return withSecurityHeaders(
@@ -155,7 +155,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const dealerId = authResult.user.dealer_id ?? DEALER_ID;
 
   // Run the scorer
   const result = await scoreDealerCompliance(dealerId);

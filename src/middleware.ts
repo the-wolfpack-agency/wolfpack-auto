@@ -33,8 +33,8 @@ const MARKETING_SITE_URL =
  */
 const OEM_ID = process.env.OEM_ID ?? "";
 
-/** Routes that bypass tenant resolution (admin panel, API health, etc.). */
-const ADMIN_ROUTE_PREFIXES = ["/admin", "/api/admin", "/api/health", "/_next"];
+/** Routes that bypass tenant resolution (admin panel, API health, cron, privacy, etc.). */
+const ADMIN_ROUTE_PREFIXES = ["/admin", "/api/admin", "/api/health", "/api/privacy", "/api/cron", "/_next"];
 
 /** Platform domains — serve the marketing site, not a dealer. */
 const PLATFORM_DOMAINS = new Set([

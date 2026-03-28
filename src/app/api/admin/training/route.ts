@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackServerEvent } from "@/lib/analytics";
+import { getDealerId } from "@/lib/get-dealer-id";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -113,6 +114,7 @@ function computeSummary(certs: Certification[]) {
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealer_id = getDealerId(authResult);
 
   const oemId = request.headers.get("x-oem-id");
 
@@ -120,7 +122,6 @@ export async function GET(request: NextRequest) {
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      const dealer_id = process.env.DEALER_ID ?? "default";
 
       const conditions = ["dealer_id = $1"];
       const params: unknown[] = [dealer_id];
@@ -163,6 +164,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealer_id = getDealerId(authResult);
 
   let body: {
     employee_name?: string;
@@ -207,7 +209,6 @@ export async function POST(request: NextRequest) {
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      const dealer_id = process.env.DEALER_ID ?? "default";
 
       const result = await query<Certification>(
         `INSERT INTO certifications

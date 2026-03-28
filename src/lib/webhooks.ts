@@ -54,7 +54,7 @@ export async function getWebhookConfigs(
     }>(
       `SELECT id, dealer_id, provider, url, api_key, events, active
        FROM webhooks
-       WHERE dealer_id = $1
+       WHERE dealer_id = $1 AND deleted_at IS NULL
        ORDER BY created_at DESC`,
       [dealerId],
     );
@@ -114,10 +114,11 @@ export async function deleteWebhookConfig(
   if (!process.env.DATABASE_URL) return;
 
   const { query } = await import("@/lib/db");
-  await query(`DELETE FROM webhooks WHERE id = $1 AND dealer_id = $2`, [
-    id,
-    dealerId,
-  ]);
+  // Soft delete — preserve for audit trail
+  await query(
+    `UPDATE webhooks SET deleted_at = NOW() WHERE id = $1 AND dealer_id = $2 AND deleted_at IS NULL`,
+    [id, dealerId],
+  );
 }
 
 // ---------------------------------------------------------------------------
