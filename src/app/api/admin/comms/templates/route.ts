@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackComms } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -182,11 +183,15 @@ export async function POST(request: NextRequest) {
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9)`,
         [newId, DEALER_ID, body.name, body.channel, body.category ?? "general", body.subject ?? null, body.body, variables, now],
       );
+      try { trackComms("comms.template_created", DEALER_ID, { channel: body.channel, category: body.category ?? "general" }); } catch {}
+
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/comms/templates] POST DB error:", err);
     }
   }
+
+  try { trackComms("comms.template_created", DEALER_ID, { channel: body.channel, category: body.category ?? "general" }); } catch {}
 
   // Shadow mode
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });

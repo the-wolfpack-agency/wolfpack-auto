@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackService } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -354,11 +355,15 @@ export async function POST(request: NextRequest) {
         ],
       );
 
+      try { trackService("service.ro_created", DEALER_ID, { vehicle_vin: String(body.vin), line_item_count: (body.line_items ?? []).length }); } catch {}
+
       return NextResponse.json({ success: true, id: newId, ro_number: roNum });
     } catch (err) {
       console.error("[api/admin/service/repair-orders] POST DB error:", err);
     }
   }
+
+  try { trackService("service.ro_created", DEALER_ID, { vehicle_vin: String(body.vin), line_item_count: (body.line_items ?? []).length }); } catch {}
 
   // Shadow mode
   return NextResponse.json({ success: true, id: newId, ro_number: roNum, mode: "shadow" });

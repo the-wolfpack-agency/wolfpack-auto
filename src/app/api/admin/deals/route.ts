@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackDeal } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock data                                                           */
@@ -356,6 +357,8 @@ export async function POST(request: NextRequest) {
         ],
       );
 
+      try { trackDeal("deal.created", dealerId, { deal_type: String(body.deal_type || "retail"), selling_price: Number(body.selling_price), vehicle_vin: String(body.vehicle_vin) }); } catch {}
+
       return NextResponse.json({ deal: result.rows[0], created: true }, { status: 201 });
     } catch (err) {
       console.error("[api/admin/deals] DB insert error, falling back to mock:", err);
@@ -401,6 +404,8 @@ export async function POST(request: NextRequest) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
+
+  try { trackDeal("deal.created", dealerId, { deal_type: String(newDeal.deal_type), selling_price: Number(newDeal.selling_price), vehicle_vin: String(newDeal.vehicle_vin) }); } catch {}
 
   return NextResponse.json({ deal: newDeal, created: true }, { status: 201 });
 }

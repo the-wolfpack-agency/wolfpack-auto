@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackDeal } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock — single deal                                                  */
@@ -196,6 +197,13 @@ export async function PATCH(
         return NextResponse.json({ error: "Deal not found" }, { status: 404 });
       }
 
+      try {
+        const status = updates.status as string | undefined;
+        if (status === "presented" || status === "accepted" || status === "funded" || status === "unwound") {
+          trackDeal(`deal.${status}` as "deal.presented" | "deal.accepted" | "deal.funded" | "deal.unwound", dealerId, { deal_id: dealId, gross: Number(updates.total_gross ?? 0) });
+        }
+      } catch {}
+
       return NextResponse.json({ deal: result.rows[0], updated: true });
     } catch (err) {
       console.error(`[api/admin/deals/${dealId}] DB update error:`, err);
@@ -207,6 +215,13 @@ export async function PATCH(
   const existing = mutations.get(dealId) ?? {};
   const merged = { ...existing, ...updates, updated_at: new Date().toISOString() };
   mutations.set(dealId, merged);
+
+  try {
+    const status = updates.status as string | undefined;
+    if (status === "presented" || status === "accepted" || status === "funded" || status === "unwound") {
+      trackDeal(`deal.${status}` as "deal.presented" | "deal.accepted" | "deal.funded" | "deal.unwound", dealerId, { deal_id: dealId, gross: Number(updates.total_gross ?? 0) });
+    }
+  } catch {}
 
   return NextResponse.json({
     deal: { ...MOCK_DEAL, id: dealId, ...merged },

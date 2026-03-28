@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { trackRetail } from "@/lib/analytics-hooks";
 
 /**
  * POST /api/admin/digital-retail/calculator
@@ -36,6 +37,8 @@ export async function POST(request: NextRequest) {
     residual_pct = 55,
     tax_rate = 7.0,
   } = body;
+
+  try { trackRetail("retail.calculator_used", process.env.DEALER_ID ?? "default", { deal_type, vehicle_price }); } catch {}
 
   if (vehicle_price <= 0) {
     return NextResponse.json(

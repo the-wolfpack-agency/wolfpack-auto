@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackService } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -72,11 +73,21 @@ export async function PATCH(
         values,
       );
 
+      try {
+        if (body.status === "completed") trackService("service.appointment_completed", DEALER_ID, { appointment_id: id });
+        if (body.status === "no_show") trackService("service.appointment_no_show", DEALER_ID, { appointment_id: id });
+      } catch {}
+
       return NextResponse.json({ success: true, id });
     } catch (err) {
       console.error("[api/admin/service/appointments/[id]] PATCH DB error:", err);
     }
   }
+
+  try {
+    if (body.status === "completed") trackService("service.appointment_completed", DEALER_ID, { appointment_id: id });
+    if (body.status === "no_show") trackService("service.appointment_no_show", DEALER_ID, { appointment_id: id });
+  } catch {}
 
   // Shadow mode
   return NextResponse.json({ success: true, id, mode: "shadow" });

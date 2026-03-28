@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackDeal } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -211,6 +212,8 @@ export async function POST(
     default:
       result = calculateRetail(body);
   }
+
+  try { trackDeal("deal.payment_calculated", authResult.user.dealer_id, { deal_type: dealType, term: body.term_months ?? 60, apr: body.apr ?? 0 }); } catch {}
 
   return NextResponse.json({ calculation: result });
 }

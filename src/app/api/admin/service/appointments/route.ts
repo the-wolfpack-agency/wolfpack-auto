@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackService } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -283,11 +284,15 @@ export async function POST(request: NextRequest) {
         ],
       );
 
+      try { trackService("service.appointment_created", DEALER_ID, { service_type: String(body.service_type ?? "other"), vehicle_vin: String(body.vin ?? "") }); } catch {}
+
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/service/appointments] POST DB error:", err);
     }
   }
+
+  try { trackService("service.appointment_created", DEALER_ID, { service_type: String(body.service_type ?? "other"), vehicle_vin: String(body.vin ?? "") }); } catch {}
 
   // Shadow mode
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });

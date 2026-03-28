@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackAccounting } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -278,11 +279,15 @@ export async function POST(request: NextRequest) {
          body.front_gross ?? 0, body.back_gross ?? 0, body.fi_gross ?? 0, body.total_gross ?? 0,
          body.salesperson, body.fi_manager, body.deal_type ?? "retail", body.trade_in, body.trade_allowance],
       );
+      try { trackAccounting("accounting.sale_logged", DEALER_ID, { front_gross: Number(body.front_gross ?? 0), back_gross: Number(body.back_gross ?? 0), fi_income: Number(body.fi_gross ?? 0), salesperson: String(body.salesperson ?? "") }); } catch {}
+
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/accounting/sales-log] POST DB error:", err);
     }
   }
+
+  try { trackAccounting("accounting.sale_logged", DEALER_ID, { front_gross: Number(body.front_gross ?? 0), back_gross: Number(body.back_gross ?? 0), fi_income: Number(body.fi_gross ?? 0), salesperson: String(body.salesperson ?? "") }); } catch {}
 
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackAccounting } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -173,11 +174,14 @@ export async function POST(request: NextRequest) {
           `UPDATE commissions SET paid = true, paid_date = $1 WHERE dealer_id = $2 AND id IN (${placeholders})`,
           [new Date().toISOString().split("T")[0], DEALER_ID, ...body.ids],
         );
+        try { for (const cid of body.ids!) { trackAccounting("accounting.commission_paid", DEALER_ID, { commission_id: cid, employee: "" }); } } catch {}
+
         return NextResponse.json({ success: true, marked_paid: body.ids.length });
       } catch (err) {
         console.error("[api/admin/accounting/commissions] mark_paid error:", err);
       }
     }
+    try { for (const cid of body.ids!) { trackAccounting("accounting.commission_paid", DEALER_ID, { commission_id: cid, employee: "" }); } } catch {}
     return NextResponse.json({ success: true, marked_paid: body.ids.length, mode: "shadow" });
   }
 
@@ -202,11 +206,15 @@ export async function POST(request: NextRequest) {
          body.deal_description ?? "", body.gross_basis ?? 0, body.rate_percent ?? 25,
          body.amount, body.pay_period ?? ""],
       );
+      try { trackAccounting("accounting.commission_paid", DEALER_ID, { employee: String(body.employee_name), amount: Number(body.amount) }); } catch {}
+
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/accounting/commissions] POST error:", err);
     }
   }
+
+  try { trackAccounting("accounting.commission_paid", DEALER_ID, { employee: String(body.employee_name), amount: Number(body.amount) }); } catch {}
 
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }

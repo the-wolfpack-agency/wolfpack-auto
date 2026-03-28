@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackReview } from "@/lib/analytics-hooks";
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
 
@@ -44,11 +45,15 @@ export async function POST(
         return NextResponse.json({ error: "Review not found" }, { status: 404 });
       }
 
+      try { trackReview("review.responded", DEALER_ID, { review_id: id, rating: 0 }); } catch {}
+
       return NextResponse.json({ success: true, review: result.rows[0] });
     } catch (err) {
       console.error("[api/admin/reviews/respond] DB error:", err);
     }
   }
+
+  try { trackReview("review.responded", DEALER_ID, { review_id: id, rating: 0 }); } catch {}
 
   // Shadow mode
   return NextResponse.json({
