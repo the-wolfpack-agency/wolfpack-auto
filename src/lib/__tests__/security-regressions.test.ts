@@ -1443,3 +1443,96 @@ describe("IDEMP-001: idempotency.ts exists with TTL cleanup", () => {
     }
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* ENH-001: Duplicate lead detection exists in leads route                    */
+/* -------------------------------------------------------------------------- */
+
+describe("ENH-001: duplicate lead detection in /api/leads", () => {
+  it("leads route checks for existing lead before INSERT", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/leads/route.ts"),
+      "utf-8",
+    );
+
+    // Must query for existing leads with same email + dealer in 30-day window
+    expect(src).toContain("INTERVAL '30 days'");
+    expect(src).toContain("deleted_at IS NULL");
+
+    // Must return duplicate flag instead of creating a new record
+    expect(src).toContain("duplicate: true");
+
+    // Must fire analytics event
+    expect(src).toContain("lead.duplicate_detected");
+    expect(src).toContain("trackLead");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* ENH-002: API version header set in middleware                              */
+/* -------------------------------------------------------------------------- */
+
+describe("ENH-002: API version header in middleware", () => {
+  it("middleware imports and sets API_VERSION header", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../middleware.ts"),
+      "utf-8",
+    );
+
+    // Must import from api-version module
+    expect(src).toMatch(/import.*API_VERSION.*from.*api-version/);
+
+    // Must set the header in the applyHeaders function
+    expect(src).toContain("API_VERSION_HEADER");
+    expect(src).toContain("API_VERSION");
+  });
+
+  it("api-version module exports a valid semver version", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../api-version.ts"),
+      "utf-8",
+    );
+
+    // Must export API_VERSION as a semver string
+    expect(src).toMatch(/export const API_VERSION\s*=\s*"\d+\.\d+\.\d+"/);
+    expect(src).toContain("X-API-Version");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* ENH-003: useApi hook exported from use-api.ts                             */
+/* -------------------------------------------------------------------------- */
+
+describe("ENH-003: useApi hook exists and is properly structured", () => {
+  it("use-api.ts exports useApi function", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../use-api.ts"),
+      "utf-8",
+    );
+
+    // Must be a client component
+    expect(src).toMatch(/^["']use client["']/);
+
+    // Must export useApi
+    expect(src).toMatch(/export function useApi/);
+
+    // Must handle 401 gracefully
+    expect(src).toContain("401");
+
+    // Must support auto-refresh and focus revalidation
+    expect(src).toContain("refreshInterval");
+    expect(src).toContain("revalidateOnFocus");
+  });
+});

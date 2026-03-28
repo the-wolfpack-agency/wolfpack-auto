@@ -8,6 +8,7 @@ import {
   generateCSRFToken,
   validateCSRFToken,
 } from "@/lib/csrf";
+import { API_VERSION, API_VERSION_HEADER } from "@/lib/api-version";
 
 /**
  * Next.js Edge Middleware — runs on every request.
@@ -225,6 +226,10 @@ function applyHeaders(
   // Strip server identification
   response.headers.delete("X-Powered-By");
   response.headers.delete("Server");
+
+  // API versioning — all /api/ responses include the platform API version
+  // so clients can detect breaking changes and show upgrade prompts.
+  response.headers.set(API_VERSION_HEADER, API_VERSION);
 
   // Graceful degradation: set X-Request-Timeout header
   response.headers.set("X-Request-Timeout", "30000");

@@ -125,6 +125,12 @@ export type KnowledgeEvent =
   | "knowledge.document_ingested"
   | "knowledge.queried";
 
+export type LeadEvent =
+  | "lead.created"
+  | "lead.duplicate_detected"
+  | "lead.scored"
+  | "lead.assigned";
+
 export type SecurityEvent =
   | "security.scan_completed"
   | "security.finding_resolved"
@@ -147,6 +153,7 @@ export type PlatformEvent =
   | RetailEvent
   | CustomerEvent
   | LenderEvent
+  | LeadEvent
   | CreditEvent
   | ComplianceEvent
   | DocumentEvent
@@ -261,6 +268,17 @@ export function trackCustomer(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "customer", ...meta });
+}
+
+/**
+ * Track a lead lifecycle event (creation, dedup, scoring, assignment).
+ */
+export function trackLead(
+  event: LeadEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "leads", ...meta });
 }
 
 /**

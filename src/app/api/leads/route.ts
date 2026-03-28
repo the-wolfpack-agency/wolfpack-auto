@@ -4,6 +4,7 @@ import { encryptPII } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit-log";
 import { scoreLeadIntent, extractEmailDomain } from "@/lib/lead-scorer";
 import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
+import { trackLead } from "@/lib/analytics-hooks";
 
 /**
  * Lead submission schema — strict validation.
@@ -116,6 +117,22 @@ export async function POST(request: NextRequest) {
           retry_after: rateCheck.resetAt,
         },
         { status: 429 },
+      );
+    }
+
+    // Check for duplicate (same email, same dealer, last 30 days)
+    const existingLead = await query<{ id: string }>(
+      `SELECT id FROM leads WHERE email = $1 AND dealer_id = $2 AND created_at > NOW() - INTERVAL '30 days' AND deleted_at IS NULL LIMIT 1`,
+      [lead.email.toLowerCase(), lead.dealer_id],
+    );
+    if (existingLead.rows.length > 0) {
+      trackLead("lead.duplicate_detected", lead.dealer_id, {
+        existing_lead_id: existingLead.rows[0].id,
+        source: lead.source,
+      });
+      return NextResponse.json(
+        { id: existingLead.rows[0].id, duplicate: true, message: "Lead already exists" },
+        { status: 200 },
       );
     }
 
