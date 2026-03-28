@@ -293,8 +293,13 @@ The platform delivers complete DOS feature coverage across all major dealer oper
 
 | Feature | Implementation |
 |---------|---------------|
+| Zero-token security scanner | 10-category OWASP analysis at `/admin/security` |
 | TOTP MFA | `otplib` — setup/enable/verify/disable |
 | Login rate limiting | Redis-backed (in-memory fallback), 5 attempts / 15 min |
+| API rate limiting | 8 high-risk routes: deals, appointments, ROs, comms, credit, docs, compliance, lenders |
+| Request body guard | 1MB limit via `parseBody()`, returns 413 on overflow |
+| NEXTAUTH_SECRET | Throws in production if unset (no hardcoded fallback) |
+| 401 graceful handling | All admin pages show empty state, not red error banners |
 | Session idle timeout | 30-minute inactivity invalidation |
 | MFA backup codes | 8 codes, hashed with bcrypt, consumed on use |
 | PII encryption | AES-256 for MFA secrets at rest |
@@ -409,18 +414,19 @@ The platform delivers complete DOS feature coverage across all major dealer oper
 | Metric | Value |
 |--------|-------|
 | Total project duration | 4 days (March 25–28) |
-| Total commits | 85+ |
-| Admin pages | 50+ |
-| API routes | 70+ |
+| Total commits | 90+ |
+| Admin pages | 55+ |
+| API routes | 75+ |
 | Database migrations | 30 |
 | Features shipped | 60+ distinct features |
 | DOS modules built (Day 4) | 14 modules in one session |
 | Bugs fixed | 15+ (including 8 critical during live demo) |
 | Test files written | 41 |
-| Tests written | 800+ |
-| Lines of code (total) | ~75,000+ |
-| Lines added Day 4 alone | ~45,000 |
-| Security CVEs addressed | 5 (CVE-001 through CVE-005) |
+| Tests written | 830+ |
+| Lines of code (total) | ~80,000+ |
+| Lines added Day 4 alone | ~50,000 |
+| Security CVEs addressed | 5 (CVE-001 through CVE-005) + 5 OWASP gaps |
+| Security scanner patterns | 298 across 5 languages |
 | Regulatory compliance rules | 20+ (TILA, FCRA, ECOA, FTC, GLBA) |
 | Parallel agent builds used | 10+ simultaneous agents |
 | Fastest parallel build (11 features) | ~6 minutes wall-clock |
