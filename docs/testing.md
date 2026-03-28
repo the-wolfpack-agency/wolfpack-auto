@@ -262,3 +262,43 @@ For each new API route, create a corresponding test in `tests/shadow-hardening/a
 |------|-------|---------|
 | `security-hardening.spec.ts` | 20 | Scanner API, security page, rate limiting, auth guard |
 | `security-regressions.test.ts` (SEC-001 to SEC-005) | 12 | NEXTAUTH_SECRET hardening, rate limiting on 8 routes, request guard, scanner module, SecurityEvent analytics |
+
+---
+
+## Updated Test Inventory (March 28, 2026)
+
+| Category | Files | Tests |
+|----------|-------|-------|
+| Unit + security regression | 2 | 108 |
+| Integration (authenticated, DB-verified) | 6 | 66 |
+| Availability (circuit breaker, health) | 1 | 11 |
+| Pentest (IDOR, auth, injection, abuse) | 7 | 126 |
+| Submission flows (public + admin) | 4 | 110 |
+| Analytics pipeline (capture, integrity, UI) | 5 | 125 |
+| API contracts | 28 | 398 |
+| User flows (browser interaction) | 10 | 249 |
+| UI element verification | 2 | 75+ |
+| Platform smoke | 1 | 81 |
+| **Total** | **66+** | **1,200+** |
+
+### Integration Tests (`tests/e2e/integration/`)
+Authenticate as demo user, perform real actions, verify data in DB:
+- `deal-lifecycle.spec.ts`: create → calculate → status change → verify in DB + UI
+- `lead-to-customer.spec.ts`: public submit → admin list → verify in DB
+- `service-flow.spec.ts`: appointment → RO → verify counts
+- `comms-flow.spec.ts`: template → send → log → verify
+- `review-flow.spec.ts`: add review → respond → verify rating
+- `analytics-roundtrip.spec.ts`: baseline → 3 actions → verify event count increased
+
+### Pentest Suite (`tests/e2e/pentest/`)
+- `idor-authorization.spec.ts`: cross-tenant data access, ID enumeration
+- `auth-bypass.spec.ts`: JWT manipulation, demo credential guard
+- `business-logic.spec.ts`: negative prices, extreme values
+- `injection-xss.spec.ts`: XSS, SQL injection, command injection
+- `api-abuse.spec.ts`: oversized payloads, verb tampering
+- `data-exposure.spec.ts`: SSN/CC leak, stack traces, source maps
+- `file-upload.spec.ts`: SVG XSS, path traversal, MIME bypass
+
+### Nightly Scripts
+- `npm run nightly:safety-check` — mutation testing (6 mutations, ~50s)
+- `npm run nightly:pentest` — full pentest suite (~2min)

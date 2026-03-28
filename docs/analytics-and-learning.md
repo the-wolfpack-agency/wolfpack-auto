@@ -285,3 +285,35 @@ More User Actions (loop repeats)
 | `security.finding_resolved` | Finding marked resolved | Resolution velocity tracking |
 
 **Tracking helper:** `trackSecurity(event, dealerId, metadata)`
+
+---
+
+## Analytics Persistence (March 28 fix)
+
+Events are now written to the PostgreSQL `analytics_events` table as PRIMARY storage. Previously, events were only forwarded to Plausible (external analytics) which was not configured, causing all events to be silently dropped.
+
+### How it works
+1. `track()` in `analytics-hooks.ts` calls `persistEvent()` first (DB write)
+2. Then calls `trackServerEvent()` second (Plausible, optional)
+3. Both are fire-and-forget — neither can break the request
+4. `persistEvent()` checks `DATABASE_URL` — skips in shadow mode
+
+### Analytics Health Endpoint
+`GET /api/admin/analytics/health` returns:
+- `db_connected`: boolean
+- `events_last_hour/day/week`: counts
+- `modules_reporting`: which modules have fired events
+- `modules_silent`: which modules haven't (potential pipeline break)
+- `healthy`: true if events received in last 24 hours
+
+### System Events
+| Event | Trigger |
+|-------|---------|
+| `system.circuit_breaker_opened` | DB circuit breaker opens |
+| `system.circuit_breaker_closed` | DB circuit breaker recovers |
+| `system.health_check` | Health endpoint queried |
+| `system.health_degraded` | System enters degraded state |
+| `system.health_critical` | System enters critical state |
+| `system.auto_rollback` | Auto-rollback triggers |
+
+**Tracking helper:** `trackSystem(event, dealerId, metadata)`

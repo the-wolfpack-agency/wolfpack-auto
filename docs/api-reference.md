@@ -1040,3 +1040,12 @@ A/B test results.
 |-------|--------|------|--------|-------------|
 | `/api/admin/security/scan` | GET | Yes | Yes | Returns last scan results |
 | `/api/admin/security/scan` | POST | Yes | Yes | Runs the 10-category OWASP scanner |
+
+---
+
+## System Health
+
+| Route | Method | Auth | Shadow | Description |
+|-------|--------|------|--------|-------------|
+| `/api/admin/system/health` | GET | Yes | Yes | Comprehensive health: DB, Redis, external services, analytics, uptime. Returns 503 on critical. |
+| `/api/admin/analytics/health` | GET | Yes | Yes | Analytics pipeline: event counts, module coverage, db_connected, healthy status |

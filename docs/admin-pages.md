@@ -801,3 +801,18 @@ Every admin page in the Wolfpack Auto platform, with its path, purpose, key UI e
 - Filter by category and severity
 - "Run Scan" button to trigger fresh analysis
 **Connected API routes:** `GET/POST /api/admin/security/scan`
+
+---
+
+## System Health Dashboard
+
+**Path:** `/admin/system`
+**What it does:** Real-time monitoring of all platform dependencies.
+**Key UI elements:**
+- Status cards for: Database, Redis, Resend, Twilio, Sentry, Plausible, Qdrant
+- Circuit breaker state badge (green/yellow/red)
+- Analytics pipeline status (events flowing, learning active)
+- Deployment info (commit, environment)
+- Process uptime
+- Auto-refresh every 15 seconds
+**Connected API routes:** `GET /api/admin/system/health`

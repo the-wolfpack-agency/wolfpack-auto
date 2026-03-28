@@ -837,3 +837,31 @@ The analytics brain (`analytics-engine.ts`) implements triple-write: events go t
 
 ### Learning System Connection
 Rate limit events reveal which endpoints are under attack pressure. The learning system tracks rate limit frequency by route, time of day, and dealer to identify patterns and adjust limits automatically.
+
+---
+
+## Module: System Health
+
+### Pages
+| Page | Path | What the user sees | Key elements |
+|------|------|--------------------|--------------|
+| System Health | `/admin/system` | Real-time dependency status dashboard | Status cards for DB, Redis, external services, analytics pipeline; circuit breaker state badge; auto-refresh every 15s |
+
+### API Routes
+| Route | Method | What it does | Shadow mode? |
+|-------|--------|-------------|--------------|
+| `/api/admin/system/health` | GET | Comprehensive health check — DB, Redis, external services, analytics, uptime | Yes |
+| `/api/admin/analytics/health` | GET | Analytics pipeline health — event counts, module coverage, db_connected | Yes |
+
+### Analytics Events
+| Event | When it fires | What it feeds |
+|-------|--------------|--------------|
+| `system.circuit_breaker_opened` | DB circuit breaker opens (3 failures) | Outage tracking, incident response |
+| `system.circuit_breaker_closed` | DB circuit breaker recovers | Recovery time metrics |
+| `system.health_check` | Health endpoint is queried | Monitoring frequency |
+| `system.health_degraded` | System enters degraded state | Alert triggering |
+| `system.health_critical` | System enters critical state | Incident escalation |
+| `system.auto_rollback` | Auto-rollback script triggers | Deploy failure tracking |
+
+### Learning System Connection
+Circuit breaker events reveal database reliability patterns. The learning system tracks outage frequency, duration, and recovery time to predict infrastructure issues before they affect users.

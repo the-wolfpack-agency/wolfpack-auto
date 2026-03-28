@@ -225,3 +225,38 @@ bash scripts/rollback_migration.sh <number>  # Rollback specific migration
 - [Platform Map](./platform-map.md) -- every page and route
 - [API Reference](./api-reference.md) -- all API routes
 - [Getting Started](./getting-started.md) -- setup instructions
+
+---
+
+## High Availability Infrastructure
+
+### Circuit Breaker (`src/lib/circuit-breaker.ts`)
+Wraps all database queries with automatic failover:
+- **CLOSED** (normal): queries go to DB
+- **OPEN** (after 3 consecutive failures): queries return empty/shadow data for 30 seconds
+- **HALF_OPEN** (after cooldown): one test query sent — success closes the breaker, failure reopens it
+- State transitions logged and tracked via `system.circuit_breaker_opened/closed` analytics events
+- `safeQuery()` in `src/lib/db.ts` provides the wrapped interface
+
+### Safe-Fetch (`src/lib/safe-fetch.ts`)
+Wraps all external HTTP calls:
+- 10-second timeout via AbortController (configurable)
+- 1 automatic retry on network errors (not on 4xx/5xx)
+- `TimeoutError` and `NetworkError` classes for typed error handling
+
+### Request Body Guard (`src/lib/request-guard.ts`)
+- `parseBody<T>(request, maxBytes)` enforces 1MB default limit
+- Returns 413 Payload Too Large on oversized requests
+- Prevents memory exhaustion from malicious large payloads
+
+### Analytics Persistence
+Events are written to the PostgreSQL `analytics_events` table as PRIMARY storage:
+- `persistEvent()` in `analytics-hooks.ts` writes every event to DB
+- Plausible (external) is SECONDARY — works when configured, not required
+- `/api/admin/analytics/health` monitors the pipeline: event counts, module coverage, healthy/degraded status
+
+### Auto-Rollback (`scripts/auto-rollback.sh`)
+- Hits `/api/admin/system/health` every 5 minutes (cron)
+- If status is critical (503), triggers `vercel rollback --yes`
+- Logs all rollback actions
+- Tracks via `system.auto_rollback` analytics event
