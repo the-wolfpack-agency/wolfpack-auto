@@ -300,25 +300,25 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                     key={v.id}
                     className="transition-colors hover:bg-surface-muted/50"
                   >
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td className="max-w-0 px-4 py-3 sm:max-w-none sm:whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         {v.photo_url ? (
                           <img
                             src={v.photo_url}
                             alt={`${v.year} ${v.make} ${v.model}`}
-                            className="h-10 w-14 rounded object-cover"
+                            className="h-10 w-14 shrink-0 rounded object-cover"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="flex h-10 w-14 items-center justify-center rounded bg-surface-subtle text-xs text-gray-400">
+                          <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded bg-surface-subtle text-xs text-gray-400">
                             No img
                           </div>
                         )}
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-900">
                             {v.year} {v.make} {v.model}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="truncate text-xs text-gray-500">
                             {v.trim} &middot; {v.exterior_color}
                           </p>
                         </div>
@@ -327,7 +327,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                     <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-sm text-gray-700 sm:table-cell">
                       {v.vin}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold text-gray-900">
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
                       ${v.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
