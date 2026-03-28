@@ -302,3 +302,13 @@ Authenticate as demo user, perform real actions, verify data in DB:
 ### Nightly Scripts
 - `npm run nightly:safety-check` — mutation testing (6 mutations, ~50s)
 - `npm run nightly:pentest` — full pentest suite (~2min)
+
+### Enhancement Tests (`tests/e2e/enhancements.spec.ts`)
+| Test | Count | Coverage |
+|------|-------|---------|
+| Duplicate lead detection | 4 | Same email dedup, cross-dealer, 30-day window |
+| API versioning | 5 | X-API-Version header on all responses |
+| useApi hook | 3 | Module exports, fetch pattern |
+| Total | 19 | |
+
+### Final Test Count: ~2,400 tests across 161+ files

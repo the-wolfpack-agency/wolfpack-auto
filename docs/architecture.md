@@ -260,3 +260,16 @@ Events are written to the PostgreSQL `analytics_events` table as PRIMARY storage
 - If status is critical (503), triggers `vercel rollback --yes`
 - Logs all rollback actions
 - Tracks via `system.auto_rollback` analytics event
+
+### Duplicate Lead Detection
+Public lead submission (`POST /api/leads`) checks for existing leads with the same email + dealer within 30 days. Returns the existing lead ID with `duplicate: true` instead of creating a duplicate record. Tracked via `lead.duplicate_detected` analytics event.
+
+### API Versioning
+All API responses include `X-API-Version: 1.0.0` header set in middleware. No route changes needed — the header allows clients to detect when the API version changes for backward compatibility.
+
+### Client-Side Data Fetching (`src/lib/use-api.ts`)
+Lightweight `useApi<T>()` hook with:
+- Auto-refresh via configurable interval
+- Revalidation on window focus
+- `mutate()` for manual cache invalidation after mutations
+- Graceful 401 handling (returns null, no error)

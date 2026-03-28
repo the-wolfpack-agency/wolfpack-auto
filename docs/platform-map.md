@@ -865,3 +865,24 @@ Rate limit events reveal which endpoints are under attack pressure. The learning
 
 ### Learning System Connection
 Circuit breaker events reveal database reliability patterns. The learning system tracks outage frequency, duration, and recovery time to predict infrastructure issues before they affect users.
+
+---
+
+## Module: Client Onboarding
+
+### Documentation
+| Document | Path | Audience |
+|----------|------|----------|
+| Client Onboarding Guide | `docs/client-onboarding.md` | Internal team + new clients |
+| Getting Started (Developer) | `docs/getting-started.md` | Engineers |
+| White Paper | `docs/wolfpack-auto-whitepaper.md` | Investors + enterprise clients |
+| Platform Map | `docs/platform-map.md` | Internal team |
+
+### Onboarding Flow
+1. Provision database + set env vars
+2. Configure branding via admin portal
+3. Import inventory (CSV/DMS/manual)
+4. Create admin users with MFA
+5. Configure integrations (email, SMS, lenders)
+6. Training session
+7. DNS + go live

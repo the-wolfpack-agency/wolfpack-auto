@@ -156,3 +156,13 @@ The automotive dealer technology market is ripe for disruption. The incumbents a
 ---
 
 *For more information, contact the Wolfpack Auto team.*
+
+### Client Onboarding
+
+A new dealer can be fully onboarded in under 4 hours:
+- 15 minutes to provision infrastructure
+- 15-60 minutes to import inventory
+- 30-60 minutes for training
+- Go-live same day
+
+The platform requires no custom development per client. Configuration is done entirely through the admin portal and environment variables. Every dealer gets the same software with the same learning engine, but their data, branding, and settings are completely isolated.

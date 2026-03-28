@@ -47,3 +47,7 @@ When `DEMO_MODE=true` is set, the admin panel is accessible without authenticati
 ## Deploy
 
 The platform is designed for Vercel deployment. See [Architecture](./architecture.md) for the full deploy pipeline and [Getting Started](./getting-started.md) for environment variable setup.
+
+## Client Resources
+- [Client Onboarding Guide](client-onboarding.md) — Everything needed to onboard a new dealer
+- [White Paper](wolfpack-auto-whitepaper.md) — Platform positioning for investors and enterprise clients
