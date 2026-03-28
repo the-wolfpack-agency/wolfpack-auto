@@ -111,6 +111,11 @@ export default function DocumentsPage() {
   // Signing
   const [signingId, setSigningId] = useState<string | null>(null);
 
+  // Analysis
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<Record<string, { score: number; passed: boolean; issues: number }>>({});
+  const [analyzingAll, setAnalyzingAll] = useState(false);
+
   async function loadDocuments() {
     try {
       const params = new URLSearchParams();
@@ -163,6 +168,45 @@ export default function DocumentsPage() {
       await fetch(`/api/admin/documents/${docId}`, { method: "DELETE" });
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
     } catch {}
+  }
+
+  async function handleAnalyze(doc: Document) {
+    setAnalyzingId(doc.id);
+    try {
+      const res = await fetch("/api/admin/documents/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          document_id: doc.id,
+          doc_type: doc.doc_type,
+          metadata: {
+            name: doc.name,
+            signed: doc.signed,
+            has_signatures: doc.signed,
+            has_vin: !!doc.vehicle_vin,
+            vehicle_vin: doc.vehicle_vin,
+            deal_id: doc.deal_id,
+          },
+        }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setAnalysisResults((prev) => ({
+          ...prev,
+          [doc.id]: { score: result.score, passed: result.passed, issues: result.issues?.length ?? 0 },
+        }));
+      }
+    } catch {} finally {
+      setAnalyzingId(null);
+    }
+  }
+
+  async function handleAnalyzeAll() {
+    setAnalyzingAll(true);
+    for (const doc of documents) {
+      await handleAnalyze(doc);
+    }
+    setAnalyzingAll(false);
   }
 
   async function handleUpload(e: React.FormEvent) {
@@ -220,12 +264,21 @@ export default function DocumentsPage() {
             {loading ? "Loading..." : `${documents.length} document${documents.length !== 1 ? "s" : ""}`}
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
-        >
-          {showForm ? "Cancel" : "+ Upload Document"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { void handleAnalyzeAll(); }}
+            disabled={analyzingAll || documents.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-brand-600 px-4 py-2 text-sm font-semibold text-brand-600 shadow-sm transition hover:bg-brand-50 disabled:opacity-60"
+          >
+            {analyzingAll ? "Scanning..." : "Analyze All"}
+          </button>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+          >
+            {showForm ? "Cancel" : "+ Upload Document"}
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -395,6 +448,7 @@ export default function DocumentsPage() {
                 <th className="px-4 py-3 font-medium hidden md:table-cell">Uploaded By</th>
                 <th className="px-4 py-3 font-medium hidden md:table-cell">Date</th>
                 <th className="px-4 py-3 font-medium">Signed</th>
+                <th className="px-4 py-3 font-medium hidden lg:table-cell">Compliance</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -435,8 +489,31 @@ export default function DocumentsPage() {
                       <span className="text-xs text-gray-400">Unsigned</span>
                     )}
                   </td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    {analysisResults[doc.id] ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-xs font-bold ${analysisResults[doc.id].score >= 90 ? "text-emerald-600" : analysisResults[doc.id].score >= 70 ? "text-amber-600" : "text-red-600"}`}>
+                          {analysisResults[doc.id].score}
+                        </span>
+                        {analysisResults[doc.id].passed ? (
+                          <span className="inline-flex rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Pass</span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700 ring-1 ring-inset ring-red-600/20">Fail</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">---</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { void handleAnalyze(doc); }}
+                        disabled={analyzingId === doc.id}
+                        className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                      >
+                        {analyzingId === doc.id ? "..." : "Analyze"}
+                      </button>
                       {!doc.signed && (
                         <button
                           onClick={() => { void handleSign(doc.id); }}

@@ -88,6 +88,10 @@ export type DocumentEvent =
   | "document.analyzed"
   | "document.deal_jacket_analyzed";
 
+export type KnowledgeEvent =
+  | "knowledge.document_ingested"
+  | "knowledge.queried";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -99,7 +103,8 @@ export type PlatformEvent =
   | LenderEvent
   | CreditEvent
   | ComplianceEvent
-  | DocumentEvent;
+  | DocumentEvent
+  | KnowledgeEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -248,4 +253,15 @@ export function trackDocument(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "documents", ...meta });
+}
+
+/**
+ * Track a knowledge base event.
+ */
+export function trackKnowledge(
+  event: KnowledgeEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "knowledge", ...meta });
 }

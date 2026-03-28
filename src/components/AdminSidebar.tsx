@@ -4,6 +4,12 @@ import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 
+/** Sub-items shown under Documents when on a /admin/documents page. */
+const DOCUMENTS_CHILDREN = [
+  { href: "/admin/documents", label: "Vault" },
+  { href: "/admin/documents/compliance", label: "Compliance" },
+] as const;
+
 /** Sub-items shown under Analytics when on an analytics page. */
 const ANALYTICS_CHILDREN = [
   { href: "/admin/analytics", label: "Overview" },
@@ -57,6 +63,7 @@ const NAV_ITEMS = [
   { href: "/admin/lenders", label: "Lenders", icon: LendersIcon },
   { href: "/admin/credit", label: "Credit Bureau", icon: CreditIcon },
   { href: "/admin/documents", label: "Documents", icon: DocumentsIcon },
+  { href: "/admin/knowledge", label: "Knowledge Base", icon: KnowledgeIcon },
   { href: "/admin/trade-in", label: "Trade-Ins", icon: TradeInIcon },
   { href: "/admin/service", label: "Service & Parts", icon: ServiceIcon },
   { href: "/admin/floor-plan", label: "Floor Plan", icon: FloorPlanIcon },
@@ -101,6 +108,7 @@ export default function AdminSidebar() {
   const isServicePage = pathname.startsWith("/admin/service");
   const isCommsPage = pathname.startsWith("/admin/comms");
   const isAccountingPage = pathname.startsWith("/admin/accounting");
+  const isDocumentsPage = pathname.startsWith("/admin/documents");
 
   const navContent = (
     <>
@@ -137,6 +145,7 @@ export default function AdminSidebar() {
             const isService = href === "/admin/service";
             const isComms = href === "/admin/comms";
             const isAccounting = href === "/admin/accounting";
+            const isDocuments = href === "/admin/documents";
             const isActive =
               href === "/admin"
                 ? pathname === href
@@ -161,6 +170,26 @@ export default function AdminSidebar() {
                 {isAnalytics && isAnalyticsPage && (
                   <ul className="ml-8 mt-1 space-y-0.5" role="list">
                     {ANALYTICS_CHILDREN.map((child) => (
+                      <li key={child.href}>
+                        <a
+                          href={child.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                            pathname === child.href
+                              ? "font-semibold text-brand-400"
+                              : "text-gray-400 hover:text-gray-200"
+                          }`}
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* Documents sub-navigation */}
+                {isDocuments && isDocumentsPage && (
+                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
+                    {DOCUMENTS_CHILDREN.map((child) => (
                       <li key={child.href}>
                         <a
                           href={child.href}
@@ -572,6 +601,14 @@ function ResourcesIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+    </svg>
+  );
+}
+
+function KnowledgeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
     </svg>
   );
 }
