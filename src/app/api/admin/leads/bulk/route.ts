@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackLead } from "@/lib/analytics-hooks";
 
 const bulkSchema = z.object({
   action: z.enum(["assign", "status"]),
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
         [value, dealerId, ...lead_ids],
       );
 
+      try { trackLead("lead.bulk_action", authResult?.user?.dealer_id ?? "system", { action: action, count: (result.rows as any[]).length }); } catch {}
       return NextResponse.json({
         updated: (result.rows as any[]).length,
         action,
@@ -97,6 +99,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Fallback: report success for sample data
+  try { trackLead("lead.bulk_action", authResult?.user?.dealer_id ?? "system", { action: action, count: lead_ids.length }); } catch {}
   return NextResponse.json({
     updated: lead_ids.length,
     action,

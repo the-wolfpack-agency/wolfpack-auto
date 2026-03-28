@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { scoreLeadIntent, extractEmailDomain } from "@/lib/lead-scorer";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackLead } from "@/lib/analytics-hooks";
 
 const BATCH_SIZE = 20;
 
@@ -107,6 +108,7 @@ export async function POST() {
       );
     }
 
+    try { trackLead("lead.scored", authResult?.user?.dealer_id ?? "system", { action: "batch_scored", count: scored }); } catch {}
     return NextResponse.json({ scored, skipped });
   } catch (err) {
     console.error("[api/admin/leads/score-all] DB error:", err);

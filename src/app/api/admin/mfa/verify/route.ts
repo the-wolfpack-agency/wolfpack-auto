@@ -15,6 +15,7 @@ import { NextResponse } from "next/server";
 import { verifyTOTP, verifyBackupCode, hashBackupCode } from "@/lib/mfa";
 import { decryptPII } from "@/lib/crypto";
 import { query } from "@/lib/db";
+import { trackSecurity } from "@/lib/analytics-hooks";
 
 interface VerifyRequestBody {
   userId: string;
@@ -82,6 +83,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // Standard TOTP verification
     const valid = verifyTOTP(plaintextSecret, token);
+    try { trackSecurity("security.mfa_verified", "system", { action: "mfa_verified", valid, user_id: userId }); } catch {}
     return NextResponse.json({ valid });
   } catch (err) {
     console.error("[mfa/verify] Error:", err);

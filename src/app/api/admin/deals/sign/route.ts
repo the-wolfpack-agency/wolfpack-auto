@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auditLog } from "@/lib/audit-log";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackDeal } from "@/lib/analytics-hooks";
 
 /**
  * POST /api/admin/deals/sign
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
         price: agreed_price,
       }).catch(() => {});
 
+      try { trackDeal("deal.signed", authResult?.user?.dealer_id ?? "system", { action: "deal_signed", deal_id: dealId, agreed_price }); } catch {}
       return NextResponse.json(
         { deal_id: dealId, status: "signed", signed_at: signedAt },
         { status: 201 },
@@ -96,6 +98,7 @@ export async function POST(request: NextRequest) {
   // No DB — log the deal and return success
   console.log("[api/deals/sign] Deal recorded (no DB):", JSON.stringify(auditEntry));
 
+  try { trackDeal("deal.signed", authResult?.user?.dealer_id ?? "system", { action: "deal_signed", deal_id: dealId, agreed_price }); } catch {}
   return NextResponse.json(
     { deal_id: dealId, status: "signed", signed_at: signedAt },
     { status: 201 },

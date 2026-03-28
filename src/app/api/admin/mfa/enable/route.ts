@@ -13,6 +13,7 @@ import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { verifyTOTP, hashBackupCode } from "@/lib/mfa";
 import { decryptPII } from "@/lib/crypto";
 import { query } from "@/lib/db";
+import { trackSecurity } from "@/lib/analytics-hooks";
 
 interface EnableRequestBody {
   token: string;
@@ -90,6 +91,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       [hashedCodes, user.id],
     );
 
+    try { trackSecurity("security.mfa_enabled", authResult?.user?.dealer_id ?? "system", { action: "mfa_enabled" }); } catch {}
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[mfa/enable] Error:", err);

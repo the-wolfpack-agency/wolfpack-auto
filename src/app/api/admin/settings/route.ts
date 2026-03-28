@@ -7,6 +7,7 @@ import { pool } from "@/lib/db";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
 import { DEFAULT_CONFIG } from "@/lib/dealer-config-shared";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 const EMAIL_RE = /@/;
@@ -172,6 +173,7 @@ export async function PUT(req: NextRequest) {
       fields_changed: Object.keys(body),
     }).catch(() => {});
 
+    try { trackSystem("system.settings_updated", authResult?.user?.dealer_id ?? "system", { action: "settings_updated" }); } catch {}
     return NextResponse.json(updated);
   } catch (err) {
     console.error("[PUT /api/admin/settings] Error:", err);

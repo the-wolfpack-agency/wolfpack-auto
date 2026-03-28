@@ -4,6 +4,7 @@ import { embedText } from "@/lib/embeddings";
 import { upsertPoints, createCollection, type QdrantPoint } from "@/lib/qdrant-client";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 const QDRANT_COLLECTION = "vehicles";
 const VECTOR_DIM = 384;
 
@@ -260,6 +261,7 @@ export async function POST(req: NextRequest) {
     // Index in Qdrant (async, non-blocking for the response)
     indexVehicleInQdrant(d, dealerId).catch(() => {});
 
+    try { trackSystem("system.vehicle_created", authResult?.user?.dealer_id ?? "system", { action: "vehicle_created", vin: d.vin }); } catch {}
     return NextResponse.json(created, { status: 201 });
   } catch (err: any) {
     // Handle unique constraint violation (duplicate VIN for dealer)

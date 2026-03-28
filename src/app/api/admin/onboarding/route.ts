@@ -3,6 +3,7 @@ import { z } from "zod";
 import { generateDealerSlug } from "@/lib/dealer-onboarding";
 import crypto from "node:crypto";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Zod schema                                                                 */
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    try { trackSystem("system.onboarding_step", authResult?.user?.dealer_id ?? "system", { action: "onboarding_completed", dealer_id: dealerId }); } catch {}
     return NextResponse.json(
       {
         dealer_id: dealerId,

@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 import {
   addDomain,
   getDomains,
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
     // Insert domain record
     const record = await addDomain(dealerId, normalizedDomain);
 
+    try { trackSystem("system.domain_updated", authResult?.user?.dealer_id ?? "system", { action: "domain_registered", domain: normalizedDomain }); } catch {}
     return NextResponse.json(
       {
         domain: record,

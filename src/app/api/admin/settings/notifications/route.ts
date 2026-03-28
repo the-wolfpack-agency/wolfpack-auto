@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 interface NotificationPrefs {
   new_lead: boolean;
@@ -73,6 +74,7 @@ export async function PUT(request: NextRequest) {
       `UPDATE dealer_users SET notification_prefs = $1 WHERE id = $2`,
       [JSON.stringify(prefs), authResult.user.id],
     );
+    try { trackSystem("system.notifications_updated", authResult?.user?.dealer_id ?? "system", { action: "notifications_updated" }); } catch {}
     return NextResponse.json({ prefs, saved: true }, { status: 200 });
   } catch {
     return NextResponse.json({ prefs, saved: true }, { status: 200 }); // shadow fallback

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/admin/vehicles/generate-listing                                  */
@@ -282,6 +283,7 @@ export async function POST(req: NextRequest) {
     const aiResult = await generateWithAI(body);
     const result = aiResult ?? generateFromTemplate(body);
 
+    try { trackSystem("system.listing_generated", authResult?.user?.dealer_id ?? "system", { action: "listing_generated", ai_used: aiResult !== null }); } catch {}
     return NextResponse.json(result);
   } catch (err) {
     console.error("[POST /api/admin/vehicles/generate-listing] Error:", err);

@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { LeadStatus, LeadTemperature } from "@/types/lead";
 import { auditLog } from "@/lib/audit-log";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackLead } from "@/lib/analytics-hooks";
 
 /** Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */
 const DEALER_ID =
@@ -170,6 +171,7 @@ export async function PUT(
         })();
       }
 
+      try { trackLead("lead.updated", authResult?.user?.dealer_id ?? "system", { action: "lead_updated", lead_id: id }); } catch {}
       return NextResponse.json({ lead: result.rows[0], updated: true });
     } catch (err) {
       console.error("[api/admin/leads/[id]] DB update failed:", err);
@@ -185,6 +187,7 @@ export async function PUT(
   const merged = { ...existing, ...updates };
   mutations.set(id, merged);
 
+  try { trackLead("lead.updated", authResult?.user?.dealer_id ?? "system", { action: "lead_updated", lead_id: id }); } catch {}
   return NextResponse.json({ lead_id: id, updated: true, changes: updates });
 }
 

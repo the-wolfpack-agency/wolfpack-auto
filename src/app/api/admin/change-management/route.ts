@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -186,6 +187,7 @@ export async function POST(request: NextRequest) {
       metrics_after: null,
       created_at: new Date().toISOString(),
     };
+    try { trackSystem("system.change_recorded", authResult?.user?.dealer_id ?? "system", { action: "change_created", category: category ?? "" }); } catch {}
     return NextResponse.json({ change: mockNew }, { status: 201 });
   }
 
@@ -216,6 +218,7 @@ export async function POST(request: NextRequest) {
       authResult.user.dealer_id,
     ).catch(() => {});
 
+    try { trackSystem("system.change_recorded", authResult?.user?.dealer_id ?? "system", { action: "change_created", category: category ?? "" }); } catch {}
     return NextResponse.json({ id: result.rows[0].id }, { status: 201 });
   } catch (err) {
     console.error("[api/admin/change-management] POST failed:", err);

@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { query } from "@/lib/db";
+import { trackDeal } from "@/lib/analytics-hooks";
 
 export async function PATCH(
   req: NextRequest,
@@ -113,6 +114,7 @@ export async function PATCH(
         [vehicleId, dealerId],
       );
 
+      try { trackDeal("deal.pricing_applied", authResult?.user?.dealer_id ?? "system", { action: "pricing_applied", vehicle_id: vehicleId, new_price: finalPrice }); } catch {}
       return NextResponse.json({
         success: true,
         vehicleId,
@@ -130,6 +132,7 @@ export async function PATCH(
       [vehicleId, dealerId],
     );
 
+    try { trackDeal("deal.pricing_applied", authResult?.user?.dealer_id ?? "system", { action: "pricing_dismissed", vehicle_id: vehicleId }); } catch {}
     return NextResponse.json({
       success: true,
       vehicleId,

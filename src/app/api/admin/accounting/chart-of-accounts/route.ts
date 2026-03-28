@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackAccounting } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Standard dealer chart of accounts                                          */
@@ -99,6 +100,7 @@ export async function POST(request: NextRequest) {
          RETURNING *`,
         [body.code, body.name, body.type, body.category ?? "custom", authResult.user.dealer_id],
       );
+      try { trackAccounting("accounting.chart_updated", authResult?.user?.dealer_id ?? "system", { action: "account_added", code: body.code ?? "" }); } catch {}
       return NextResponse.json({ account: result.rows[0] }, { status: 201 });
     } catch (err) {
       console.error("[api/admin/accounting/chart-of-accounts] DB insert error:", err);
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Shadow mode
+  try { trackAccounting("accounting.chart_updated", authResult?.user?.dealer_id ?? "system", { action: "account_added", code: body.code ?? "" }); } catch {}
   return NextResponse.json({
     account: {
       code: body.code,

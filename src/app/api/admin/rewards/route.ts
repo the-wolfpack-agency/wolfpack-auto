@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -171,6 +172,7 @@ export async function POST(request: NextRequest) {
         user.dealer_id,
       );
 
+      try { trackSystem("system.reward_given", authResult?.user?.dealer_id ?? "system", { action: "reward_issued", employee_name: body.employee_name, points }); } catch {}
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/rewards] POST DB error:", err);
@@ -185,5 +187,6 @@ export async function POST(request: NextRequest) {
     user.dealer_id,
   );
 
+  try { trackSystem("system.reward_given", authResult?.user?.dealer_id ?? "system", { action: "reward_issued", employee_name: body.employee_name, points }); } catch {}
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }

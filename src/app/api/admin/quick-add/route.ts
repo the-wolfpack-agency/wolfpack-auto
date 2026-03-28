@@ -19,6 +19,7 @@ import { processPhonePhotos } from "@/lib/intake/photo-from-phone";
 import { query } from "@/lib/db";
 import type { Vehicle, VehicleCondition, VehicleStatus } from "@/types/vehicle";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* ------------------------------------------------------------------ */
 /*  Stock number generation                                            */
@@ -261,6 +262,8 @@ export async function POST(request: NextRequest) {
     const indexed = await indexInQdrant(vehicle);
 
     // --- Done ---
+
+    try { trackSystem("system.vehicle_quick_added", authResult?.user?.dealer_id ?? "system", { action: "vehicle_quick_added", vin }); } catch {}
 
     return NextResponse.json({
       success: true,

@@ -5,6 +5,7 @@ import type { DMSVehicleRecord } from "@/lib/dms/types";
 import { processBulkIntake, type IntakeResult } from "@/lib/intake/pipeline";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * POST /api/admin/intake
@@ -119,6 +120,8 @@ export async function POST(request: NextRequest) {
       count: normalizedVehicles.length,
       dealer_id: dealer_id.trim(),
     }, undefined, dealer_id.trim()).catch(() => {});
+
+    try { trackSystem("system.intake_processed", authResult?.user?.dealer_id ?? "system", { action: "bulk_intake", count: normalizedVehicles.length }); } catch {}
 
     return NextResponse.json({
       success: true,

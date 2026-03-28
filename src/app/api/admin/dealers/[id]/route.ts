@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 export async function DELETE(
   _req: NextRequest,
@@ -16,6 +17,7 @@ export async function DELETE(
   try {
     const { query } = await import("@/lib/db");
     await query(`UPDATE dealers SET is_active = false, updated_at = NOW() WHERE id = $1`, [id]);
+    try { trackSystem("agency.dealer_toggled", authResult?.user?.dealer_id ?? "system", { action: "dealer_deactivated", target_dealer_id: id }); } catch {}
     return NextResponse.json({ deleted: true, id });
   } catch (err) {
     console.error("[dealers] Delete error:", err);

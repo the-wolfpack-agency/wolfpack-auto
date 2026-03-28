@@ -9,6 +9,7 @@ import { scoreDealerCompliance } from "@/lib/compliance-scorer";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { SECURITY_HEADERS } from "@/lib/security-headers";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackCompliance } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                     */
@@ -179,6 +180,8 @@ export async function POST(req: NextRequest) {
       err,
     );
   }
+
+  try { trackCompliance("compliance.check_run", authResult?.user?.dealer_id ?? "system", { action: "compliance_check", score: result.score, grade: result.grade }); } catch {}
 
   return withSecurityHeaders(
     NextResponse.json(

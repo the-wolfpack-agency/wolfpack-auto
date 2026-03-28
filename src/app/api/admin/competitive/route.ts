@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -191,6 +192,7 @@ export async function POST(request: NextRequest) {
       observed_date: new Date().toISOString().split("T")[0],
       vehicles_mentioned: safeVehicles,
     };
+    try { trackSystem("system.competitive_updated", authResult?.user?.dealer_id ?? "system", { action: "intel_logged", category: category ?? "" }); } catch {}
     return NextResponse.json({ intel: mockRecord }, { status: 201 });
   }
 
@@ -222,6 +224,7 @@ export async function POST(request: NextRequest) {
       authResult.user.dealer_id,
     ).catch(() => {});
 
+    try { trackSystem("system.competitive_updated", authResult?.user?.dealer_id ?? "system", { action: "intel_logged", category: category ?? "" }); } catch {}
     return NextResponse.json({ id: intelResult.rows[0].id }, { status: 201 });
   } catch (err) {
     console.error("[api/admin/competitive] POST failed:", err);

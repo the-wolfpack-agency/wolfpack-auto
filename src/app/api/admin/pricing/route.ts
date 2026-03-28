@@ -7,6 +7,7 @@ import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { query } from "@/lib/db";
 import { generatePricingReport } from "@/lib/pricing-engine";
+import { trackDeal } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* GET                                                                        */
@@ -190,6 +191,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    try { trackDeal("deal.pricing_generated", authResult?.user?.dealer_id ?? "system", { action: "pricing_generated", vehicle_count: allAnalyses.length }); } catch {}
     return NextResponse.json({ cached: false, ...report });
   } catch (err) {
     console.error("[POST /api/admin/pricing] Error, returning empty report:", err);

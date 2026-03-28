@@ -4,6 +4,7 @@ import { embedText } from "@/lib/embeddings";
 import { upsertPoints, createCollection, type QdrantPoint } from "@/lib/qdrant-client";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 const QDRANT_COLLECTION = "vehicles";
 const VECTOR_DIM = 384;
 
@@ -195,6 +196,7 @@ export async function PUT(
     // Re-index in Qdrant
     reindexVehicle(vin.toUpperCase(), body, dealerId).catch(() => {});
 
+    try { trackSystem("system.vehicle_updated", authResult?.user?.dealer_id ?? "system", { action: "vehicle_updated", vin: vin.toUpperCase() }); } catch {}
     return NextResponse.json(updated);
   } catch (err) {
     console.error("[PUT /api/admin/vehicles/[vin]] Error:", err);

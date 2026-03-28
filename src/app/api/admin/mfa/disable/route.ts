@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { requireRole, isAuthenticated } from "@/lib/auth-guard";
 import { query } from "@/lib/db";
+import { trackSecurity } from "@/lib/analytics-hooks";
 
 interface DisableRequestBody {
   userId?: string;
@@ -61,6 +62,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       [targetUserId],
     );
 
+    try { trackSecurity("security.mfa_disabled", authResult?.user?.dealer_id ?? "system", { action: "mfa_disabled", target_user: targetUserId }); } catch {}
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[mfa/disable] Error:", err);

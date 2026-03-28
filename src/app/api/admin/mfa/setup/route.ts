@@ -15,6 +15,7 @@ import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { generateTOTPSecret, generateBackupCodes } from "@/lib/mfa";
 import { encryptPII } from "@/lib/crypto";
 import { query } from "@/lib/db";
+import { trackSecurity } from "@/lib/analytics-hooks";
 
 export async function POST(): Promise<NextResponse> {
   const authResult = await requireAuth();
@@ -48,6 +49,7 @@ export async function POST(): Promise<NextResponse> {
       [encryptedSecret, user.id],
     );
 
+    try { trackSecurity("security.mfa_setup", authResult?.user?.dealer_id ?? "system", { action: "mfa_setup_initiated" }); } catch {}
     return NextResponse.json({ qrDataUrl, secret, backupCodes });
   } catch (err) {
     console.error("[mfa/setup] Error:", err);

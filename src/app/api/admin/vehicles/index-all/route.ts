@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { indexAllVehicles } from "@/lib/intake/vehicle-indexer";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * POST /api/admin/vehicles/index-all
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    try { trackSystem("system.vehicles_indexed", authResult?.user?.dealer_id ?? "system", { action: "vehicles_indexed", count: result.indexed }); } catch {}
     return NextResponse.json({
       success: true,
       message: `Indexed ${result.indexed} vehicles into Qdrant (source: ${result.source}).`,

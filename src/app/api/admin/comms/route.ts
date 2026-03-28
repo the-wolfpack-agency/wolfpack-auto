@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackComms } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -186,6 +187,7 @@ export async function POST(request: NextRequest) {
         user.dealer_id,
       );
 
+      try { trackComms("comms.announcement_created", authResult?.user?.dealer_id ?? "system", { action: "announcement_created", audience: body.audience }); } catch {}
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/comms] POST DB error:", err);
@@ -200,5 +202,6 @@ export async function POST(request: NextRequest) {
     user.dealer_id,
   );
 
+  try { trackComms("comms.announcement_created", authResult?.user?.dealer_id ?? "system", { action: "announcement_created", audience: body.audience }); } catch {}
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }

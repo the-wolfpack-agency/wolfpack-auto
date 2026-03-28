@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -201,6 +202,7 @@ export async function POST(request: NextRequest) {
       status: "pending",
       created_at: new Date().toISOString(),
     };
+    try { trackSystem("system.good_faith_created", authResult?.user?.dealer_id ?? "system", { action: "gesture_created", gesture_type }); } catch {}
     return NextResponse.json({ gesture: mock }, { status: 201 });
   }
 
@@ -237,6 +239,7 @@ export async function POST(request: NextRequest) {
       console.error("[api/admin/good-faith] Audit log write failed:", auditErr);
     }
 
+    try { trackSystem("system.good_faith_created", authResult?.user?.dealer_id ?? "system", { action: "gesture_created", gesture_type }); } catch {}
     return NextResponse.json({ gesture: (result.rows as any[])[0] }, { status: 201 });
   } catch (err) {
     console.error("[api/admin/good-faith] POST failed:", err);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -170,6 +171,7 @@ export async function POST(request: NextRequest) {
       conversions: 0,
       roi_pct: 0,
     };
+    try { trackSystem("system.campaign_created", authResult?.user?.dealer_id ?? "system", { action: "campaign_created", budget }); } catch {}
     return NextResponse.json({ campaign: mockNew }, { status: 201 });
   }
 
@@ -201,6 +203,7 @@ export async function POST(request: NextRequest) {
       authResult.user.dealer_id,
     ).catch(() => {});
 
+    try { trackSystem("system.campaign_created", authResult?.user?.dealer_id ?? "system", { action: "campaign_created", budget }); } catch {}
     return NextResponse.json({ id: result.rows[0].id }, { status: 201 });
   } catch (err) {
     console.error("[api/admin/marketing] POST failed:", err);

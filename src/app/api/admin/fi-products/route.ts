@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackDeal } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock data                                                           */
@@ -261,6 +262,7 @@ export async function POST(request: NextRequest) {
           body.sort_order || 99,
         ],
       );
+      try { trackDeal("deal.fi_product_added", authResult?.user?.dealer_id ?? "system", { action: "fi_product_added", product_name: String(body.name ?? "") }); } catch {}
       return NextResponse.json({ product: result.rows[0], created: true }, { status: 201 });
     } catch (err) {
       console.error("[api/admin/fi-products] DB insert error:", err);
@@ -290,5 +292,6 @@ export async function POST(request: NextRequest) {
     updated_at: new Date().toISOString(),
   };
 
+  try { trackDeal("deal.fi_product_added", authResult?.user?.dealer_id ?? "system", { action: "fi_product_added", product_name: String(body.name ?? "") }); } catch {}
   return NextResponse.json({ product: newProduct, created: true }, { status: 201 });
 }

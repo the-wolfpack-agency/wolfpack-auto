@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
       model: model as string,
     }).catch(() => {});
 
+    try { trackSystem("system.vehicle_added", authResult?.user?.dealer_id ?? "system", { action: "vehicle_added", vin: vinStr }); } catch {}
     return NextResponse.json(created, { status: 201 });
   } catch (err: unknown) {
     const pgErr = err as { code?: string; message?: string };

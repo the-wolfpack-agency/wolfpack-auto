@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 interface RouteContext {
   params: Promise<{ vin: string }>;
@@ -99,6 +100,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
       fields_changed: Object.keys(body as object).filter((k) => k in allowedFields),
     }).catch(() => {});
 
+    try { trackSystem("system.vehicle_updated", authResult?.user?.dealer_id ?? "system", { action: "vehicle_updated", vin: vin.toUpperCase() }); } catch {}
     return NextResponse.json(updated);
   } catch (err) {
     console.error("[PUT /api/admin/inventory/[vin]] Error:", err);

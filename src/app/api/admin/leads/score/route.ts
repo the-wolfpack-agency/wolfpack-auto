@@ -6,6 +6,7 @@ import {
   extractEmailDomain,
   type LeadScoringInput,
 } from "@/lib/lead-scorer";
+import { trackLead } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Input schema                                                                */
@@ -134,6 +135,7 @@ export async function POST(request: NextRequest) {
         ],
       );
 
+      try { trackLead("lead.scored", authResult?.user?.dealer_id ?? "system", { action: "lead_scored", lead_id, score: leadScore.score }); } catch {}
       return NextResponse.json({
         lead_id,
         score: leadScore.score,
@@ -161,6 +163,7 @@ export async function POST(request: NextRequest) {
 
   const leadScore = scoreLeadIntent(input);
 
+  try { trackLead("lead.scored", authResult?.user?.dealer_id ?? "system", { action: "lead_scored", lead_id, score: leadScore.score }); } catch {}
   return NextResponse.json({
     lead_id,
     score: leadScore.score,

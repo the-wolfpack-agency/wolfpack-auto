@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -196,6 +197,7 @@ export async function POST(request: NextRequest) {
       rating,
       created_at: new Date().toISOString(),
     };
+    try { trackSystem("system.engagement_logged", authResult?.user?.dealer_id ?? "system", { action: "engagement_created", interaction_type, outcome }); } catch {}
     return NextResponse.json({ report: mock }, { status: 201 });
   }
 
@@ -234,6 +236,7 @@ export async function POST(request: NextRequest) {
       console.error("[api/admin/engagement-reports] Audit log write failed:", auditErr);
     }
 
+    try { trackSystem("system.engagement_logged", authResult?.user?.dealer_id ?? "system", { action: "engagement_created", interaction_type, outcome }); } catch {}
     return NextResponse.json({ report: (result.rows as any[])[0] }, { status: 201 });
   } catch (err) {
     console.error("[api/admin/engagement-reports] POST failed:", err);

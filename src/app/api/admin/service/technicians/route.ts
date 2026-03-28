@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackService } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -156,6 +157,7 @@ export async function POST(request: NextRequest) {
         ],
       );
 
+      try { trackService("service.tech_added", authResult?.user?.dealer_id ?? "system", { action: "tech_added", name: body.name ?? "" }); } catch {}
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/service/technicians] POST DB error:", err);
@@ -163,6 +165,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Shadow mode
+  try { trackService("service.tech_added", authResult?.user?.dealer_id ?? "system", { action: "tech_added", name: body.name ?? "" }); } catch {}
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }
 

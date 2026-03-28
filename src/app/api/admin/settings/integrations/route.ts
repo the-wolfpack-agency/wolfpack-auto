@@ -6,6 +6,7 @@ import {
   getWebhookConfigs,
   saveWebhookConfig,
 } from "@/lib/webhooks";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Validation                                                                 */
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
   try {
     await saveWebhookConfig(config);
 
+    try { trackSystem("system.integration_updated", authResult?.user?.dealer_id ?? "system", { action: "integration_saved", provider: config.provider }); } catch {}
     return NextResponse.json({
       success: true,
       config,

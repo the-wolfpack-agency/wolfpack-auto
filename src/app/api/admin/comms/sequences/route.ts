@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackComms } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      try { trackComms("comms.sequence_created", authResult?.user?.dealer_id ?? "system", { action: "sequence_created", trigger: body.trigger }); } catch {}
       return NextResponse.json({ success: true, id: newId });
     } catch (err) {
       console.error("[api/admin/comms/sequences] POST DB error:", err);
@@ -171,5 +173,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Shadow mode
+  try { trackComms("comms.sequence_created", authResult?.user?.dealer_id ?? "system", { action: "sequence_created", trigger: body.trigger }); } catch {}
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }

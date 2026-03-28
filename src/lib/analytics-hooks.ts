@@ -52,9 +52,12 @@ export type DealEvent =
   | "deal.accepted"
   | "deal.funded"
   | "deal.unwound"
+  | "deal.signed"
   | "deal.fi_product_added"
   | "deal.fi_product_removed"
-  | "deal.payment_calculated";
+  | "deal.payment_calculated"
+  | "deal.pricing_applied"
+  | "deal.pricing_generated";
 
 export type ServiceEvent =
   | "service.appointment_created"
@@ -64,21 +67,26 @@ export type ServiceEvent =
   | "service.ro_created"
   | "service.ro_completed"
   | "service.part_ordered"
-  | "service.part_low_stock";
+  | "service.part_low_stock"
+  | "service.part_added"
+  | "service.tech_added";
 
 export type CommsEvent =
   | "comms.message_sent"
   | "comms.message_opened"
   | "comms.message_clicked"
   | "comms.message_bounced"
+  | "comms.announcement_created"
   | "comms.sequence_started"
   | "comms.sequence_completed"
+  | "comms.sequence_created"
   | "comms.sequence_step_processed"
   | "comms.template_created";
 
 export type AccountingEvent =
   | "accounting.sale_logged"
   | "accounting.commission_paid"
+  | "accounting.chart_updated"
   | "accounting.floor_plan_added"
   | "accounting.floor_plan_payoff"
   | "accounting.exported";
@@ -111,6 +119,7 @@ export type ComplianceEvent =
   | "compliance.check_run"
   | "compliance.check_reviewed"
   | "compliance.check_overridden"
+  | "compliance.check_completed"
   | "compliance.data_deletion"
   | "compliance.data_export";
 
@@ -129,12 +138,18 @@ export type LeadEvent =
   | "lead.created"
   | "lead.duplicate_detected"
   | "lead.scored"
-  | "lead.assigned";
+  | "lead.assigned"
+  | "lead.updated"
+  | "lead.bulk_action";
 
 export type SecurityEvent =
   | "security.scan_completed"
   | "security.finding_resolved"
-  | "security.rate_limit_triggered";
+  | "security.rate_limit_triggered"
+  | "security.mfa_disabled"
+  | "security.mfa_enabled"
+  | "security.mfa_setup"
+  | "security.mfa_verified";
 
 export type SystemEvent =
   | "system.circuit_breaker_opened"
@@ -143,6 +158,26 @@ export type SystemEvent =
   | "system.health_degraded"
   | "system.health_critical"
   | "system.auto_rollback"
+  | "system.analytics_queried"
+  | "system.change_recorded"
+  | "system.competitive_updated"
+  | "system.domain_updated"
+  | "system.engagement_logged"
+  | "system.good_faith_created"
+  | "system.intake_processed"
+  | "system.vehicle_updated"
+  | "system.vehicle_added"
+  | "system.vehicle_created"
+  | "system.vehicle_quick_added"
+  | "system.vehicles_indexed"
+  | "system.listing_generated"
+  | "system.campaign_created"
+  | "system.onboarding_step"
+  | "system.reward_given"
+  | "system.integration_updated"
+  | "system.notifications_updated"
+  | "system.settings_updated"
+  | "system.task_created"
   | "team.user_created"
   | "team.user_updated"
   | "team.user_deactivated"
@@ -154,6 +189,7 @@ export type WebhookEvent =
   | "webhook.delivered"
   | "webhook.failed"
   | "webhook.config_created"
+  | "webhook.config_updated"
   | "webhook.test_sent";
 
 export type PlatformEvent =

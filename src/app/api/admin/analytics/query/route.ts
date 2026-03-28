@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * POST /api/admin/analytics/query
@@ -203,6 +204,8 @@ export async function POST(request: NextRequest) {
 
   // Keyword matching against sample data
   const matched = matchQuery(question);
+
+  try { trackSystem("system.analytics_queried", authResult?.user?.dealer_id ?? "system", { action: "query" }); } catch {}
 
   if (matched) {
     return NextResponse.json(matched);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { auditLog } from "@/lib/audit-log";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -217,6 +218,7 @@ export async function POST(request: NextRequest) {
           user.dealer_id,
         );
 
+        try { trackSystem("system.task_created", authResult?.user?.dealer_id ?? "system", { action: "task_created", priority: body.priority ?? "medium" }); } catch {}
         return NextResponse.json({ success: true, id: newId });
       } else {
         // recognize
@@ -259,6 +261,7 @@ export async function POST(request: NextRequest) {
     user.dealer_id,
   );
 
+  try { trackSystem("system.task_created", authResult?.user?.dealer_id ?? "system", { action: action === "create_task" ? "task_created" : "recognition_given" }); } catch {}
   return NextResponse.json({ success: true, id: newId, mode: "shadow" });
 }
 

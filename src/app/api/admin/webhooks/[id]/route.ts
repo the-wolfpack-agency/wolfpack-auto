@@ -12,6 +12,7 @@ import {
   deleteWebhookOutboundConfig,
   getWebhookDeliveries,
 } from "@/lib/webhook-outbound";
+import { trackWebhook } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Validation                                                                 */
@@ -85,6 +86,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Webhook config not found" }, { status: 404 });
   }
 
+  try { trackWebhook("webhook.config_updated", authResult?.user?.dealer_id ?? "system", { action: "webhook_config_updated", config_id: id }); } catch {}
   return NextResponse.json({ config: updated });
 }
 
