@@ -16,6 +16,7 @@
     "test:shadow": "bash scripts/shadow-test.sh",
     "nightly:safety-check": "bash scripts/nightly-safety-net-check.sh",
     "nightly:pentest": "bash scripts/nightly-pentest.sh",
+    "nightly:client-test": "bash scripts/nightly-client-test.sh",
     "agenticqa:scan": "bash scripts/run-agenticqa-pipeline.sh",
     "predeploy": "bash scripts/predeploy-gate.sh",
     "predeploy:quick": "bash scripts/predeploy-gate.sh --quick",
