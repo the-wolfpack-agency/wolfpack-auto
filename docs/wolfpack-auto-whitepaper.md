@@ -78,16 +78,19 @@ The entire platform operates in shadow mode: every API route returns realistic m
 The platform is built on modern, proven infrastructure:
 
 - **Next.js 15** on Vercel for the application layer
-- **PostgreSQL** with row-level security for multi-tenant data isolation
+- **PostgreSQL** (Neon) with row-level security for multi-tenant data isolation
 - **Qdrant** vector database for knowledge base and semantic search
-- **1,200+ automated tests** including true integration tests that authenticate as real users and verify database writes end-to-end
+- **Sentry** for real-time error monitoring with source maps, session replay on errors, and CSP-compliant browser reporting
+- **Resend** for transactional email (lead notifications, customer confirmations, inventory alerts)
+- **PII encryption** using AES-256-GCM for all customer data at rest (emails, phone numbers)
+- **2,400+ automated tests** including true integration tests that authenticate as real users and verify database writes end-to-end
 - **GitHub Actions** running a 4-phase CI pipeline on every commit: preflight validation, security scanning, quality testing, and shadow mode verification
 - **Zero-token security scanner** with 298 patterns across 5 languages, analyzing 10 OWASP categories
 - **Circuit breaker** on database connections: after 3 consecutive failures, the platform automatically switches to shadow data and recovers after 30 seconds, so users never see error pages
 - **Safe-fetch wrapper** with 10-second timeouts and automatic retry for all external HTTP calls
-- **System health dashboard** monitoring all dependencies (database, cache, external services) in real-time with auto-refresh
+- **System health dashboard** monitoring all dependencies (database, cache, email, error tracking, analytics) in real-time with auto-refresh
 - **Auto-rollback script** for failed deployments: detects unhealthy state and reverts to the last known-good release
-- **Analytics event persistence** to PostgreSQL: every user action is durably stored, not just forwarded to external analytics
+- **Analytics event persistence** to PostgreSQL: every user action is durably stored with module attribution, powering the learning engine directly
 
 A nightly mutation testing suite intentionally injects 6 different types of code defects, verifies the test suite catches each one, and reports whether the safety net is intact. A separate nightly pentest suite runs 126 automated penetration tests covering IDOR, authentication bypass, business logic abuse, injection attacks, API abuse, data exposure, and file upload security. The engineering team knows, every morning, that both the deploy pipeline and the security posture are functioning correctly.
 
@@ -125,12 +128,14 @@ Additional revenue from:
 
 ## Traction
 
-- **Platform built in 4 days** from zero to complete DOS with 50+ admin pages, 70+ API routes, and 800+ automated tests
+- **Platform built in 4 days** from zero to complete DOS with 55+ admin pages, 80+ API routes, and 2,400+ automated tests
 - **Live client demo** completed successfully during build (March 27, 2026)
-- **Full regulatory compliance engine** covering TILA, FCRA, ECOA, FTC, GLBA
-- **30 database migrations** covering the complete data model
-- **Closed-loop learning system** operational from day one
+- **Production infrastructure live**: Neon PostgreSQL (46 tables), Sentry error monitoring (verified), Resend email (configured), PII encryption (AES-256-GCM)
+- **Full regulatory compliance engine** covering TILA, FCRA, ECOA, FTC, GLBA with 20+ rules
+- **35 database migrations** covering the complete data model
+- **Closed-loop learning system** operational from day one, verified with 259+ events across 11 modules
 - **4-layer deploy pipeline** ensuring production quality on every release
+- **System health dashboard** with real-time dependency monitoring (database, email, error tracking, analytics pipeline)
 
 ---
 

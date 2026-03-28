@@ -394,12 +394,12 @@ The platform delivers complete DOS feature coverage across all major dealer oper
 |-----------|------------|
 | Framework | Next.js 15 App Router |
 | Deployment | Vercel |
-| Database | PostgreSQL (Vercel Marketplace) |
+| Database | PostgreSQL (Neon -- 46 tables, RLS multi-tenant) |
 | Auth | NextAuth.js v4 — JWT strategy |
 | MFA | otplib (TOTP RFC 6238) |
 | Rate Limiting | ioredis (Redis) + in-memory fallback |
-| PII Encryption | Node.js `crypto` — AES-256-GCM |
-| Analytics | GA4 + platform dual-tracking |
+| PII Encryption | Node.js `crypto` — AES-256-GCM (configured and active) |
+| Analytics | PostgreSQL (primary) -- 11 modules, all mutation routes wired |
 | Email | Resend |
 | Monitoring | Sentry |
 | Vector Store | Qdrant (RAG for analytics brain) |
@@ -529,18 +529,27 @@ Complete platform documentation generated from actual source code (3,800+ lines 
 
 ---
 
+## Infrastructure Status (Updated March 28, 2026)
+
+| Service | Status | Details |
+|---------|--------|---------|
+| PostgreSQL (Neon) | **Live** | 46 tables, 35 migrations, 259+ analytics events |
+| Sentry | **Live** | Error monitoring verified, source maps uploading, CSP configured |
+| Resend | **Live** | API key configured, email templates ready |
+| PII Encryption | **Live** | AES-256-GCM, customer data encrypted at rest |
+| Analytics Pipeline | **Live** | 11 modules reporting, all 80+ mutation routes wired |
+| Circuit Breaker | **Live** | Auto-failover to shadow mode on DB outage |
+| System Health Dashboard | **Live** | Real-time monitoring of all dependencies |
+
 ## Next Steps
 
-1. **Database provisioning** — Connect Vercel Postgres for live data
-2. **DNS + domain** — Point dealer domain to Vercel deployment
-3. **Resend email** — Configure API key for lead notifications
-4. **Twilio SMS** — Configure for communication automation
-5. **Sentry DSN** — Wire error monitoring
-6. **MFA enrollment** — Admin users set up TOTP
-7. **Redis** — Provision for production-grade rate limiting
-8. **Real lender integrations** — RouteOne/DealerTrack API credentials
-9. **Credit bureau API** — 700Credit/Equifax credentials
-10. **Qdrant production** — Deploy vector store for knowledge base
+1. **DNS + domain** — Buy and configure custom domain
+2. **Twilio SMS** — Configure for communication automation (when dealer needs SMS)
+3. **Redis** — Provision for production-grade rate limiting (when traffic demands it)
+4. **MFA enrollment** — Admin users set up TOTP (before real customer data)
+5. **Real lender integrations** — RouteOne/DealerTrack API credentials
+6. **Credit bureau API** — 700Credit/Equifax credentials
+7. **Qdrant production** — Deploy vector store for knowledge base
 
 ---
 

@@ -31,27 +31,30 @@ Create a `.env.local` file. The platform runs without any env vars in shadow mod
 | `NEXTAUTH_SECRET` | Random 32+ character string for JWT signing |
 | `NEXTAUTH_URL` | Full URL of the deployment (e.g. `https://app.wolfpackauto.com`) |
 
+### Recommended for Production
+
+| Variable | Purpose |
+|----------|---------|
+| `PII_ENCRYPTION_KEY` | 32-byte hex key for AES-256-GCM encryption of customer PII |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN for error monitoring (client + server + edge) |
+| `SENTRY_ORG` | Sentry org slug (for source map uploads) |
+| `SENTRY_PROJECT` | Sentry project slug |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token with `org:ci` scope |
+| `RESEND_API_KEY` | Resend API key for transactional email |
+| `RESEND_FROM_EMAIL` | Sender email (default: `Wolfpack Motors <leads@wolfpackauto.com>`) |
+| `DEALER_ID` | Default dealer ID for single-tenant deployments |
+
 ### Optional
 
 | Variable | Purpose |
 |----------|---------|
-| `REDIS_URL` | Redis connection for rate limiting and caching |
-| `RESEND_API_KEY` | Resend API key for transactional email |
-| `RESEND_FROM_EMAIL` | Sender email address for notifications |
-| `AWS_ACCESS_KEY_ID` | S3 access for image storage |
-| `AWS_SECRET_ACCESS_KEY` | S3 secret for image storage |
-| `S3_BUCKET` | S3 bucket name for vehicle images |
-| `ELASTICSEARCH_URL` | Elasticsearch URL for vehicle search |
-| `QDRANT_URL` | Qdrant URL for analytics vector storage |
-| `NEO4J_URI` | Neo4j connection URI for graph analytics |
-| `NEO4J_PASSWORD` | Neo4j password |
+| `REDIS_URL` | Redis connection for rate limiting and caching (in-memory fallback) |
+| `QDRANT_URL` | Qdrant URL for knowledge base vector storage |
 | `STRIPE_SECRET_KEY` | Stripe key for billing |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook verification |
-| `DEALER_ID` | Default dealer ID for single-tenant deployments |
 | `OEM_ID` | OEM identifier for OEM-scoped admin portals |
 | `DEMO_MODE` | Set to `true` to bypass auth (demos only, never production) |
 | `MARKETING_SITE_URL` | URL to redirect unknown tenants (default: `https://wolfpackauto.com`) |
-| `SENTRY_DSN` | Sentry error tracking DSN |
 
 ### Generate Secrets
 

@@ -10,11 +10,9 @@
 | Styling | Tailwind CSS | 3.4+ |
 | Auth | NextAuth.js (JWT strategy) | 4.24+ |
 | Database | PostgreSQL (via `pg`) | 8.12+ |
-| Cache / Rate Limiting | Redis (via `ioredis`) | 5.4+ |
-| Search | Elasticsearch | 8.13+ |
-| Vector Store | Qdrant (analytics) | -- |
-| Graph DB | Neo4j (analytics graph) | -- |
-| Object Storage | AWS S3 | -- |
+| Cache / Rate Limiting | Redis (via `ioredis`, optional -- in-memory fallback) | 5.4+ |
+| Vector Store | Qdrant (knowledge base + semantic search) | 1.9+ |
+| Object Storage | Cloudflare R2 | -- |
 | Email | Resend | 6.9+ |
 | Payments | Stripe | 21.0+ |
 | Image Processing | Sharp | 0.33+ |
@@ -33,7 +31,7 @@ wolfpack-auto/
   src/
     app/                          # Next.js App Router
       (public pages)              # /, /about, /contact, /financing, /inventory, etc.
-      admin/                      # Admin panel pages (40+ pages)
+      admin/                      # Admin panel pages (55+ pages)
         page.tsx                  # Dashboard
         inventory/                # Inventory management
         leads/                    # Lead management
@@ -42,7 +40,7 @@ wolfpack-auto/
         accounting/               # Accounting & commissions
         ...                       # 35+ more admin modules
       api/                        # API routes
-        admin/                    # Authenticated admin API (90+ routes)
+        admin/                    # Authenticated admin API (80+ routes)
         analytics/                # Public analytics endpoints
         auth/                     # NextAuth endpoints
         contact/                  # Public contact form
@@ -67,10 +65,10 @@ wolfpack-auto/
       security-headers.ts         # CSP, HSTS, X-Frame-Options, etc.
       ...                         # 60+ library modules
     db/
-      migrations/                 # 21 SQL migration files
+      migrations/                 # 35 SQL migration files
         001_initial_schema.sql
         ...
-        030_floor_plan.sql
+        035_dealer_users.sql
       migrate.ts                  # Migration runner
       seed.ts                     # Seed data
     middleware.ts                  # Edge middleware (tenant resolution, auth, CSRF, security headers)
@@ -156,7 +154,7 @@ Applied to every response by Edge Middleware:
 | Header | Value |
 |--------|-------|
 | Strict-Transport-Security | `max-age=63072000; includeSubDomains; preload` |
-| Content-Security-Policy | Restrictive CSP (self-only, no unsafe-eval in prod) |
+| Content-Security-Policy | Restrictive CSP (self-only, no unsafe-eval in prod, Sentry ingest allowed) |
 | X-Content-Type-Options | `nosniff` |
 | X-Frame-Options | `DENY` |
 | X-XSS-Protection | `1; mode=block` |
@@ -174,7 +172,7 @@ Public form endpoints (e.g., `/api/contact`) are protected by double-submit cook
 
 ## Database Migrations
 
-21 migration files in `src/db/migrations/`:
+35 migration files in `src/db/migrations/`:
 
 | Migration | Purpose |
 |-----------|---------|
@@ -199,6 +197,11 @@ Public form endpoints (e.g., `/api/contact`) are protected by double-submit cook
 | 028 | Document vault |
 | 029 | Compliance checks tables |
 | 030 | Floor plan financing |
+| 031 | Schema fixes |
+| 032 | Soft delete |
+| 033 | Missing indexes |
+| 034 | Webhook outbound |
+| 035 | Dealer users |
 
 Rollback scripts are available in `src/db/migrations/rollback/` for migrations 001-005.
 
@@ -250,10 +253,31 @@ Wraps all external HTTP calls:
 - Prevents memory exhaustion from malicious large payloads
 
 ### Analytics Persistence
-Events are written to the PostgreSQL `analytics_events` table as PRIMARY storage:
+Events are written to the PostgreSQL `analytics_events` table as PRIMARY and ONLY storage:
 - `persistEvent()` in `analytics-hooks.ts` writes every event to DB
-- Plausible (external) is SECONDARY — works when configured, not required
+- All 80+ mutation routes wired to emit typed analytics events
+- 11 modules reporting: deal, service, comms, accounting, review, compliance, document, retail, security, customer, page_view
 - `/api/admin/analytics/health` monitors the pipeline: event counts, module coverage, healthy/degraded status
+
+### Error Monitoring (Sentry)
+- Client, server, and edge runtimes initialized via `src/instrumentation.ts` and `src/instrumentation-client.ts`
+- 10% trace sampling in production, 100% in development
+- Session replay on errors (production only)
+- Source maps uploaded via `withSentryConfig` in `next.config.mjs` (requires `SENTRY_AUTH_TOKEN`)
+- CSP allows Sentry ingest domains (`*.ingest.us.sentry.io`)
+
+### Email (Resend)
+- Lead notifications to dealer staff (`src/lib/notifications.ts`)
+- Customer confirmation emails (`src/lib/email.ts`)
+- Inventory alerts (slow movers, price opportunities, gaps)
+- Lead assignment notifications
+- Graceful degradation: logs to console when `RESEND_API_KEY` is absent
+
+### PII Encryption (`src/lib/crypto.ts`)
+- AES-256-GCM encryption for customer emails and phone numbers at rest
+- Key: `PII_ENCRYPTION_KEY` env var (32 bytes, hex-encoded)
+- Graceful degradation: values pass through unencrypted when no key is set
+- Backward-compatible: reads both encrypted and unencrypted values
 
 ### Auto-Rollback (`scripts/auto-rollback.sh`)
 - Hits `/api/admin/system/health` every 5 minutes (cron)
