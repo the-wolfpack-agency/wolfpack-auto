@@ -28,6 +28,20 @@ export interface AuthResult {
  * Returns the authenticated user or a 401 NextResponse.
  */
 export async function requireAuth(): Promise<AuthResult | NextResponse> {
+  // In DEMO_MODE, return a synthetic admin user so API routes work without login.
+  // DEMO_MODE should NEVER be set in production with real customer data.
+  if (process.env.DEMO_MODE === "true") {
+    return {
+      user: {
+        id: "demo-user",
+        email: "demo@wolfpackauto.com",
+        name: "Demo Admin",
+        dealer_id: process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001",
+        role: "admin",
+      },
+    };
+  }
+
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
