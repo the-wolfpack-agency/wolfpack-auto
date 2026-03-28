@@ -10,7 +10,7 @@
 
 Wolfpack Auto is a production-grade, multi-tenant automotive Dealer Operating System (DOS) built from scratch in 4 days. It delivers a complete public-facing dealership website, a fully-featured admin portal with 50+ pages, customer conversion tools, an AI-powered behavioral analytics brain, and a complete data/learning pipeline — all deployed on Vercel with shadow mode resilience (works without a live database).
 
-The platform achieves full competitive parity with CDK Global, Reynolds & Reynolds, and Tekion — with a unique advantage: a closed-loop learning system where every interaction compounds into smarter insights. Built and iterated in real-time, including a live demo with a client (Hoxsie) on March 27.
+The platform delivers complete DOS feature coverage across all major dealer operations modules — with a unique advantage: a closed-loop learning system where every interaction compounds into smarter insights. Built and iterated in real-time, including a live demo with a client (Hoxsie) on March 27.
 
 **Key differentiator:** Every deal, service appointment, message, review, and document analysis feeds the analytics brain. The platform gets measurably smarter the longer a dealer uses it. No competitor offers this.
 
@@ -464,39 +464,17 @@ Audit run March 27, 2026. 16 gaps identified and remediated:
 
 ---
 
-## Competitive Position
+## Platform Differentiators
 
-The platform now achieves full feature parity with CDK Global, Reynolds & Reynolds, and Tekion across all major DOS modules:
-
-| Category | CDK | Reynolds | Tekion | Wolfpack Auto |
-|----------|-----|----------|--------|---------------|
-| Inventory CRUD + VIN decode | ✅ | ✅ | ✅ | ✅ |
-| Lead management + scoring | ✅ | ✅ | ✅ | ✅ |
-| F&I deal desking | ✅ | ✅ | ✅ | ✅ |
-| Service & Parts | ✅ | ✅ | ✅ | ✅ |
-| Accounting / GL export | ✅ | ✅ | ✅ | ✅ |
-| Lender portal integration | ✅ | ✅ | ✅ | ✅ |
-| Credit bureau | ✅ | ✅ | ✅ | ✅ |
-| Document vault + e-sign | ✅ | ✅ | ✅ | ✅ |
-| Compliance (OFAC/Red Flags) | ✅ | ✅ | ✅ | ✅ |
-| Floor plan management | ✅ | ✅ | ✅ | ✅ |
-| Review management | ❌ | ❌ | 🟡 | ✅ |
-| Customer 360 | 🟡 | 🟡 | ✅ | ✅ |
-| Digital retailing | 🟡 | ❌ | ✅ | ✅ |
-| Service self-scheduling | ❌ | ❌ | ✅ | ✅ |
-| **AI learning system** | ❌ | ❌ | ❌ | ✅ |
-| **Document compliance engine** | ❌ | ❌ | ❌ | ✅ |
-| **Knowledge base / RAG** | ❌ | ❌ | ❌ | ✅ |
-| **Automated testing (800+)** | ❌ | ❌ | ❌ | ✅ |
-| **Shadow mode (zero-DB demo)** | ❌ | ❌ | ❌ | ✅ |
-
-**Unique advantages no competitor has:**
-- Closed-loop learning system that compounds from every interaction
-- Document compliance engine with 20+ regulatory rules
-- Knowledge base with semantic search across all dealer documents
-- 800+ automated tests with nightly mutation testing of the test suite itself
-- Full AgenticQA CI pipeline (security, compliance, quality) on every deploy
-- Shadow mode — entire platform demos without a database
+| Capability | Status |
+|------------|--------|
+| Closed-loop AI learning system — compounds from every interaction | ✅ |
+| Document compliance engine — 20+ regulatory rules (TILA, FCRA, ECOA, FTC, GLBA) | ✅ |
+| Knowledge base with semantic search across all dealer documents | ✅ |
+| 800+ automated tests with nightly mutation testing of the test suite itself | ✅ |
+| Full AgenticQA CI pipeline (security, compliance, quality) on every deploy | ✅ |
+| Shadow mode — entire platform demos without a database | ✅ |
+| Complete DOS feature coverage across all major dealer operations modules | ✅ |
 
 ---
 
