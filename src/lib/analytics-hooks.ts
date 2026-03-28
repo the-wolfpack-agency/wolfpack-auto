@@ -84,7 +84,9 @@ export type ComplianceEvent =
 export type DocumentEvent =
   | "document.uploaded"
   | "document.signed"
-  | "document.deleted";
+  | "document.deleted"
+  | "document.analyzed"
+  | "document.deal_jacket_analyzed";
 
 export type PlatformEvent =
   | DealEvent
