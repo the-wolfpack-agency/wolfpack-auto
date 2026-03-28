@@ -91,13 +91,13 @@ function checkExternalServices(): ExternalServiceStatus[] {
     },
     {
       name: "Sentry (errors)",
-      configured: !!process.env.SENTRY_DSN,
-      status: process.env.SENTRY_DSN ? "ok" : "not_configured",
+      configured: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
+      status: process.env.NEXT_PUBLIC_SENTRY_DSN ? "ok" : "not_configured",
     },
     {
-      name: "Plausible (analytics)",
-      configured: !!process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN,
-      status: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN ? "ok" : "not_configured",
+      name: "Analytics (Postgres)",
+      configured: !!process.env.DATABASE_URL,
+      status: process.env.DATABASE_URL ? "ok" : "not_configured",
     },
   ];
 }

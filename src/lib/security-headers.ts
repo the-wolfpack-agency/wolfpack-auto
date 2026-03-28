@@ -39,7 +39,7 @@ const CSP_DIRECTIVES = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://images.unsplash.com",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.ingest.us.sentry.io https://*.ingest.sentry.io",
   "frame-src https://www.google.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
