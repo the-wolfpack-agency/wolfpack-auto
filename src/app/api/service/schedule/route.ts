@@ -2,7 +2,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { trackService } from "@/lib/analytics-hooks";
 
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+const DEALER_ID = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 /* -------------------------------------------------------------------------- */
 /* Shadow mock — upcoming 7 days of slots                                     */
