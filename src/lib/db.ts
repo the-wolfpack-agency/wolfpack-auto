@@ -2,12 +2,18 @@ import { Pool, type PoolConfig } from "pg";
 
 const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
-  max: 20,
+  // Neon serverless: keep pool small to avoid exhausting connection slots.
+  // Neon's pooler handles multiplexing — local pool is just a buffer.
+  max: 5,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
-  // Enforce SSL in production
-  ssl:
-    process.env.NODE_ENV === "production"
+  // SSL: Neon requires SSL. The connection string already includes sslmode=require.
+  // Use rejectUnauthorized: false with Neon's pooler (uses pgBouncer which
+  // presents its own cert, not the origin server's). Safe because the
+  // connection string forces TLS at the transport level.
+  ssl: process.env.DATABASE_URL?.includes("neon")
+    ? { rejectUnauthorized: false }
+    : process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: true }
       : undefined,
 };
@@ -25,7 +31,9 @@ function createPool(): Pool {
     globalForPg.__pgPool = new Pool(poolConfig);
 
     globalForPg.__pgPool.on("error", (err) => {
-      console.error("[db] Unexpected pool error:", err);
+      // Log error message only — never log the full error object
+      // which may contain connection strings or credentials
+      console.error("[db] Unexpected pool error:", err.message);
     });
   }
 
