@@ -58,10 +58,10 @@ const DEALER_ID = process.env.NEXT_PUBLIC_DEALER_ID ?? "default";
 
 const DMS_PROVIDERS = [
   { value: "GENERIC_CSV", label: "CSV / Generic" },
-  { value: "CDK", label: "CDK" },
-  { value: "REYNOLDS", label: "Reynolds & Reynolds" },
-  { value: "DEALERTRACK", label: "Dealertrack" },
-  { value: "TEKION", label: "Tekion" },
+  { value: "CDK", label: "DMS Provider A" },
+  { value: "REYNOLDS", label: "DMS Provider B" },
+  { value: "DEALERTRACK", label: "DMS Provider C" },
+  { value: "TEKION", label: "DMS Provider D" },
   { value: "GENERIC_XML", label: "XML" },
 ] as const;
 

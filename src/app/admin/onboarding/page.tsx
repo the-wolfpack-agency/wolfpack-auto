@@ -18,10 +18,10 @@ const STEPS = [
 const STORAGE_KEY = "wolfpack_onboarding_progress";
 
 const DMS_PROVIDERS = [
-  { value: "cdk", label: "CDK Global" },
-  { value: "reynolds", label: "Reynolds & Reynolds" },
+  { value: "cdk", label: "DMS Provider A" },
+  { value: "reynolds", label: "DMS Provider B" },
   { value: "dealertrack", label: "Dealertrack" },
-  { value: "tekion", label: "Tekion" },
+  { value: "tekion", label: "DMS Provider C" },
 ] as const;
 
 type TeamMember = { email: string; role: "admin" | "manager" | "staff" };

@@ -24,7 +24,7 @@
 - **Quick Add** — VIN barcode scanner (camera), NHTSA API decode, auto-fill all specs
 - **AI Listing Generation** — GPT-4o-mini with template fallback, SEO title/meta
 - **Photo Processing** — sharp optimization (WebP/AVIF/JPEG), thumbnails, R2 upload, EXIF auto-ordering
-- **Bulk Import** — CSV/JSON/XML from 5 DMS providers (CDK, Reynolds, Dealertrack, Tekion, generic)
+- **Bulk Import** — CSV/JSON/XML from 5 DMS providers (supports all major platforms)
 - **Smart Defaults** — pricing suggestions from comparable inventory
 - **Recommendation Engine** — similar vehicles (Qdrant), pricing intelligence, inventory gap detection, slow mover alerts
 
