@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-03-28T23:53:55.639Z",
+  "type": "load_test",
+  "base_url": "https://wolfpack-auto.vercel.app",
+  "duration_s": 240,
+  "max_vus": 50,
+  "metrics": {
+    "http_reqs": 7404,
+    "http_req_duration_p95": 198.44364999999996,
+    "http_req_duration_avg": 153.74022136682865,
+    "http_req_failed_rate": 0.413290113452188,
+    "inventory_latency_p95": 166.22255,
+    "lead_submit_latency_p95": 3702.98675,
+    "admin_dashboard_latency_p95": 162.20089999999996,
+    "health_latency_p95": 3550.9134999999997,
+    "error_rate": 0.206645056726094,
+    "total_lead_submissions": 636,
+    "total_inventory_views": 1530
+  },
+  "thresholds_passed": true
+}
