@@ -80,11 +80,16 @@ The platform is built on modern, proven infrastructure:
 - **Next.js 15** on Vercel for the application layer
 - **PostgreSQL** with row-level security for multi-tenant data isolation
 - **Qdrant** vector database for knowledge base and semantic search
-- **Playwright** with 830+ automated tests covering every page, form, API route, and user flow
+- **1,200+ automated tests** including true integration tests that authenticate as real users and verify database writes end-to-end
 - **GitHub Actions** running a 4-phase CI pipeline on every commit: preflight validation, security scanning, quality testing, and shadow mode verification
 - **Zero-token security scanner** with 298 patterns across 5 languages, analyzing 10 OWASP categories
+- **Circuit breaker** on database connections: after 3 consecutive failures, the platform automatically switches to shadow data and recovers after 30 seconds, so users never see error pages
+- **Safe-fetch wrapper** with 10-second timeouts and automatic retry for all external HTTP calls
+- **System health dashboard** monitoring all dependencies (database, cache, external services) in real-time with auto-refresh
+- **Auto-rollback script** for failed deployments: detects unhealthy state and reverts to the last known-good release
+- **Analytics event persistence** to PostgreSQL: every user action is durably stored, not just forwarded to external analytics
 
-A nightly mutation testing suite intentionally injects 6 different types of code defects, verifies the test suite catches each one, and reports whether the safety net is intact. The engineering team knows, every morning, that the deploy pipeline is functioning correctly.
+A nightly mutation testing suite intentionally injects 6 different types of code defects, verifies the test suite catches each one, and reports whether the safety net is intact. A separate nightly pentest suite runs 126 automated penetration tests covering IDOR, authentication bypass, business logic abuse, injection attacks, API abuse, data exposure, and file upload security. The engineering team knows, every morning, that both the deploy pipeline and the security posture are functioning correctly.
 
 The built-in security scanner runs without any external API calls or tokens. It checks for hardcoded secrets, missing rate limiting, input validation gaps, SSRF vectors, SQL injection risk, and sensitive data exposure across every source file. Results are surfaced in the admin portal's Security dashboard, and every rate limit trigger feeds the learning system so the platform tracks which endpoints are under pressure.
 
