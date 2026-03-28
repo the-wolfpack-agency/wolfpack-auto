@@ -273,3 +273,15 @@ More User Actions (loop repeats)
 - [Platform Map](./platform-map.md) -- analytics events per module
 - [Compliance](./compliance.md) -- compliance rules and scoring
 - [Architecture](./architecture.md) -- triple-write pattern, database schema
+
+---
+
+## Security Events
+
+| Event | Trigger | What it feeds |
+|-------|---------|--------------|
+| `security.scan_completed` | After security scanner finishes | Scan frequency, finding trends |
+| `security.rate_limit_triggered` | Any rate-limited route returns 429 | Attack pressure monitoring |
+| `security.finding_resolved` | Finding marked resolved | Resolution velocity tracking |
+
+**Tracking helper:** `trackSecurity(event, dealerId, metadata)`

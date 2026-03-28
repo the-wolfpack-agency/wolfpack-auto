@@ -1031,3 +1031,12 @@ A/B test results.
 
 **Auth required:** Yes
 **Shadow mode:** Yes
+
+---
+
+## Security
+
+| Route | Method | Auth | Shadow | Description |
+|-------|--------|------|--------|-------------|
+| `/api/admin/security/scan` | GET | Yes | Yes | Returns last scan results |
+| `/api/admin/security/scan` | POST | Yes | Yes | Runs the 10-category OWASP scanner |

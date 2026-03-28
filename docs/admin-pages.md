@@ -787,3 +787,17 @@ Every admin page in the Wolfpack Auto platform, with its path, purpose, key UI e
 - Error messages for rate limiting ("Too many login attempts. Please try again in 15 minutes.")
 
 **Connected API routes:** `/api/auth/[...nextauth]`
+
+---
+
+## Security Dashboard
+
+**Path:** `/admin/security`
+**What it does:** Zero-token OWASP security scanner that analyzes the codebase for vulnerabilities across 10 categories.
+**Key UI elements:**
+- Stats cards: total findings, critical, high, medium, low
+- Findings list grouped by category with severity badges
+- Expandable recommendations per finding
+- Filter by category and severity
+- "Run Scan" button to trigger fresh analysis
+**Connected API routes:** `GET/POST /api/admin/security/scan`

@@ -80,10 +80,13 @@ The platform is built on modern, proven infrastructure:
 - **Next.js 15** on Vercel for the application layer
 - **PostgreSQL** with row-level security for multi-tenant data isolation
 - **Qdrant** vector database for knowledge base and semantic search
-- **Playwright** with 800+ automated tests covering every page, form, API route, and user flow
+- **Playwright** with 830+ automated tests covering every page, form, API route, and user flow
 - **GitHub Actions** running a 4-phase CI pipeline on every commit: preflight validation, security scanning, quality testing, and shadow mode verification
+- **Zero-token security scanner** with 298 patterns across 5 languages, analyzing 10 OWASP categories
 
 A nightly mutation testing suite intentionally injects 6 different types of code defects, verifies the test suite catches each one, and reports whether the safety net is intact. The engineering team knows, every morning, that the deploy pipeline is functioning correctly.
+
+The built-in security scanner runs without any external API calls or tokens. It checks for hardcoded secrets, missing rate limiting, input validation gaps, SSRF vectors, SQL injection risk, and sensitive data exposure across every source file. Results are surfaced in the admin portal's Security dashboard, and every rate limit trigger feeds the learning system so the platform tracks which endpoints are under pressure.
 
 ---
 

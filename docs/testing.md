@@ -253,3 +253,12 @@ For each new API route, create a corresponding test in `tests/shadow-hardening/a
 - [Architecture](./architecture.md) -- shadow mode pattern, auth flow
 - [API Reference](./api-reference.md) -- all API routes
 - [Platform Map](./platform-map.md) -- what each module does
+
+---
+
+## Security Hardening Tests
+
+| File | Tests | Coverage |
+|------|-------|---------|
+| `security-hardening.spec.ts` | 20 | Scanner API, security page, rate limiting, auth guard |
+| `security-regressions.test.ts` (SEC-001 to SEC-005) | 12 | NEXTAUTH_SECRET hardening, rate limiting on 8 routes, request guard, scanner module, SecurityEvent analytics |

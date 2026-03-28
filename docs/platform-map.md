@@ -798,3 +798,42 @@ The analytics brain (`analytics-engine.ts`) implements triple-write: events go t
 | `/api/ab/assign` | POST | Assign user to A/B test variant | Yes |
 | `/api/ab/convert` | POST | Record A/B conversion | Yes |
 | `/api/ab/results` | GET | A/B test results | Yes |
+
+---
+
+## Module: Security
+
+### Pages
+| Page | Path | What the user sees | Key elements |
+|------|------|--------------------|--------------|
+| Security Dashboard | `/admin/security` | Zero-token OWASP scan results | Stats cards (total/critical/high/medium/low findings), findings list grouped by category, severity badges, recommendations, "Run Scan" button |
+
+### API Routes
+| Route | Method | What it does | Shadow mode? |
+|-------|--------|-------------|--------------|
+| `/api/admin/security/scan` | GET | Returns last scan results | Yes |
+| `/api/admin/security/scan` | POST | Runs the 10-category security scanner | Yes |
+
+### Scanner Categories
+| Category | What it checks |
+|----------|---------------|
+| Hardcoded secrets | API keys, passwords, NEXTAUTH_SECRET fallbacks |
+| Rate limiting | Which mutation routes have rate limiting |
+| Input validation | Routes parsing request.json() without Zod validation |
+| Shadow mode | Auth'd routes without DATABASE_URL check |
+| SSRF vectors | fetch() calls with potentially user-controlled URLs |
+| Auth guard | Admin routes without requireAuth() |
+| CSRF protection | Mutation routes lacking CSRF checks |
+| Content-Length | Routes without request body size limits |
+| SQL injection | String concatenation in queries vs parameterized |
+| Sensitive data | SSN, credit card patterns in logs or responses |
+
+### Analytics Events
+| Event | When it fires | What it feeds |
+|-------|--------------|--------------|
+| `security.scan_completed` | After scanner finishes | Scan frequency, finding trends over time |
+| `security.rate_limit_triggered` | When any rate-limited route returns 429 | Attack pressure monitoring, hotspot detection |
+| `security.finding_resolved` | When a finding is marked resolved | Resolution velocity, security posture improvement |
+
+### Learning System Connection
+Rate limit events reveal which endpoints are under attack pressure. The learning system tracks rate limit frequency by route, time of day, and dealer to identify patterns and adjust limits automatically.
