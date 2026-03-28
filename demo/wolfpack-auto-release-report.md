@@ -504,6 +504,25 @@ Layer 4: Document Compliance (npm run agenticqa:scan)
 
 ---
 
+## Documentation Suite
+
+Complete platform documentation generated from actual source code (3,800+ lines across 9 files):
+
+| Document | Contents |
+|----------|----------|
+| [README](../docs/README.md) | Platform overview, quick start, demo access |
+| [Platform Map](../docs/platform-map.md) | Single source of truth: every page, API, analytic, and learning connection |
+| [Admin Pages](../docs/admin-pages.md) | Every admin page with UI elements and connected routes |
+| [API Reference](../docs/api-reference.md) | Every API route with auth, shadow mode, request/response shapes |
+| [Testing Guide](../docs/testing.md) | 800+ tests, all commands, pre-deploy gate, nightly safety net |
+| [Analytics & Learning](../docs/analytics-and-learning.md) | Every event type, learning aggregator, closed-loop architecture |
+| [Compliance](../docs/compliance.md) | 20+ regulatory rules with TILA/FCRA/ECOA/FTC/GLBA references |
+| [Architecture](../docs/architecture.md) | Tech stack, patterns, migrations, deploy pipeline |
+| [Getting Started](../docs/getting-started.md) | Developer onboarding: clone to deploy |
+| [White Paper](../docs/wolfpack-auto-whitepaper.md) | Investor positioning, market opportunity, business model |
+
+---
+
 ## Next Steps
 
 1. **Database provisioning** — Connect Vercel Postgres for live data
