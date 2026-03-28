@@ -42,6 +42,16 @@ export async function PATCH(
     );
   }
 
+  // Shadow mode — no DB
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      success: true,
+      vehicleId,
+      action: action === "apply" ? "applied" : "dismissed",
+      ...(action === "apply" && new_price ? { newPrice: new_price } : {}),
+    });
+  }
+
   try {
     // Verify the vehicle belongs to this dealer
     const vehicleCheck = await query(

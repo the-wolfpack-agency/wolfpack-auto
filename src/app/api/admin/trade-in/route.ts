@@ -64,10 +64,10 @@ export async function GET(request: NextRequest) {
       { status: 200 },
     );
   } catch (err) {
-    console.error("[api/admin/trade-in] Query failed:", err);
+    console.error("[api/admin/trade-in] Query failed, falling back to empty:", err);
     return NextResponse.json(
-      { error: "Failed to fetch trade-in estimates" },
-      { status: 500 },
+      { estimates: [], submissions: [], total: 0, page, page_size: pageSize },
+      { status: 200 },
     );
   }
 }

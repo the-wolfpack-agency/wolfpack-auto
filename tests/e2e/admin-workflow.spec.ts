@@ -107,6 +107,88 @@ test.describe("Admin workflow: Quick Add vehicle", () => {
   });
 });
 
+test.describe("Admin workflow: Quick Add page renders", () => {
+  test("Quick-add page renders heading and VIN input without crash", async ({ page }) => {
+    const ok = await safeNavigate(page, "/admin/vehicles/quick-add");
+    if (!ok) {
+      test.info().annotations.push({
+        type: "skip",
+        description: "/admin/vehicles/quick-add not accessible",
+      });
+      return;
+    }
+
+    // Page must have a heading
+    const heading = page.locator("h1, h2");
+    await expect(heading.first()).toBeVisible({ timeout: 5_000 });
+
+    // VIN input must render
+    const vinInput = page.locator(
+      'input[name="vin"], input[placeholder*="VIN" i], input[aria-label*="VIN" i]'
+    );
+    await expect(vinInput.first()).toBeVisible({ timeout: 5_000 });
+
+    // No error boundary or crash text
+    const body = await page.textContent("body");
+    expect(body).not.toContain("Application error");
+    expect(body).not.toContain("Internal Server Error");
+  });
+});
+
+test.describe("Admin workflow: vehicle edit pre-population", () => {
+  test("Edit page pre-populates fields from API data", async ({ page }) => {
+    // Use the demo VIN from inventory mock data
+    const ok = await safeNavigate(page, "/admin/vehicles/1HGCV1F34PA000001/edit");
+    if (!ok) {
+      test.info().annotations.push({
+        type: "skip",
+        description: "/admin/vehicles/:vin/edit not accessible",
+      });
+      return;
+    }
+
+    // Wait for loading to finish
+    await page.waitForTimeout(3000);
+
+    // Page should NOT still be showing "Loading vehicle data..."
+    const loadingText = page.locator('text="Loading vehicle data..."');
+    const stillLoading = await loadingText.isVisible({ timeout: 2_000 }).catch(() => false);
+
+    if (stillLoading) {
+      test.info().annotations.push({
+        type: "info",
+        description: "Edit page still loading — API may not return vehicle data in demo mode",
+      });
+      return;
+    }
+
+    // If we got an error page (vehicle not found), that's acceptable in demo mode
+    const errorText = page.locator('text="Vehicle not found"');
+    if (await errorText.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      test.info().annotations.push({
+        type: "info",
+        description: "Vehicle not found in demo mode — pre-population test N/A",
+      });
+      return;
+    }
+
+    // If we got past loading and no error, fields should be pre-populated
+    // Check that at least one form input has a non-empty value
+    const inputs = page.locator('input[type="text"], input[type="number"], select');
+    const count = await inputs.count();
+    expect(count).toBeGreaterThan(0);
+
+    let populatedCount = 0;
+    for (let i = 0; i < Math.min(count, 10); i++) {
+      const val = await inputs.nth(i).inputValue().catch(() => "");
+      if (val.length > 0) populatedCount++;
+    }
+
+    // At least one field should be pre-populated (VIN, year, make, etc.)
+    expect(populatedCount).toBeGreaterThan(0);
+  });
+});
+
 test.describe("Admin workflow: analytics dashboard", () => {
   test("Admin views analytics and asks a question", async ({ page }) => {
     const ok = await safeNavigate(page, "/admin/analytics");
@@ -208,6 +290,7 @@ test.describe("Admin layout regression: no double header or sidebar overlap", ()
     "/admin/leads",
     "/admin/analytics",
     "/admin/settings",
+    "/admin/settings/mfa",
   ];
 
   for (const route of ADMIN_ROUTES) {
@@ -314,5 +397,161 @@ test.describe("Admin layout regression: no double header or sidebar overlap", ()
 
     const bubble = page.locator('button[aria-label="Open chat assistant"]');
     await expect(bubble).not.toBeVisible({ timeout: 3_000 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Admin API contract tests — added to complement layout regression tests
+// ---------------------------------------------------------------------------
+
+test.describe("Admin API: leads endpoint shape and filtering", () => {
+  test("Admin leads endpoint returns correct response shape", async ({
+    request,
+  }) => {
+    const resp = await request.get("/api/admin/leads");
+
+    // Accept 200 (demo mode) or 401 (production auth) — never 500
+    expect([200, 401, 403]).toContain(resp.status());
+
+    if (resp.status() !== 200) {
+      test.info().annotations.push({
+        type: "info",
+        description: "Auth required — skipping shape assertion",
+      });
+      return;
+    }
+
+    const body = await resp.json();
+
+    // Required top-level keys
+    expect(body).toHaveProperty("leads");
+    expect(body).toHaveProperty("total");
+    expect(body).toHaveProperty("page");
+    expect(body).toHaveProperty("page_size");
+    expect(body).toHaveProperty("team_members");
+
+    expect(Array.isArray(body.leads)).toBe(true);
+    expect(typeof body.total).toBe("number");
+    expect(typeof body.page).toBe("number");
+    expect(typeof body.page_size).toBe("number");
+    expect(Array.isArray(body.team_members)).toBe(true);
+  });
+
+  test("Admin leads pagination: page_size=5 returns at most 5 leads", async ({
+    request,
+  }) => {
+    const resp = await request.get("/api/admin/leads?page=1&page_size=5");
+    expect([200, 401, 403]).toContain(resp.status());
+
+    if (resp.status() !== 200) return;
+
+    const body = await resp.json();
+    expect(Array.isArray(body.leads)).toBe(true);
+    expect(body.leads.length).toBeLessThanOrEqual(5);
+    expect(body.page_size).toBe(5);
+    expect(body.page).toBe(1);
+  });
+
+  test("Admin leads pagination: page=2 returns a different set from page=1", async ({
+    request,
+  }) => {
+    const [resp1, resp2] = await Promise.all([
+      request.get("/api/admin/leads?page=1&page_size=3"),
+      request.get("/api/admin/leads?page=2&page_size=3"),
+    ]);
+
+    expect([200, 401, 403]).toContain(resp1.status());
+    if (resp1.status() !== 200 || resp2.status() !== 200) return;
+
+    const body1 = await resp1.json();
+    const body2 = await resp2.json();
+
+    // If there are enough leads for a page 2, IDs must differ
+    if (body2.leads.length > 0 && body1.leads.length > 0) {
+      const ids1 = new Set(body1.leads.map((l: { id: string }) => l.id));
+      const ids2 = body2.leads.map((l: { id: string }) => l.id);
+      const overlap = ids2.filter((id: string) => ids1.has(id));
+      expect(overlap.length).toBe(0);
+    }
+  });
+
+  test("Admin leads status filter: ?status=new returns only new leads", async ({
+    request,
+  }) => {
+    const resp = await request.get("/api/admin/leads?status=new");
+    expect([200, 401, 403]).toContain(resp.status());
+
+    if (resp.status() !== 200) return;
+
+    const body = await resp.json();
+    expect(Array.isArray(body.leads)).toBe(true);
+
+    for (const lead of body.leads) {
+      expect(lead.status).toBe("new");
+    }
+  });
+
+  test("Admin leads status filter: ?status=contacted returns only contacted leads", async ({
+    request,
+  }) => {
+    const resp = await request.get("/api/admin/leads?status=contacted");
+    expect([200, 401, 403]).toContain(resp.status());
+
+    if (resp.status() !== 200) return;
+
+    const body = await resp.json();
+    for (const lead of body.leads) {
+      expect(lead.status).toBe("contacted");
+    }
+  });
+
+  test("Admin leads: each lead in response has required fields", async ({
+    request,
+  }) => {
+    const resp = await request.get("/api/admin/leads?page_size=3");
+    expect([200, 401, 403]).toContain(resp.status());
+
+    if (resp.status() !== 200) return;
+
+    const body = await resp.json();
+    for (const lead of body.leads) {
+      expect(lead).toHaveProperty("id");
+      expect(lead).toHaveProperty("first_name");
+      expect(lead).toHaveProperty("last_name");
+      expect(lead).toHaveProperty("status");
+      expect(lead).toHaveProperty("created_at");
+    }
+  });
+});
+
+test.describe("Admin API: health endpoint", () => {
+  test("GET /api/health returns 200 or 503 with status and checks fields", async ({
+    request,
+  }) => {
+    const resp = await request.get("/api/health");
+
+    // 200 = healthy/degraded, 503 = unhealthy — both are documented responses
+    expect([200, 503]).toContain(resp.status());
+
+    const body = await resp.json();
+
+    // Required shape from health route contract
+    expect(body).toHaveProperty("status");
+    expect(body).toHaveProperty("checks");
+    expect(["healthy", "degraded", "unhealthy"]).toContain(body.status);
+    expect(typeof body.checks).toBe("object");
+  });
+
+  test("GET /api/health checks object has postgres and redis keys", async ({
+    request,
+  }) => {
+    const resp = await request.get("/api/health");
+    expect([200, 503]).toContain(resp.status());
+
+    const body = await resp.json();
+    expect(body.checks).toHaveProperty("postgres");
+    expect(body.checks).toHaveProperty("redis");
+    expect(typeof body.checks.postgres.ok).toBe("boolean");
+    expect(typeof body.checks.redis.ok).toBe("boolean");
   });
 });

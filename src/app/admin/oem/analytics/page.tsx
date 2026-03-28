@@ -63,12 +63,9 @@ export default async function OemAnalyticsPage() {
       </div>
 
       {migrationPending && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <strong>No network data yet.</strong> Apply migration{" "}
-          <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">
-            004_oem_program_management.sql
-          </code>{" "}
-          and link dealers to an OEM to see cross-dealer benchmarks.
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          <strong className="text-gray-700">No network data yet.</strong>{" "}
+          Connect your database and link dealers to an OEM to see cross-dealer benchmarks.
         </div>
       )}
 

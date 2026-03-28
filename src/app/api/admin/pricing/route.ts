@@ -17,6 +17,21 @@ export async function GET() {
   if (!isAuthenticated(authResult)) return authResult;
   const dealerId = authResult.user.dealer_id;
 
+  // Shadow mode — no DB available
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      cached: false,
+      generatedAt: new Date(),
+      totalVehicles: 0,
+      immediateAction: [],
+      soonAction: [],
+      monitorAction: [],
+      projectedRevenueImpact: 0,
+      avgDaysOnLot: 0,
+      stalledVehicles: 0,
+    });
+  }
+
   try {
     // Check for recent recommendations (< 24 hours old)
     const recent = await query(
@@ -82,8 +97,18 @@ export async function GET() {
     const report = await generatePricingReport(dealerId);
     return NextResponse.json({ cached: false, ...report });
   } catch (err) {
-    console.error("[GET /api/admin/pricing] Error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("[GET /api/admin/pricing] Error, returning empty report:", err);
+    return NextResponse.json({
+      cached: false,
+      generatedAt: new Date(),
+      totalVehicles: 0,
+      immediateAction: [],
+      soonAction: [],
+      monitorAction: [],
+      projectedRevenueImpact: 0,
+      avgDaysOnLot: 0,
+      stalledVehicles: 0,
+    });
   }
 }
 
@@ -95,6 +120,21 @@ export async function POST(req: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
   const dealerId = authResult.user.dealer_id;
+
+  // Shadow mode — no DB available
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({
+      cached: false,
+      generatedAt: new Date(),
+      totalVehicles: 0,
+      immediateAction: [],
+      soonAction: [],
+      monitorAction: [],
+      projectedRevenueImpact: 0,
+      avgDaysOnLot: 0,
+      stalledVehicles: 0,
+    });
+  }
 
   // Rate limit: 10 regenerations per hour
   const rl = await checkRateLimit(`pricing-regenerate:${dealerId}`, 10, 3600);
@@ -152,7 +192,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ cached: false, ...report });
   } catch (err) {
-    console.error("[POST /api/admin/pricing] Error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("[POST /api/admin/pricing] Error, returning empty report:", err);
+    return NextResponse.json({
+      cached: false,
+      generatedAt: new Date(),
+      totalVehicles: 0,
+      immediateAction: [],
+      soonAction: [],
+      monitorAction: [],
+      projectedRevenueImpact: 0,
+      avgDaysOnLot: 0,
+      stalledVehicles: 0,
+    });
   }
 }

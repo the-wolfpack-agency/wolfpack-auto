@@ -62,7 +62,7 @@ export default async function SettingsPage() {
         {/* ---------------------------------------------------------------- */}
         <section
           aria-labelledby="dealer-info-heading"
-          className="rounded-card border border-surface-border bg-white p-6 shadow-card"
+          className="overflow-hidden rounded-card border border-surface-border bg-white px-4 py-5 shadow-card sm:p-6"
         >
           <h2
             id="dealer-info-heading"
@@ -210,57 +210,81 @@ export default async function SettingsPage() {
               <legend className="text-sm font-semibold text-gray-900">
                 Sales Hours
               </legend>
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 divide-y divide-gray-100 sm:divide-y-0 sm:space-y-2">
                 {DAYS.map((day) => {
                   const hours = dealer?.sales_hours?.find(
                     (h) => h.day === day,
                   );
                   return (
-                    <div
-                      key={day}
-                      className="flex items-center gap-3 text-sm"
-                    >
-                      <span className="w-24 capitalize text-gray-700">
-                        {day}
-                      </span>
-                      <label
-                        htmlFor={`hours-${day}-open`}
-                        className="sr-only"
-                      >
-                        {day} opening time
-                      </label>
-                      <input
-                        id={`hours-${day}-open`}
-                        name={`hours_${day}_open`}
-                        type="time"
-                        defaultValue={hours?.open ?? "09:00"}
-                        disabled={hours?.closed}
-                        className="rounded-lg border border-surface-border px-3 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-surface-subtle disabled:text-gray-400"
-                      />
-                      <span className="text-gray-400">to</span>
-                      <label
-                        htmlFor={`hours-${day}-close`}
-                        className="sr-only"
-                      >
-                        {day} closing time
-                      </label>
-                      <input
-                        id={`hours-${day}-close`}
-                        name={`hours_${day}_close`}
-                        type="time"
-                        defaultValue={hours?.close ?? "18:00"}
-                        disabled={hours?.closed}
-                        className="rounded-lg border border-surface-border px-3 py-1.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-surface-subtle disabled:text-gray-400"
-                      />
-                      <label className="flex items-center gap-1.5 text-sm text-gray-500">
+                    <div key={day} className="py-3 text-sm first:pt-0 sm:py-0">
+                      {/* Mobile: stacked layout */}
+                      <div className="sm:hidden">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="font-medium capitalize text-gray-700">{day}</span>
+                          <label className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <input
+                              type="checkbox"
+                              name={`hours_${day}_closed`}
+                              defaultChecked={hours?.closed}
+                              className="h-3.5 w-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            />
+                            Closed
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label htmlFor={`hours-${day}-open-m`} className="sr-only">{day} open</label>
+                          <input
+                            id={`hours-${day}-open-m`}
+                            name={`hours_${day}_open`}
+                            type="time"
+                            defaultValue={hours?.open ?? "09:00"}
+                            disabled={hours?.closed}
+                            className="block w-full rounded-lg border border-surface-border py-2 text-center text-sm shadow-sm disabled:bg-surface-subtle disabled:text-gray-400"
+                          />
+                          <span className="shrink-0 text-gray-400">to</span>
+                          <label htmlFor={`hours-${day}-close-m`} className="sr-only">{day} close</label>
+                          <input
+                            id={`hours-${day}-close-m`}
+                            name={`hours_${day}_close`}
+                            type="time"
+                            defaultValue={hours?.close ?? "18:00"}
+                            disabled={hours?.closed}
+                            className="block w-full rounded-lg border border-surface-border py-2 text-center text-sm shadow-sm disabled:bg-surface-subtle disabled:text-gray-400"
+                          />
+                        </div>
+                      </div>
+                      {/* Desktop: single row */}
+                      <div className="hidden items-center gap-3 sm:flex">
+                        <span className="w-24 capitalize text-gray-700">{day}</span>
+                        <label htmlFor={`hours-${day}-open`} className="sr-only">{day} open</label>
                         <input
-                          type="checkbox"
-                          name={`hours_${day}_closed`}
-                          defaultChecked={hours?.closed}
-                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          id={`hours-${day}-open`}
+                          name={`hours_${day}_open`}
+                          type="time"
+                          defaultValue={hours?.open ?? "09:00"}
+                          disabled={hours?.closed}
+                          className="rounded-lg border border-surface-border px-3 py-1.5 text-sm shadow-sm disabled:bg-surface-subtle disabled:text-gray-400"
                         />
-                        Closed
-                      </label>
+                        <span className="text-gray-400">to</span>
+                        <label htmlFor={`hours-${day}-close`} className="sr-only">{day} close</label>
+                        <input
+                          id={`hours-${day}-close`}
+                          name={`hours_${day}_close`}
+                          type="time"
+                          defaultValue={hours?.close ?? "18:00"}
+                          disabled={hours?.closed}
+                          className="rounded-lg border border-surface-border px-3 py-1.5 text-sm shadow-sm disabled:bg-surface-subtle disabled:text-gray-400"
+                        />
+                        <label className="flex items-center gap-1.5 text-sm text-gray-500">
+                          <input
+                            type="checkbox"
+                            name={`hours_${day}_closed`}
+                            defaultChecked={hours?.closed}
+                            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          Closed
+                        </label>
+                      </div>
                     </div>
                   );
                 })}
@@ -283,7 +307,7 @@ export default async function SettingsPage() {
         {/* ---------------------------------------------------------------- */}
         <section
           aria-labelledby="branding-heading"
-          className="rounded-card border border-surface-border bg-white p-6 shadow-card"
+          className="overflow-hidden rounded-card border border-surface-border bg-white p-6 shadow-card"
         >
           <h2
             id="branding-heading"
@@ -299,38 +323,38 @@ export default async function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   Logo
                 </label>
-                <div className="mt-1 flex items-center gap-4">
-                  {dealer?.branding?.logo_url ? (
-                    <img
-                      src={dealer.branding.logo_url}
-                      alt="Current dealer logo"
-                      className="h-12 w-auto rounded"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded bg-surface-subtle text-sm text-gray-400">
-                      Logo
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <label
-                      htmlFor="logo-upload"
-                      className="cursor-pointer rounded-lg border border-dashed border-surface-border px-4 py-3 text-center text-sm text-gray-500 transition-colors hover:border-brand-500 hover:text-brand-600"
-                    >
-                      <span className="block font-medium">
+                <div className="mt-2">
+                  <label
+                    htmlFor="logo-upload"
+                    className="flex cursor-pointer items-center gap-4 rounded-lg border border-dashed border-surface-border p-4 text-sm text-gray-500 transition-colors hover:border-brand-500 hover:text-brand-600"
+                  >
+                    {dealer?.branding?.logo_url ? (
+                      <img
+                        src={dealer.branding.logo_url}
+                        alt="Current dealer logo"
+                        className="h-12 w-auto shrink-0 rounded"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-surface-subtle text-xs text-gray-400">
+                        ?
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <span className="block font-medium text-gray-700">
                         Click to upload logo
                       </span>
-                      <span className="text-xs">
+                      <span className="text-xs text-gray-400">
                         PNG, JPG, or SVG up to 2MB
                       </span>
-                    </label>
-                    <input
-                      id="logo-upload"
-                      name="logo"
-                      type="file"
-                      accept="image/png,image/jpeg,image/svg+xml"
-                      className="sr-only"
-                    />
-                  </div>
+                    </div>
+                  </label>
+                  <input
+                    id="logo-upload"
+                    name="logo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml"
+                    className="sr-only"
+                  />
                 </div>
               </div>
 

@@ -142,6 +142,20 @@ test.describe("Security contracts: POST /api/admin/deals/sign", () => {
       expect([401, 403, 422]).toContain(resp.status());
     },
   );
+
+  test(
+    "POST /api/admin/deals/sign with oversized signature_data returns 413 or 401",
+    async ({ request }) => {
+      const oversized =
+        "data:image/png;base64," + "A".repeat(600_000);
+      const resp = await request.post("/api/admin/deals/sign", {
+        data: { ...VALID_SIGN_BODY, signature_data: oversized },
+      });
+
+      expect(resp.status()).not.toBe(500);
+      expect([401, 403, 413]).toContain(resp.status());
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

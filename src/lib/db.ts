@@ -37,7 +37,7 @@ export const pool = createPool();
 /**
  * Convenience: run a single parameterised query.
  */
-export async function query<T extends Record<string, unknown>>(
+export async function query<T extends Record<string, any>>(
   text: string,
   params?: unknown[],
 ) {

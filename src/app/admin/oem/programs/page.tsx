@@ -102,13 +102,10 @@ export default async function OemProgramsPage() {
       {programs.length === 0 ? (
         <>
           {/* Pre-migration: show what programs look like */}
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            <strong>No programs found.</strong> Apply migration{" "}
-            <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">
-              004_oem_program_management.sql
-            </code>{" "}
-            and insert OEM programs to manage them here. Below is a preview of supported
-            program types.
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+            <strong className="text-gray-700">No programs yet.</strong>{" "}
+            Use the &ldquo;+ New Program&rdquo; button above to create your first OEM program.
+            Below is a preview of supported program types.
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

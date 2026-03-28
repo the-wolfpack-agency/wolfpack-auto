@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
           violations: [],
           checkedAt: null,
           message:
-            "Compliance data unavailable. Run migration 006_compliance.sql and POST to generate a score.",
+            "No compliance data yet. Click \"Run Compliance Check\" to generate your first score.",
         },
         { status: 200 },
       ),

@@ -395,7 +395,7 @@ export default function ChangeManagementPage() {
                   required
                   value={formEffectiveDate}
                   onChange={(e) => setFormEffectiveDate(e.target.value)}
-                  className="mt-1.5 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="mt-1.5 block w-full rounded-lg border border-gray-300 px-3 py-2 text-center text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
             </div>

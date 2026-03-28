@@ -147,7 +147,7 @@ export default function OnboardingPage() {
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-600">
           <CheckIcon className="h-8 w-8 text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="text-2xl font-bold text-gray-900">
           Your dealership is live!
         </h1>
         <p className="mt-2 text-gray-400">
@@ -167,8 +167,8 @@ export default function OnboardingPage() {
     <div className="mx-auto max-w-3xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Set Up Your Dealership</h1>
-        <p className="mt-1 text-sm text-gray-400">
+        <h1 className="text-2xl font-bold text-gray-900">Set Up Your Dealership</h1>
+        <p className="mt-1 text-sm text-gray-500">
           Complete these steps to launch your dealer site.
         </p>
       </div>
@@ -241,7 +241,7 @@ function ProgressBar({
   return (
     <div>
       {/* Bar */}
-      <div className="relative h-2 overflow-hidden rounded-full bg-gray-700">
+      <div className="relative h-2 overflow-hidden rounded-full bg-gray-200">
         <div
           className="absolute inset-y-0 left-0 rounded-full bg-brand-600 transition-all duration-300"
           style={{
@@ -258,14 +258,14 @@ function ProgressBar({
             type="button"
             onClick={() => {}}
             className={`flex-1 text-center text-xs font-medium transition-colors ${
-              i <= currentStep ? "text-brand-400" : "text-gray-500"
+              i <= currentStep ? "text-brand-600" : "text-gray-400"
             }`}
           >
             {label}
           </button>
         ))}
       </div>
-      <p className="mt-2 text-xs text-gray-400 sm:hidden">
+      <p className="mt-2 text-xs text-gray-500 sm:hidden">
         Step {currentStep + 1} of {steps.length}: {steps[currentStep]}
       </p>
     </div>

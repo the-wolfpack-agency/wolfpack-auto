@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auditLog } from "@/lib/audit-log";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 
 /**
  * POST /api/admin/deals/sign
@@ -7,6 +8,9 @@ import { auditLog } from "@/lib/audit-log";
  * Records a signed deal / buyer's order with e-signature data.
  */
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
   let body: { lead_id?: string; vehicle_vin?: string; signature_data?: string; agreed_price?: number };
 
   try {
@@ -36,6 +40,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "signature_data must be a base64 PNG data URL" },
       { status: 422 },
+    );
+  }
+
+  // Cap signature at ~500 KB base64 (roughly 375 KB decoded image)
+  if (signature_data.length > 500_000) {
+    return NextResponse.json(
+      { error: "signature_data exceeds maximum allowed size (500 KB)" },
+      { status: 413 },
     );
   }
 

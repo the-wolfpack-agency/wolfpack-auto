@@ -86,7 +86,7 @@ export default function TradeInAdminPage() {
         const res = await fetch("/api/admin/trade-in");
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
         const data = await res.json();
-        setSubmissions(data.submissions ?? []);
+        setSubmissions(data.submissions ?? data.estimates ?? []);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load submissions.",

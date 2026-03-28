@@ -131,13 +131,12 @@ const FEATURES: { label: string; starter: string; professional: string; enterpri
 
 function MigrationPendingNotice() {
   return (
-    <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3">
-      <p className="text-sm font-medium text-yellow-800">
-        Billing database migration pending
+    <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+      <p className="text-sm font-medium text-gray-700">
+        Trial plan active
       </p>
-      <p className="mt-1 text-xs text-yellow-700">
-        Run migration <code className="rounded bg-yellow-100 px-1 font-mono">005_billing.sql</code> to
-        enable full billing features. Showing default trial status until then.
+      <p className="mt-1 text-xs text-gray-500">
+        Connect your database to unlock full billing features and manage your subscription.
       </p>
     </div>
   );

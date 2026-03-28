@@ -106,15 +106,11 @@ export default async function OemOverviewPage() {
         </div>
       </div>
 
-      {/* Migration pending notice */}
+      {/* Empty state notice */}
       {migrationPending && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <strong>Migration pending:</strong> Run{" "}
-          <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">
-            004_oem_program_management.sql
-          </code>{" "}
-          against your database to activate OEM tables. The portal will display live data once
-          the migration is applied.
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+          <strong className="text-gray-700">Getting started:</strong>{" "}
+          Connect your database to activate OEM network features. The portal will display live data once configured.
         </div>
       )}
 

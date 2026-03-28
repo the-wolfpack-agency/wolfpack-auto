@@ -155,8 +155,7 @@ export default function ReportsPage() {
                 type="date"
                 value={leadDateFrom}
                 onChange={(e) => setLeadDateFrom(e.target.value)}
-                className="w-full rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                style={{ fontSize: 16 }}
+                className="w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-center text-sm shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
 
@@ -172,8 +171,7 @@ export default function ReportsPage() {
                 type="date"
                 value={leadDateTo}
                 onChange={(e) => setLeadDateTo(e.target.value)}
-                className="w-full rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                style={{ fontSize: 16 }}
+                className="w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-center text-sm shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
 

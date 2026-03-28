@@ -9,9 +9,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Type correctness is enforced by tsc --noEmit in CI.
-    // Skipping here avoids Vercel build cache causing false TS errors.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   env: {

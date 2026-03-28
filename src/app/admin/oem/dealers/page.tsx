@@ -72,7 +72,7 @@ export default async function OemDealersPage() {
             </svg>
             <p className="mt-3 text-sm font-medium text-gray-600">No dealers found</p>
             <p className="mt-1 text-xs text-gray-400">
-              Apply migration 004 and add dealers to see the network here.
+              Add dealers to your network to see them listed here.
             </p>
           </div>
         ) : (

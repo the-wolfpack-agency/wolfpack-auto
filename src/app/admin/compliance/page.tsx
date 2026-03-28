@@ -300,7 +300,7 @@ export default function CompliancePage() {
 
       {/* Pending message */}
       {!loading && data?.message && data.score === null && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
           {data.message}
         </div>
       )}

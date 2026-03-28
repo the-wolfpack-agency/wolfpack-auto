@@ -330,14 +330,14 @@ describe("BUG-004: next.config.mjs disables lint/TS checks that break Vercel bui
     expect(src).toContain("ignoreDuringBuilds: true");
   });
 
-  it("typescript.ignoreBuildErrors is true", () => {
+  it("typescript.ignoreBuildErrors is false (TS errors are enforced)", () => {
     const { readFileSync } = require("fs");
     const { join } = require("path");
     const src = readFileSync(
       join(__dirname, "../../../next.config.mjs"),
       "utf-8",
     );
-    expect(src).toContain("ignoreBuildErrors: true");
+    expect(src).toContain("ignoreBuildErrors: false");
   });
 });
 
