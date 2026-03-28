@@ -520,6 +520,114 @@ export default async function SettingsPage() {
             </div>
           </form>
         </section>
+        {/* ---------------------------------------------------------------- */}
+        {/* Integrations / Webhooks                                          */}
+        {/* ---------------------------------------------------------------- */}
+        <section
+          aria-labelledby="integrations-heading"
+          className="rounded-card border border-surface-border bg-white p-6 shadow-card"
+        >
+          <h2
+            id="integrations-heading"
+            className="mb-6 text-lg font-semibold text-gray-900"
+          >
+            Integrations
+          </h2>
+
+          <form action="/api/admin/settings/webhooks" method="POST">
+            <div className="space-y-6">
+              <div>
+                <label
+                  htmlFor="webhook-url"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Webhook URL
+                </label>
+                <input
+                  id="webhook-url"
+                  name="webhook_url"
+                  type="url"
+                  placeholder="https://your-crm.com/webhooks/wolfpack"
+                  className="mt-1 block w-full rounded-lg border border-surface-border px-4 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  We&apos;ll send real-time POST requests to this URL when events occur.
+                </p>
+              </div>
+
+              <fieldset>
+                <legend className="text-sm font-semibold text-gray-900">
+                  Event Types
+                </legend>
+                <p className="mt-1 text-xs text-gray-500">
+                  Select which events should trigger webhook deliveries.
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {[
+                    { value: "lead.created", label: "Lead Created" },
+                    { value: "lead.updated", label: "Lead Updated" },
+                    { value: "deal.funded", label: "Deal Funded" },
+                    { value: "deal.status_changed", label: "Deal Status Changed" },
+                    { value: "vehicle.added", label: "Vehicle Added" },
+                    { value: "vehicle.sold", label: "Vehicle Sold" },
+                    { value: "service.appointment_created", label: "Service Appointment Created" },
+                    { value: "service.repair_completed", label: "Repair Order Completed" },
+                    { value: "customer.created", label: "Customer Created" },
+                    { value: "review.submitted", label: "Review Submitted" },
+                  ].map((evt) => (
+                    <label
+                      key={evt.value}
+                      className="flex items-center gap-2 rounded-lg border border-surface-border px-3 py-2 text-sm transition-colors hover:bg-surface-subtle"
+                    >
+                      <input
+                        type="checkbox"
+                        name="events"
+                        value={evt.value}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-gray-700">{evt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              {/* Webhook status display */}
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Webhook Status</p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      No webhook configured yet. Add a URL and save to activate.
+                    </p>
+                  </div>
+                  <span className="inline-flex rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                    Inactive
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+                  <span>Last delivery: --</span>
+                  <span className="text-gray-300">|</span>
+                  <span>Last status: --</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3 sm:justify-end">
+              <button
+                type="button"
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+              >
+                Test Webhook
+              </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+              >
+                Save Webhook
+              </button>
+            </div>
+          </form>
+        </section>
       </div>
     </>
   );

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 /** Sub-items shown under Documents when on a /admin/documents page. */
 const DOCUMENTS_CHILDREN = [
@@ -89,6 +89,7 @@ const NAV_ITEMS = [
   { href: "/admin/training", label: "Training", icon: TrainingIcon },
   { href: "/admin/resources", label: "Resources", icon: ResourcesIcon },
   { href: "/admin/webhooks", label: "Webhooks", icon: WebhooksIcon },
+  { href: "/admin/team", label: "Team", icon: TeamIcon },
   { href: "/admin/agency", label: "Agency", icon: AgencyIcon },
   { href: "/admin/compliance", label: "Compliance", icon: ComplianceIcon },
   { href: "/admin/security", label: "Security", icon: SecurityHardeningIcon },
@@ -96,10 +97,58 @@ const NAV_ITEMS = [
   { href: "/admin/billing", label: "Billing", icon: BillingIcon },
 ] as const;
 
+interface DealerOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export default function AdminSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [dealers, setDealers] = useState<DealerOption[]>([]);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  // Fetch dealers for agency-level users
+  const isAgencyUser =
+    session?.user?.id === "demo-user" ||
+    session?.user?.role === "owner" ||
+    session?.user?.role === "admin";
+
+  const fetchDealers = useCallback(async () => {
+    if (!isAgencyUser) return;
+    try {
+      const res = await fetch("/api/admin/dealers");
+      if (res.ok) {
+        const data = await res.json();
+        setDealers(data.dealers ?? []);
+      }
+    } catch {
+      // swallow
+    }
+  }, [isAgencyUser]);
+
+  useEffect(() => {
+    fetchDealers();
+  }, [fetchDealers]);
+
+  const handleSwitchDealer = async (dealerId: string) => {
+    try {
+      const res = await fetch("/api/admin/switch-dealer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dealer_id: dealerId }),
+      });
+      if (res.ok) {
+        setSwitcherOpen(false);
+        router.refresh();
+      }
+    } catch {
+      // swallow
+    }
+  };
 
   // Hide sidebar on the login page
   if (pathname === "/admin/login") return null;
@@ -139,6 +188,46 @@ export default function AdminSidebar() {
           </svg>
         </button>
       </div>
+
+      {/* Dealer Switcher — agency-level users only */}
+      {isAgencyUser && dealers.length > 0 && (
+        <div className="border-b border-gray-800 px-3 py-2">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSwitcherOpen(!switcherOpen)}
+              className="flex w-full items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+            >
+              <span className="truncate">
+                {session?.user?.dealer_id
+                  ? dealers.find((d) => d.id === session.user.dealer_id)?.name ?? session.user.dealer_id
+                  : "Select Dealer"}
+              </span>
+              <svg className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${switcherOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+              </svg>
+            </button>
+            {switcherOpen && (
+              <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800 py-1 shadow-lg">
+                {dealers.map((dealer) => (
+                  <button
+                    key={dealer.id}
+                    onClick={() => handleSwitchDealer(dealer.id)}
+                    className={`block w-full px-3 py-2 text-left text-sm transition-colors ${
+                      session?.user?.dealer_id === dealer.id
+                        ? "bg-gray-700 font-medium text-white"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                    }`}
+                  >
+                    {dealer.name}
+                    <span className="ml-2 text-xs text-gray-500">{dealer.slug}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav aria-label="Admin navigation" className="flex-1 overflow-y-auto px-3 py-4">
@@ -742,6 +831,14 @@ function WebhooksIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+    </svg>
+  );
+}
+
+function TeamIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
     </svg>
   );
 }

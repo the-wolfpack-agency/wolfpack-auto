@@ -142,7 +142,13 @@ export type SystemEvent =
   | "system.health_check"
   | "system.health_degraded"
   | "system.health_critical"
-  | "system.auto_rollback";
+  | "system.auto_rollback"
+  | "team.user_created"
+  | "team.user_updated"
+  | "team.user_deactivated"
+  | "agency.dealer_created"
+  | "agency.dealer_toggled"
+  | "agency.dealer_switched";
 
 export type WebhookEvent =
   | "webhook.delivered"

@@ -16,7 +16,7 @@ declare module "next-auth" {
       email: string;
       name: string;
       dealer_id: string;
-      role: "admin" | "manager" | "staff";
+      role: "owner" | "admin" | "manager" | "staff";
     };
     /** True when the session JWT was created after MFA was verified. */
     mfaVerified?: boolean;
@@ -27,7 +27,7 @@ declare module "next-auth" {
     email: string;
     name: string;
     dealer_id: string;
-    role: "admin" | "manager" | "staff";
+    role: "owner" | "admin" | "manager" | "staff";
     /** Set when MFA is required before issuing a full session. */
     mfa_required?: boolean;
   }
@@ -39,7 +39,7 @@ declare module "next-auth/jwt" {
     email: string;
     name: string;
     dealer_id: string;
-    role: "admin" | "manager" | "staff";
+    role: "owner" | "admin" | "manager" | "staff";
     lastActivity: number;
     /**
      * When true the user authenticated with password but has NOT yet

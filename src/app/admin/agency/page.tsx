@@ -15,6 +15,7 @@ interface DealerSummary {
   inventory_count: number;
   revenue_mtd: number;
   status: "active" | "onboarding" | "suspended";
+  is_active?: boolean;
   created_at: string;
 }
 
@@ -95,7 +96,7 @@ export default function AgencyPage() {
     try {
       const [overviewRes, dealersRes, keysRes] = await Promise.all([
         fetch("/api/agency/overview"),
-        fetch("/api/agency/dealers"),
+        fetch("/api/admin/dealers"),
         fetch("/api/agency/api-keys"),
       ]);
       if (overviewRes.ok) {
@@ -139,6 +140,20 @@ export default function AgencyPage() {
     }
   };
 
+  const toggleDealerStatus = async (dealer: DealerSummary) => {
+    try {
+      const newActive = dealer.is_active === false;
+      await fetch(`/api/admin/dealers`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: dealer.id, is_active: newActive }),
+      });
+      fetchData();
+    } catch {
+      // swallow
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-8">
@@ -149,11 +164,24 @@ export default function AgencyPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900">Agency Dashboard</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Overview of all dealers managed by your agency.
-      </p>
+    <div className="p-6 max-w-6xl mx-auto sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Agency Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Overview of all dealers managed by your agency.
+          </p>
+        </div>
+        <a
+          href="/admin/agency/new-dealer"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add New Dealer
+        </a>
+      </div>
 
       {/* Overview stats */}
       {overview && (
@@ -176,50 +204,82 @@ export default function AgencyPage() {
         </div>
       )}
 
+      {/* Dealer count badge */}
+      <div className="mt-8 flex items-center gap-3">
+        <h2 className="text-lg font-semibold text-gray-900">Dealer Network</h2>
+        <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+          {dealers.length} {dealers.length === 1 ? "dealer" : "dealers"}
+        </span>
+      </div>
+
       {/* Dealer table */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900">Dealer Performance</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Dealer</th>
-                <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Status</th>
-                <th className="px-4 py-2 text-right text-xs font-medium uppercase text-gray-500">Leads</th>
-                <th className="px-4 py-2 text-right text-xs font-medium uppercase text-gray-500">Deals</th>
-                <th className="px-4 py-2 text-right text-xs font-medium uppercase text-gray-500">Inventory</th>
-                <th className="px-4 py-2 text-right text-xs font-medium uppercase text-gray-500">Revenue MTD</th>
-                <th className="px-4 py-2 text-left text-xs font-medium uppercase text-gray-500">Joined</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {dealers.map((dealer) => (
+      <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Dealer</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Slug</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Status</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Leads</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Inventory</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">Created</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {dealers.map((dealer) => {
+              const isActive = dealer.is_active !== false && dealer.status !== "suspended";
+              return (
                 <tr key={dealer.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     <a
-                      href={`/admin?dealer=${dealer.slug}`}
+                      href={`/dealers/${dealer.slug}`}
                       className="text-sm font-medium text-blue-600 hover:text-blue-800"
                     >
                       {dealer.name}
                     </a>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[dealer.status] ?? ""}`}>
-                      {dealer.status}
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">
+                    {dealer.slug}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isActive ? STATUS_BADGE.active : STATUS_BADGE.suspended}`}>
+                      {isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-900">{dealer.leads_count}</td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-900">{dealer.deals_count}</td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-900">{dealer.inventory_count}</td>
-                  <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
-                    {formatCurrency(dealer.revenue_mtd)}
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
+                    {dealer.leads_count ?? 0}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{formatDate(dealer.created_at)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-900">
+                    {dealer.inventory_count ?? 0}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    {formatDate(dealer.created_at)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right">
+                    <button
+                      onClick={() => toggleDealerStatus(dealer)}
+                      className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                        isActive
+                          ? "bg-red-50 text-red-700 hover:bg-red-100"
+                          : "bg-green-50 text-green-700 hover:bg-green-100"
+                      }`}
+                    >
+                      {isActive ? "Deactivate" : "Activate"}
+                    </button>
+                  </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+            {dealers.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">
+                  No dealers yet. Click &quot;Add New Dealer&quot; to get started.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* API Keys */}
