@@ -8,7 +8,8 @@ export type LeadSource =
   | "chat"
   | "phone"
   | "third_party"
-  | "walk_in";
+  | "walk_in"
+  | "trade_in";
 
 export type LeadStatus =
   | "new"
@@ -66,6 +67,22 @@ export interface Lead {
   utm_medium: string | null;
   utm_campaign: string | null;
   referrer_url: string | null;
+
+  // Intent scoring (populated after scoreLeadIntent runs)
+  intent_score?: number | null;
+  score_factors?: Array<{
+    signal: string;
+    impact: number;
+    description: string;
+  }> | null;
+  recommended_followup_at?: string | null;
+  scored_at?: string | null;
+
+  // Behavioural signals (populated by analytics layer)
+  page_views?: number;
+  vdp_views?: number;
+  time_on_site_seconds?: number;
+  return_visits?: number;
 
   // Metadata
   created_at: string;
