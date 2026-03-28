@@ -144,6 +144,12 @@ export type SystemEvent =
   | "system.health_critical"
   | "system.auto_rollback";
 
+export type WebhookEvent =
+  | "webhook.delivered"
+  | "webhook.failed"
+  | "webhook.config_created"
+  | "webhook.test_sent";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -159,7 +165,8 @@ export type PlatformEvent =
   | DocumentEvent
   | KnowledgeEvent
   | SecurityEvent
-  | SystemEvent;
+  | SystemEvent
+  | WebhookEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -184,6 +191,12 @@ function track(
     trackServerEvent(event, props).catch(() => {
       /* swallow — analytics must never throw */
     });
+    // TERTIARY: dispatch to outbound webhooks (CRM integrations)
+    import("@/lib/webhook-outbound")
+      .then(({ dispatchWebhooks }) =>
+        dispatchWebhooks(event, dealer_id, props).catch(() => {}),
+      )
+      .catch(() => {});
   } catch {
     /* swallow — analytics must never throw */
   }
@@ -356,4 +369,15 @@ export function trackSystem(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "system", ...meta });
+}
+
+/**
+ * Track a webhook outbound event (delivery, failure, config changes).
+ */
+export function trackWebhook(
+  event: WebhookEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "webhook", ...meta });
 }

@@ -1536,3 +1536,155 @@ describe("ENH-003: useApi hook exists and is properly structured", () => {
     expect(src).toContain("revalidateOnFocus");
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* WEBHOOK-002: webhook-outbound.ts exports dispatchWebhooks                  */
+/* -------------------------------------------------------------------------- */
+
+describe("WEBHOOK-002: webhook-outbound exports dispatchWebhooks", () => {
+  it("webhook-outbound.ts exports dispatchWebhooks function", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../webhook-outbound.ts"),
+      "utf-8",
+    );
+
+    expect(src).toMatch(/export async function dispatchWebhooks/);
+    expect(src).toMatch(/export async function sendTestWebhook/);
+    expect(src).toMatch(/export async function getWebhookOutboundConfigs/);
+    expect(src).toMatch(/export async function getWebhookDeliveries/);
+  });
+
+  it("webhook-outbound signs payloads with HMAC-SHA256", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../webhook-outbound.ts"),
+      "utf-8",
+    );
+
+    expect(src).toMatch(/createHmac\(["']sha256["']/);
+    expect(src).toContain("X-Webhook-Signature");
+    expect(src).toContain("X-Webhook-ID");
+    expect(src).toContain("X-Webhook-Event");
+  });
+
+  it("webhook-outbound uses safe-fetch with timeout", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../webhook-outbound.ts"),
+      "utf-8",
+    );
+
+    expect(src).toMatch(/import.*safeFetch.*from.*safe-fetch/);
+    expect(src).toMatch(/timeoutMs:\s*10[_,]?000/);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* WEBHOOK-003: All platform events trigger webhook dispatch                  */
+/* -------------------------------------------------------------------------- */
+
+describe("WEBHOOK-003: analytics track() dispatches webhooks", () => {
+  it("analytics-hooks.ts calls dispatchWebhooks in track()", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../analytics-hooks.ts"),
+      "utf-8",
+    );
+
+    // The track() function must import and call dispatchWebhooks
+    expect(src).toMatch(/dispatchWebhooks/);
+    expect(src).toMatch(/webhook-outbound/);
+  });
+
+  it("analytics-hooks.ts exports WebhookEvent type and trackWebhook", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../analytics-hooks.ts"),
+      "utf-8",
+    );
+
+    expect(src).toMatch(/export type WebhookEvent/);
+    expect(src).toMatch(/export function trackWebhook/);
+    expect(src).toContain("webhook.delivered");
+    expect(src).toContain("webhook.failed");
+    expect(src).toContain("webhook.config_created");
+    expect(src).toContain("webhook.test_sent");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* AGENCY-001: Agency API endpoints exist                                     */
+/* -------------------------------------------------------------------------- */
+
+describe("AGENCY-001: agency API endpoints exist", () => {
+  it("agency dealers route exists and exports GET", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/agency/dealers/route.ts"),
+      "utf-8",
+    );
+
+    expect(src).toMatch(/export async function GET/);
+    expect(src).toMatch(/requireAuth/);
+  });
+
+  it("agency overview route exists and exports GET", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/agency/overview/route.ts"),
+      "utf-8",
+    );
+
+    expect(src).toMatch(/export async function GET/);
+    expect(src).toContain("total_dealers");
+    expect(src).toContain("total_revenue_mtd");
+  });
+
+  it("agency api-keys route exists and exports GET and POST", async () => {
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    const src = readFileSync(
+      join(__dirname, "../../app/api/agency/api-keys/route.ts"),
+      "utf-8",
+    );
+
+    expect(src).toMatch(/export async function GET/);
+    expect(src).toMatch(/export async function POST/);
+    expect(src).toMatch(/wpa_live_/);
+  });
+
+  it("webhook CRUD routes exist", async () => {
+    const { readFileSync, existsSync } = await import("fs");
+    const { join } = await import("path");
+
+    const routes = [
+      "../../app/api/admin/webhooks/route.ts",
+      "../../app/api/admin/webhooks/[id]/route.ts",
+      "../../app/api/admin/webhooks/[id]/test/route.ts",
+      "../../app/api/admin/webhooks/deliveries/route.ts",
+    ];
+
+    for (const route of routes) {
+      const fullPath = join(__dirname, route);
+      expect(existsSync(fullPath)).toBe(true);
+      const src = readFileSync(fullPath, "utf-8");
+      expect(src).toMatch(/requireAuth/);
+    }
+  });
+});
