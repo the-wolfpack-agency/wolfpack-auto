@@ -734,3 +734,81 @@ describe("PEN-005: x-powered-by header disabled", () => {
     expect(src).toMatch(/headers\.delete.*X-Powered-By/i);
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* DATA-001: Analytics events MUST persist to Postgres                        */
+/* -------------------------------------------------------------------------- */
+
+describe("DATA-001: analytics events persist to database", () => {
+  it("analytics-hooks.ts calls persistEvent (not just Plausible)", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../analytics-hooks.ts"), "utf-8");
+    // The track() function must call persistEvent as PRIMARY storage
+    expect(src).toContain("persistEvent(event, dealer_id");
+    // persistEvent must write to analytics_events table
+    expect(src).toContain("INSERT INTO analytics_events");
+    // Must check DATABASE_URL before attempting write
+    expect(src).toContain("process.env.DATABASE_URL");
+  });
+
+  it("persistEvent is defined and writes to analytics_events", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../analytics-hooks.ts"), "utf-8");
+    expect(src).toContain("async function persistEvent");
+    expect(src).toContain("analytics_events");
+    // Must never throw
+    expect(src).toContain("analytics must not break the request");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* DATA-002: Learning aggregator queries correct table names                   */
+/* -------------------------------------------------------------------------- */
+
+describe("DATA-002: learning aggregator uses correct table names", () => {
+  it("references deal_worksheets not deals", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../learning-aggregator.ts"), "utf-8");
+    expect(src).toContain("deal_worksheets");
+    expect(src).not.toMatch(/FROM deals[^_]/);
+  });
+
+  it("references published_at not date for reviews", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../learning-aggregator.ts"), "utf-8");
+    expect(src).toContain("published_at >= CURRENT_DATE");
+    expect(src).not.toMatch(/WHERE date >=/);
+  });
+
+  it("uses response_text IS NOT NULL for responded reviews", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../learning-aggregator.ts"), "utf-8");
+    expect(src).toContain("response_text IS NOT NULL");
+    expect(src).not.toContain("responded = true");
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* DATA-003: Analytics health endpoint exists                                  */
+/* -------------------------------------------------------------------------- */
+
+describe("DATA-003: analytics health check endpoint", () => {
+  it("health route exists and checks event counts", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(
+      join(__dirname, "../../app/api/admin/analytics/health/route.ts"),
+      "utf-8",
+    );
+    expect(src).toContain("events_last_hour");
+    expect(src).toContain("events_last_day");
+    expect(src).toContain("modules_reporting");
+    expect(src).toContain("modules_silent");
+    expect(src).toContain("healthy");
+  });
+});

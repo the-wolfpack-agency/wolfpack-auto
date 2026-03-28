@@ -12,6 +12,36 @@
 
 import { trackServerEvent } from "@/lib/analytics";
 
+/**
+ * Persist an analytics event to the Postgres analytics_events table.
+ * This is the PRIMARY storage — Plausible is secondary/optional.
+ * If the DB write fails, log the error but never throw.
+ */
+async function persistEvent(
+  event: string,
+  dealer_id: string,
+  metadata: Record<string, string | number | boolean>,
+): Promise<void> {
+  if (!process.env.DATABASE_URL) return; // shadow mode — skip DB write
+  try {
+    const { query } = await import("@/lib/db");
+    await query(
+      `INSERT INTO analytics_events (event_type, action, page, session_id, metadata, timestamp)
+       VALUES ($1, $2, $3, $4, $5, NOW())`,
+      [
+        event.split(".")[0],      // module (e.g. "deal", "service")
+        event,                     // full event name (e.g. "deal.created")
+        dealer_id,                 // use page column for dealer_id
+        "server",                  // server-side event
+        JSON.stringify({ dealer_id, ...metadata }),
+      ],
+    );
+  } catch (err) {
+    console.error(`[analytics-hooks] Failed to persist event "${event}":`, err);
+    // Never throw — analytics must not break the request
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Event type unions                                                   */
 /* ------------------------------------------------------------------ */
@@ -127,7 +157,11 @@ function track(
       dealer_id,
       ts: new Date().toISOString(),
     };
-    // Fire and forget - do not await
+    // PRIMARY: persist to Postgres (the learning system reads from here)
+    persistEvent(event, dealer_id, props).catch(() => {
+      /* swallow — analytics must never throw */
+    });
+    // SECONDARY: send to Plausible (optional external analytics)
     trackServerEvent(event, props).catch(() => {
       /* swallow — analytics must never throw */
     });

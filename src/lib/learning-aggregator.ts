@@ -115,7 +115,7 @@ async function computeFromDB(dealerId: string): Promise<LearningInsights | null>
          COUNT(*) AS total_deals,
          COUNT(*) FILTER (WHERE jsonb_array_length(fi_products) > 0) AS deals_with_fi,
          COALESCE(AVG(back_gross), 0) AS avg_fi
-       FROM deals WHERE dealer_id = $1 AND status != 'working'`,
+       FROM deal_worksheets WHERE dealer_id = $1 AND status != 'working'`,
       [dealerId],
     );
     const fi = (fiResult.rows as Record<string, string>[])[0];
@@ -125,7 +125,7 @@ async function computeFromDB(dealerId: string): Promise<LearningInsights | null>
     // Top F&I products
     const topFiResult = await query<{ product: string; cnt: string }>(
       `SELECT elem AS product, COUNT(*) AS cnt
-       FROM deals, jsonb_array_elements_text(fi_products) AS elem
+       FROM deal_worksheets, jsonb_array_elements_text(fi_products) AS elem
        WHERE dealer_id = $1
        GROUP BY elem ORDER BY cnt DESC LIMIT 5`,
       [dealerId],
@@ -157,7 +157,7 @@ async function computeFromDB(dealerId: string): Promise<LearningInsights | null>
       responded_count: string;
     }>(
       `SELECT AVG(rating) AS avg_rating, COUNT(*) AS total_reviews,
-              COUNT(*) FILTER (WHERE responded = true) AS responded_count
+              COUNT(*) FILTER (WHERE response_text IS NOT NULL) AS responded_count
        FROM reviews WHERE dealer_id = $1`,
       [dealerId],
     );
@@ -176,8 +176,8 @@ async function computeFromDB(dealerId: string): Promise<LearningInsights | null>
     // Sentiment trend — compare last 30d average to prior 30d
     const trendResult = await query<{ recent_avg: string; prior_avg: string }>(
       `SELECT
-         AVG(rating) FILTER (WHERE date >= CURRENT_DATE - 30) AS recent_avg,
-         AVG(rating) FILTER (WHERE date >= CURRENT_DATE - 60 AND date < CURRENT_DATE - 30) AS prior_avg
+         AVG(rating) FILTER (WHERE published_at >= CURRENT_DATE - 30) AS recent_avg,
+         AVG(rating) FILTER (WHERE published_at >= CURRENT_DATE - 60 AND published_at < CURRENT_DATE - 30) AS prior_avg
        FROM reviews WHERE dealer_id = $1`,
       [dealerId],
     );
