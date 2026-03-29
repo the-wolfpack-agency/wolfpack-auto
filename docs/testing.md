@@ -18,6 +18,53 @@ All test commands from `package.json`:
 | `npm run predeploy:quick` | Quick pre-deploy gate (`scripts/predeploy-gate.sh --quick`) -- type-check + lint only |
 | `npm run nightly:safety-check` | Nightly safety net (`scripts/nightly-safety-net-check.sh`) |
 
+## Load Testing
+
+```bash
+# Install k6 (one-time)
+brew install k6
+
+# Run against production
+k6 run --env BASE_URL=https://wolfpack-auto.vercel.app tests/load/k6-full-platform.js
+
+# Run against local
+k6 run tests/load/k6-full-platform.js
+
+# Output JSON for analytics pipeline
+k6 run --out json=load-results.json tests/load/k6-full-platform.js
+```
+
+The full platform load test ramps from 1 to 50 virtual users over 4 minutes, simulating:
+- Customer inventory browsing (50% of traffic)
+- Lead submissions (20%)
+- Admin dashboard usage (20%)
+- Health checks (10%)
+
+Results are output to `load-test-results.json` for ingestion into the analytics pipeline.
+
+### Baseline Results (March 28, 2026 — Vercel free tier)
+
+| Scenario | p95 Latency | Capacity |
+|----------|-------------|----------|
+| Inventory browsing | 166ms | 50+ concurrent users |
+| Admin dashboard | 162ms | 50+ concurrent users |
+| Lead submission | 3.7s at peak | Degrades above 30 concurrent |
+| Total requests (4 min) | 7,404 | |
+
+**Verdict:** Production-ready for first 5-10 dealers. Scale-up path: Redis + Vercel Pro (~10 min each).
+
+## Render Verification Tests
+
+Three test files ensure no page ever white-screens for users:
+
+| File | Tests | What It Catches |
+|------|-------|-----------------|
+| `tests/e2e/admin-api-200.spec.ts` | 58 | Every admin GET API returns 200 with JSON |
+| `tests/e2e/admin-pages-render.spec.ts` | 63 | Every admin page renders visible content, no 401 errors |
+| `tests/e2e/public-pages-render.spec.ts` | 11 | Every customer page renders without JS errors |
+
+These were added after a blank dashboard bug where `requireAuth()` returned 401 in DEMO_MODE. The old shadow-hardening tests only checked "not 500" which let 401s through.
+
 ## Test File Inventory
 
 ### Smoke Tests

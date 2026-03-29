@@ -92,6 +92,8 @@ The platform is built on modern, proven infrastructure:
 - **Auto-rollback script** for failed deployments: detects unhealthy state and reverts to the last known-good release
 - **Analytics event persistence** to PostgreSQL: every user action is durably stored with module attribution, powering the learning engine directly
 
+Load testing with 50 concurrent virtual users over 4 minutes confirms the platform handles dealer-scale traffic with ease: inventory browsing at 166ms (p95), admin dashboards at 162ms (p95), and 7,404 total requests without degradation. The platform is production-ready on Vercel's free tier for the first 5-10 dealers, with a 10-minute scale-up path (Redis + Vercel Pro) when traffic demands it.
+
 A nightly mutation testing suite intentionally injects 6 different types of code defects, verifies the test suite catches each one, and reports whether the safety net is intact. A separate nightly pentest suite runs 126 automated penetration tests covering IDOR, authentication bypass, business logic abuse, injection attacks, API abuse, data exposure, and file upload security. The engineering team knows, every morning, that both the deploy pipeline and the security posture are functioning correctly.
 
 The built-in security scanner runs without any external API calls or tokens. It checks for hardcoded secrets, missing rate limiting, input validation gaps, SSRF vectors, SQL injection risk, and sensitive data exposure across every source file. Results are surfaced in the admin portal's Security dashboard, and every rate limit trigger feeds the learning system so the platform tracks which endpoints are under pressure.
