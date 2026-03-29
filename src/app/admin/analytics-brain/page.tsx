@@ -264,20 +264,55 @@ export default async function AnalyticsBrainPage() {
         </div>
       )}
 
-      {/* Inventory Gaps */}
+      {/* Inventory Intelligence — structured display for non-technical users */}
       {(gapInsight || demandInsight) && (
         <div className="rounded-xl border border-violet-200 bg-violet-50/50 p-6">
           <h2 className="text-lg font-semibold text-gray-900">Inventory Intelligence</h2>
-          {gapInsight && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-violet-800">Zero-Result Searches (Unmet Demand)</p>
-              <p className="mt-1 text-sm text-gray-700">{gapInsight.insight}</p>
+          <p className="mt-1 text-sm text-gray-500">What your visitors are searching for vs. what you have in stock.</p>
+
+          {/* Zero-result searches as a clean list */}
+          {gapInsight && Array.isArray(gapInsight.data.zero_result_queries) && (gapInsight.data.zero_result_queries as { query: string; sessions: number }[]).length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-red-700">Missing from Inventory</p>
+              <p className="mt-0.5 text-xs text-gray-500">Searches that returned zero results — these visitors wanted something you don&apos;t have.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(gapInsight.data.zero_result_queries as { query: string; sessions: number }[]).slice(0, 8).map((q) => (
+                  <span key={q.query} className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-sm">
+                    <span className="font-medium text-red-800">&ldquo;{q.query}&rdquo;</span>
+                    <span className="text-xs text-red-500">{q.sessions} {q.sessions === 1 ? "visitor" : "visitors"}</span>
+                  </span>
+                ))}
+              </div>
             </div>
           )}
-          {demandInsight && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-violet-800">Market Demand Signals</p>
-              <p className="mt-1 text-sm text-gray-700">{demandInsight.insight}</p>
+
+          {/* Demand signals as ranked cards */}
+          {demandInsight && Array.isArray(demandInsight.data.demand_signals) && (demandInsight.data.demand_signals as { category: string; total_searches: number }[]).length > 0 && (
+            <div className="mt-5">
+              <p className="text-sm font-semibold text-violet-800">Top Demand Signals</p>
+              <p className="mt-0.5 text-xs text-gray-500">What visitors are searching for most — ranked by volume.</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {(demandInsight.data.demand_signals as { category: string; total_searches: number; queries: string[] }[]).slice(0, 8).map((signal) => {
+                  const [type, value] = signal.category.split(":");
+                  const label = type === "price_ceiling" ? `Under $${Number(value).toLocaleString()}`
+                    : type === "body_style" ? value.charAt(0).toUpperCase() + value.slice(1)
+                    : type === "make" ? value.charAt(0).toUpperCase() + value.slice(1)
+                    : type === "drivetrain" ? value.toUpperCase()
+                    : value;
+                  const typeLabel = type === "price_ceiling" ? "Price"
+                    : type === "body_style" ? "Body Style"
+                    : type === "make" ? "Make"
+                    : type === "drivetrain" ? "Drivetrain"
+                    : type.replace(/_/g, " ");
+                  return (
+                    <div key={signal.category} className="rounded-lg border border-violet-200 bg-white p-3">
+                      <p className="text-xs font-medium uppercase tracking-wider text-violet-500">{typeLabel}</p>
+                      <p className="mt-0.5 text-sm font-semibold text-gray-900">{label}</p>
+                      <p className="mt-1 text-xs text-gray-500">{signal.total_searches} searches</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
