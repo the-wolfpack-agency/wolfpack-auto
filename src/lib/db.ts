@@ -7,6 +7,9 @@ const poolConfig: PoolConfig = {
   max: 5,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
+  // 10s query timeout — prevents hung queries from monopolizing the pool.
+  // Applied at the connection level so it works without explicit transactions.
+  statement_timeout: 10_000,
   // SSL: Neon requires SSL. The connection string already includes sslmode=require.
   // Use rejectUnauthorized: false with Neon's pooler (uses pgBouncer which
   // presents its own cert, not the origin server's). Safe because the
@@ -43,31 +46,19 @@ function createPool(): Pool {
 export const pool = createPool();
 
 /**
- * Default query timeout in milliseconds.
- * Prevents hung queries from blocking the connection pool under load.
- */
-const QUERY_TIMEOUT_MS = 10_000;
-
-/**
- * Convenience: run a single parameterised query with a timeout.
+ * Convenience: run a single parameterised query.
  *
- * Every query gets a 10s statement_timeout by default. This prevents
- * slow queries from monopolizing the connection pool under load —
- * critical for Neon's 5-connection limit.
+ * The 10s statement_timeout is set at the pool level (poolConfig.statement_timeout)
+ * so every query is automatically bounded. No manual connect/release needed —
+ * pool.query() handles connection lifecycle internally and won't leak clients
+ * on connection drops (fixes "Connection terminated unexpectedly" crashes).
  */
 export async function query<T extends Record<string, any>>(
   text: string,
   params?: unknown[],
-  timeoutMs: number = QUERY_TIMEOUT_MS,
 ) {
-  const client = await pool.connect();
-  try {
-    await client.query(`SET LOCAL statement_timeout = '${timeoutMs}'`);
-    const result = await client.query<T>(text, params);
-    return result;
-  } finally {
-    client.release();
-  }
+  const result = await pool.query<T>(text, params);
+  return result;
 }
 
 /**
