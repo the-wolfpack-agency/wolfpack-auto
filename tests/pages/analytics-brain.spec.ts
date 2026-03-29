@@ -116,11 +116,40 @@ test.describe("Analytics Brain with Seeded Data", () => {
     expect(insightCount).toBeTruthy();
   });
 
-  test("all insights section shows categorized insights", async ({ page }) => {
+  test("top insights section shows categorized insights with limit", async ({ page }) => {
     await page.goto("/admin/analytics-brain");
-    const allInsights = page.locator("text=All Insights");
-    // Either shows insights or empty state
     const content = await page.textContent("body");
-    expect(content?.includes("All Insights") || content?.includes("No insights")).toBeTruthy();
+    // Renamed from "All Insights" to "Top Insights" — shows limited preview
+    expect(content?.includes("Top Insights") || content?.includes("No insights")).toBeTruthy();
+  });
+
+  test("view all insights link navigates to full list", async ({ page }) => {
+    await page.goto("/admin/analytics-brain");
+    const main = page.locator("main#admin-main-content");
+    const viewAllLink = main.locator('a[href="/admin/analytics-brain/all"]').first();
+    if (await viewAllLink.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await viewAllLink.click();
+      await expect(page).toHaveURL(/\/admin\/analytics-brain\/all/);
+      await expect(page.locator("h1")).toContainText(/Insights/i);
+      // Back link should exist in main content
+      const backLink = main.locator('a[href="/admin/analytics-brain"]');
+      await expect(backLink).toBeVisible();
+    }
+  });
+
+  test("all insights page renders with back link", async ({ page }) => {
+    await page.goto("/admin/analytics-brain/all");
+    const content = await page.textContent("body");
+    expect(content?.length ?? 0).toBeGreaterThan(50);
+    // Back link in main content area
+    const main = page.locator("main#admin-main-content");
+    const backLink = main.locator('a[href="/admin/analytics-brain"]');
+    await expect(backLink).toBeVisible();
+  });
+
+  test("all insights page filters by category", async ({ page }) => {
+    await page.goto("/admin/analytics-brain/all?category=engagement");
+    const h1 = page.locator("h1");
+    await expect(h1).toContainText(/Engagement Insights|All Insights/i);
   });
 });

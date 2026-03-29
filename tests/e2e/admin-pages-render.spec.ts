@@ -27,6 +27,8 @@ const ADMIN_PAGES = [
   { path: "/admin/analytics", name: "Analytics" },
   { path: "/admin/analytics/inventory", name: "Analytics Inventory" },
   { path: "/admin/analytics/leads", name: "Analytics Leads" },
+  { path: "/admin/analytics-brain", name: "Analytics Brain" },
+  { path: "/admin/analytics-brain/all", name: "All Insights" },
   { path: "/admin/change-management", name: "Change Management" },
   { path: "/admin/comms", name: "Comms" },
   { path: "/admin/comms/log", name: "Comms Log" },

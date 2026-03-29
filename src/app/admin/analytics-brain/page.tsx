@@ -289,43 +289,83 @@ export default async function AnalyticsBrainPage() {
         </div>
       )}
 
-      {/* All Insights by Category */}
+      {/* Top Insights by Category — deduplicated, limited preview */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">All Insights</h2>
-        <p className="mt-1 text-sm text-gray-500">{insights.length} insights across {grouped.size} categories.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Top Insights</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Showing highest-confidence insights across {grouped.size} categories.
+            </p>
+          </div>
+          {insights.length > 0 && (
+            <a
+              href="/admin/analytics-brain/all"
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+              data-track="brain_view_all_insights"
+            >
+              View all {insights.length} insights
+            </a>
+          )}
+        </div>
 
         <div className="mt-4 space-y-3">
           {categoryOrder
             .filter((cat) => grouped.has(cat))
-            .map((cat) => (
-              <div key={cat}>
-                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">{cat.replace(/_/g, " ")}</h3>
-                <div className="space-y-2">
-                  {grouped.get(cat)!.map((insight) => (
-                    <div
-                      key={insight.id}
-                      className={`rounded-lg border-l-4 p-4 ${categoryColor(insight.category)}`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <p className="text-sm text-gray-700">{insight.insight}</p>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <div className="h-1.5 w-12 overflow-hidden rounded-full bg-gray-200">
-                            <div
-                              className={`h-full rounded-full ${confidenceBar(insight.confidence)}`}
-                              style={{ width: `${insight.confidence * 100}%` }}
-                            />
+            .map((cat) => {
+              const catInsights = grouped.get(cat)!;
+              // Deduplicate: keep highest-confidence insight per unique text prefix (first 80 chars)
+              const seen = new Set<string>();
+              const deduped = catInsights
+                .sort((a, b) => b.confidence - a.confidence)
+                .filter((insight) => {
+                  const key = insight.insight.slice(0, 80);
+                  if (seen.has(key)) return false;
+                  seen.add(key);
+                  return true;
+                });
+              const preview = deduped.slice(0, 3);
+              const remaining = deduped.length - preview.length;
+
+              return (
+                <div key={cat}>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">{cat.replace(/_/g, " ")}</h3>
+                  <div className="space-y-2">
+                    {preview.map((insight) => (
+                      <div
+                        key={insight.id}
+                        className={`rounded-lg border-l-4 p-4 ${categoryColor(insight.category)}`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <p className="text-sm text-gray-700">{insight.insight}</p>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <div className="h-1.5 w-12 overflow-hidden rounded-full bg-gray-200">
+                              <div
+                                className={`h-full rounded-full ${confidenceBar(insight.confidence)}`}
+                                style={{ width: `${insight.confidence * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-400">{(insight.confidence * 100).toFixed(0)}%</span>
                           </div>
-                          <span className="text-xs text-gray-400">{(insight.confidence * 100).toFixed(0)}%</span>
                         </div>
+                        <p className="mt-1 text-xs text-gray-400">
+                          Sample: {insight.sample_size} | Generated: {new Date(insight.generated_at).toLocaleTimeString()}
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs text-gray-400">
-                        Sample: {insight.sample_size} | Generated: {new Date(insight.generated_at).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
+                    {remaining > 0 && (
+                      <a
+                        href={`/admin/analytics-brain/all?category=${cat}`}
+                        className="block text-center text-xs font-medium text-brand-600 hover:text-brand-700 py-1"
+                        data-track="brain_view_category_insights"
+                      >
+                        +{remaining} more {cat.replace(/_/g, " ")} insight{remaining !== 1 ? "s" : ""}
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
         </div>
       </div>
 
