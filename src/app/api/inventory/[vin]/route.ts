@@ -95,65 +95,128 @@ export async function GET(
       return NextResponse.json(cached);
     }
 
-    // Fetch vehicle
-    let vehicleResponse;
+    // Try Elasticsearch first, fall back to PostgreSQL
+    let vehicle: VehicleDoc | null = null;
+    let related: RelatedVehicle[] = [];
+
     try {
-      vehicleResponse = await esClient.get({
+      const vehicleResponse = await esClient.get({
         index: VEHICLES_INDEX,
         id: docId,
       });
-    } catch (err: unknown) {
-      const esErr = err as { meta?: { statusCode?: number } };
-      if (esErr?.meta?.statusCode === 404) {
+      vehicle = vehicleResponse._source as VehicleDoc;
+
+      // Fetch related vehicles from ES
+      const priceRange = {
+        gte: Math.floor(vehicle.price * 0.8),
+        lte: Math.ceil(vehicle.price * 1.2),
+      };
+
+      const relatedResponse = await esClient.search({
+        index: VEHICLES_INDEX,
+        body: {
+          size: 6,
+          _source: ["vin", "year", "make", "model", "trim", "price", "mileage", "photo_url"],
+          query: {
+            bool: {
+              filter: [
+                { term: { dealer_id } },
+                { term: { status: "available" } },
+              ],
+              must_not: [{ term: { vin } }],
+              should: [
+                {
+                  bool: {
+                    must: [
+                      { term: { make: vehicle.make } },
+                      { term: { model: vehicle.model } },
+                    ],
+                    boost: 2.0,
+                  },
+                },
+                { range: { price: priceRange } },
+              ],
+              minimum_should_match: 1,
+            },
+          },
+        },
+      });
+
+      related = relatedResponse.hits.hits.map(
+        (hit) => hit._source as RelatedVehicle,
+      );
+    } catch (esErr: unknown) {
+      const err = esErr as { meta?: { statusCode?: number } };
+      if (err?.meta?.statusCode === 404) {
+        // ES says vehicle doesn't exist — try DB before returning 404
+      }
+
+      // Elasticsearch unavailable or 404 — fall back to PostgreSQL
+      if (process.env.DATABASE_URL) {
+        try {
+          const { query: dbQuery } = await import("@/lib/db");
+          const dbResult = await dbQuery<VehicleDoc>(
+            `SELECT * FROM vehicles WHERE vin = $1 AND dealer_id = $2 AND deleted_at IS NULL LIMIT 1`,
+            [vin, dealer_id],
+          );
+
+          if (dbResult.rows.length === 0) {
+            return NextResponse.json(
+              { error: "Vehicle not found" },
+              { status: 404 },
+            );
+          }
+
+          vehicle = dbResult.rows[0];
+
+          // Fetch related from DB (same make or similar price)
+          const relatedResult = await dbQuery<RelatedVehicle>(
+            `SELECT vin, year, make, model, trim, price, mileage, photo_url
+             FROM vehicles
+             WHERE dealer_id = $1
+               AND vin != $2
+               AND status = 'available'
+               AND deleted_at IS NULL
+               AND (make = $3 OR price BETWEEN $4 AND $5)
+             ORDER BY
+               CASE WHEN make = $3 AND model = $6 THEN 0
+                    WHEN make = $3 THEN 1
+                    ELSE 2 END,
+               ABS(price - $7)
+             LIMIT 6`,
+            [
+              dealer_id,
+              vin,
+              vehicle.make,
+              Math.floor(vehicle.price * 0.8),
+              Math.ceil(vehicle.price * 1.2),
+              vehicle.model,
+              vehicle.price,
+            ],
+          );
+          related = relatedResult.rows;
+        } catch {
+          // DB also failed — return 404 (graceful, not 503)
+          return NextResponse.json(
+            { error: "Vehicle not found" },
+            { status: 404 },
+          );
+        }
+      } else {
+        // No ES, no DB — return 404 instead of 503
         return NextResponse.json(
           { error: "Vehicle not found" },
           { status: 404 },
         );
       }
-      throw err;
     }
 
-    const vehicle = vehicleResponse._source as VehicleDoc;
-
-    // Fetch related vehicles: same make/model or similar price (+/- 20%)
-    const priceRange = {
-      gte: Math.floor(vehicle.price * 0.8),
-      lte: Math.ceil(vehicle.price * 1.2),
-    };
-
-    const relatedResponse = await esClient.search({
-      index: VEHICLES_INDEX,
-      body: {
-        size: 6,
-        _source: ["vin", "year", "make", "model", "trim", "price", "mileage", "photo_url"],
-        query: {
-          bool: {
-            filter: [
-              { term: { dealer_id } },
-              { term: { status: "available" } },
-            ],
-            must_not: [{ term: { vin } }],
-            should: [
-              {
-                bool: {
-                  must: [
-                    { term: { make: vehicle.make } },
-                    { term: { model: vehicle.model } },
-                  ],
-                  boost: 2.0,
-                },
-              },
-              { range: { price: priceRange } },
-            ],
-            minimum_should_match: 1,
-          },
-        },
-      },
-    });
-
-    const related: RelatedVehicle[] = relatedResponse.hits.hits.map(
-      (hit) => hit._source as RelatedVehicle,
-    );
+    if (!vehicle) {
+      return NextResponse.json(
+        { error: "Vehicle not found" },
+        { status: 404 },
+      );
+    }
 
     const result = { vehicle, related };
 
@@ -164,9 +227,10 @@ export async function GET(
   } catch (err) {
     console.error(`[api/inventory/${vin}] Fetch failed:`, err);
 
+    // Return 404 instead of 503 — a missing vehicle is not a service failure
     return NextResponse.json(
-      { error: "Service temporarily unavailable" },
-      { status: 503 },
+      { error: "Vehicle not found" },
+      { status: 404 },
     );
   }
 }

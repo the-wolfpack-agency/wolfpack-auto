@@ -17,6 +17,7 @@
     "nightly:safety-check": "bash scripts/nightly-safety-net-check.sh",
     "nightly:pentest": "bash scripts/nightly-pentest.sh",
     "nightly:client-test": "bash scripts/nightly-client-test.sh",
+    "nightly:load-test": "bash scripts/nightly-load-test.sh",
     "agenticqa:scan": "bash scripts/run-agenticqa-pipeline.sh",
     "validate": "bash scripts/validate-platform-integrity.sh",
     "validate:quick": "bash scripts/validate-platform-integrity.sh --quick",
