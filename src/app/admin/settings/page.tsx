@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { query } from "@/lib/db";
 import type { Dealer, DealerHours } from "@/types/dealer";
 import LogoUploader from "@/components/LogoUploader";
+import BrandingForm from "@/components/BrandingForm";
+import SettingsForm from "@/components/SettingsForm";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -10,17 +12,6 @@ export const metadata: Metadata = {
 };
 
 const DEALER_ID = process.env.DEALER_ID ?? "default";
-
-const FONT_OPTIONS = [
-  "Inter",
-  "Roboto",
-  "Open Sans",
-  "Montserrat",
-  "Lato",
-  "Poppins",
-  "Source Sans Pro",
-  "Nunito",
-];
 
 const DAYS: DealerHours["day"][] = [
   "monday",
@@ -72,7 +63,7 @@ export default async function SettingsPage() {
             Dealer Information
           </h2>
 
-          <form action="/api/admin/settings/dealer" method="POST">
+          <SettingsForm buttonLabel="Save Dealer Info" fieldMap={{ street: "address" }}>
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
                 <label
@@ -292,15 +283,7 @@ export default async function SettingsPage() {
               </div>
             </fieldset>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="submit"
-                className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-              >
-                Save Dealer Info
-              </button>
-            </div>
-          </form>
+          </SettingsForm>
         </section>
 
         {/* ---------------------------------------------------------------- */}
@@ -317,100 +300,19 @@ export default async function SettingsPage() {
             Branding
           </h2>
 
-          <form action="/api/admin/settings/branding" method="POST">
+          <div className="space-y-6">
+            {/* Logo upload — client component with preview, drag-drop, and API upload */}
             <div className="grid gap-6 sm:grid-cols-2">
-              {/* Logo upload — client component with preview, drag-drop, and API upload */}
               <LogoUploader currentLogoUrl={dealer?.branding?.logo_url ?? (dealer as any)?.logo_url ?? null} />
-
-              <div>
-                <label
-                  htmlFor="primary-color"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Primary Color
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  <input
-                    id="primary-color"
-                    name="primary_color"
-                    type="color"
-                    defaultValue={dealer?.branding?.primary_color ?? "#0070c7"}
-                    className="h-10 w-10 cursor-pointer rounded border border-surface-border"
-                  />
-                  <input
-                    name="primary_color_hex"
-                    type="text"
-                    defaultValue={dealer?.branding?.primary_color ?? "#0070c7"}
-                    pattern="^#[0-9a-fA-F]{6}$"
-                    maxLength={7}
-                    className="flex-1 rounded-lg border border-surface-border px-4 py-2 font-mono text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    aria-label="Primary color hex value"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="secondary-color"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Secondary Color
-                </label>
-                <div className="mt-1 flex items-center gap-2">
-                  <input
-                    id="secondary-color"
-                    name="secondary_color"
-                    type="color"
-                    defaultValue={
-                      dealer?.branding?.secondary_color ?? "#f97316"
-                    }
-                    className="h-10 w-10 cursor-pointer rounded border border-surface-border"
-                  />
-                  <input
-                    name="secondary_color_hex"
-                    type="text"
-                    defaultValue={
-                      dealer?.branding?.secondary_color ?? "#f97316"
-                    }
-                    pattern="^#[0-9a-fA-F]{6}$"
-                    maxLength={7}
-                    className="flex-1 rounded-lg border border-surface-border px-4 py-2 font-mono text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    aria-label="Secondary color hex value"
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label
-                  htmlFor="font-family"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Font Family
-                </label>
-                <select
-                  id="font-family"
-                  name="font_family"
-                  defaultValue={dealer?.branding?.font_family ?? "Inter"}
-                  className="mt-1 block w-full rounded-lg border border-surface-border px-4 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                >
-                  {FONT_OPTIONS.map((font) => (
-                    <option key={font} value={font}>
-                      {font}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="submit"
-                className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-              >
-                Save Branding
-              </button>
-            </div>
-          </form>
+            {/* Colors & font — client component that PUTs to /api/admin/settings */}
+            <BrandingForm
+              primaryColor={dealer?.branding?.primary_color ?? "#0070c7"}
+              secondaryColor={dealer?.branding?.secondary_color ?? "#f97316"}
+              fontFamily={dealer?.branding?.font_family ?? "Inter"}
+            />
+          </div>
         </section>
 
         {/* ---------------------------------------------------------------- */}
@@ -427,7 +329,7 @@ export default async function SettingsPage() {
             SEO Settings
           </h2>
 
-          <form action="/api/admin/settings/seo" method="POST">
+          <SettingsForm buttonLabel="Save SEO Settings">
             <div className="space-y-6">
               <div>
                 <label
@@ -474,15 +376,7 @@ export default async function SettingsPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="submit"
-                className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-              >
-                Save SEO Settings
-              </button>
-            </div>
-          </form>
+          </SettingsForm>
         </section>
         {/* ---------------------------------------------------------------- */}
         {/* Integrations / Webhooks                                          */}
@@ -498,7 +392,7 @@ export default async function SettingsPage() {
             Integrations
           </h2>
 
-          <form action="/api/admin/settings/webhooks" method="POST">
+          <SettingsForm buttonLabel="Save Webhook">
             <div className="space-y-6">
               <div>
                 <label
@@ -576,21 +470,7 @@ export default async function SettingsPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3 sm:justify-end">
-              <button
-                type="button"
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
-              >
-                Test Webhook
-              </button>
-              <button
-                type="submit"
-                className="rounded-lg bg-brand-600 px-6 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-              >
-                Save Webhook
-              </button>
-            </div>
-          </form>
+          </SettingsForm>
         </section>
       </div>
     </>

@@ -1,13 +1,10 @@
 /**
- * Logo Upload — Settings Branding
+ * Settings Branding — Logo Upload & Branding Form
  *
- * Verifies the logo uploader component:
- *   1. File input is present and clickable
- *   2. Upload API accepts valid files (PNG, JPG, SVG)
- *   3. Upload API rejects invalid files (wrong type, too large)
- *   4. Preview updates after upload
- *   5. Remove button clears the logo
- *   6. Analytics event fires on upload
+ * Verifies:
+ *   1. Logo uploader: upload, preview, remove, validation
+ *   2. Branding form: save colors/font via PUT /api/admin/settings
+ *   3. No 404s: all form actions hit real API routes
  */
 
 import { test, expect } from "@playwright/test";
@@ -131,6 +128,73 @@ test.describe("Logo Upload — Settings Branding", () => {
       const previewGone = await page.locator("img[alt='Dealer logo preview']").isVisible().catch(() => false);
       // It's OK if the default upload icon appears instead
       expect(previewGone).toBe(false);
+    }
+  });
+});
+
+test.describe("Branding Form — Save Colors & Font", () => {
+  test("PUT /api/admin/settings accepts branding fields", async ({ request }) => {
+    const res = await request.put("/api/admin/settings", {
+      data: {
+        primary_color: "#0070c7",
+        secondary_color: "#f97316",
+      },
+    });
+    // Accept 200 (saved) or 404 (no dealer row in demo) — NOT 404 from missing route
+    expect(res.status()).not.toBe(404);
+    expect([200, 400]).toContain(res.status());
+  });
+
+  test("branding form does NOT submit to a 404 route", async ({ page }) => {
+    await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(500);
+
+    // The branding section should NOT contain a <form> with action="/api/admin/settings/branding"
+    // It should use client-side fetch instead
+    const oldForm = page.locator('form[action="/api/admin/settings/branding"]');
+    const count = await oldForm.count();
+    expect(count, "Found old form action pointing to /api/admin/settings/branding — will 404").toBe(0);
+  });
+
+  test("Save Branding button triggers client-side save", async ({ page }) => {
+    await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(500);
+
+    // Intercept the PUT request to verify it goes to the right endpoint
+    const putPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",
+      { timeout: 10000 },
+    );
+
+    // Click Save Branding
+    const saveBtn = page.getByRole("button", { name: /save branding/i });
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    // Verify the PUT was sent to the correct endpoint
+    const putRes = await putPromise;
+    expect(putRes.url()).toContain("/api/admin/settings");
+    expect(putRes.status()).not.toBe(404);
+  });
+
+  test("settings page has no forms pointing to non-existent routes", async ({ page, request }) => {
+    await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(500);
+
+    // Find all form actions on the page
+    const formActions = await page.$$eval("form[action]", (forms) =>
+      forms.map((f) => f.getAttribute("action")).filter(Boolean),
+    );
+
+    // Every form action that is a relative URL should return non-404
+    for (const action of formActions) {
+      if (action && action.startsWith("/")) {
+        const res = await request.get(action);
+        expect(
+          res.status(),
+          `Form action ${action} returns ${res.status()} — route does not exist`,
+        ).not.toBe(404);
+      }
     }
   });
 });
