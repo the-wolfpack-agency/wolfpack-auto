@@ -247,6 +247,18 @@ const COMPLIANCE_RULES: ComplianceRule[] = [
     recommendation: "Verify insurance coverage before releasing vehicle to buyer",
   },
 
+  // Red Flags / Anti-Fraud
+  {
+    id: "RF-001",
+    doc_types: ["credit_app"],
+    severity: "critical",
+    category: "Red Flags",
+    check: "identity_verification",
+    description: "Identity verification required before credit application processing; mismatched name/SSN/address triggers review",
+    recommendation: "Verify government-issued ID matches credit app data. Flag mismatches for manual review per Red Flags Rule 16 CFR 681.",
+    regulatory_ref: "Red Flags Rule 16 CFR 681",
+  },
+
   // Deal Jacket completeness
   {
     id: "DJ-001",

@@ -70,6 +70,12 @@ A document **passes** only if it has zero critical and zero high issues.
 |---------|----------|----------|---------------|---------------------|
 | IN-001 | High | Insurance Verification | Proof of insurance must be obtained before vehicle delivery | -- |
 
+### Anti-Fraud / Red Flags Rules
+
+| Rule ID | Severity | Category | What it checks | Regulatory Reference |
+|---------|----------|----------|---------------|---------------------|
+| RF-001 | Critical | Red Flags | Identity verification required before credit application processing; mismatched name/SSN/address triggers review | Red Flags Rule 16 CFR 681 |
+
 ### Deal Jacket Rules
 
 | Rule ID | Severity | Category | What it checks | Regulatory Reference |
