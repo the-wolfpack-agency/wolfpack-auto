@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q");
   const category = request.nextUrl.searchParams.get("category");
   const limit = Math.min(
-    parseInt(request.nextUrl.searchParams.get("limit") ?? "5", 10),
-    20,
+    parseInt(request.nextUrl.searchParams.get("limit") ?? "20", 10),
+    500,
   );
 
   // If no query, return current in-memory insights (no vector search needed)

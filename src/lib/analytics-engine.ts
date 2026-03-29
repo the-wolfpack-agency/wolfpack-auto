@@ -1179,6 +1179,12 @@ export function generateInsights(): BehavioralInsight[] {
       signals.narrowing_behavior = 5;
     }
 
+    // Conversion — the strongest signal (+25 pts)
+    if (summary.converted) {
+      temperature += 25;
+      signals.converted = 25;
+    }
+
     // Cap at 100
     temperature = Math.min(temperature, 100);
 

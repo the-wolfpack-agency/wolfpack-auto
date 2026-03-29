@@ -77,16 +77,38 @@ export default async function AnalyticsBrainPage() {
     grouped.set(insight.category, list);
   }
 
-  // Extract lead temperatures
+  // Extract lead temperatures with friendly labels
   const temperatures = insights
     .filter((i) => i.id.startsWith("lead_temperature_"))
-    .map((i) => ({
-      session: (i.data.session_id as string)?.slice(0, 12) ?? "unknown",
-      temperature: i.data.temperature as number,
-      tier: i.data.tier as string,
-      signals: i.data.signals as Record<string, number>,
-      converted: i.data.converted as boolean,
-    }))
+    .map((i) => {
+      const signals = i.data.signals as Record<string, number>;
+      const tier = i.data.tier as string;
+      const converted = i.data.converted as boolean;
+
+      // Generate a friendly visitor label from signals
+      let visitorType = "Visitor";
+      if (converted) visitorType = "Buyer";
+      else if ((signals.vehicle_engagement ?? 0) >= 12) visitorType = "Serious Shopper";
+      else if ((signals.search_activity ?? 0) > 0) visitorType = "Searcher";
+      else if ((signals.chat_engagement ?? 0) > 0) visitorType = "Chat Lead";
+      else if ((signals.session_depth ?? 0) >= 9) visitorType = "Deep Browser";
+      else visitorType = "Browser";
+
+      // Parse time from generated_at
+      const time = new Date(i.generated_at).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      return {
+        label: `${visitorType} \u2014 ${time}`,
+        temperature: i.data.temperature as number,
+        tier,
+        signals,
+        converted,
+      };
+    })
     .sort((a, b) => b.temperature - a.temperature);
 
   // Extract inventory gaps
@@ -177,7 +199,7 @@ export default async function AnalyticsBrainPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  <th className="pb-3 pr-4">Session</th>
+                  <th className="pb-3 pr-4">Visitor</th>
                   <th className="pb-3 pr-4">Score</th>
                   <th className="pb-3 pr-4">Tier</th>
                   <th className="pb-3 pr-4">Top Signals</th>
@@ -185,9 +207,9 @@ export default async function AnalyticsBrainPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {temperatures.slice(0, 10).map((t) => (
-                  <tr key={t.session} className="text-gray-700">
-                    <td className="py-3 pr-4 font-mono text-xs">{t.session}</td>
+                {temperatures.slice(0, 10).map((t, idx) => (
+                  <tr key={idx} className="text-gray-700">
+                    <td className="py-3 pr-4 text-sm font-medium">{t.label}</td>
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-200">
