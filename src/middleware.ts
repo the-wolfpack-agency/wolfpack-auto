@@ -143,7 +143,12 @@ export async function middleware(request: NextRequest) {
   // Controlled by DEMO_MODE env var — set to "true" only for public demos.
   // Production deployments must NOT set DEMO_MODE=true.
   const isDemoMode = process.env.DEMO_MODE === "true";
-  if (!isDemoMode && isAdminRoute(pathname) && !isLogin && !isAuthApi) {
+  // Health endpoints are public — load balancers, canary probes, and monitoring
+  // need unauthenticated access. The deep health endpoint self-protects with
+  // CANARY_SECRET so infrastructure details stay private.
+  const isHealthRoute = pathname.startsWith("/api/health");
+
+  if (!isDemoMode && isAdminRoute(pathname) && !isLogin && !isAuthApi && !isHealthRoute) {
     const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-change-in-production" });
 
     if (!token) {
