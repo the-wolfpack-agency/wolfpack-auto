@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { query } from "@/lib/db";
 import type { Dealer, DealerHours } from "@/types/dealer";
+import LogoUploader from "@/components/LogoUploader";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -318,45 +319,8 @@ export default async function SettingsPage() {
 
           <form action="/api/admin/settings/branding" method="POST">
             <div className="grid gap-6 sm:grid-cols-2">
-              {/* Logo upload placeholder */}
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Logo
-                </label>
-                <div className="mt-2">
-                  <label
-                    htmlFor="logo-upload"
-                    className="flex cursor-pointer items-center gap-4 rounded-lg border border-dashed border-surface-border p-4 text-sm text-gray-500 transition-colors hover:border-brand-500 hover:text-brand-600"
-                  >
-                    {dealer?.branding?.logo_url ? (
-                      <img
-                        src={dealer.branding.logo_url}
-                        alt="Current dealer logo"
-                        className="h-12 w-auto shrink-0 rounded"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-surface-subtle text-xs text-gray-400">
-                        ?
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <span className="block font-medium text-gray-700">
-                        Click to upload logo
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        PNG, JPG, or SVG up to 2MB
-                      </span>
-                    </div>
-                  </label>
-                  <input
-                    id="logo-upload"
-                    name="logo"
-                    type="file"
-                    accept="image/png,image/jpeg,image/svg+xml"
-                    className="sr-only"
-                  />
-                </div>
-              </div>
+              {/* Logo upload — client component with preview, drag-drop, and API upload */}
+              <LogoUploader currentLogoUrl={dealer?.branding?.logo_url ?? (dealer as any)?.logo_url ?? null} />
 
               <div>
                 <label
