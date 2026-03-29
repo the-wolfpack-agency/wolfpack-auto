@@ -693,13 +693,54 @@ Changes:
 
 | Service | Status | Details |
 |---------|--------|---------|
-| PostgreSQL (Neon) | **Live** | 46 tables, 35 migrations, 500+ analytics events |
+| PostgreSQL (Neon) | **Live** | 52 tables, 38 migrations, 500+ analytics events |
+| Production Canary | **Live** | 66 tests verify every deploy against real infrastructure |
 | Sentry | **Live** | Error monitoring verified, source maps uploading, CSP configured |
 | Resend | **Live** | API key configured, email templates ready |
 | PII Encryption | **Live** | AES-256-GCM, customer data encrypted at rest |
 | Analytics Pipeline | **Live** | 11 modules reporting, all 80+ mutation routes wired |
 | Circuit Breaker | **Live** | Auto-failover to shadow mode on DB outage |
 | System Health Dashboard | **Live** | Real-time monitoring of all dependencies |
+
+## March 29, 2026 — Session 2: Production Canary + Testing Gap Closure (Day 5 continued)
+
+### Production Canary Suite (66 tests)
+Built and deployed a post-deploy verification system that runs against the live Vercel deployment after every deploy. Catches the gap between "tests pass" and "production actually works."
+
+- **Deep health endpoint** (`/api/health/deep`) — 4 probes: DB connectivity + table count, write-read-delete roundtrip, Elasticsearch ping, analytics pipeline write-read-delete
+- **7 Playwright test files**: deep health, data source verification, write roundtrip, analytics pipeline, latency gates (cold/warm), UI rendering (24 pages), endpoint contract
+- **Auto-rollback**: `--rollback` flag triggers `vercel rollback` on failure
+- **GitHub Actions workflow**: triggers on `deployment_status`, manual dispatch, and nightly cron
+- **Integrated into `npm run validate`** as Suite 8 of 8
+
+### Database Migration Fixes (Migration 036-038)
+The canary suite uncovered 6 missing tables/columns in the live Neon DB:
+- Added `deleted_at` (soft delete) to 10 tables
+- Created `customers`, `marketing_campaigns`, `dealer_users` tables
+- Created `deals` view → `deal_worksheets`, `service_parts` view → `parts_inventory`
+- Added SEO, webhook, and branding columns to dealers table
+
+### Settings Page — Full Fix
+All 4 settings forms (Dealer Info, Branding, SEO, Webhooks) were submitting to non-existent API routes (404). Converted all to client-side components with proper PUT to `/api/admin/settings`. Logo upload now works end-to-end (15 tests).
+
+### Form & Action Regression Suite (40 tests)
+Full audit of 103 API endpoints across 15 admin pages. Found and fixed 1 missing route (`/api/admin/resources/analytics`). Regression suite scans every admin page for static form actions and verifies every API endpoint is reachable.
+
+### Analytics Brain — Duplicate Fix
+Lead Temperature Board was showing 9 identical "Buyer — 81" cards. Added grouping: visually identical sessions now collapse into one card with a count badge (e.g. "×9").
+
+### UI Polish
+- Deal Desking date pickers now match dropdown widths (flex-1 instead of fixed w-40)
+
+### Test Count (this session)
+| Suite | Tests |
+|-------|-------|
+| Production Canary | 66 |
+| Form/Action Regression | 40 |
+| Settings Branding | 15 |
+| **Total new tests** | **121** |
+
+---
 
 ## Next Steps
 
