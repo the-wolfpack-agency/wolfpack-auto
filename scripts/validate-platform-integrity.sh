@@ -10,6 +10,7 @@
 #   5. Layout regressions (sidebar positioning, mobile drawer)
 #   6. Analytics brain (stats, sidebar link, responsive)
 #   7. OEM portal (routes, tiles, breadcrumbs, navigation, layout)
+#   8. Production canary (deep health, data source, write roundtrip, UI render)
 #
 # This is the "nothing is broken" gate. Run before demos, deploys, or
 # after any UI/layout change.
@@ -135,7 +136,7 @@ echo -e "  ${BOLD}PLATFORM INTEGRITY VALIDATION${RESET}"
 if [[ "$QUICK" == "true" ]]; then
   echo -e "  Mode: ${YELLOW}Quick${RESET} (sidebar + renders only)"
 else
-  echo -e "  Mode: ${GREEN}Full${RESET} (all 7 suites)"
+  echo -e "  Mode: ${GREEN}Full${RESET} (all 8 suites)"
 fi
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
@@ -168,6 +169,32 @@ if [[ "$QUICK" == "false" ]]; then
   # ── Suite 7: OEM Portal ─────────────────────────────────────────────
   run_suite "OEM Portal (60 tests)" \
     tests/e2e/oem-portal.spec.ts
+
+  # ── Suite 8: Production Canary (deep health, data source, write roundtrip, UI render)
+  log "Running: Production Canary (66 tests)..."
+  CANARY_START=$SECONDS
+  CANARY_EXIT=0
+  CANARY_OUTPUT=$(CANARY_URL=http://localhost:3000 CANARY_SECRET="" \
+    npx playwright test --config=playwright.canary.config.ts --workers=1 --reporter=line 2>&1) || CANARY_EXIT=$?
+
+  CANARY_PASSED=$(echo "$CANARY_OUTPUT" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo "0")
+  CANARY_FAIL_CT=$(echo "$CANARY_OUTPUT" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' || echo "0")
+  CANARY_SKIPPED=$(echo "$CANARY_OUTPUT" | grep -oE '[0-9]+ skipped' | grep -oE '[0-9]+' || echo "0")
+  CANARY_PASSED=${CANARY_PASSED:-0}
+  CANARY_FAIL_CT=${CANARY_FAIL_CT:-0}
+  CANARY_SKIPPED=${CANARY_SKIPPED:-0}
+  CANARY_DURATION=$((SECONDS - CANARY_START))
+
+  if [[ "$CANARY_FAIL_CT" == "0" && "$CANARY_EXIT" == "0" ]]; then
+    ok "Production Canary: ${CANARY_PASSED} passed, ${CANARY_SKIPPED} skipped (${CANARY_DURATION}s)"
+  else
+    fail "Production Canary: ${CANARY_PASSED} passed, ${CANARY_FAIL_CT} FAILED, ${CANARY_SKIPPED} skipped (${CANARY_DURATION}s)"
+    SUITE_FAILURES=$((SUITE_FAILURES + 1))
+    echo "$CANARY_OUTPUT" | grep "✘" | head -10
+  fi
+  TOTAL_PASSED=$((TOTAL_PASSED + ${CANARY_PASSED}))
+  TOTAL_FAILED=$((TOTAL_FAILED + ${CANARY_FAIL_CT}))
+  TOTAL_SKIPPED=$((TOTAL_SKIPPED + ${CANARY_SKIPPED}))
 fi
 
 # ── Summary ──────────────────────────────────────────────────────────────
