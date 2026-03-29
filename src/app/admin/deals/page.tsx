@@ -277,7 +277,7 @@ export default function DealDeskingPage() {
               ))}
             </select>
           </div>
-          <div className="w-full sm:w-40">
+          <div className="flex-1 min-w-0">
             <label className="block text-xs font-medium text-gray-500">From</label>
             <input
               type="date"
@@ -286,7 +286,7 @@ export default function DealDeskingPage() {
               className="mt-1 block w-full rounded-md border border-surface-border px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
-          <div className="w-full sm:w-40">
+          <div className="flex-1 min-w-0">
             <label className="block text-xs font-medium text-gray-500">To</label>
             <input
               type="date"
