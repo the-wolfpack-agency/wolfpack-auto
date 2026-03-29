@@ -608,27 +608,56 @@ export function generateInsights(): BehavioralInsight[] {
     }
   }
 
-  // --- Insight 6: Peak hours ---
+  // --- Insight 6: Peak hours (in dealer's local timezone) ---
+  const dealerTz = process.env.DEALER_TIMEZONE ?? "America/New_York";
   const hourBuckets = new Array(24).fill(0) as number[];
   for (const [, events] of buffer.sessions) {
     for (const e of events) {
-      const hour = new Date(e.timestamp).getHours();
-      hourBuckets[hour]++;
+      // Convert to dealer timezone for accurate local hour
+      const localHourStr = new Date(e.timestamp).toLocaleString("en-US", {
+        timeZone: dealerTz,
+        hour: "numeric",
+        hour12: false,
+      });
+      const localHour = parseInt(localHourStr, 10);
+      if (!isNaN(localHour) && localHour >= 0 && localHour < 24) {
+        hourBuckets[localHour]++;
+      }
     }
   }
 
   const peakHour = hourBuckets.indexOf(Math.max(...hourBuckets));
   const totalEvents = hourBuckets.reduce((a, b) => a + b, 0);
 
+  // Format hour as readable time (e.g., "4:00 PM")
+  const formatHour = (h: number): string => {
+    const suffix = h >= 12 ? "PM" : "AM";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${h12}:00 ${suffix}`;
+  };
+
+  // Get timezone abbreviation for display (e.g., "EDT", "PST")
+  const tzAbbr = new Date()
+    .toLocaleString("en-US", { timeZone: dealerTz, timeZoneName: "short" })
+    .split(" ")
+    .pop() ?? dealerTz;
+
   if (totalEvents > 10) {
+    // Find top 3 busiest hours
+    const topHours = hourBuckets
+      .map((count, hour) => ({ hour, count }))
+      .filter((h) => h.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+
     insights.push({
       id: `peak_hours_${Date.now()}`,
-      insight: `Peak activity hour is ${peakHour}:00 with ${hourBuckets[peakHour]} events (${((hourBuckets[peakHour] / totalEvents) * 100).toFixed(1)}% of traffic). Hourly distribution: ${hourBuckets.map((c, h) => `${h}:00=${c}`).filter((_, i) => hourBuckets[i] > 0).join(", ")}.`,
+      insight: `Your busiest hour is ${formatHour(peakHour)} ${tzAbbr} with ${hourBuckets[peakHour]} events (${((hourBuckets[peakHour] / totalEvents) * 100).toFixed(1)}% of traffic). Top hours: ${topHours.map((h) => `${formatHour(h.hour)} (${h.count})`).join(", ")}.`,
       category: "engagement",
       confidence: Math.min(totalEvents / 100, 1),
       sample_size: totalEvents,
       generated_at: now,
-      data: { hourly: hourBuckets, peak_hour: peakHour },
+      data: { hourly: hourBuckets, peak_hour: peakHour, timezone: dealerTz, timezone_abbr: tzAbbr },
     });
   }
 
