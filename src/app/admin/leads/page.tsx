@@ -259,7 +259,7 @@ export default function LeadsManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end">
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
         {/* Search */}
         <div className="flex-1">
           <label htmlFor="lead-search" className="sr-only">
@@ -323,7 +323,7 @@ export default function LeadsManagementPage() {
         </select>
 
         {/* Sort */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-stretch gap-1">
           <select
             value={sort}
             onChange={(e) => handleSort(e.target.value)}
@@ -339,7 +339,7 @@ export default function LeadsManagementPage() {
           <button
             type="button"
             onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-            className="rounded-lg border border-surface-border bg-white p-2.5 text-sm text-gray-600 shadow-sm transition-colors hover:bg-surface-muted"
+            className="flex items-center rounded-lg border border-surface-border bg-white px-2.5 text-sm text-gray-600 shadow-sm transition-colors hover:bg-surface-muted"
             aria-label={`Sort ${sortDir === "desc" ? "ascending" : "descending"}`}
           >
             {sortDir === "desc" ? "\u2193" : "\u2191"}
