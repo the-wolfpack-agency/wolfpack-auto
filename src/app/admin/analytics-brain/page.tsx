@@ -173,94 +173,130 @@ export default async function AnalyticsBrainPage() {
         </div>
       </div>
 
-      {/* Priority Alerts */}
+      {/* Priority Alerts — clean, actionable language */}
       {alerts.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-gray-900">Priority Alerts</h2>
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="rounded-xl border border-red-200 bg-red-50 p-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100">
-                  <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-red-800">{alert.insight}</p>
-                  <p className="mt-1 text-xs text-red-600">
-                    Confidence: {(alert.confidence * 100).toFixed(0)}% | Sample: {alert.sample_size} events
-                  </p>
+          <p className="text-sm text-gray-500">Issues that need immediate attention to avoid losing potential buyers.</p>
+          {alerts.map((alert) => {
+            const isExitAlert = alert.id.startsWith("hot_lead_exit_");
+            const isRageAlert = alert.id.startsWith("frustrated_buyers_");
+            const title = isExitAlert
+              ? "Engaged visitors are leaving"
+              : isRageAlert
+                ? "Visitors struggling with your site"
+                : "Action needed";
+            const description = isExitAlert
+              ? "Visitors who showed strong buying intent are leaving without converting. Consider adding chat prompts, special offers, or scheduling CTAs on exit pages."
+              : isRageAlert
+                ? "Visitors are repeatedly clicking on elements that aren't responding. This usually means a button isn't working or a page is loading too slowly. Check the contact and financing pages."
+                : alert.insight.split(".")[0] + ".";
+            return (
+              <div
+                key={alert.id}
+                className={`rounded-xl border p-4 ${isRageAlert ? "border-amber-200 bg-amber-50" : "border-red-200 bg-red-50"}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isRageAlert ? "bg-amber-100" : "bg-red-100"}`}>
+                    <svg className={`h-5 w-5 ${isRageAlert ? "text-amber-600" : "text-red-600"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isRageAlert ? "text-amber-900" : "text-red-900"}`}>{title}</p>
+                    <p className={`mt-1 text-sm ${isRageAlert ? "text-amber-700" : "text-red-700"}`}>{description}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Lead Temperature Board */}
+      {/* Lead Temperature Board — card layout for clarity */}
       {temperatures.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Lead Temperature Board</h2>
-          <p className="mt-1 text-sm text-gray-500">Real-time buyer intent scoring across active sessions.</p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  <th className="pb-3 pr-4">Visitor</th>
-                  <th className="pb-3 pr-4">Score</th>
-                  <th className="pb-3 pr-4">Tier</th>
-                  <th className="pb-3 pr-4">Top Signals</th>
-                  <th className="pb-3">Converted</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {temperatures.slice(0, 10).map((t, idx) => (
-                  <tr key={idx} className="text-gray-700">
-                    <td className="py-3 pr-4 text-sm font-medium">{t.label}</td>
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-200">
-                          <div
-                            className={`h-full rounded-full ${t.temperature >= 80 ? "bg-red-500" : t.temperature >= 50 ? "bg-amber-500" : t.temperature >= 25 ? "bg-blue-500" : "bg-gray-400"}`}
-                            style={{ width: `${t.temperature}%` }}
-                          />
-                        </div>
-                        <span className="font-semibold">{t.temperature}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${tierColor(t.tier)}`}>
-                        {t.tier}
+          <p className="mt-1 text-sm text-gray-500">
+            How engaged your current visitors are — higher scores mean closer to buying.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {temperatures.slice(0, 9).map((t, idx) => {
+              // Translate signal keys to friendly labels
+              const signalLabels: Record<string, string> = {
+                converted: "Submitted a lead",
+                vehicle_engagement: "Viewed vehicles",
+                session_depth: "Browsed many pages",
+                search_activity: "Searched inventory",
+                time_investment: "Spent time on site",
+                chat_engagement: "Used live chat",
+                form_started: "Started filling a form",
+                price_interaction: "Checked pricing",
+                return_visitor: "Returning visitor",
+                high_intent_chat: "Asked about financing/test drive",
+                comparison_shopping: "Comparing vehicles",
+                narrowing_behavior: "Narrowing choices",
+              };
+              const topSignals = Object.entries(t.signals)
+                .filter(([, v]) => v > 0)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 3)
+                .map(([k]) => signalLabels[k] ?? k.replace(/_/g, " "));
+
+              return (
+                <div
+                  key={idx}
+                  className={`rounded-xl border p-4 ${
+                    t.tier === "hot" ? "border-red-200 bg-red-50/50" :
+                    t.tier === "warm" ? "border-amber-200 bg-amber-50/50" :
+                    t.tier === "cool" ? "border-blue-200 bg-blue-50/50" :
+                    "border-gray-200 bg-white"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-900">{t.label}</span>
+                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${tierColor(t.tier)}`}>
+                      {t.tier}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          t.temperature >= 80 ? "bg-red-500" :
+                          t.temperature >= 50 ? "bg-amber-500" :
+                          t.temperature >= 25 ? "bg-blue-500" :
+                          "bg-gray-400"
+                        }`}
+                        style={{ width: `${t.temperature}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-gray-700">{t.temperature}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {topSignals.map((s) => (
+                      <span key={s} className="rounded-md bg-white/80 px-1.5 py-0.5 text-xs text-gray-600 border border-gray-200">
+                        {s}
                       </span>
-                    </td>
-                    <td className="py-3 pr-4 text-xs text-gray-500">
-                      {Object.entries(t.signals)
-                        .filter(([, v]) => v > 0)
-                        .sort(([, a], [, b]) => b - a)
-                        .slice(0, 3)
-                        .map(([k, v]) => `${k.replace(/_/g, " ")} (${v})`)
-                        .join(", ")}
-                    </td>
-                    <td className="py-3">
-                      {t.converted ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
-                          <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                          </svg>
-                          Yes
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">No</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    ))}
+                  </div>
+                  {t.converted && (
+                    <div className="mt-2 flex items-center gap-1 text-xs font-medium text-emerald-600">
+                      <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+                      </svg>
+                      Converted
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
+          {temperatures.length > 9 && (
+            <p className="mt-2 text-center text-xs text-gray-400">
+              Showing top 9 of {temperatures.length} visitors
+            </p>
+          )}
         </div>
       )}
 
@@ -318,37 +354,43 @@ export default async function AnalyticsBrainPage() {
         </div>
       )}
 
-      {/* Photo Engagement */}
+      {/* Photo Engagement — clean card display */}
       {photoInsight && (
         <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-6">
-          <h2 className="text-lg font-semibold text-gray-900">Photo Engagement Scores</h2>
-          <p className="mt-1 text-sm text-gray-700">{photoInsight.insight}</p>
-          {Array.isArray(photoInsight.data.low_engagement) && photoInsight.data.low_engagement.length > 0 ? (
-            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p className="text-xs font-semibold uppercase text-amber-700">Needs Attention</p>
-              <p className="mt-1 text-sm text-amber-800">
+          <h2 className="text-lg font-semibold text-gray-900">Photo Performance</h2>
+          <p className="mt-1 text-sm text-gray-500">How much time visitors spend looking at your vehicle photos.</p>
+          {Array.isArray(photoInsight.data.low_engagement) && (photoInsight.data.low_engagement as { vin: string; score: number; views: number }[]).length > 0 ? (
+            <div className="mt-3">
+              <p className="text-sm font-medium text-amber-700">These vehicles need better photos</p>
+              <div className="mt-2 flex flex-wrap gap-2">
                 {(photoInsight.data.low_engagement as { vin: string; score: number; views: number }[])
                   .slice(0, 5)
-                  .map((v) => `${v.vin} (score: ${v.score}, views: ${v.views})`)
-                  .join(" | ")}
-              </p>
+                  .map((v) => (
+                    <span key={v.vin} className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm">
+                      <span className="font-mono text-xs text-amber-700">{v.vin}</span>
+                      <span className="text-xs text-amber-500">{v.views} views</span>
+                    </span>
+                  ))}
+              </div>
             </div>
-          ) : null}
+          ) : (
+            <p className="mt-2 text-sm text-blue-700">All vehicle photos are performing well.</p>
+          )}
         </div>
       )}
 
-      {/* Performance Correlation */}
+      {/* Page Speed Impact — keep cards, add context */}
       {perfInsight && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6">
-          <h2 className="text-lg font-semibold text-gray-900">Page Speed Impact</h2>
-          <p className="mt-1 text-sm text-gray-700">{perfInsight.insight}</p>
+          <h2 className="text-lg font-semibold text-gray-900">Page Speed vs. Conversions</h2>
+          <p className="mt-1 text-sm text-gray-500">How your site speed affects whether visitors become leads.</p>
           {Array.isArray(perfInsight.data.buckets) ? (
             <div className="mt-4 grid gap-2 sm:grid-cols-5">
               {(perfInsight.data.buckets as { range: string; sessions: number; conversion_rate: number; avg_load_ms: number }[]).map((b) => (
                 <div key={b.range} className="rounded-lg border border-emerald-200 bg-white p-3 text-center">
                   <p className="text-xs font-medium text-gray-500">{b.range}</p>
                   <p className="mt-1 text-xl font-bold text-gray-900">{(b.conversion_rate * 100).toFixed(1)}%</p>
-                  <p className="text-xs text-gray-400">{b.sessions} sessions</p>
+                  <p className="text-xs text-gray-400">{b.sessions} visitors</p>
                 </div>
               ))}
             </div>
@@ -356,13 +398,13 @@ export default async function AnalyticsBrainPage() {
         </div>
       )}
 
-      {/* Top Insights by Category — deduplicated, limited preview */}
+      {/* Top Insights — clean summaries, no raw text dumps */}
       <div>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Top Insights</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Showing highest-confidence insights across {grouped.size} categories.
+              Key findings from visitor behavior across {grouped.size} categories.
             </p>
           </div>
           {insights.length > 0 && (
@@ -380,8 +422,16 @@ export default async function AnalyticsBrainPage() {
           {categoryOrder
             .filter((cat) => grouped.has(cat))
             .map((cat) => {
+              const categoryLabels: Record<string, string> = {
+                conversion: "Sales & Conversions",
+                ux_friction: "User Experience Issues",
+                engagement: "Visitor Engagement",
+                search: "Search & Inventory",
+                chat: "Chat Activity",
+                marketing: "Marketing Performance",
+                navigation: "Site Navigation",
+              };
               const catInsights = grouped.get(cat)!;
-              // Deduplicate: keep highest-confidence insight per unique text prefix (first 80 chars)
               const seen = new Set<string>();
               const deduped = catInsights
                 .sort((a, b) => b.confidence - a.confidence)
@@ -396,37 +446,49 @@ export default async function AnalyticsBrainPage() {
 
               return (
                 <div key={cat}>
-                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-gray-500">{cat.replace(/_/g, " ")}</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-gray-700">{categoryLabels[cat] ?? cat.replace(/_/g, " ")}</h3>
                   <div className="space-y-2">
-                    {preview.map((insight) => (
-                      <div
-                        key={insight.id}
-                        className={`rounded-lg border-l-4 p-4 ${categoryColor(insight.category)}`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <p className="text-sm text-gray-700">{insight.insight}</p>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <div className="h-1.5 w-12 overflow-hidden rounded-full bg-gray-200">
-                              <div
-                                className={`h-full rounded-full ${confidenceBar(insight.confidence)}`}
-                                style={{ width: `${insight.confidence * 100}%` }}
-                              />
+                    {preview.map((insight) => {
+                      // Extract the first sentence as a clean summary
+                      const firstSentence = insight.insight.split(/\.\s/)[0] + ".";
+                      // Truncate if still too long
+                      const summary = firstSentence.length > 200
+                        ? firstSentence.slice(0, 197) + "..."
+                        : firstSentence;
+
+                      return (
+                        <div
+                          key={insight.id}
+                          className={`rounded-lg border-l-4 p-4 ${categoryColor(insight.category)}`}
+                        >
+                          <p className="text-sm text-gray-700">{summary}</p>
+                          <div className="mt-2 flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                              <div className="h-1.5 w-10 overflow-hidden rounded-full bg-gray-200">
+                                <div
+                                  className={`h-full rounded-full ${confidenceBar(insight.confidence)}`}
+                                  style={{ width: `${insight.confidence * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-400">
+                                {insight.confidence >= 0.8 ? "High confidence" : insight.confidence >= 0.5 ? "Medium confidence" : "Low confidence"}
+                              </span>
                             </div>
-                            <span className="text-xs text-gray-400">{(insight.confidence * 100).toFixed(0)}%</span>
+                            <span className="text-xs text-gray-300">|</span>
+                            <span className="text-xs text-gray-400">
+                              Based on {insight.sample_size} {insight.sample_size === 1 ? "visitor" : "visitors"}
+                            </span>
                           </div>
                         </div>
-                        <p className="mt-1 text-xs text-gray-400">
-                          Sample: {insight.sample_size} | Generated: {new Date(insight.generated_at).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {remaining > 0 && (
                       <a
                         href={`/admin/analytics-brain/all?category=${cat}`}
                         className="block text-center text-xs font-medium text-brand-600 hover:text-brand-700 py-1"
                         data-track="brain_view_category_insights"
                       >
-                        +{remaining} more {cat.replace(/_/g, " ")} insight{remaining !== 1 ? "s" : ""}
+                        +{remaining} more in this category
                       </a>
                     )}
                   </div>
