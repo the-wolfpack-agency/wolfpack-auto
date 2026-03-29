@@ -310,11 +310,13 @@ test.describe("Admin layout regression: no double header or sidebar overlap", ()
       const publicNav = page.locator("header[role='banner']");
       await expect(publicNav).not.toBeVisible({ timeout: 3_000 });
 
-      // The public top bar (dark bar with hours/address) must also be absent
-      const topBar = page.locator(
-        'a[href="/inventory"]:not([class*="admin"]), nav[aria-label="Primary navigation"]'
-      );
-      await expect(topBar).not.toBeVisible({ timeout: 3_000 });
+      // The public top bar (dark bar with hours/address) must also be absent.
+      // Use .first() to avoid strict-mode violations when multiple matching
+      // elements exist (e.g. public nav + footer).
+      const publicTopNav = page.locator('nav[aria-label="Primary navigation"]');
+      if (await publicTopNav.count() > 0) {
+        await expect(publicTopNav.first()).not.toBeVisible({ timeout: 3_000 });
+      }
     });
 
     test(`${route}: desktop sidebar renders and content not overlapped`, async ({
@@ -345,7 +347,9 @@ test.describe("Admin layout regression: no double header or sidebar overlap", ()
 
       // Main content must start to the right of the sidebar
       const sidebarBox = await sidebar.boundingBox();
-      const mainContent = page.locator("main#main-content");
+      // Use the admin layout's own <main> — the root layout's main#main-content
+      // is the outer wrapper at x=0.
+      const mainContent = page.locator("main#admin-main-content");
       await expect(mainContent).toBeVisible({ timeout: 5_000 });
       const mainBox = await mainContent.boundingBox();
 

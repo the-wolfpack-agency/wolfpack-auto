@@ -8,11 +8,13 @@ test.describe("Admin Analytics Brain Dashboard", () => {
 
   test("shows stats overview cards", async ({ page }) => {
     await page.goto("/admin/analytics-brain");
-    await expect(page.locator("text=Active Sessions")).toBeVisible();
-    await expect(page.locator("text=Buffered Events")).toBeVisible();
-    await expect(page.locator("text=Insights Generated")).toBeVisible();
-    await expect(page.locator("text=Hot Leads")).toBeVisible();
-    await expect(page.locator("text=Alerts")).toBeVisible();
+    // Use getByText with exact match to avoid strict-mode violations
+    // from description text mentioning the same words
+    await expect(page.getByText("Active Sessions", { exact: true })).toBeVisible();
+    await expect(page.getByText("Buffered Events", { exact: true })).toBeVisible();
+    await expect(page.getByText("Insights Generated", { exact: true })).toBeVisible();
+    await expect(page.getByText("Hot Leads", { exact: true })).toBeVisible();
+    await expect(page.getByText("Alerts", { exact: true })).toBeVisible();
   });
 
   test("shows empty state when no sessions exist", async ({ page }) => {
@@ -27,14 +29,18 @@ test.describe("Admin Analytics Brain Dashboard", () => {
 
   test("admin sidebar includes Brain nav link", async ({ page }) => {
     await page.goto("/admin/analytics-brain");
-    const brainLink = page.locator('a[href="/admin/analytics-brain"]');
+    // Scope to desktop sidebar to avoid matching hidden mobile copy
+    const sidebar = page.locator("[aria-label='Admin navigation desktop']");
+    const brainLink = sidebar.locator('a[href="/admin/analytics-brain"]');
     await expect(brainLink).toBeVisible();
     await expect(brainLink).toContainText("Brain");
   });
 
   test("brain page is accessible from admin dashboard", async ({ page }) => {
     await page.goto("/admin");
-    const brainLink = page.locator('a[href="/admin/analytics-brain"]');
+    // Dashboard section auto-expands on /admin — Brain is inside it
+    const sidebar = page.locator("[aria-label='Admin navigation desktop']");
+    const brainLink = sidebar.locator('a[href="/admin/analytics-brain"]');
     await expect(brainLink).toBeVisible();
     await brainLink.click();
     await page.waitForURL(/\/admin\/analytics-brain/);
@@ -58,7 +64,7 @@ test.describe("Admin Analytics Brain Dashboard", () => {
     await page.goto("/admin/analytics-brain");
     await expect(page.locator("h1")).toContainText("Analytics Brain");
     // Stats cards should still be visible
-    await expect(page.locator("text=Active Sessions")).toBeVisible();
+    await expect(page.getByText("Active Sessions", { exact: true })).toBeVisible();
   });
 });
 

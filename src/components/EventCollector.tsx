@@ -983,7 +983,8 @@ export default function EventCollector({
 
     function handleClick(e: MouseEvent) {
       const target = e.target as HTMLElement;
-      const id = target.getAttribute("data-track") || target.id || target.className.slice(0, 40) || target.tagName;
+      const cls = typeof target.className === "string" ? target.className : "";
+      const id = target.getAttribute("data-track") || target.id || cls.slice(0, 40) || target.tagName;
       const now = Date.now();
       clickLog.push({ target: id, time: now });
 
@@ -1016,7 +1017,7 @@ export default function EventCollector({
         enqueueEvent(buildEvent("dead_click", "non_interactive_click", {
           element_tag: target.tagName.toLowerCase(),
           element_text: (target.textContent ?? "").trim().slice(0, 100),
-          element_class: target.className.toString().slice(0, 80),
+          element_class: (typeof target.className === "string" ? target.className : "").slice(0, 80),
           x: e.clientX,
           y: e.clientY,
           page: window.location.pathname,

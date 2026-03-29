@@ -3,21 +3,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
+import { useAnalytics } from "@/components/EventCollector";
 
-/** Sub-items shown under Documents when on a /admin/documents page. */
+/* -------------------------------------------------------------------------- */
+/* Sub-item definitions (unchanged)                                           */
+/* -------------------------------------------------------------------------- */
+
 const DOCUMENTS_CHILDREN = [
   { href: "/admin/documents", label: "Vault" },
   { href: "/admin/documents/compliance", label: "Compliance" },
 ] as const;
 
-/** Sub-items shown under Analytics when on an analytics page. */
 const ANALYTICS_CHILDREN = [
   { href: "/admin/analytics", label: "Overview" },
   { href: "/admin/analytics/leads", label: "Leads" },
   { href: "/admin/analytics/inventory", label: "Inventory" },
 ] as const;
 
-/** Sub-items shown under OEM Network when on an /admin/oem page. */
 const OEM_CHILDREN = [
   { href: "/admin/oem", label: "Overview" },
   { href: "/admin/oem/dealers", label: "Dealer Network" },
@@ -25,7 +27,6 @@ const OEM_CHILDREN = [
   { href: "/admin/oem/analytics", label: "Cross-Dealer Analytics" },
 ] as const;
 
-/** Sub-items shown under Comms when on an /admin/comms page. */
 const COMMS_CHILDREN = [
   { href: "/admin/comms", label: "Overview" },
   { href: "/admin/comms/templates", label: "Templates" },
@@ -33,14 +34,12 @@ const COMMS_CHILDREN = [
   { href: "/admin/comms/log", label: "Message Log" },
 ] as const;
 
-/** Sub-items shown under Accounting when on an /admin/accounting page. */
 const ACCOUNTING_CHILDREN = [
   { href: "/admin/accounting", label: "Dashboard" },
   { href: "/admin/accounting/commissions", label: "Commissions" },
   { href: "/admin/accounting/export", label: "Export / GL" },
 ] as const;
 
-/** Sub-items shown under Service when on an /admin/service page. */
 const SERVICE_CHILDREN = [
   { href: "/admin/service", label: "Dashboard" },
   { href: "/admin/service/appointments", label: "Appointments" },
@@ -49,53 +48,172 @@ const SERVICE_CHILDREN = [
   { href: "/admin/service/technicians", label: "Technicians" },
 ] as const;
 
-/** Navigation items for the admin sidebar. */
-const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard", icon: DashboardIcon },
-  { href: "/admin/inventory", label: "Inventory", icon: InventoryIcon },
-  { href: "/admin/vehicles/new", label: "Add Vehicle", icon: PlusIcon },
-  { href: "/admin/intake", label: "Intake", icon: IntakeIcon },
-  { href: "/admin/leads", label: "Leads", icon: LeadsIcon },
-  { href: "/admin/engagement-reports", label: "Engagement Reports", icon: EngagementReportsIcon },
-  { href: "/admin/good-faith", label: "Good Faith", icon: GoodFaithIcon },
-  { href: "/admin/deals", label: "Deal Desking", icon: DealDeskingIcon },
-  { href: "/admin/fi-products", label: "F&I Products", icon: FiProductsIcon },
-  { href: "/admin/lenders", label: "Lenders", icon: LendersIcon },
-  { href: "/admin/credit", label: "Credit Bureau", icon: CreditIcon },
-  { href: "/admin/documents", label: "Documents", icon: DocumentsIcon },
-  { href: "/admin/knowledge", label: "Knowledge Base", icon: KnowledgeIcon },
-  { href: "/admin/trade-in", label: "Trade-Ins", icon: TradeInIcon },
-  { href: "/admin/service", label: "Service & Parts", icon: ServiceIcon },
-  { href: "/admin/floor-plan", label: "Floor Plan", icon: FloorPlanIcon },
-  { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
-  { href: "/admin/digital-retail", label: "Digital Retail", icon: DigitalRetailIcon },
-  { href: "/admin/reviews", label: "Reviews", icon: ReviewsIcon },
-  { href: "/admin/customers", label: "Customers", icon: CustomersIcon },
-  { href: "/admin/compliance/checks", label: "Compliance Checks", icon: ComplianceChecksIcon },
-  { href: "/admin/tasks", label: "Tasks", icon: TasksIcon },
-  { href: "/admin/comms", label: "Comms", icon: CommsIcon },
-  { href: "/admin/rewards", label: "Rewards", icon: RewardsIcon },
-  { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon },
-  { href: "/admin/funnel-health", label: "Funnel Health", icon: FunnelHealthIcon },
-  { href: "/admin/analytics-brain", label: "Brain", icon: BrainIcon },
-  { href: "/admin/marketing", label: "Marketing", icon: MarketingIcon },
-  { href: "/admin/competitive", label: "Competitive Intel", icon: CompetitiveIcon },
-  { href: "/admin/change-management", label: "Change Management", icon: ChangeManagementIcon },
-  { href: "/admin/pricing", label: "Pricing", icon: PricingIcon },
-  { href: "/admin/reports", label: "Reports", icon: ReportsIcon },
-  { href: "/admin/onboarding", label: "Onboarding", icon: OnboardingIcon },
-  { href: "/admin/oem", label: "OEM Network", icon: OemIcon },
-  { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
-  { href: "/admin/training", label: "Training", icon: TrainingIcon },
-  { href: "/admin/resources", label: "Resources", icon: ResourcesIcon },
-  { href: "/admin/webhooks", label: "Webhooks", icon: WebhooksIcon },
-  { href: "/admin/team", label: "Team", icon: TeamIcon },
-  { href: "/admin/agency", label: "Agency", icon: AgencyIcon },
-  { href: "/admin/compliance", label: "Compliance", icon: ComplianceIcon },
-  { href: "/admin/security", label: "Security", icon: SecurityHardeningIcon },
-  { href: "/admin/system", label: "System Health", icon: SystemHealthIcon },
-  { href: "/admin/billing", label: "Billing", icon: BillingIcon },
-] as const;
+/** Map parent href → child routes for sub-navigation */
+const ITEM_CHILDREN: Record<string, readonly { href: string; label: string }[]> = {
+  "/admin/analytics": ANALYTICS_CHILDREN,
+  "/admin/oem": OEM_CHILDREN,
+  "/admin/service": SERVICE_CHILDREN,
+  "/admin/comms": COMMS_CHILDREN,
+  "/admin/accounting": ACCOUNTING_CHILDREN,
+  "/admin/documents": DOCUMENTS_CHILDREN,
+};
+
+/* -------------------------------------------------------------------------- */
+/* Grouped navigation structure                                               */
+/* -------------------------------------------------------------------------- */
+
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: IconComponent;
+}
+
+interface NavSection {
+  id: string;
+  label: string;
+  icon: IconComponent;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: DashboardIcon,
+    items: [
+      { href: "/admin", label: "Dashboard", icon: DashboardIcon },
+      { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon },
+      { href: "/admin/funnel-health", label: "Funnel Health", icon: FunnelHealthIcon },
+      { href: "/admin/analytics-brain", label: "Brain", icon: BrainIcon },
+      { href: "/admin/reports", label: "Reports", icon: ReportsIcon },
+    ],
+  },
+  {
+    id: "sales",
+    label: "Sales",
+    icon: DealDeskingIcon,
+    items: [
+      { href: "/admin/leads", label: "Leads", icon: LeadsIcon },
+      { href: "/admin/engagement-reports", label: "Engagement Reports", icon: EngagementReportsIcon },
+      { href: "/admin/good-faith", label: "Good Faith", icon: GoodFaithIcon },
+      { href: "/admin/deals", label: "Deal Desking", icon: DealDeskingIcon },
+      { href: "/admin/fi-products", label: "F&I Products", icon: FiProductsIcon },
+      { href: "/admin/digital-retail", label: "Digital Retail", icon: DigitalRetailIcon },
+      { href: "/admin/pricing", label: "Pricing", icon: PricingIcon },
+    ],
+  },
+  {
+    id: "inventory",
+    label: "Inventory",
+    icon: InventoryIcon,
+    items: [
+      { href: "/admin/inventory", label: "Inventory", icon: InventoryIcon },
+      { href: "/admin/vehicles/new", label: "Add Vehicle", icon: PlusIcon },
+      { href: "/admin/intake", label: "Intake", icon: IntakeIcon },
+      { href: "/admin/trade-in", label: "Trade-Ins", icon: TradeInIcon },
+      { href: "/admin/floor-plan", label: "Floor Plan", icon: FloorPlanIcon },
+    ],
+  },
+  {
+    id: "finance",
+    label: "Finance",
+    icon: LendersIcon,
+    items: [
+      { href: "/admin/lenders", label: "Lenders", icon: LendersIcon },
+      { href: "/admin/credit", label: "Credit Bureau", icon: CreditIcon },
+      { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
+    ],
+  },
+  {
+    id: "service",
+    label: "Service",
+    icon: ServiceIcon,
+    items: [
+      { href: "/admin/service", label: "Service & Parts", icon: ServiceIcon },
+    ],
+  },
+  {
+    id: "customers",
+    label: "Customers",
+    icon: CustomersIcon,
+    items: [
+      { href: "/admin/customers", label: "Customers", icon: CustomersIcon },
+      { href: "/admin/comms", label: "Comms", icon: CommsIcon },
+      { href: "/admin/reviews", label: "Reviews", icon: ReviewsIcon },
+      { href: "/admin/rewards", label: "Rewards", icon: RewardsIcon },
+      { href: "/admin/marketing", label: "Marketing", icon: MarketingIcon },
+      { href: "/admin/competitive", label: "Competitive Intel", icon: CompetitiveIcon },
+    ],
+  },
+  {
+    id: "operations",
+    label: "Operations",
+    icon: ComplianceIcon,
+    items: [
+      { href: "/admin/documents", label: "Documents", icon: DocumentsIcon },
+      { href: "/admin/knowledge", label: "Knowledge Base", icon: KnowledgeIcon },
+      { href: "/admin/compliance", label: "Compliance", icon: ComplianceIcon },
+      { href: "/admin/compliance/checks", label: "Compliance Checks", icon: ComplianceChecksIcon },
+      { href: "/admin/tasks", label: "Tasks", icon: TasksIcon },
+      { href: "/admin/change-management", label: "Change Management", icon: ChangeManagementIcon },
+      { href: "/admin/training", label: "Training", icon: TrainingIcon },
+      { href: "/admin/resources", label: "Resources", icon: ResourcesIcon },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Admin",
+    icon: SettingsIcon,
+    items: [
+      { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
+      { href: "/admin/team", label: "Team", icon: TeamIcon },
+      { href: "/admin/security", label: "Security", icon: SecurityHardeningIcon },
+      { href: "/admin/system", label: "System Health", icon: SystemHealthIcon },
+      { href: "/admin/billing", label: "Billing", icon: BillingIcon },
+      { href: "/admin/webhooks", label: "Webhooks", icon: WebhooksIcon },
+      { href: "/admin/onboarding", label: "Onboarding", icon: OnboardingIcon },
+      { href: "/admin/oem", label: "OEM Network", icon: OemIcon },
+      { href: "/admin/agency", label: "Agency", icon: AgencyIcon },
+      { href: "/admin/privacy", label: "Privacy", icon: ComplianceIcon },
+    ],
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Route-matching helpers                                                     */
+/* -------------------------------------------------------------------------- */
+
+function isItemActive(href: string, pathname: string): boolean {
+  if (href === "/admin") return pathname === "/admin";
+  // analytics-brain should NOT match analytics
+  if (href === "/admin/analytics")
+    return pathname.startsWith("/admin/analytics") && !pathname.startsWith("/admin/analytics-brain");
+  return pathname.startsWith(href);
+}
+
+function findActiveSection(pathname: string): string | null {
+  for (const section of NAV_SECTIONS) {
+    if (section.items.some((item) => isItemActive(item.href, pathname))) {
+      return section.id;
+    }
+  }
+  return null;
+}
+
+/** Should this item show its sub-navigation children? */
+function shouldShowChildren(href: string, pathname: string): boolean {
+  if (!(href in ITEM_CHILDREN)) return false;
+  if (!pathname.startsWith(href)) return false;
+  // analytics children should not show on analytics-brain
+  if (href === "/admin/analytics" && pathname.startsWith("/admin/analytics-brain")) return false;
+  return true;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
 
 interface DealerOption {
   id: string;
@@ -110,6 +228,40 @@ export default function AdminSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dealers, setDealers] = useState<DealerOption[]>([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const { track } = useAnalytics();
+
+  // Auto-expand section containing the active page
+  useEffect(() => {
+    const activeId = findActiveSection(pathname);
+    if (activeId) {
+      setExpandedSections((prev) => {
+        if (prev.has(activeId)) return prev;
+        const next = new Set(prev);
+        next.add(activeId);
+        return next;
+      });
+    }
+  }, [pathname]);
+
+  const toggleSection = useCallback((id: string) => {
+    setExpandedSections((prev) => {
+      const wasOpen = prev.has(id);
+      const next = new Set(prev);
+      if (wasOpen) next.delete(id);
+      else next.add(id);
+
+      // Track section toggle for the learning system
+      track("sidebar", wasOpen ? "section_collapsed" : "section_expanded", {
+        section_id: id,
+        section_label: NAV_SECTIONS.find((s) => s.id === id)?.label ?? id,
+        expanded_count: next.size,
+        total_sections: NAV_SECTIONS.length,
+      });
+
+      return next;
+    });
+  }, [track]);
 
   // Fetch dealers for agency-level users
   const isAgencyUser =
@@ -152,16 +304,6 @@ export default function AdminSidebar() {
 
   // Hide sidebar on the login page
   if (pathname === "/admin/login") return null;
-
-  const isAnalyticsPage =
-    pathname.startsWith("/admin/analytics") &&
-    !pathname.startsWith("/admin/analytics-brain");
-
-  const isOemPage = pathname.startsWith("/admin/oem");
-  const isServicePage = pathname.startsWith("/admin/service");
-  const isCommsPage = pathname.startsWith("/admin/comms");
-  const isAccountingPage = pathname.startsWith("/admin/accounting");
-  const isDocumentsPage = pathname.startsWith("/admin/documents");
 
   const navContent = (
     <>
@@ -229,156 +371,93 @@ export default function AdminSidebar() {
         </div>
       )}
 
-      {/* Navigation */}
+      {/* Navigation — grouped into collapsible sections */}
       <nav aria-label="Admin navigation" className="flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1" role="list">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const isAnalytics = href === "/admin/analytics";
-            const isOem = href === "/admin/oem";
-            const isService = href === "/admin/service";
-            const isComms = href === "/admin/comms";
-            const isAccounting = href === "/admin/accounting";
-            const isDocuments = href === "/admin/documents";
-            const isActive =
-              href === "/admin"
-                ? pathname === href
-                : pathname.startsWith(href) &&
-                  !(isAnalytics && !isAnalyticsPage) &&
-                  !(isOem && !isOemPage);
+          {NAV_SECTIONS.map((section) => {
+            const isOpen = expandedSections.has(section.id);
+            const sectionHasActive = section.items.some((item) => isItemActive(item.href, pathname));
+            const SectionIcon = section.icon;
+
             return (
-              <li key={href}>
-                <a
-                  href={href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-gray-800 text-white"
-                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
+              <li key={section.id}>
+                {/* Section header */}
+                <button
+                  type="button"
+                  onClick={() => toggleSection(section.id)}
+                  className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider transition-colors ${
+                    sectionHasActive
+                      ? "text-white"
+                      : "text-gray-500 hover:text-gray-300"
+                  }`}
+                  aria-expanded={isOpen}
+                  data-section={section.id}
+                >
+                  <SectionIcon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">{section.label}</span>
+                  <svg
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+
+                {/* Section items — always in DOM for test compatibility, hidden via CSS */}
+                <div
+                  className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                    isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
                   }`}
                 >
-                  <Icon className="h-5 w-5 shrink-0 text-gray-400 transition-colors group-hover:text-white" />
-                  {label}
-                </a>
-                {/* Analytics sub-navigation */}
-                {isAnalytics && isAnalyticsPage && (
-                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
-                    {ANALYTICS_CHILDREN.map((child) => (
-                      <li key={child.href}>
-                        <a
-                          href={child.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
-                            pathname === child.href
-                              ? "font-semibold text-brand-400"
-                              : "text-gray-400 hover:text-gray-200"
-                          }`}
-                        >
-                          {child.label}
-                        </a>
-                      </li>
-                    ))}
+                  <ul className="mt-0.5 space-y-0.5 border-l border-gray-800 ml-5 pl-2" role="list">
+                    {section.items.map(({ href, label, icon: Icon }) => {
+                      const active = isItemActive(href, pathname);
+                      const showChildren = shouldShowChildren(href, pathname);
+                      const children = ITEM_CHILDREN[href];
+
+                      return (
+                        <li key={href}>
+                          <a
+                            href={href}
+                            onClick={() => setMobileOpen(false)}
+                            className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              active
+                                ? "bg-gray-800 text-white"
+                                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-white" />
+                            {label}
+                          </a>
+                          {/* Sub-navigation children */}
+                          {showChildren && children && (
+                            <ul className="ml-7 mt-1 space-y-0.5" role="list">
+                              {children.map((child) => (
+                                <li key={child.href}>
+                                  <a
+                                    href={child.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                                      pathname === child.href
+                                        ? "font-semibold text-brand-400"
+                                        : "text-gray-400 hover:text-gray-200"
+                                    }`}
+                                  >
+                                    {child.label}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
-                )}
-                {/* Documents sub-navigation */}
-                {isDocuments && isDocumentsPage && (
-                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
-                    {DOCUMENTS_CHILDREN.map((child) => (
-                      <li key={child.href}>
-                        <a
-                          href={child.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
-                            pathname === child.href
-                              ? "font-semibold text-brand-400"
-                              : "text-gray-400 hover:text-gray-200"
-                          }`}
-                        >
-                          {child.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {/* OEM Network sub-navigation */}
-                {isOem && isOemPage && (
-                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
-                    {OEM_CHILDREN.map((child) => (
-                      <li key={child.href}>
-                        <a
-                          href={child.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
-                            pathname === child.href
-                              ? "font-semibold text-brand-400"
-                              : "text-gray-400 hover:text-gray-200"
-                          }`}
-                        >
-                          {child.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {/* Service sub-navigation */}
-                {isService && isServicePage && (
-                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
-                    {SERVICE_CHILDREN.map((child) => (
-                      <li key={child.href}>
-                        <a
-                          href={child.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
-                            pathname === child.href
-                              ? "font-semibold text-brand-400"
-                              : "text-gray-400 hover:text-gray-200"
-                          }`}
-                        >
-                          {child.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {/* Comms sub-navigation */}
-                {isComms && isCommsPage && (
-                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
-                    {COMMS_CHILDREN.map((child) => (
-                      <li key={child.href}>
-                        <a
-                          href={child.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
-                            pathname === child.href
-                              ? "font-semibold text-brand-400"
-                              : "text-gray-400 hover:text-gray-200"
-                          }`}
-                        >
-                          {child.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {/* Accounting sub-navigation */}
-                {isAccounting && isAccountingPage && (
-                  <ul className="ml-8 mt-1 space-y-0.5" role="list">
-                    {ACCOUNTING_CHILDREN.map((child) => (
-                      <li key={child.href}>
-                        <a
-                          href={child.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
-                            pathname === child.href
-                              ? "font-semibold text-brand-400"
-                              : "text-gray-400 hover:text-gray-200"
-                          }`}
-                        >
-                          {child.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                </div>
               </li>
             );
           })}
@@ -464,7 +543,6 @@ export default function AdminSidebar() {
       </aside>
 
       {/* ------------------------------------------------------------------ */}
-      {/* ------------------------------------------------------------------ */}
       {/* Desktop: always-visible sidebar                                     */}
       {/* ------------------------------------------------------------------ */}
       <aside
@@ -493,6 +571,14 @@ function InventoryIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+    </svg>
+  );
+}
+
+function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
     </svg>
   );
 }
@@ -534,14 +620,6 @@ function IntakeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-    </svg>
-  );
-}
-
-function PlusIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
     </svg>
   );
 }
