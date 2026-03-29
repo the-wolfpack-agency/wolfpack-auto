@@ -26,8 +26,8 @@ const CHECKS: LatencyCheck[] = [
     name: "Shallow health",
     path: "/api/health",
     method: "GET",
-    warmThresholdMs: 500,
-    coldThresholdMs: 3000,
+    warmThresholdMs: 2000, // Redis connection attempts add latency on Vercel Free
+    coldThresholdMs: 8000, // Serverless cold start + Redis timeout
   },
   {
     name: "Deep health (all probes)",
