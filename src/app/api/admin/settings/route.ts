@@ -32,7 +32,8 @@ export async function GET(_req: NextRequest) {
       `SELECT
          id, name, tagline, phone, email,
          address, primary_color, secondary_color, accent_color,
-         business_hours, social, logo_url
+         business_hours, social, logo_url, font_family,
+         title_template, meta_description, webhook_url, webhook_events
        FROM dealers WHERE id = $1 LIMIT 1`,
       [dealerId],
     );
@@ -117,7 +118,12 @@ export async function PUT(req: NextRequest) {
     const params: unknown[] = [dealerId];
     let idx = 2;
 
-    const scalarFields = ["name", "tagline", "phone", "email", "primary_color", "secondary_color", "accent_color"] as const;
+    const scalarFields = [
+      "name", "tagline", "phone", "email",
+      "primary_color", "secondary_color", "accent_color", "font_family",
+      "title_template", "meta_description",
+      "webhook_url",
+    ] as const;
     for (const field of scalarFields) {
       if (field in body) {
         setClauses.push(`${field} = $${idx}`);
@@ -143,6 +149,12 @@ export async function PUT(req: NextRequest) {
     if ("business_hours" in body) {
       setClauses.push(`business_hours = $${idx}`);
       params.push(JSON.stringify(body.business_hours));
+      idx++;
+    }
+
+    if ("webhook_events" in body) {
+      setClauses.push(`webhook_events = $${idx}`);
+      params.push(JSON.stringify(body.webhook_events));
       idx++;
     }
 

@@ -392,7 +392,7 @@ export default async function SettingsPage() {
             Integrations
           </h2>
 
-          <SettingsForm buttonLabel="Save Webhook">
+          <SettingsForm buttonLabel="Save Webhook" fieldMap={{ events: "webhook_events" }}>
             <div className="space-y-6">
               <div>
                 <label

@@ -27,12 +27,16 @@ export default function SettingsForm({ children, buttonLabel, fieldMap }: Settin
     const formData = new FormData(e.currentTarget);
     const payload: Record<string, unknown> = {};
 
-    formData.forEach((value, key) => {
-      // Skip checkbox fields that are unchecked (they won't be in FormData)
-      // Map field names if a mapping is provided
+    // Collect unique field names, then resolve values.
+    // Fields with multiple values (checkboxes) become arrays.
+    const fieldNames = new Set<string>();
+    formData.forEach((_, key) => fieldNames.add(key));
+
+    for (const key of fieldNames) {
       const apiKey = fieldMap?.[key] ?? key;
-      payload[apiKey] = value;
-    });
+      const values = formData.getAll(key);
+      payload[apiKey] = values.length > 1 ? values : values[0];
+    }
 
     try {
       const res = await fetch("/api/admin/settings", {

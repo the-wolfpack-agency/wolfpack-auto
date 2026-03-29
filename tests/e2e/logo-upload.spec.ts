@@ -140,7 +140,6 @@ test.describe("Branding Form — Save Colors & Font", () => {
         secondary_color: "#f97316",
       },
     });
-    // Accept 200 (saved) or 404 (no dealer row in demo) — NOT 404 from missing route
     expect(res.status()).not.toBe(404);
     expect([200, 400]).toContain(res.status());
   });
@@ -149,8 +148,6 @@ test.describe("Branding Form — Save Colors & Font", () => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(500);
 
-    // The branding section should NOT contain a <form> with action="/api/admin/settings/branding"
-    // It should use client-side fetch instead
     const oldForm = page.locator('form[action="/api/admin/settings/branding"]');
     const count = await oldForm.count();
     expect(count, "Found old form action pointing to /api/admin/settings/branding — will 404").toBe(0);
@@ -160,41 +157,121 @@ test.describe("Branding Form — Save Colors & Font", () => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(500);
 
-    // Intercept the PUT request to verify it goes to the right endpoint
     const putPromise = page.waitForResponse(
       (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",
       { timeout: 10000 },
     );
 
-    // Click Save Branding
     const saveBtn = page.getByRole("button", { name: /save branding/i });
     await expect(saveBtn).toBeVisible();
     await saveBtn.click();
 
-    // Verify the PUT was sent to the correct endpoint
     const putRes = await putPromise;
     expect(putRes.url()).toContain("/api/admin/settings");
     expect(putRes.status()).not.toBe(404);
   });
 
-  test("settings page has no forms pointing to non-existent routes", async ({ page, request }) => {
+  test("settings page has no forms with action attributes (all use client-side fetch)", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(500);
 
-    // Find all form actions on the page
     const formActions = await page.$$eval("form[action]", (forms) =>
       forms.map((f) => f.getAttribute("action")).filter(Boolean),
     );
 
-    // Every form action that is a relative URL should return non-404
-    for (const action of formActions) {
-      if (action && action.startsWith("/")) {
-        const res = await request.get(action);
-        expect(
-          res.status(),
-          `Form action ${action} returns ${res.status()} — route does not exist`,
-        ).not.toBe(404);
-      }
-    }
+    expect(
+      formActions,
+      `Found static form actions that will 404: ${formActions.join(", ")}`,
+    ).toHaveLength(0);
+  });
+});
+
+test.describe("SEO Settings Form", () => {
+  test("PUT /api/admin/settings accepts SEO fields", async ({ request }) => {
+    const res = await request.put("/api/admin/settings", {
+      data: {
+        title_template: "%s | Test Dealer",
+        meta_description: "Test meta description for canary",
+      },
+    });
+    expect(res.status()).not.toBe(404);
+    expect(res.status()).not.toBe(400);
+  });
+
+  test("Save SEO Settings button triggers client-side save", async ({ page }) => {
+    await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(500);
+
+    const putPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",
+      { timeout: 10000 },
+    );
+
+    const saveBtn = page.getByRole("button", { name: /save seo/i });
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    const putRes = await putPromise;
+    expect(putRes.status()).not.toBe(404);
+    // Must not return "No updatable fields provided"
+    const body = await putRes.json();
+    expect(body.error).not.toBe("No updatable fields provided");
+  });
+});
+
+test.describe("Webhook Settings Form", () => {
+  test("PUT /api/admin/settings accepts webhook fields", async ({ request }) => {
+    const res = await request.put("/api/admin/settings", {
+      data: {
+        webhook_url: "https://example.com/webhook",
+        webhook_events: ["lead.created", "deal.funded"],
+      },
+    });
+    expect(res.status()).not.toBe(404);
+    expect(res.status()).not.toBe(400);
+  });
+
+  test("Save Webhook button triggers client-side save", async ({ page }) => {
+    await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(500);
+
+    // Fill in a webhook URL so the form has data to send
+    const urlInput = page.locator("#webhook-url");
+    await urlInput.fill("https://example.com/webhook");
+
+    const putPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",
+      { timeout: 10000 },
+    );
+
+    const saveBtn = page.getByRole("button", { name: /save webhook/i });
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    const putRes = await putPromise;
+    expect(putRes.status()).not.toBe(404);
+    const body = await putRes.json();
+    expect(body.error).not.toBe("No updatable fields provided");
+  });
+});
+
+test.describe("Dealer Info Form", () => {
+  test("Save Dealer Info button triggers client-side save", async ({ page }) => {
+    await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(500);
+
+    const putPromise = page.waitForResponse(
+      (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",
+      { timeout: 10000 },
+    );
+
+    const saveBtn = page.getByRole("button", { name: /save dealer info/i });
+    await expect(saveBtn).toBeVisible();
+    await saveBtn.click();
+
+    const putRes = await putPromise;
+    expect(putRes.status()).not.toBe(404);
+    const body = await putRes.json();
+    expect(body.error).not.toBe("No updatable fields provided");
   });
 });
