@@ -324,7 +324,7 @@ export default function VehicleForm({
             <select
               value={form.body_style}
               onChange={(e) => set("body_style", e.target.value)}
-              className={inputCls()}
+              className={selectCls()}
             >
               <option value="">Select...</option>
               {BODY_STYLES.map((s) => (
@@ -349,7 +349,7 @@ export default function VehicleForm({
             <select
               value={form.transmission}
               onChange={(e) => set("transmission", e.target.value as TransmissionType)}
-              className={inputCls()}
+              className={selectCls()}
             >
               <option value="automatic">Automatic</option>
               <option value="manual">Manual</option>
@@ -361,7 +361,7 @@ export default function VehicleForm({
             <select
               value={form.drivetrain}
               onChange={(e) => set("drivetrain", e.target.value as DrivetrainType)}
-              className={inputCls()}
+              className={selectCls()}
             >
               <option value="fwd">FWD</option>
               <option value="rwd">RWD</option>
@@ -374,7 +374,7 @@ export default function VehicleForm({
             <select
               value={form.fuel_type}
               onChange={(e) => set("fuel_type", e.target.value as FuelType)}
-              className={inputCls()}
+              className={selectCls()}
             >
               <option value="gasoline">Gasoline</option>
               <option value="diesel">Diesel</option>
@@ -495,7 +495,7 @@ export default function VehicleForm({
             <select
               value={form.condition}
               onChange={(e) => set("condition", e.target.value as VehicleCondition)}
-              className={inputCls()}
+              className={selectCls()}
             >
               <option value="new">New</option>
               <option value="used">Used</option>
@@ -517,7 +517,7 @@ export default function VehicleForm({
             <select
               value={form.status}
               onChange={(e) => set("status", e.target.value as VehicleStatus)}
-              className={inputCls()}
+              className={selectCls()}
             >
               <option value="available">Available</option>
               <option value="pending">Pending</option>
@@ -716,6 +716,11 @@ function inputCls(error?: string, disabled = false): string {
       : "border-gray-300 bg-white",
     disabled ? "cursor-not-allowed bg-gray-100 text-gray-500" : "",
   ].join(" ");
+}
+
+/** Select variant — normalizes native dropdown chrome so selects match input widths. */
+function selectCls(error?: string, disabled = false): string {
+  return `${inputCls(error, disabled)} appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_0.5rem_center] bg-no-repeat pr-8`;
 }
 
 /* -------------------------------------------------------------------------- */
