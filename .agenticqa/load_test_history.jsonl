@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-03-29T15:29:32Z",
+  "event": "nightly_load_test",
+  "base_url": "https://wolfpack-auto.vercel.app",
+  "commit": "1569605",
+  "thresholds_passed": false,
+  "health_p95": 2035.0181999999945,
+  "lead_submit_p95": 431.3042499999981,
+  "admin_dashboard_p95": 144.63824999999997,
+  "inventory_p95": 8777.005749999998,
+  "error_rate_pct": 1.2,
+  "total_requests": 2537,
+  "duration_seconds": 248
+}

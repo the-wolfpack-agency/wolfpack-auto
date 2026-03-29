@@ -14,8 +14,10 @@ function createElasticsearchClient(): Client {
 
     globalForEs.__esClient = new Client({
       node: url,
-      maxRetries: 3,
-      requestTimeout: 10_000,
+      maxRetries: 1, // Fail fast — 3 retries × 5s timeout = 15s wasted if ES is down
+      requestTimeout: 5_000, // Per-request timeout (was 10s)
+      pingTimeout: 3_000, // Fast ping check
+      resurrectStrategy: "optimistic", // Re-check dead nodes sooner
     });
   }
 

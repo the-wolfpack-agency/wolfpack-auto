@@ -164,31 +164,31 @@ export async function POST(req: NextRequest) {
     ];
 
     // Persist to pricing_recommendations (upsert by vehicle_id within dealer)
-    // Delete stale recs first, then insert fresh batch
+    // Delete stale recs first, then batch-insert fresh set in a single query
     if (allAnalyses.length > 0) {
       await query(
         `DELETE FROM pricing_recommendations WHERE dealer_id = $1`,
         [dealerId],
       );
 
-      for (const a of allAnalyses) {
-        await query(
-          `INSERT INTO pricing_recommendations
-             (dealer_id, vehicle_id, current_price, recommended_price,
-              action, urgency, reason, generated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-           ON CONFLICT DO NOTHING`,
-          [
-            dealerId,
-            a.vehicleId,
-            a.currentPrice,
-            a.recommendedPrice,
-            a.action,
-            a.urgency,
-            a.actionReason,
-          ],
-        );
+      // Batch INSERT — single query instead of N sequential inserts
+      const placeholders: string[] = [];
+      const flatParams: unknown[] = [];
+      for (let i = 0; i < allAnalyses.length; i++) {
+        const a = allAnalyses[i];
+        const base = i * 7;
+        placeholders.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, NOW())`);
+        flatParams.push(dealerId, a.vehicleId, a.currentPrice, a.recommendedPrice, a.action, a.urgency, a.actionReason);
       }
+
+      await query(
+        `INSERT INTO pricing_recommendations
+           (dealer_id, vehicle_id, current_price, recommended_price,
+            action, urgency, reason, generated_at)
+         VALUES ${placeholders.join(", ")}
+         ON CONFLICT DO NOTHING`,
+        flatParams,
+      );
     }
 
     try { trackDeal("deal.pricing_generated", authResult?.user?.dealer_id ?? "system", { action: "pricing_generated", vehicle_count: allAnalyses.length }); } catch {}

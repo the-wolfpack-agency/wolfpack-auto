@@ -43,14 +43,31 @@ function createPool(): Pool {
 export const pool = createPool();
 
 /**
- * Convenience: run a single parameterised query.
+ * Default query timeout in milliseconds.
+ * Prevents hung queries from blocking the connection pool under load.
+ */
+const QUERY_TIMEOUT_MS = 10_000;
+
+/**
+ * Convenience: run a single parameterised query with a timeout.
+ *
+ * Every query gets a 10s statement_timeout by default. This prevents
+ * slow queries from monopolizing the connection pool under load —
+ * critical for Neon's 5-connection limit.
  */
 export async function query<T extends Record<string, any>>(
   text: string,
   params?: unknown[],
+  timeoutMs: number = QUERY_TIMEOUT_MS,
 ) {
-  const result = await pool.query<T>(text, params);
-  return result;
+  const client = await pool.connect();
+  try {
+    await client.query(`SET LOCAL statement_timeout = '${timeoutMs}'`);
+    const result = await client.query<T>(text, params);
+    return result;
+  } finally {
+    client.release();
+  }
 }
 
 /**

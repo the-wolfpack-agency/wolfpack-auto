@@ -63,14 +63,23 @@ export async function GET(request: NextRequest) {
       getVehicleFacets(),
     ]);
 
-    return NextResponse.json({
-      vehicles: inventoryResult.data,
-      total: inventoryResult.data.length,
-      page: parsed.data.page,
-      page_size: parsed.data.page_size,
-      facets: facetsResult.data,
-      source: inventoryResult.source,
-    });
+    return NextResponse.json(
+      {
+        vehicles: inventoryResult.data,
+        total: inventoryResult.data.length,
+        page: parsed.data.page,
+        page_size: parsed.data.page_size,
+        facets: facetsResult.data,
+        source: inventoryResult.source,
+      },
+      {
+        headers: {
+          // Inventory changes infrequently — cache for 60s, serve stale for 5 min
+          // while revalidating. CDN and browser both benefit.
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        },
+      },
+    );
   } catch (err) {
     console.error("[api/inventory] Search failed:", err);
 
