@@ -161,10 +161,11 @@ test.describe("OEM portal: overview page structure", () => {
       return;
     }
 
-    // Each tile is a link
-    const dealerTile = page.locator('a[href="/admin/oem/dealers"]').filter({ hasText: /Dealer Network/i });
-    const programsTile = page.locator('a[href="/admin/oem/programs"]').filter({ hasText: /Programs/i });
-    const analyticsTile = page.locator('a[href="/admin/oem/analytics"]').filter({ hasText: /Cross-Dealer Analytics/i });
+    // Scope to main content to avoid matching sidebar sub-nav items
+    const main = page.locator("main#admin-main-content");
+    const dealerTile = main.locator('a[href="/admin/oem/dealers"]').filter({ hasText: /Dealer Network/i });
+    const programsTile = main.locator('a[href="/admin/oem/programs"]').filter({ hasText: /Programs/i });
+    const analyticsTile = main.locator('a[href="/admin/oem/analytics"]').filter({ hasText: /Cross-Dealer Analytics/i });
 
     await expect(dealerTile.first()).toBeVisible({ timeout: 5_000 });
     await expect(programsTile.first()).toBeVisible({ timeout: 5_000 });
@@ -210,7 +211,9 @@ test.describe("OEM portal: dealers page", () => {
       return;
     }
 
-    const breadcrumb = page.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i });
+    // Scope to main content to avoid matching sidebar OEM link
+    const main = page.locator("main#admin-main-content");
+    const breadcrumb = main.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i });
     await expect(breadcrumb.first()).toBeVisible({ timeout: 5_000 });
   });
 
@@ -222,10 +225,14 @@ test.describe("OEM portal: dealers page", () => {
       return;
     }
 
+    // Scope to main content — sidebar may have overlapping OEM links
+    const main = page.locator("main#admin-main-content");
+    // Wait for client-side data fetch to complete
+    await page.waitForTimeout(2_000);
     // Either a data table or an empty-state message
-    const hasTable = await page.locator("table").isVisible({ timeout: 5_000 }).catch(() => false);
-    const hasEmptyState = await page.locator("text=/no dealers found/i, text=/add dealers/i").first()
-      .isVisible({ timeout: 3_000 }).catch(() => false);
+    const hasTable = await main.locator("table").isVisible({ timeout: 8_000 }).catch(() => false);
+    const hasEmptyState = await main.getByText(/no dealers found/i)
+      .isVisible({ timeout: 5_000 }).catch(() => false);
 
     expect(hasTable || hasEmptyState).toBe(true);
   });
@@ -238,7 +245,8 @@ test.describe("OEM portal: dealers page", () => {
       return;
     }
 
-    const link = page.locator('a[href="/admin/oem/programs"]').filter({ hasText: /Manage Programs/i });
+    const main = page.locator("main#admin-main-content");
+    const link = main.locator('a[href="/admin/oem/programs"]').filter({ hasText: /Manage Programs/i });
     await expect(link.first()).toBeVisible({ timeout: 5_000 });
   });
 });
@@ -256,7 +264,8 @@ test.describe("OEM portal: programs page", () => {
       return;
     }
 
-    const breadcrumb = page.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i });
+    const main = page.locator("main#admin-main-content");
+    const breadcrumb = main.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i });
     await expect(breadcrumb.first()).toBeVisible({ timeout: 5_000 });
   });
 
@@ -268,17 +277,23 @@ test.describe("OEM portal: programs page", () => {
       return;
     }
 
+    const main = page.locator("main#admin-main-content");
+    // Wait for client-side data fetch
+    await page.waitForTimeout(2_000);
     // Empty state shows template program cards
-    const hasProgramCard = await page.locator(".rounded-xl.border").filter({ hasText: /incentive|certification|brand standard|training|co-op/i })
-      .first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const hasProgramCard = await main.locator(".rounded-xl.border").filter({ hasText: /incentive|certification|brand standard|training|co-op/i })
+      .first().isVisible({ timeout: 8_000 }).catch(() => false);
 
     const bodyText = await page.locator("body").textContent();
     expect(bodyText?.length ?? 0).toBeGreaterThan(200);
 
     if (!hasProgramCard) {
-      // Should at least have the migration notice
-      const notice = page.locator("text=/no programs found/i, text=/migration/i");
-      await expect(notice.first()).toBeVisible({ timeout: 3_000 });
+      // Should at least have the migration notice or empty state
+      const hasNotice = await main.getByText(/no programs/i)
+        .first().isVisible({ timeout: 5_000 }).catch(() => false);
+      const hasMigration = await main.getByText(/migration/i)
+        .first().isVisible({ timeout: 1_000 }).catch(() => false);
+      expect(hasNotice || hasMigration).toBe(true);
     }
   });
 
@@ -324,7 +339,8 @@ test.describe("OEM portal: analytics page", () => {
       return;
     }
 
-    const breadcrumb = page.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i });
+    const main = page.locator("main#admin-main-content");
+    const breadcrumb = main.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i });
     await expect(breadcrumb.first()).toBeVisible({ timeout: 5_000 });
   });
 
@@ -640,7 +656,9 @@ test.describe("OEM portal: inter-page navigation", () => {
       return;
     }
 
-    const dealerLink = page.locator('a[href="/admin/oem/dealers"]').filter({ hasText: /Dealer Network/i }).first();
+    // Scope to main content to click the page tile, not the sidebar sub-nav
+    const main = page.locator("main#admin-main-content");
+    const dealerLink = main.locator('a[href="/admin/oem/dealers"]').filter({ hasText: /Dealer Network/i }).first();
     await expect(dealerLink).toBeVisible({ timeout: 5_000 });
     await dealerLink.click();
 
@@ -656,7 +674,8 @@ test.describe("OEM portal: inter-page navigation", () => {
       return;
     }
 
-    const programsLink = page.locator('a[href="/admin/oem/programs"]').filter({ hasText: /Manage Programs/i }).first();
+    const main = page.locator("main#admin-main-content");
+    const programsLink = main.locator('a[href="/admin/oem/programs"]').filter({ hasText: /Manage Programs/i }).first();
     await expect(programsLink).toBeVisible({ timeout: 5_000 });
     await programsLink.click();
 
@@ -672,7 +691,9 @@ test.describe("OEM portal: inter-page navigation", () => {
       return;
     }
 
-    const breadcrumb = page.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i }).first();
+    // Scope to main content for breadcrumb (sidebar also has OEM Network link)
+    const main = page.locator("main#admin-main-content");
+    const breadcrumb = main.locator('a[href="/admin/oem"]').filter({ hasText: /OEM Network/i }).first();
     await expect(breadcrumb).toBeVisible({ timeout: 5_000 });
     await breadcrumb.click();
 
