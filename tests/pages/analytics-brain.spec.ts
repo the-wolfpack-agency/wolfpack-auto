@@ -248,15 +248,99 @@ test.describe("Analytics Brain with Seeded Data", () => {
   test("lead temperature board uses friendly visitor labels (not raw IDs)", async ({ page }) => {
     await page.goto("/admin/analytics-brain");
     const main = page.locator("main#admin-main-content");
-    // Should show friendly labels like "Buyer", "Serious Shopper", "Browser"
-    // and NOT raw session IDs like "hot_lead_" or "s_177471"
-    const tableText = await main.locator("table").first().textContent();
-    expect(tableText).not.toContain("hot_lead_");
-    expect(tableText).not.toContain("exit_lead_");
-    expect(tableText).not.toContain("rage_lead_");
-    // Should contain at least one friendly label
-    const hasFriendly = /Buyer|Shopper|Searcher|Browser|Chat Lead|Deep Browser/.test(tableText ?? "");
+    // Temperature board is now a card grid, not a table
+    const boardText = await main.locator("text=Lead Temperature Board").locator("xpath=ancestor::div").first().textContent();
+    expect(boardText).not.toContain("hot_lead_");
+    expect(boardText).not.toContain("exit_lead_");
+    expect(boardText).not.toContain("rage_lead_");
+    const hasFriendly = /Buyer|Shopper|Searcher|Browser|Chat Lead|Deep Browser/.test(boardText ?? "");
     expect(hasFriendly, "Lead temperature board should use friendly visitor labels").toBe(true);
+  });
+
+  test("lead temperature board shows friendly signal labels", async ({ page }) => {
+    await page.goto("/admin/analytics-brain");
+    const main = page.locator("main#admin-main-content");
+    const boardText = await main.textContent();
+    // Should show human-readable signals, not raw keys
+    const friendlySignals = [
+      "Viewed vehicles",
+      "Browsed many pages",
+      "Searched inventory",
+      "Spent time on site",
+      "Submitted a lead",
+      "Started filling a form",
+    ];
+    const hasAtLeastOne = friendlySignals.some((s) => boardText?.includes(s));
+    expect(hasAtLeastOne, "Should display at least one friendly signal label").toBe(true);
+    // Should NOT show raw signal keys
+    expect(boardText).not.toContain("vehicle_engagement");
+    expect(boardText).not.toContain("session_depth");
+    expect(boardText).not.toContain("search_activity");
+  });
+
+  test("priority alerts use plain language (not raw insight text)", async ({ page }) => {
+    await page.goto("/admin/analytics-brain");
+    const main = page.locator("main#admin-main-content");
+    const content = await main.textContent();
+    if (content?.includes("Priority Alerts")) {
+      // Should use friendly titles, not raw engine output
+      const hasFriendlyAlert =
+        content.includes("Engaged visitors are leaving") ||
+        content.includes("Visitors struggling with your site") ||
+        content.includes("Action needed");
+      expect(hasFriendlyAlert, "Alerts should use plain language titles").toBe(true);
+    }
+  });
+
+  test("top insights use friendly category names", async ({ page }) => {
+    await page.goto("/admin/analytics-brain");
+    const main = page.locator("main#admin-main-content");
+    const content = await main.textContent();
+    if (content?.includes("Top Insights")) {
+      // Should show human-friendly category names
+      const friendlyCategories = [
+        "Sales & Conversions",
+        "User Experience Issues",
+        "Visitor Engagement",
+        "Search & Inventory",
+        "Chat Activity",
+        "Marketing Performance",
+        "Site Navigation",
+      ];
+      const hasAtLeastOne = friendlyCategories.some((c) => content?.includes(c));
+      expect(hasAtLeastOne, "Top Insights should use friendly category names").toBe(true);
+      // Category headers should not use raw keys like "ux_friction"
+      expect(content).not.toContain("ux_friction");
+    }
+  });
+
+  test("top insights show confidence as words not percentages", async ({ page }) => {
+    await page.goto("/admin/analytics-brain");
+    const main = page.locator("main#admin-main-content");
+    const content = await main.textContent();
+    if (content?.includes("Top Insights")) {
+      const hasWordConfidence =
+        content.includes("High confidence") ||
+        content.includes("Medium confidence") ||
+        content.includes("Low confidence");
+      expect(hasWordConfidence, "Should show confidence as words").toBe(true);
+      // Should say "visitors" not "Sample:"
+      const hasVisitors = content.includes("visitors") || content.includes("visitor");
+      expect(hasVisitors, "Should say 'visitors' not 'Sample:'").toBe(true);
+    }
+  });
+
+  test("top insights truncate long text to first sentence", async ({ page }) => {
+    await page.goto("/admin/analytics-brain");
+    const main = page.locator("main#admin-main-content");
+    // Get all insight card texts within the Top Insights section
+    const insightCards = main.locator(".border-l-4 p.text-sm");
+    const count = await insightCards.count();
+    for (let i = 0; i < Math.min(count, 5); i++) {
+      const text = await insightCards.nth(i).textContent();
+      // Each insight text should be a single sentence (ends with .), not a paragraph
+      expect((text ?? "").length, `Insight ${i} should be truncated`).toBeLessThanOrEqual(250);
+    }
   });
 
   test("hot lead insight exists in API with HIGH PRIORITY text", async ({ request }) => {
