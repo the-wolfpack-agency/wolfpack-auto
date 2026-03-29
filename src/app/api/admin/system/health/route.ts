@@ -128,17 +128,37 @@ async function checkAnalyticsPipeline(dbConnected: boolean): Promise<{
 }
 
 /* -------------------------------------------------------------------------- */
+/* Response cache — health checks don't need real-time data                    */
+/* -------------------------------------------------------------------------- */
+
+let cachedResponse: { body: Record<string, unknown>; statusCode: number; expiresAt: number } | null = null;
+const CACHE_TTL_MS = 15_000; // 15 seconds — fast enough for monitoring, prevents DB storms
+
+/* -------------------------------------------------------------------------- */
 /* GET handler                                                                 */
 /* -------------------------------------------------------------------------- */
 
 export async function GET() {
+  // Return cached response if fresh
+  if (cachedResponse && Date.now() < cachedResponse.expiresAt) {
+    return NextResponse.json(
+      { ...cachedResponse.body, cached: true, responseTimeMs: 0 },
+      { status: cachedResponse.statusCode },
+    );
+  }
+
   const startTime = Date.now();
 
-  // Run probes in parallel
-  const [db, redis] = await Promise.all([probeDatabase(), probeRedis()]);
+  // Run ALL probes in parallel — analytics doesn't depend on DB result
+  const [db, redis, analyticsRaw] = await Promise.all([
+    probeDatabase(),
+    probeRedis(),
+    checkAnalyticsPipeline(true), // optimistic — if DB is down, we catch it below
+  ]);
 
   const externalServices = checkExternalServices();
-  const analytics = await checkAnalyticsPipeline(db.connected);
+  // If DB is actually down, override analytics to empty
+  const analytics = db.connected ? analyticsRaw : { eventsFlowing: false, eventsLastHour: 0, learningActive: false };
 
   // Determine overall status
   let overallStatus: "healthy" | "degraded" | "critical" = "healthy";
@@ -208,6 +228,10 @@ export async function GET() {
   }
 
   const statusCode = overallStatus === "critical" ? 503 : 200;
+
+  // Cache the response for subsequent requests
+  cachedResponse = { body, statusCode, expiresAt: Date.now() + CACHE_TTL_MS };
+
   return NextResponse.json(body, { status: statusCode });
 }
 

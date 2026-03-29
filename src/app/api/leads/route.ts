@@ -6,6 +6,26 @@ import { scoreLeadIntent, extractEmailDomain } from "@/lib/lead-scorer";
 import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
 import { trackLead } from "@/lib/analytics-hooks";
 
+/* -------------------------------------------------------------------------- */
+/* Lazy-loaded modules — resolve once, reuse on subsequent requests            */
+/* -------------------------------------------------------------------------- */
+let _dbMod: Awaited<typeof import("@/lib/db")> | null = null;
+let _rateMod: Awaited<typeof import("@/lib/rate-limit")> | null = null;
+let _cacheMod: Awaited<typeof import("@/lib/cache")> | null = null;
+
+async function getDb() {
+  if (!_dbMod) _dbMod = await import("@/lib/db");
+  return _dbMod;
+}
+async function getRateLimit() {
+  if (!_rateMod) _rateMod = await import("@/lib/rate-limit");
+  return _rateMod;
+}
+async function getCache() {
+  if (!_cacheMod) _cacheMod = await import("@/lib/cache");
+  return _cacheMod;
+}
+
 /**
  * Lead submission schema — strict validation.
  */
@@ -101,12 +121,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Dynamic import to avoid module-level errors when pg is not configured
-    const { query } = await import("@/lib/db");
-    const { checkRateLimit } = await import("@/lib/rate-limit");
-    const { cacheInvalidate } = await import("@/lib/cache");
-
-    // Rate limit: max 5 leads per email per hour
+    // Rate limit FIRST — fail fast before touching DB
+    const { checkRateLimit } = await getRateLimit();
     const rateLimitKey = `lead:${lead.email.toLowerCase()}`;
     const rateCheck = await checkRateLimit(rateLimitKey, 5, 3600);
 
@@ -119,6 +135,8 @@ export async function POST(request: NextRequest) {
         { status: 429 },
       );
     }
+
+    const { query } = await getDb();
 
     // Check for duplicate (same email, same dealer, last 30 days)
     const existingLead = await query<{ id: string }>(
@@ -218,7 +236,7 @@ export async function POST(request: NextRequest) {
     }).catch(() => {});
 
     // Invalidate any cached lead-related data for this dealer
-    void cacheInvalidate(`leads:dealer:${lead.dealer_id}:*`);
+    void getCache().then(({ cacheInvalidate }) => cacheInvalidate(`leads:dealer:${lead.dealer_id}:*`));
 
     // Fire-and-forget email notifications — never block the response
     void (async () => {

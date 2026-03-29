@@ -68,37 +68,35 @@ run_suite() {
   local start=$SECONDS
 
   local output
-  output=$(npx playwright test "${files[@]}" --project=chromium --workers="${WORKERS}" --reporter=json 2>/dev/null) || true
+  local pw_exit=0
+  output=$(npx playwright test "${files[@]}" --project=chromium --workers="${WORKERS}" --reporter=line 2>&1) || pw_exit=$?
 
+  # Parse counts from Playwright line reporter summary (e.g. "  28 passed (33.0s)")
   local passed failed skipped
-  passed=$(echo "$output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(1 for s in d.get('suites',[]) for sp in s.get('specs',[]) for t in sp.get('tests',[]) for r in t.get('results',[]) if r.get('status')=='passed'))" 2>/dev/null || echo "?")
-  failed=$(echo "$output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(1 for s in d.get('suites',[]) for sp in s.get('specs',[]) for t in sp.get('tests',[]) for r in t.get('results',[]) if r.get('status')=='failed'))" 2>/dev/null || echo "?")
-  skipped=$(echo "$output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(1 for s in d.get('suites',[]) for sp in s.get('specs',[]) for t in sp.get('tests',[]) for r in t.get('results',[]) if r.get('status')=='skipped'))" 2>/dev/null || echo "?")
+  passed=$(echo "$output" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' || echo "0")
+  failed=$(echo "$output" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' || echo "0")
+  skipped=$(echo "$output" | grep -oE '[0-9]+ skipped' | grep -oE '[0-9]+' || echo "0")
 
-  # Fallback: parse from line output if JSON fails
-  if [[ "$passed" == "?" ]]; then
-    local line_output
-    line_output=$(npx playwright test "${files[@]}" --project=chromium --workers="${WORKERS}" --reporter=line 2>&1) || true
-    passed=$(echo "$line_output" | grep -oP '\d+(?= passed)' || echo "0")
-    failed=$(echo "$line_output" | grep -oP '\d+(?= failed)' || echo "0")
-    skipped=$(echo "$line_output" | grep -oP '\d+(?= skipped)' || echo "0")
-  fi
+  # Default to 0 if empty
+  passed=${passed:-0}
+  failed=${failed:-0}
+  skipped=${skipped:-0}
 
   local duration=$((SECONDS - start))
 
-  if [[ "$failed" == "0" ]]; then
+  if [[ "$failed" == "0" && "$pw_exit" == "0" ]]; then
     ok "${name}: ${passed} passed, ${skipped} skipped (${duration}s)"
   else
     fail "${name}: ${passed} passed, ${failed} FAILED, ${skipped} skipped (${duration}s)"
     SUITE_FAILURES=$((SUITE_FAILURES + 1))
 
     # Show failed test names
-    npx playwright test "${files[@]}" --project=chromium --workers="${WORKERS}" --reporter=list 2>&1 | grep "✘" | head -10
+    echo "$output" | grep "✘" | head -10
   fi
 
-  TOTAL_PASSED=$((TOTAL_PASSED + ${passed:-0}))
-  TOTAL_FAILED=$((TOTAL_FAILED + ${failed:-0}))
-  TOTAL_SKIPPED=$((TOTAL_SKIPPED + ${skipped:-0}))
+  TOTAL_PASSED=$((TOTAL_PASSED + ${passed}))
+  TOTAL_FAILED=$((TOTAL_FAILED + ${failed}))
+  TOTAL_SKIPPED=$((TOTAL_SKIPPED + ${skipped}))
 }
 
 # ── Preflight: TypeScript compile check ──────────────────────────────────
