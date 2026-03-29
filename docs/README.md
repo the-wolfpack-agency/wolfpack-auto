@@ -14,6 +14,7 @@ Wolfpack Auto is a multi-tenant dealer operating system (DOS) built with Next.js
 | [Compliance](./compliance.md) | All 21 compliance rules, regulatory references, document analysis |
 | [Architecture](./architecture.md) | Tech stack, directory structure, shadow mode, auth flow, multi-tenancy |
 | [Getting Started](./getting-started.md) | Developer onboarding: prerequisites, setup, local dev, deploy |
+| [Product Audit & SWOT](./product-audit-report.md) | Venture-grade scorecard (98/100), SWOT analysis, roadmap, benchmarks |
 
 ## Quick Start
 
