@@ -213,37 +213,56 @@ export default async function AnalyticsBrainPage() {
         </div>
       )}
 
-      {/* Lead Temperature Board — card layout for clarity */}
-      {temperatures.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Lead Temperature Board</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            How engaged your current visitors are — higher scores mean closer to buying.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {temperatures.slice(0, 9).map((t, idx) => {
-              // Translate signal keys to friendly labels
-              const signalLabels: Record<string, string> = {
-                converted: "Submitted a lead",
-                vehicle_engagement: "Viewed vehicles",
-                session_depth: "Browsed many pages",
-                search_activity: "Searched inventory",
-                time_investment: "Spent time on site",
-                chat_engagement: "Used live chat",
-                form_started: "Started filling a form",
-                price_interaction: "Checked pricing",
-                return_visitor: "Returning visitor",
-                high_intent_chat: "Asked about financing/test drive",
-                comparison_shopping: "Comparing vehicles",
-                narrowing_behavior: "Narrowing choices",
-              };
-              const topSignals = Object.entries(t.signals)
-                .filter(([, v]) => v > 0)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 3)
-                .map(([k]) => signalLabels[k] ?? k.replace(/_/g, " "));
+      {/* Lead Temperature Board — grouped to avoid duplicate-looking cards */}
+      {temperatures.length > 0 && (() => {
+        // Group visually identical entries (same tier + temperature + visitor type)
+        // so 9 identical "Buyer — hot — 81" cards become one card with "×9"
+        const signalLabels: Record<string, string> = {
+          converted: "Submitted a lead",
+          vehicle_engagement: "Viewed vehicles",
+          session_depth: "Browsed many pages",
+          search_activity: "Searched inventory",
+          time_investment: "Spent time on site",
+          chat_engagement: "Used live chat",
+          form_started: "Started filling a form",
+          price_interaction: "Checked pricing",
+          return_visitor: "Returning visitor",
+          high_intent_chat: "Asked about financing/test drive",
+          comparison_shopping: "Comparing vehicles",
+          narrowing_behavior: "Narrowing choices",
+        };
 
-              return (
+        type GroupedTemp = typeof temperatures[0] & { count: number; topSignals: string[] };
+        const grouped: GroupedTemp[] = [];
+        const groupKeys = new Map<string, number>(); // key → index in grouped[]
+
+        for (const t of temperatures) {
+          // Build a grouping key from the visual representation
+          const topSigs = Object.entries(t.signals)
+            .filter(([, v]) => v > 0)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 3)
+            .map(([k]) => signalLabels[k] ?? k.replace(/_/g, " "));
+          const visitorType = t.label.split(" \u2014 ")[0]; // "Buyer", "Serious Shopper", etc.
+          const key = `${visitorType}|${t.tier}|${t.temperature}|${topSigs.join(",")}`;
+
+          const existingIdx = groupKeys.get(key);
+          if (existingIdx !== undefined) {
+            grouped[existingIdx].count++;
+          } else {
+            groupKeys.set(key, grouped.length);
+            grouped.push({ ...t, count: 1, topSignals: topSigs });
+          }
+        }
+
+        return (
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Lead Temperature Board</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              How engaged your current visitors are — higher scores mean closer to buying.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {grouped.slice(0, 9).map((t, idx) => (
                 <div
                   key={idx}
                   className={`rounded-xl border p-4 ${
@@ -254,7 +273,14 @@ export default async function AnalyticsBrainPage() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-gray-900">{t.label}</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {t.label}
+                      {t.count > 1 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-gray-900 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          {`\u00d7${t.count}`}
+                        </span>
+                      )}
+                    </span>
                     <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${tierColor(t.tier)}`}>
                       {t.tier}
                     </span>
@@ -274,7 +300,7 @@ export default async function AnalyticsBrainPage() {
                     <span className="text-sm font-bold text-gray-700">{t.temperature}</span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {topSignals.map((s) => (
+                    {t.topSignals.map((s) => (
                       <span key={s} className="rounded-md bg-white/80 px-1.5 py-0.5 text-xs text-gray-600 border border-gray-200">
                         {s}
                       </span>
@@ -289,16 +315,16 @@ export default async function AnalyticsBrainPage() {
                     </div>
                   )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+            {temperatures.length > grouped.length && (
+              <p className="mt-2 text-center text-xs text-gray-400">
+                {temperatures.length} visitors grouped into {grouped.length} categories
+              </p>
+            )}
           </div>
-          {temperatures.length > 9 && (
-            <p className="mt-2 text-center text-xs text-gray-400">
-              Showing top 9 of {temperatures.length} visitors
-            </p>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Inventory Intelligence — structured display for non-technical users */}
       {(gapInsight || demandInsight) && (
