@@ -633,11 +633,65 @@ Complete platform documentation generated from actual source code (3,800+ lines 
 
 ---
 
-## Infrastructure Status (Updated March 28, 2026)
+## Day 5 — March 29, 2026 (Performance & Polish)
+
+### Session: UX Overhaul + Performance Optimization
+
+**Sidebar Navigation Refactor**
+- Grouped 44 flat nav items into 8 collapsible sections (Dashboard, Sales, Inventory, Finance, Service, Customers, Operations, Admin)
+- Sections auto-expand when their child route is active
+- All sub-navigation (Analytics, OEM, Service, Comms, Accounting, Documents) preserved
+- Section toggles fire analytics events into the learning system
+- 28 new e2e tests for sidebar structure, expand/collapse, mobile drawer, backward compatibility
+
+**Sentry Bug Fix**
+- Fixed `TypeError: n.className.slice is not a function` crash on Mobile Safari
+- Root cause: SVG elements return `SVGAnimatedString`, not a string — `.slice()` fails
+- Fixed in EventCollector rage click and dead click detection
+
+**Performance Optimizations (Load Test Verified)**
+
+| Endpoint | Before | After | Improvement |
+|----------|--------|-------|-------------|
+| Health check (p95) | 3,551ms | 116ms | **96.7% faster** |
+| Lead submission (p95) | 3,703ms | 108ms | **97.1% faster** |
+| Admin dashboard (p95) | 162ms | 104ms | **35.8% faster** |
+| Error rate | 21% | 1.2% | **VDP 503s eliminated** |
+
+Changes:
+- Health endpoint: 15s response cache + parallelized all probes
+- Lead submission: lazy module loading + fail-fast rate limiting before DB
+- Database: 10s statement_timeout on all queries (prevents pool exhaustion)
+- Elasticsearch: 1 retry × 5s instead of 3 × 10s (fail-fast)
+- Inventory API: Cache-Control headers (CDN caches for 60s)
+- Pricing: batch INSERT replaces N+1 loop (100 vehicles = 1 query)
+- VDP route: PostgreSQL fallback when ES unavailable, returns 404 not 503
+
+**Analytics Brain — Living Dashboard**
+- Brain hydrates from PostgreSQL on cold start (serverless-friendly)
+- "Top Insights" shows deduplicated, highest-confidence insights (max 3 per category)
+- "View all" links to `/admin/analytics-brain/all` with category filters
+- Seeded production with 262 events across 15 realistic sessions
+- Brain populates from real user browsing via EventCollector
+
+**Mobile Fixes**
+- Slow Movers pricing table: card layout on mobile, full table on desktop
+- Loading skeletons for inventory, leads, and deals pages
+
+**Built-in Validation & Testing**
+- `npm run validate` — 7-suite platform integrity validation (252 tests)
+- `npm run validate:quick` — sidebar + renders only (~3 min)
+- `npm run nightly:load-test` — k6 load test with baseline comparison
+- Results logged to `.agenticqa/validation_history.jsonl` and `.agenticqa/load_test_history.jsonl`
+- All tests updated for grouped sidebar (scoped locators, correct main content ID)
+
+---
+
+## Infrastructure Status (Updated March 29, 2026)
 
 | Service | Status | Details |
 |---------|--------|---------|
-| PostgreSQL (Neon) | **Live** | 46 tables, 35 migrations, 259+ analytics events |
+| PostgreSQL (Neon) | **Live** | 46 tables, 35 migrations, 500+ analytics events |
 | Sentry | **Live** | Error monitoring verified, source maps uploading, CSP configured |
 | Resend | **Live** | API key configured, email templates ready |
 | PII Encryption | **Live** | AES-256-GCM, customer data encrypted at rest |
@@ -659,4 +713,4 @@ Complete platform documentation generated from actual source code (3,800+ lines 
 
 *Report generated from git history. All timestamps in EDT (UTC-4).*
 *Build powered by AgenticQA — parallel agent orchestration.*
-*Platform built in 4 days, 85+ commits, ~75,000 lines of code.*
+*Platform built in 5 days, 100+ commits, ~80,000 lines of code.*

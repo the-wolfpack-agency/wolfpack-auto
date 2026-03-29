@@ -563,13 +563,19 @@ Every admin page in the Wolfpack Auto platform, with its path, purpose, key UI e
 
 ## Analytics Brain
 **Path:** `/admin/analytics-brain`
-**What it does:** AI-powered behavioral analytics engine with session analysis and computed insights.
+**What it does:** AI-powered behavioral analytics engine. Hydrates from PostgreSQL on cold start (serverless-friendly). Generates insights from real user sessions captured by EventCollector.
 **Key UI elements:**
-- Behavioral insight cards
-- Session analysis
-- Recommendation engine output
+- Stats overview (active sessions, buffered events, insights, hot leads, alerts)
+- Priority alerts (hot lead exits, frustrated buyers)
+- Lead temperature board (real-time buyer intent scoring)
+- Inventory intelligence (unmet demand, market signals)
+- Top Insights — deduplicated, top 3 per category with "view all" link
+- Event type distribution
 
-**Connected API routes:** `/api/admin/analytics/learning`, `/api/admin/analytics/query`
+**Sub-pages:**
+- `/admin/analytics-brain/all` — full insight list with category filter pills
+
+**Connected API routes:** `/api/analytics/events` (ingestion), `/api/analytics/insights` (query), `/api/admin/analytics/learning`, `/api/admin/analytics/health`
 
 ---
 

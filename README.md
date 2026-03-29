@@ -31,9 +31,9 @@ The app starts at [http://localhost:3000](http://localhost:3000). Admin panel at
 
 ## What's Included
 
-- **55+ admin pages** -- inventory, leads, deals, F&I, service, accounting, compliance, and more
+- **55+ admin pages** -- grouped into 8 collapsible sidebar sections for intuitive navigation
 - **80+ API routes** -- all with shadow mode fallback (work without a database)
-- **2,400+ automated tests** -- unit, E2E, security regression, mutation testing
+- **2,500+ automated tests** -- unit, E2E, security regression, mutation testing, platform integrity validation
 - **Document compliance engine** -- 20+ regulatory rules (TILA, FCRA, ECOA, FTC, GLBA)
 - **Behavioral analytics brain** -- 30+ signals, closed-loop learning, compound insights
 - **Zero-token security scanner** -- 298 patterns across 5 languages

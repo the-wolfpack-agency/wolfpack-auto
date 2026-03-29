@@ -241,6 +241,18 @@ Wraps all database queries with automatic failover:
 - State transitions logged and tracked via `system.circuit_breaker_opened/closed` analytics events
 - `safeQuery()` in `src/lib/db.ts` provides the wrapped interface
 
+### Query Timeouts (`src/lib/db.ts`)
+Every database query has a 10-second `statement_timeout` via `SET LOCAL`. Prevents slow queries from monopolizing the 5-connection pool under load. Timeout is configurable per-call via optional third parameter.
+
+### Elasticsearch Fail-Fast (`src/lib/elasticsearch.ts`)
+- 1 retry (not 3) with 5s request timeout — fail-fast when ES is unavailable
+- 3s ping timeout, optimistic resurrect strategy
+- VDP route falls back to PostgreSQL when ES is down (returns 404, not 503)
+
+### Response Caching
+- Health endpoint: 15s in-memory cache (monitoring doesn't need real-time)
+- Inventory API: `Cache-Control: public, max-age=60, stale-while-revalidate=300` (CDN + browser)
+
 ### Safe-Fetch (`src/lib/safe-fetch.ts`)
 Wraps all external HTTP calls:
 - 10-second timeout via AbortController (configurable)

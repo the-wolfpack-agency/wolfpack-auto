@@ -556,10 +556,11 @@ The funnel health engine (`funnel-health.ts`) computes: lead volume trends, SLA 
 ### Pages
 | Page | Path | What the user sees | Key elements |
 |------|------|--------------------|--------------|
-| Brain | `/admin/analytics-brain` | AI-powered analytics brain | Behavioral insights, session analysis, recommendations |
+| Brain | `/admin/analytics-brain` | AI-powered analytics brain | Top insights (deduped, 3/category), lead temperature board, alerts, stats |
+| All Insights | `/admin/analytics-brain/all` | Full insight list | Category filter pills, deduplication, back navigation |
 
 ### Learning System Connection
-The analytics brain (`analytics-engine.ts`) implements triple-write: events go to PostgreSQL (raw storage), Qdrant (vector embeddings for semantic search), and Neo4j (relationship graph). It computes behavioral insights with confidence scores and sample sizes.
+The analytics brain (`analytics-engine.ts`) implements triple-write: events go to PostgreSQL (raw storage), Qdrant (vector embeddings for semantic search), and Neo4j (relationship graph). It computes behavioral insights with confidence scores and sample sizes. On serverless cold start, the brain hydrates from PostgreSQL (last 24h of events) so insights are always available. Sidebar section toggles and "view all" clicks feed back into EventCollector for usage pattern analysis.
 
 ---
 

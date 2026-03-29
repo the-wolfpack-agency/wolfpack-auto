@@ -258,6 +258,22 @@ More User Actions (loop repeats)
 3. **Month 3:** Trend data becomes meaningful. Sentiment trends (improving/stable/declining) based on 30-day rolling averages. Lead source conversion rates stabilize.
 4. **Month 6+:** System has deep knowledge of the dealer's patterns. Optimal follow-up timing is data-driven. Pricing recommendations reflect real turn rates. F&I product recommendations are based on actual attachment rates.
 
+### Serverless Resilience
+
+On Vercel (serverless), the in-memory event buffer resets on every cold start. To ensure the analytics brain always has data:
+
+- **`hydrateBufferFromDb()`** loads the last 24 hours of events from PostgreSQL into the in-memory buffer on first access
+- Hydration runs once per process — subsequent calls are no-ops
+- Events are always persisted to PostgreSQL (fire-and-forget) so nothing is lost between cold starts
+- The brain page calls hydration before generating insights
+
+### Validation & Trend Tracking
+
+- **Platform integrity validation** (`npm run validate`) runs 252 e2e tests across 7 suites
+- **Nightly load test** (`npm run nightly:load-test`) runs k6 against production and compares to previous baseline
+- Results logged to `.agenticqa/validation_history.jsonl` and `.agenticqa/load_test_history.jsonl`
+- Sidebar section toggles and insight "view all" clicks feed into EventCollector for usage pattern analysis
+
 ### Integration Points
 
 - **Lead Scorer** (`lead-scorer.ts`) uses behavioral signals to score purchase intent
@@ -265,6 +281,7 @@ More User Actions (loop repeats)
 - **Funnel Health** (`funnel-health.ts`) uses lead pipeline data for health scoring and alerts
 - **Compliance Scorer** (`compliance-scorer.ts`) uses dealer configuration and response time data
 - **Document Analyzer** (`document-analyzer.ts`) feeds analysis results back into the compliance system
+- **Sidebar Analytics** — section expand/collapse events tracked via EventCollector for navigation pattern analysis
 
 ---
 

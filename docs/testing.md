@@ -16,7 +16,10 @@ All test commands from `package.json`:
 | `npm run test:predeploy` | Pre-deploy test suite (`playwright.predeploy.config.ts`) |
 | `npm run predeploy` | Full pre-deploy gate (`scripts/predeploy-gate.sh`) -- type-check + lint + tests |
 | `npm run predeploy:quick` | Quick pre-deploy gate (`scripts/predeploy-gate.sh --quick`) -- type-check + lint only |
+| `npm run validate` | Platform integrity validation -- 7 suites, 252 tests (`scripts/validate-platform-integrity.sh`) |
+| `npm run validate:quick` | Quick validation -- sidebar + renders only (~3 min) |
 | `npm run nightly:safety-check` | Nightly safety net (`scripts/nightly-safety-net-check.sh`) |
+| `npm run nightly:load-test` | Nightly load test with baseline comparison (`scripts/nightly-load-test.sh`) |
 
 ## Load Testing
 
@@ -42,16 +45,28 @@ The full platform load test ramps from 1 to 50 virtual users over 4 minutes, sim
 
 Results are output to `load-test-results.json` for ingestion into the analytics pipeline.
 
-### Baseline Results (March 28, 2026 — Vercel free tier)
+### Baseline Results (March 29, 2026 — after performance optimization)
 
-| Scenario | p95 Latency | Capacity |
-|----------|-------------|----------|
-| Inventory browsing | 166ms | 50+ concurrent users |
-| Admin dashboard | 162ms | 50+ concurrent users |
-| Lead submission | 3.7s at peak | Degrades above 30 concurrent |
-| Total requests (4 min) | 7,404 | |
+| Scenario | p95 (before) | p95 (after) | Improvement |
+|----------|-------------|-------------|-------------|
+| Health check | 3,551ms | 116ms | 96.7% faster |
+| Lead submission | 3,703ms | 108ms | 97.1% faster |
+| Admin dashboard | 162ms | 104ms | 35.8% faster |
+| Error rate | 21% | 1.2% | VDP 503s eliminated |
 
 **Verdict:** Production-ready for first 5-10 dealers. Scale-up path: Redis + Vercel Pro (~10 min each).
+
+### Nightly Load Test
+
+```bash
+# Run the automated nightly load test (compares to previous baseline)
+npm run nightly:load-test
+
+# Or target a specific URL
+BASE_URL=https://wolfpack-auto.vercel.app npm run nightly:load-test
+```
+
+Results are logged to `.agenticqa/load_test_history.jsonl` for trend analysis. Exit code 1 if any threshold regresses.
 
 ## Render Verification Tests
 
@@ -60,7 +75,8 @@ Three test files ensure no page ever white-screens for users:
 | File | Tests | What It Catches |
 |------|-------|-----------------|
 | `tests/e2e/admin-api-200.spec.ts` | 58 | Every admin GET API returns 200 with JSON |
-| `tests/e2e/admin-pages-render.spec.ts` | 63 | Every admin page renders visible content, no 401 errors |
+| `tests/e2e/admin-pages-render.spec.ts` | 66 | Every admin page renders visible content, no 401 errors |
+| `tests/e2e/sidebar-grouped-navigation.spec.ts` | 28 | Sidebar sections, expand/collapse, all 44 links, mobile drawer |
 | `tests/e2e/public-pages-render.spec.ts` | 11 | Every customer page renders without JS errors |
 
 These were added after a blank dashboard bug where `requireAuth()` returned 401 in DEMO_MODE. The old shadow-hardening tests only checked "not 500" which let 401s through.
