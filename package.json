@@ -18,6 +18,8 @@
     "nightly:pentest": "bash scripts/nightly-pentest.sh",
     "nightly:client-test": "bash scripts/nightly-client-test.sh",
     "agenticqa:scan": "bash scripts/run-agenticqa-pipeline.sh",
+    "validate": "bash scripts/validate-platform-integrity.sh",
+    "validate:quick": "bash scripts/validate-platform-integrity.sh --quick",
     "predeploy": "bash scripts/predeploy-gate.sh",
     "predeploy:quick": "bash scripts/predeploy-gate.sh --quick",
     "test:predeploy": "npx playwright test --config=playwright.predeploy.config.ts",
