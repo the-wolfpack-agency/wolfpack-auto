@@ -77,13 +77,14 @@ export default async function AnalyticsBrainPage() {
     grouped.set(insight.category, list);
   }
 
-  // Extract lead temperatures with friendly labels
-  const temperatures = insights
+  // Extract lead temperatures with friendly labels, deduplicated
+  const rawTemperatures = insights
     .filter((i) => i.id.startsWith("lead_temperature_"))
     .map((i) => {
       const signals = i.data.signals as Record<string, number>;
       const tier = i.data.tier as string;
       const converted = i.data.converted as boolean;
+      const sessionId = i.data.session_id as string;
 
       // Generate a friendly visitor label from signals
       let visitorType = "Visitor";
@@ -102,6 +103,7 @@ export default async function AnalyticsBrainPage() {
       });
 
       return {
+        sessionId,
         label: `${visitorType} \u2014 ${time}`,
         temperature: i.data.temperature as number,
         tier,
@@ -110,6 +112,14 @@ export default async function AnalyticsBrainPage() {
       };
     })
     .sort((a, b) => b.temperature - a.temperature);
+
+  // Deduplicate: keep one entry per unique session (highest temp wins)
+  const seenSessions = new Set<string>();
+  const temperatures = rawTemperatures.filter((t) => {
+    if (seenSessions.has(t.sessionId)) return false;
+    seenSessions.add(t.sessionId);
+    return true;
+  });
 
   // Extract inventory gaps
   const gapInsight = insights.find((i) => i.id.startsWith("inventory_gaps_"));
