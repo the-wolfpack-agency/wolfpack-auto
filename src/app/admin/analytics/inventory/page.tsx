@@ -221,7 +221,8 @@ export default function InventoryAnalyticsPage() {
         <p className="mb-4 text-xs text-gray-500">
           Vehicles on lot 60+ days with suggested price adjustments based on market data and view counts.
         </p>
-        <div className="overflow-x-auto">
+        {/* Desktop: full table */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border">
@@ -251,7 +252,7 @@ export default function InventoryAnalyticsPage() {
                     <td className="py-2.5 text-right text-gray-500">{v.views}</td>
                     <td className="py-2.5 text-right text-gray-700">${v.currentPrice.toLocaleString()}</td>
                     <td className="py-2.5 text-right font-semibold text-green-600">${v.suggestedPrice.toLocaleString()}</td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-2.5 text-right whitespace-nowrap">
                       <span className="text-red-600 font-medium">-${reduction.toLocaleString()}</span>
                       <span className="ml-1 text-xs text-gray-400">({reductionPct}%)</span>
                     </td>
@@ -260,6 +261,43 @@ export default function InventoryAnalyticsPage() {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile: card layout */}
+        <div className="sm:hidden space-y-3">
+          {data.slowMovers.map((v) => {
+            const reduction = v.currentPrice - v.suggestedPrice;
+            const reductionPct = ((reduction / v.currentPrice) * 100).toFixed(1);
+            return (
+              <div key={v.vin} className="rounded-lg border border-surface-border p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-900 text-sm">{v.name}</div>
+                    <div className="text-xs text-gray-400 font-mono">{v.vin}</div>
+                  </div>
+                  <span className={`text-lg font-bold ${v.daysOnLot >= 90 ? "text-red-600" : "text-orange-600"}`}>
+                    {v.daysOnLot}d
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase">Current</div>
+                    <div className="text-sm font-medium text-gray-700">${v.currentPrice.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase">Suggested</div>
+                    <div className="text-sm font-semibold text-green-600">${v.suggestedPrice.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase">Save</div>
+                    <div className="text-sm font-medium text-red-600">-${reduction.toLocaleString()}</div>
+                    <div className="text-xs text-gray-400">({reductionPct}%)</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-400">{v.views} views</div>
+              </div>
+            );
+          })}
         </div>
         <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
           <p className="text-xs text-yellow-800">

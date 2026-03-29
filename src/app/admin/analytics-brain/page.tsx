@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import {
   generateInsights,
   getBufferStats,
+  hydrateBufferFromDb,
   type BehavioralInsight,
 } from "@/lib/analytics-engine";
 
@@ -62,6 +63,9 @@ function confidenceBar(confidence: number): string {
 /* ------------------------------------------------------------------ */
 
 export default async function AnalyticsBrainPage() {
+  // Hydrate from PostgreSQL on cold start (serverless)
+  await hydrateBufferFromDb();
+
   const insights = generateInsights();
   const stats = getBufferStats();
 

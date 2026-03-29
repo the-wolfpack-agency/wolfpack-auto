@@ -118,6 +118,80 @@ function getBuffer(): EventBuffer {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Hydration from PostgreSQL                                          */
+/* ------------------------------------------------------------------ */
+
+let hydrationDone = false;
+
+/**
+ * Hydrate the in-memory buffer from PostgreSQL.
+ *
+ * On serverless platforms (Vercel), the in-memory buffer is empty after
+ * every cold start. This loads recent events from the database so the
+ * analytics brain always has data to work with.
+ *
+ * Only runs once per process — subsequent calls are no-ops.
+ */
+export async function hydrateBufferFromDb(): Promise<{ loaded: number }> {
+  if (hydrationDone) return { loaded: 0 };
+
+  const buffer = getBuffer();
+  // Skip if buffer already has data (warm process)
+  if (buffer.events.length > 0) {
+    hydrationDone = true;
+    return { loaded: 0 };
+  }
+
+  if (!process.env.DATABASE_URL) {
+    hydrationDone = true;
+    return { loaded: 0 };
+  }
+
+  try {
+    const { query } = await import("@/lib/db");
+
+    // Load last 24 hours of events (enough for insights, not too much for memory)
+    const result = await query<{
+      event_type: string;
+      action: string;
+      page: string;
+      session_id: string;
+      user_fingerprint: string;
+      timestamp: string;
+      metadata: Record<string, unknown>;
+    }>(
+      `SELECT event_type, action, page, session_id, user_fingerprint,
+              timestamp::text, metadata
+       FROM analytics_events
+       WHERE timestamp >= NOW() - INTERVAL '24 hours'
+       ORDER BY timestamp ASC
+       LIMIT 10000`,
+    );
+
+    if (result.rows.length > 0) {
+      const events: AnalyticsEvent[] = result.rows.map((row) => ({
+        event_type: row.event_type,
+        action: row.action,
+        page: row.page,
+        session_id: row.session_id,
+        user_fingerprint: row.user_fingerprint,
+        timestamp: row.timestamp,
+        metadata: row.metadata ?? {},
+      }));
+
+      ingestEvents(events);
+    }
+
+    hydrationDone = true;
+    return { loaded: result.rows.length };
+  } catch (err) {
+    console.error("[analytics-engine] Hydration from PG failed:", err);
+    hydrationDone = true;
+    return { loaded: 0 };
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Event ingestion                                                    */
 /* ------------------------------------------------------------------ */
 
