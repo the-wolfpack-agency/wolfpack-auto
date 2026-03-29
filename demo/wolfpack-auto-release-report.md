@@ -631,6 +631,7 @@ Complete platform documentation generated from actual source code (3,800+ lines 
 | [Getting Started](../docs/getting-started.md) | Developer onboarding: clone to deploy |
 | [White Paper](../docs/wolfpack-auto-whitepaper.md) | Investor positioning, market opportunity, business model |
 | [Product Audit & SWOT](../docs/product-audit-report.md) | Venture-grade scorecard (98/100), SWOT analysis, roadmap to 100 |
+| [Infrastructure Costs](../docs/infrastructure-costs.md) | Monthly cost breakdown: launch $130, growth $500, scale $2.5k, per-dealer unit economics |
 
 ---
 
