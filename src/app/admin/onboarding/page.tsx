@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAnalytics } from "@/components/EventCollector";
 import type { OnboardingPayload } from "@/lib/dealer-onboarding";
 
 /* -------------------------------------------------------------------------- */
@@ -9,9 +11,7 @@ import type { OnboardingPayload } from "@/lib/dealer-onboarding";
 
 const STEPS = [
   "Dealership Info",
-  "Branding",
-  "Import Inventory",
-  "Team Setup",
+  "Customize",
   "Review & Launch",
 ] as const;
 
@@ -57,15 +57,92 @@ function emptyPayload(): OnboardingPayload {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Collapsible section                                                        */
+/* -------------------------------------------------------------------------- */
+
+function CollapsibleSection({
+  title,
+  defaultOpen = false,
+  onToggle,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  onToggle?: (open: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    onToggle?.(next);
+  };
+
+  return (
+    <div className="rounded-lg border border-gray-700">
+      <button
+        type="button"
+        onClick={toggle}
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-700/40"
+      >
+        <span className="text-sm font-medium text-gray-300">{title}</span>
+        <ChevronIcon className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-200 ${
+          open ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="border-t border-gray-700 px-4 py-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
 export default function OnboardingPage() {
+  const router = useRouter();
+  const { track } = useAnalytics();
+
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingPayload>(emptyPayload);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Track which optional sections the user expanded in Step 2
+  const expandedSections = useRef<Set<string>>(new Set());
+  const [skippedStep2, setSkippedStep2] = useState(false);
+
+  // Track step timing
+  const stepEnteredAt = useRef<number>(Date.now());
+
+  const trackStepView = useCallback(
+    (stepIndex: number) => {
+      stepEnteredAt.current = Date.now();
+      track("onboarding", "step_viewed", {
+        step_index: stepIndex,
+        step_name: STEPS[stepIndex],
+      });
+    },
+    [track],
+  );
+
+  const trackStepComplete = useCallback(
+    (stepIndex: number) => {
+      const durationMs = Date.now() - stepEnteredAt.current;
+      track("onboarding", "step_completed", {
+        step_index: stepIndex,
+        step_name: STEPS[stepIndex],
+        duration_ms: durationMs,
+      });
+    },
+    [track],
+  );
 
   // --- Persist / restore from localStorage ----------------------------------
   useEffect(() => {
@@ -76,7 +153,8 @@ export default function OnboardingPage() {
           step: number;
           data: OnboardingPayload;
         };
-        setStep(parsed.step);
+        // Clamp step to new 3-step range
+        setStep(Math.min(parsed.step, STEPS.length - 1));
         setData(parsed.data);
       }
     } catch {
@@ -89,28 +167,45 @@ export default function OnboardingPage() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, data }));
       } catch {
-        // Storage full — silently ignore
+        // Storage full -- silently ignore
       }
     }
   }, [step, data, submitted]);
+
+  // Track step views
+  useEffect(() => {
+    trackStepView(step);
+  }, [step, trackStepView]);
 
   // --- Navigation -----------------------------------------------------------
   const canGoNext = useCallback(() => {
     if (step === 0) {
       const d = data.dealership;
-      return !!(d.name && d.address && d.city && d.state && d.zip && d.phone && d.email);
+      return !!(d.name && d.phone && d.email);
     }
-    if (step === 1) return true; // branding is optional
-    if (step === 2) return !!data.inventory.method;
-    if (step === 3) return true; // team is optional
+    // Step 1 (Customize) and Step 2 (Review) always valid
     return true;
   }, [step, data]);
 
   const next = () => {
-    if (step < STEPS.length - 1) setStep(step + 1);
+    if (step < STEPS.length - 1) {
+      trackStepComplete(step);
+      setStep(step + 1);
+    }
   };
   const back = () => {
     if (step > 0) setStep(step - 1);
+  };
+
+  const skipToReview = () => {
+    setSkippedStep2(true);
+    track("onboarding", "skip_and_launch", {
+      step_index: 1,
+      step_name: STEPS[1],
+      expanded_sections: Array.from(expandedSections.current).join(","),
+    });
+    trackStepComplete(1);
+    setStep(2);
   };
 
   // --- Submit ---------------------------------------------------------------
@@ -133,8 +228,20 @@ export default function OnboardingPage() {
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
 
+      trackStepComplete(2);
+      track("onboarding", "wizard_completed", {
+        total_steps: STEPS.length,
+        skipped_customize: skippedStep2,
+        expanded_sections: Array.from(expandedSections.current).join(","),
+      });
+
       localStorage.removeItem(STORAGE_KEY);
       setSubmitted(true);
+
+      // Redirect to getting-started after a 2-second success animation
+      setTimeout(() => {
+        router.push("/admin/getting-started");
+      }, 2000);
     } catch (err: any) {
       setError(err.message ?? "Something went wrong");
     } finally {
@@ -142,25 +249,30 @@ export default function OnboardingPage() {
     }
   };
 
-  // --- Success screen -------------------------------------------------------
+  // --- Track section expansion in Step 2 ------------------------------------
+  const handleSectionToggle = (section: string, open: boolean) => {
+    if (open) {
+      expandedSections.current.add(section);
+      track("onboarding", "section_expanded", {
+        step_index: 1,
+        section,
+      });
+    }
+  };
+
+  // --- Success screen (brief, then redirect) --------------------------------
   if (submitted) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-600">
+        <div className="mb-4 flex h-16 w-16 animate-bounce items-center justify-center rounded-full bg-green-600">
           <CheckIcon className="h-8 w-8 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
           Your dealership is live!
         </h1>
         <p className="mt-2 text-gray-400">
-          Your site is ready. Team invites have been sent.
+          Taking you to your getting-started checklist...
         </p>
-        <a
-          href="/admin"
-          className="mt-6 inline-flex items-center rounded-lg bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
-        >
-          Go to Dashboard
-        </a>
       </div>
     );
   }
@@ -171,7 +283,7 @@ export default function OnboardingPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Set Up Your Dealership</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Complete these steps to launch your dealer site.
+          Just 3 quick steps to get your site live.
         </p>
       </div>
 
@@ -181,10 +293,14 @@ export default function OnboardingPage() {
       {/* Step content */}
       <div className="mt-8 rounded-xl border border-gray-700 bg-gray-800 p-6 sm:p-8">
         {step === 0 && <StepDealershipInfo data={data} setData={setData} />}
-        {step === 1 && <StepBranding data={data} setData={setData} />}
-        {step === 2 && <StepInventory data={data} setData={setData} />}
-        {step === 3 && <StepTeam data={data} setData={setData} />}
-        {step === 4 && <StepReview data={data} />}
+        {step === 1 && (
+          <StepCustomize
+            data={data}
+            setData={setData}
+            onSectionToggle={handleSectionToggle}
+          />
+        )}
+        {step === 2 && <StepReview data={data} />}
       </div>
 
       {/* Error */}
@@ -205,25 +321,38 @@ export default function OnboardingPage() {
           Back
         </button>
 
-        {step < STEPS.length - 1 ? (
-          <button
-            type="button"
-            onClick={next}
-            disabled={!canGoNext()}
-            className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Next
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleLaunch}
-            disabled={submitting}
-            className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? "Launching..." : "Launch Your Site"}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Skip & Launch on Step 2 (Customize) */}
+          {step === 1 && (
+            <button
+              type="button"
+              onClick={skipToReview}
+              className="rounded-lg border border-gray-500 bg-gray-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-600"
+            >
+              Skip & Launch
+            </button>
+          )}
+
+          {step < STEPS.length - 1 ? (
+            <button
+              type="button"
+              onClick={next}
+              disabled={!canGoNext()}
+              className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleLaunch}
+              disabled={submitting}
+              className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? "Launching..." : "Launch Your Site"}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -275,7 +404,7 @@ function ProgressBar({
 }
 
 /* ========================================================================== */
-/* Step 1: Dealership Info                                                    */
+/* Step 1: Dealership Info (simplified -- name, email, phone required)        */
 /* ========================================================================== */
 
 function StepDealershipInfo({
@@ -294,7 +423,10 @@ function StepDealershipInfo({
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold text-white">Dealership Information</h2>
+      <h2 className="text-lg font-semibold text-white">Tell us about your dealership</h2>
+      <p className="text-sm text-gray-400">
+        We just need a few basics to get started. You can add more details later in Settings.
+      </p>
 
       <Field label="Dealership Name" required>
         <input
@@ -306,56 +438,7 @@ function StepDealershipInfo({
         />
       </Field>
 
-      <Field label="Street Address" required>
-        <input
-          type="text"
-          value={data.dealership.address}
-          onChange={(e) => update("address", e.target.value)}
-          placeholder="4500 W Colfax Ave"
-          className="input-field"
-        />
-      </Field>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="City" required>
-          <input
-            type="text"
-            value={data.dealership.city}
-            onChange={(e) => update("city", e.target.value)}
-            placeholder="Denver"
-            className="input-field"
-          />
-        </Field>
-        <Field label="State" required>
-          <input
-            type="text"
-            value={data.dealership.state}
-            onChange={(e) => update("state", e.target.value)}
-            placeholder="CO"
-            className="input-field"
-          />
-        </Field>
-        <Field label="ZIP" required>
-          <input
-            type="text"
-            value={data.dealership.zip}
-            onChange={(e) => update("zip", e.target.value)}
-            placeholder="80204"
-            className="input-field"
-          />
-        </Field>
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Phone" required>
-          <input
-            type="tel"
-            value={data.dealership.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            placeholder="(303) 555-0100"
-            className="input-field"
-          />
-        </Field>
         <Field label="Email" required>
           <input
             type="email"
@@ -365,26 +448,127 @@ function StepDealershipInfo({
             className="input-field"
           />
         </Field>
+        <Field label="Phone" required>
+          <input
+            type="tel"
+            value={data.dealership.phone}
+            onChange={(e) => update("phone", e.target.value)}
+            placeholder="(303) 555-0100"
+            className="input-field"
+          />
+        </Field>
       </div>
 
-      <Field label="Website">
-        <input
-          type="url"
-          value={data.dealership.website}
-          onChange={(e) => update("website", e.target.value)}
-          placeholder="https://wolfpackmotors.com"
-          className="input-field"
-        />
-      </Field>
+      {/* Optional address section */}
+      <CollapsibleSection title="Add address (optional)">
+        <div className="space-y-4">
+          <Field label="Street Address">
+            <input
+              type="text"
+              value={data.dealership.address}
+              onChange={(e) => update("address", e.target.value)}
+              placeholder="4500 W Colfax Ave"
+              className="input-field"
+            />
+          </Field>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="City">
+              <input
+                type="text"
+                value={data.dealership.city}
+                onChange={(e) => update("city", e.target.value)}
+                placeholder="Denver"
+                className="input-field"
+              />
+            </Field>
+            <Field label="State">
+              <input
+                type="text"
+                value={data.dealership.state}
+                onChange={(e) => update("state", e.target.value)}
+                placeholder="CO"
+                className="input-field"
+              />
+            </Field>
+            <Field label="ZIP">
+              <input
+                type="text"
+                value={data.dealership.zip}
+                onChange={(e) => update("zip", e.target.value)}
+                placeholder="80204"
+                className="input-field"
+              />
+            </Field>
+          </div>
+
+          <Field label="Website">
+            <input
+              type="url"
+              value={data.dealership.website}
+              onChange={(e) => update("website", e.target.value)}
+              placeholder="https://wolfpackmotors.com"
+              className="input-field"
+            />
+          </Field>
+        </div>
+      </CollapsibleSection>
     </div>
   );
 }
 
 /* ========================================================================== */
-/* Step 2: Branding                                                           */
+/* Step 2: Customize (merged branding + inventory + team -- all optional)     */
 /* ========================================================================== */
 
-function StepBranding({
+function StepCustomize({
+  data,
+  setData,
+  onSectionToggle,
+}: {
+  data: OnboardingPayload;
+  setData: React.Dispatch<React.SetStateAction<OnboardingPayload>>;
+  onSectionToggle: (section: string, open: boolean) => void;
+}) {
+  return (
+    <div className="space-y-5">
+      <h2 className="text-lg font-semibold text-white">Make it yours</h2>
+      <p className="text-sm text-gray-400">
+        Everything here is optional. You can set these up later from your admin panel.
+      </p>
+
+      {/* Branding section */}
+      <CollapsibleSection
+        title="Add branding (optional)"
+        onToggle={(open) => onSectionToggle("branding", open)}
+      >
+        <BrandingFields data={data} setData={setData} />
+      </CollapsibleSection>
+
+      {/* Inventory section */}
+      <CollapsibleSection
+        title="Set up inventory (optional)"
+        onToggle={(open) => onSectionToggle("inventory", open)}
+      >
+        <InventoryFields data={data} setData={setData} />
+      </CollapsibleSection>
+
+      {/* Team section */}
+      <CollapsibleSection
+        title="Invite team members (optional)"
+        onToggle={(open) => onSectionToggle("team", open)}
+      >
+        <TeamFields data={data} setData={setData} />
+      </CollapsibleSection>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Branding fields (extracted from old Step 2)                                */
+/* -------------------------------------------------------------------------- */
+
+function BrandingFields({
   data,
   setData,
 }: {
@@ -417,9 +601,7 @@ function StepBranding({
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold text-white">Branding</h2>
-
-      {/* Logo upload zone (mirrors ImageUploadZone pattern) */}
+      {/* Logo upload zone */}
       <Field label="Logo">
         <div
           onDragOver={(e) => {
@@ -530,11 +712,11 @@ function StepBranding({
   );
 }
 
-/* ========================================================================== */
-/* Step 3: Import Inventory                                                   */
-/* ========================================================================== */
+/* -------------------------------------------------------------------------- */
+/* Inventory fields (extracted from old Step 3)                               */
+/* -------------------------------------------------------------------------- */
 
-function StepInventory({
+function InventoryFields({
   data,
   setData,
 }: {
@@ -570,7 +752,6 @@ function StepInventory({
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold text-white">Import Inventory</h2>
       <p className="text-sm text-gray-400">
         Choose how you want to add your vehicles.
       </p>
@@ -690,31 +871,24 @@ function StepInventory({
         </Field>
       )}
 
-      {/* Manual entry link */}
+      {/* Manual entry note */}
       {data.inventory.method === "manual" && (
         <div className="rounded-lg border border-gray-600 bg-gray-700/30 p-4">
           <p className="text-sm text-gray-300">
             After launch, you can add vehicles one at a time from the admin
             panel.
           </p>
-          <a
-            href="/admin/vehicles/quick-add"
-            className="mt-2 inline-flex items-center text-sm font-medium text-brand-400 hover:text-brand-300"
-          >
-            Go to Quick Add
-            <ArrowRightIcon className="ml-1 h-4 w-4" />
-          </a>
         </div>
       )}
     </div>
   );
 }
 
-/* ========================================================================== */
-/* Step 4: Team Setup                                                         */
-/* ========================================================================== */
+/* -------------------------------------------------------------------------- */
+/* Team fields (extracted from old Step 4)                                    */
+/* -------------------------------------------------------------------------- */
 
-function StepTeam({
+function TeamFields({
   data,
   setData,
 }: {
@@ -746,7 +920,6 @@ function StepTeam({
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-semibold text-white">Team Setup</h2>
       <p className="text-sm text-gray-400">
         Invite team members to your admin panel. They will receive an email
         with login instructions.
@@ -822,10 +995,12 @@ function StepTeam({
 }
 
 /* ========================================================================== */
-/* Step 5: Review & Launch                                                    */
+/* Step 3: Review & Launch                                                    */
 /* ========================================================================== */
 
 function StepReview({ data }: { data: OnboardingPayload }) {
+  const hasAddress = !!(data.dealership.address || data.dealership.city || data.dealership.state || data.dealership.zip);
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-white">Review & Launch</h2>
@@ -836,12 +1011,14 @@ function StepReview({ data }: { data: OnboardingPayload }) {
       {/* Dealership */}
       <ReviewSection title="Dealership">
         <ReviewRow label="Name" value={data.dealership.name} />
-        <ReviewRow
-          label="Address"
-          value={`${data.dealership.address}, ${data.dealership.city}, ${data.dealership.state} ${data.dealership.zip}`}
-        />
-        <ReviewRow label="Phone" value={data.dealership.phone} />
         <ReviewRow label="Email" value={data.dealership.email} />
+        <ReviewRow label="Phone" value={data.dealership.phone} />
+        {hasAddress && (
+          <ReviewRow
+            label="Address"
+            value={[data.dealership.address, data.dealership.city, data.dealership.state, data.dealership.zip].filter(Boolean).join(", ")}
+          />
+        )}
         {data.dealership.website && (
           <ReviewRow label="Website" value={data.dealership.website} />
         )}
@@ -868,7 +1045,7 @@ function StepReview({ data }: { data: OnboardingPayload }) {
       </ReviewSection>
 
       {/* Inventory */}
-      <ReviewSection title="Inventory Import">
+      <ReviewSection title="Inventory">
         <ReviewRow
           label="Method"
           value={
@@ -1016,7 +1193,7 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
-function ArrowRightIcon({ className }: { className?: string }) {
+function ChevronIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
@@ -1029,7 +1206,7 @@ function ArrowRightIcon({ className }: { className?: string }) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+        d="m19.5 8.25-7.5 7.5-7.5-7.5"
       />
     </svg>
   );

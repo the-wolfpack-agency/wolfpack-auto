@@ -8,23 +8,37 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./tests",
+  // Only run e2e, pages, and top-level specs by default.
+  // Canary, load, shadow, shadow-hardening, rls, api, and components
+  // are special-purpose suites run via their own configs/scripts.
+  testMatch: ["e2e/**/*.spec.ts", "pages/**/*.spec.ts", "*.spec.ts"],
+  testIgnore: [
+    "**/canary/**",
+    "**/load/**",
+    "**/shadow/**",
+    "**/shadow-hardening/**",
+  ],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? "github" : "html",
+  workers: process.env.CI ? 2 : 4,
+  reporter: process.env.CI ? "github" : "list",
 
-  timeout: 30_000,
+  // Per-test timeout: 15s is plenty for API and page tests
+  timeout: 15_000,
+  // Kill the entire suite if it exceeds 15 minutes (2800+ tests, prevents infinite hangs)
+  globalTimeout: 900_000,
 
   expect: {
-    timeout: 10_000,
+    timeout: 5_000,
   },
 
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    // Disable video locally — saves CPU and prevents hangs on cleanup
+    video: process.env.CI ? "retain-on-failure" : "off",
   },
 
   projects: [
@@ -43,12 +57,10 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npm run dev",
-    // Use /inventory for the readiness probe — the root / can return 500
-    // during cold-start if DB is unreachable, but /inventory is static-safe.
-    // Playwright considers the server ready when this URL returns < 400.
+    command: "npm run build && npm run start",
     url: "http://localhost:3000/inventory",
     reuseExistingServer: true,
+    // Production build + start takes longer, but serves pages 5-10x faster
     timeout: 120_000,
   },
 });

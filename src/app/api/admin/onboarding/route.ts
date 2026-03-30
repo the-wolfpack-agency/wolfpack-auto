@@ -4,6 +4,7 @@ import { generateDealerSlug } from "@/lib/dealer-onboarding";
 import crypto from "node:crypto";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackSystem } from "@/lib/analytics-hooks";
+import { sendTeamInvite } from "@/lib/notifications";
 
 /* -------------------------------------------------------------------------- */
 /* Zod schema                                                                 */
@@ -17,10 +18,10 @@ const teamMemberSchema = z.object({
 const onboardingSchema = z.object({
   dealership: z.object({
     name: z.string().min(1, "Dealership name is required").max(200),
-    address: z.string().min(1, "Address is required").max(500),
-    city: z.string().min(1, "City is required").max(100),
-    state: z.string().min(1, "State is required").max(50),
-    zip: z.string().min(1, "ZIP code is required").max(20),
+    address: z.string().max(500).default(""),
+    city: z.string().max(100).default(""),
+    state: z.string().max(50).default(""),
+    zip: z.string().max(20).default(""),
     phone: z.string().min(1, "Phone is required").max(30),
     email: z.string().email("Invalid dealership email"),
     website: z.string().url("Invalid website URL").or(z.literal("")).default(""),
@@ -45,6 +46,153 @@ const onboardingSchema = z.object({
 
   team: z.array(teamMemberSchema).default([]),
 });
+
+/* -------------------------------------------------------------------------- */
+/* CSV parsing                                                                */
+/* -------------------------------------------------------------------------- */
+
+interface CsvVehicleRow {
+  vin: string;
+  year: number;
+  make: string;
+  model: string;
+  trim: string;
+  price: number;
+  mileage: number;
+  condition: string;
+  color: string;
+}
+
+/**
+ * Parse a base64-encoded CSV string into vehicle rows.
+ * Handles flexible column naming and gracefully skips invalid rows.
+ */
+function parseCsvInventory(base64Csv: string): {
+  rows: CsvVehicleRow[];
+  errors: string[];
+} {
+  const rows: CsvVehicleRow[] = [];
+  const errors: string[] = [];
+
+  let csvText: string;
+  try {
+    csvText = Buffer.from(base64Csv, "base64").toString("utf-8");
+  } catch {
+    return { rows: [], errors: ["Failed to decode base64 CSV data"] };
+  }
+
+  const lines = csvText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length < 2) {
+    return { rows: [], errors: ["CSV must have a header row and at least one data row"] };
+  }
+
+  // Parse header — normalize to lowercase, strip whitespace
+  const headerLine = lines[0];
+  const headers = headerLine.split(",").map((h) => h.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""));
+
+  // Build column index map with flexible name matching
+  const colMap: Record<string, number> = {};
+  const aliases: Record<string, string[]> = {
+    vin: ["vin", "vehicle_vin", "vin_number"],
+    year: ["year", "model_year", "yr"],
+    make: ["make", "manufacturer", "brand"],
+    model: ["model", "model_name"],
+    trim: ["trim", "trim_level", "trimlevel"],
+    price: ["price", "asking_price", "list_price", "listprice", "askingprice"],
+    mileage: ["mileage", "miles", "odometer"],
+    condition: ["condition", "cond", "vehicle_condition", "type"],
+    color: ["color", "exterior_color", "exteriorcolor", "ext_color"],
+  };
+
+  for (const [field, names] of Object.entries(aliases)) {
+    const idx = headers.findIndex((h) => names.includes(h));
+    if (idx !== -1) {
+      colMap[field] = idx;
+    }
+  }
+
+  // VIN, Year, Make, Model, Price are required columns
+  const requiredCols = ["vin", "year", "make", "model", "price"];
+  const missingCols = requiredCols.filter((c) => !(c in colMap));
+  if (missingCols.length > 0) {
+    return {
+      rows: [],
+      errors: [`Missing required CSV columns: ${missingCols.join(", ")}`],
+    };
+  }
+
+  // Parse data rows
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(",").map((v) => v.trim());
+    const lineNum = i + 1;
+
+    try {
+      const vin = values[colMap.vin] ?? "";
+      const yearStr = values[colMap.year] ?? "";
+      const make = values[colMap.make] ?? "";
+      const model = values[colMap.model] ?? "";
+      const priceStr = values[colMap.price] ?? "";
+
+      // Validate required fields
+      if (!vin || vin.length < 5) {
+        errors.push(`Row ${lineNum}: Invalid or missing VIN`);
+        continue;
+      }
+
+      const year = parseInt(yearStr, 10);
+      if (isNaN(year) || year < 1900 || year > new Date().getFullYear() + 2) {
+        errors.push(`Row ${lineNum}: Invalid year "${yearStr}"`);
+        continue;
+      }
+
+      if (!make) {
+        errors.push(`Row ${lineNum}: Missing make`);
+        continue;
+      }
+
+      if (!model) {
+        errors.push(`Row ${lineNum}: Missing model`);
+        continue;
+      }
+
+      const price = parseFloat(priceStr.replace(/[$,]/g, ""));
+      if (isNaN(price) || price <= 0) {
+        errors.push(`Row ${lineNum}: Invalid price "${priceStr}"`);
+        continue;
+      }
+
+      // Optional fields — gracefully default
+      const mileageStr = colMap.mileage !== undefined ? values[colMap.mileage] ?? "" : "";
+      const mileage = mileageStr ? parseInt(mileageStr.replace(/[,]/g, ""), 10) : 0;
+
+      const trim = colMap.trim !== undefined ? values[colMap.trim] ?? "" : "";
+      const condition = colMap.condition !== undefined ? values[colMap.condition] ?? "used" : "used";
+      const color = colMap.color !== undefined ? values[colMap.color] ?? "" : "";
+
+      rows.push({
+        vin: vin.toUpperCase(),
+        year,
+        make,
+        model,
+        trim,
+        price,
+        mileage: isNaN(mileage) ? 0 : mileage,
+        condition: ["new", "used", "certified"].includes(condition.toLowerCase())
+          ? condition.toLowerCase()
+          : "used",
+        color,
+      });
+    } catch {
+      errors.push(`Row ${lineNum}: Failed to parse row`);
+    }
+  }
+
+  return { rows, errors };
+}
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/admin/onboarding                                                 */
@@ -84,19 +232,25 @@ export async function POST(request: NextRequest) {
   const data = parsed.data;
   const slug = generateDealerSlug(data.dealership.name);
   const dealerId = `dlr_${slug}_${Date.now().toString(36)}`;
+  const onboardingEvents: Array<{ event: string; data: Record<string, unknown> }> = [];
 
   // --- Check for database availability --------------------------------------
   if (!process.env.DATABASE_URL) {
-    // Accept gracefully without DB — return a queued response
+    // Fire-and-forget analytics for DB-unavailable failures
+    try {
+      trackSystem("system.onboarding_step", dealerId, {
+        action: "onboarding_failed",
+        reason: "db_unavailable",
+        timestamp: new Date().toISOString(),
+      });
+    } catch { /* analytics never blocks */ }
+
     return NextResponse.json(
       {
-        dealer_id: dealerId,
-        slug,
-        status: "active",
-        dashboard_url: `/admin`,
-        note: "Onboarding queued. Database is currently unavailable.",
+        error: "Service temporarily unavailable. Database is not configured.",
+        code: "DB_UNAVAILABLE",
       },
-      { status: 201 },
+      { status: 503 },
     );
   }
 
@@ -104,6 +258,10 @@ export async function POST(request: NextRequest) {
     const { query } = await import("@/lib/db");
 
     // --- Create dealer record -----------------------------------------------
+    // TODO: Logo should move to Vercel Blob or S3 for production.
+    // Storing base64 data URIs in the DB works but bloats row size.
+    // When migrating, store the blob URL in branding_config.logo_url
+    // and remove the logoFile field.
     const brandingConfig = JSON.stringify({
       primaryColor: data.branding.primaryColor,
       tagline: data.branding.tagline,
@@ -153,59 +311,295 @@ export async function POST(request: NextRequest) {
       ],
     );
 
-    // --- Create invited user records ----------------------------------------
-    for (const member of data.team) {
-      const tempPassword = crypto.randomBytes(16).toString("hex");
-
+    // --- Auto-assign owner role to the authenticated user -------------------
+    try {
       await query(
-        `INSERT INTO users (
-          id, dealer_id, email, password_hash, role,
-          invite_pending, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5,
-          true, NOW(), NOW()
-        )
-        ON CONFLICT (email, dealer_id) DO UPDATE SET
-          role = EXCLUDED.role,
+        `INSERT INTO dealer_users (
+          dealer_id, email, name, password_hash, role, is_active,
+          created_at, updated_at
+        ) VALUES ($1, $2, $3, '', 'owner', true, NOW(), NOW())
+        ON CONFLICT (email) DO UPDATE SET
+          dealer_id = EXCLUDED.dealer_id,
+          role = 'owner',
+          is_active = true,
           updated_at = NOW()`,
-        [
-          `usr_${crypto.randomUUID()}`,
-          dealerId,
-          member.email.toLowerCase(),
-          tempPassword, // In production: hash this with bcrypt
-          member.role,
-        ],
+        [dealerId, authResult.user.email.toLowerCase(), authResult.user.name],
       );
-
-      // Placeholder: send invite email
-      console.log(
-        `[onboarding] Invite email queued for ${member.email} (role: ${member.role})`,
-      );
+    } catch (ownerErr) {
+      // If dealer_users table doesn't exist yet (migration not run), log and continue
+      const msg = ownerErr instanceof Error ? ownerErr.message : String(ownerErr);
+      if (msg.includes("dealer_users") && msg.includes("does not exist")) {
+        console.warn("[onboarding] dealer_users table not found — skipping owner assignment");
+      } else {
+        console.error("[onboarding] Failed to assign owner role:", ownerErr);
+      }
     }
 
-    try { trackSystem("system.onboarding_step", authResult?.user?.dealer_id ?? "system", { action: "onboarding_completed", dealer_id: dealerId }); } catch {}
-    return NextResponse.json(
-      {
+    // --- Create invited team member records with invite tokens ----------------
+    let teamInvited = 0;
+    let emailsSent = false;
+    let inviteTokensGenerated = false;
+
+    for (const member of data.team) {
+      try {
+        const inviteToken = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+        await query(
+          `INSERT INTO dealer_users (
+            dealer_id, email, name, password_hash, role,
+            is_active, invite_token, invite_expires_at,
+            created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, NULL, $4,
+            false, $5, $6,
+            NOW(), NOW()
+          )
+          ON CONFLICT (email) DO UPDATE SET
+            dealer_id = EXCLUDED.dealer_id,
+            role = EXCLUDED.role,
+            invite_token = EXCLUDED.invite_token,
+            invite_expires_at = EXCLUDED.invite_expires_at,
+            updated_at = NOW()`,
+          [
+            dealerId,
+            member.email.toLowerCase(),
+            member.email.split("@")[0], // Use email prefix as provisional name
+            member.role,
+            inviteToken,
+            expiresAt.toISOString(),
+          ],
+        );
+
+        inviteTokensGenerated = true;
+        teamInvited++;
+
+        // Send invite email via the notification system
+        try {
+          await sendTeamInvite({
+            inviteeEmail: member.email.toLowerCase(),
+            inviteeName: member.email.split("@")[0],
+            role: member.role,
+            inviterName: authResult.user.name,
+            dealerName: data.dealership.name,
+            inviteToken,
+          });
+          emailsSent = true;
+        } catch (emailErr) {
+          console.error(
+            `[onboarding] Failed to send invite email to ${member.email}:`,
+            emailErr,
+          );
+          // Don't fail onboarding if email fails — token is stored, can resend later
+        }
+
+        // Track each invite
+        try {
+          trackSystem("team.user_invited", dealerId, {
+            email: member.email,
+            role: member.role,
+          });
+        } catch { /* analytics never blocks */ }
+      } catch (memberErr) {
+        const msg = memberErr instanceof Error ? memberErr.message : String(memberErr);
+        // If invite columns don't exist, fall back to basic user creation
+        if (msg.includes("invite_token") || msg.includes("42703")) {
+          console.warn("[onboarding] invite_token column not found — falling back to basic insert");
+          try {
+            await query(
+              `INSERT INTO dealer_users (
+                dealer_id, email, name, password_hash, role,
+                is_active, created_at, updated_at
+              ) VALUES ($1, $2, $3, '', $4, false, NOW(), NOW())
+              ON CONFLICT (email) DO UPDATE SET
+                role = EXCLUDED.role,
+                updated_at = NOW()`,
+              [
+                dealerId,
+                member.email.toLowerCase(),
+                member.email.split("@")[0],
+                member.role,
+              ],
+            );
+            teamInvited++;
+          } catch (fallbackErr) {
+            console.error(`[onboarding] Failed to create team member ${member.email}:`, fallbackErr);
+          }
+        } else if (msg.includes("dealer_users") && msg.includes("does not exist")) {
+          console.warn("[onboarding] dealer_users table not found — skipping team invites");
+          break;
+        } else {
+          console.error(`[onboarding] Failed to invite ${member.email}:`, memberErr);
+        }
+      }
+    }
+
+    // --- Parse CSV inventory and create vehicle records -----------------------
+    let vehiclesImported = 0;
+    let csvErrors: string[] = [];
+
+    if (data.inventory.method === "csv" && data.inventory.csvData) {
+      const { rows, errors } = parseCsvInventory(data.inventory.csvData);
+      csvErrors = errors;
+
+      for (const vehicle of rows) {
+        try {
+          await query(
+            `INSERT INTO vehicles (
+              dealer_id, vin, year, make, model, trim,
+              price, mileage, condition, exterior_color,
+              status, created_at, updated_at
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6,
+              $7, $8, $9, $10,
+              'available', NOW(), NOW()
+            )
+            ON CONFLICT (dealer_id, vin) DO UPDATE SET
+              year = EXCLUDED.year,
+              make = EXCLUDED.make,
+              model = EXCLUDED.model,
+              trim = EXCLUDED.trim,
+              price = EXCLUDED.price,
+              mileage = EXCLUDED.mileage,
+              condition = EXCLUDED.condition,
+              exterior_color = EXCLUDED.exterior_color,
+              updated_at = NOW()`,
+            [
+              dealerId,
+              vehicle.vin,
+              vehicle.year,
+              vehicle.make,
+              vehicle.model,
+              vehicle.trim,
+              vehicle.price,
+              vehicle.mileage,
+              vehicle.condition,
+              vehicle.color,
+            ],
+          );
+          vehiclesImported++;
+        } catch (vehErr) {
+          const msg = vehErr instanceof Error ? vehErr.message : String(vehErr);
+          csvErrors.push(`VIN ${vehicle.vin}: ${msg}`);
+        }
+      }
+
+      // Track CSV import results
+      try {
+        trackSystem("system.onboarding_step", dealerId, {
+          action: "csv_import_completed",
+          vehicles_parsed: rows.length,
+          vehicles_imported: vehiclesImported,
+          vehicles_failed: rows.length - vehiclesImported,
+          parse_errors: csvErrors.length,
+        });
+      } catch { /* analytics never blocks */ }
+    }
+
+    // --- Emit onboarding analytics events ------------------------------------
+    onboardingEvents.push({
+      event: "onboarding_completed",
+      data: {
         dealer_id: dealerId,
-        slug,
-        status: "active",
-        dashboard_url: `/admin`,
-        team_invited: data.team.length,
+        dealer_name: data.dealership.name,
+        timestamp: new Date().toISOString(),
       },
-      { status: 201 },
-    );
+    });
+
+    onboardingEvents.push({
+      event: "team_size",
+      data: { count: data.team.length, invited: teamInvited },
+    });
+
+    onboardingEvents.push({
+      event: "inventory_method",
+      data: {
+        method: data.inventory.method,
+        ...(data.inventory.method === "csv"
+          ? { csv_vehicles_imported: vehiclesImported }
+          : {}),
+        ...(data.inventory.method === "dms" && data.inventory.dmsProvider
+          ? { dms_provider_selected: data.inventory.dmsProvider }
+          : {}),
+      },
+    });
+
+    if (data.inventory.method === "csv") {
+      onboardingEvents.push({
+        event: "csv_vehicles_imported",
+        data: {
+          total: vehiclesImported,
+          errors: csvErrors.length,
+        },
+      });
+    }
+
+    if (data.inventory.method === "dms" && data.inventory.dmsProvider) {
+      onboardingEvents.push({
+        event: "dms_provider_selected",
+        data: { provider: data.inventory.dmsProvider },
+      });
+    }
+
+    // Track the composite onboarding event
+    try {
+      trackSystem("system.onboarding_step", dealerId, {
+        action: "onboarding_completed",
+        team_size: data.team.length,
+        team_invited: teamInvited,
+        inventory_method: data.inventory.method,
+        csv_vehicles_imported: vehiclesImported,
+        dms_provider: data.inventory.dmsProvider ?? "",
+        has_logo: !!data.branding.logoFile,
+        has_tagline: !!data.branding.tagline,
+      });
+    } catch { /* analytics never blocks */ }
+
+    // --- Build response -------------------------------------------------------
+    const response: Record<string, unknown> = {
+      dealer_id: dealerId,
+      slug,
+      status: "active",
+      dashboard_url: `/admin`,
+      team_invited: teamInvited,
+      invite_tokens_generated: inviteTokensGenerated,
+      emails_sent: emailsSent,
+      onboarding_events: onboardingEvents,
+    };
+
+    if (data.inventory.method === "csv") {
+      response.vehicles_imported = vehiclesImported;
+      if (csvErrors.length > 0) {
+        response.csv_errors = csvErrors;
+      }
+    }
+
+    if (data.branding.logoFile) {
+      // TODO: Replace with Vercel Blob/S3 URL once storage migration is done.
+      // For now, the logo is stored as a base64 data URI in branding_config.
+      response.logo_url = `/api/admin/settings/logo?dealer=${dealerId}`;
+    }
+
+    return NextResponse.json(response, { status: 201 });
   } catch (err) {
     console.error("[api/admin/onboarding] Failed:", err);
 
+    // Fire-and-forget analytics for DB errors
+    try {
+      trackSystem("system.onboarding_step", dealerId, {
+        action: "onboarding_failed",
+        reason: "db_error",
+        error: err instanceof Error ? err.message : String(err),
+        timestamp: new Date().toISOString(),
+      });
+    } catch { /* analytics never blocks */ }
+
     return NextResponse.json(
       {
-        dealer_id: dealerId,
-        slug,
-        status: "active",
-        dashboard_url: `/admin`,
-        note: "Onboarding queued for processing.",
+        error: "Service temporarily unavailable. Database is not configured.",
+        code: "DB_UNAVAILABLE",
       },
-      { status: 201 },
+      { status: 503 },
     );
   }
 }

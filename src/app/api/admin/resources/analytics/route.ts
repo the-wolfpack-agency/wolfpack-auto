@@ -19,10 +19,12 @@ export async function POST(req: NextRequest) {
     const eventType = body.event_type ?? "resource_viewed";
     const metadata = body.metadata ?? {};
 
-    trackSystem("system.engagement_logged", authResult.user.dealer_id, {
-      action: eventType,
-      ...metadata,
-    });
+    if (process.env.DATABASE_URL) {
+      trackSystem("system.engagement_logged", authResult.user.dealer_id, {
+        action: eventType,
+        ...metadata,
+      });
+    }
 
     return NextResponse.json({ tracked: true });
   } catch {

@@ -47,9 +47,7 @@ export interface OnboardingFunnel {
 
 const ONBOARDING_STEPS = [
   "dealership_info",
-  "branding",
-  "import_inventory",
-  "team_setup",
+  "customize",
   "review_launch",
 ] as const;
 

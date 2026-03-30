@@ -311,6 +311,7 @@ async function checkLiveDeployment() {
     { method: "GET", path: "/api/admin/dealers" },
     { method: "GET", path: "/api/admin/dealer-users" },
     { method: "GET", path: "/api/agency/overview" },
+    { method: "GET", path: "/api/cron/process-sequences" },
   ];
 
   for (const ep of endpoints) {

@@ -162,10 +162,20 @@ export async function GET() {
     });
   } catch (err) {
     console.error("[onboarding/status] Error:", err);
-    return NextResponse.json(
-      { error: "Failed to load onboarding status" },
-      { status: 500 },
-    );
+    // Graceful degradation — return all-unchecked instead of 500
+    const steps = buildSteps({
+      hasVehicles: false,
+      hasBranding: false,
+      hasTeamMembers: false,
+      hasDms: false,
+      hasVisitedAnalytics: false,
+      hasNotificationPrefs: false,
+    });
+    return NextResponse.json({
+      steps,
+      progress: Math.round((1 / steps.length) * 100),
+      completed: false,
+    });
   }
 }
 

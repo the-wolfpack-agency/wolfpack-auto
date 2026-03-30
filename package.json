@@ -34,7 +34,12 @@
     "db:reset": "psql $DATABASE_URL -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' && npm run db:migrate && npm run db:seed",
     "verify:rls": "tsx scripts/verify-rls.ts",
     "audit:deps": "bash scripts/audit-deps.sh",
-    "test:migrations": "bash scripts/test-migrations.sh"
+    "test:migrations": "bash scripts/test-migrations.sh",
+    "test:fast": "playwright test --project=chromium tests/e2e/onboarding-flow.spec.ts tests/e2e/lead-flow-e2e.spec.ts tests/e2e/admin-api-200.spec.ts tests/e2e/security-hardening.spec.ts tests/smoke.spec.ts",
+    "test:full": "playwright test --project=chromium --reporter=list",
+    "test:all": "jest --no-coverage && playwright test --project=chromium --reporter=list",
+    "launch": "node scripts/launch.mjs",
+    "launch:check": "node scripts/launch.mjs --check-only"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
