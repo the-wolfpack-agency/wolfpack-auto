@@ -162,9 +162,9 @@ export default function ReviewManagementPage() {
           <p className="text-xs font-medium text-gray-500">Response Rate</p>
           <p className="mt-0.5 text-2xl font-bold text-brand-600">{responseRate}%</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm overflow-hidden">
           <p className="text-xs font-medium text-gray-500">By Platform</p>
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1 flex flex-wrap gap-1">
             {Object.entries(byPlatform).map(([p, count]) => (
               <span key={p} className={`rounded-full px-2 py-0.5 text-xs font-medium ${PLATFORM_CONFIG[p]?.color}`}>
                 {PLATFORM_CONFIG[p]?.label}: {count}
