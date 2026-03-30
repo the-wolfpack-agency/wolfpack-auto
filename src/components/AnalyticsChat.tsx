@@ -22,11 +22,15 @@ export default function AnalyticsChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll on new messages
+  // Auto-scroll within the messages container, not the page
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
 
   const handleSubmit = useCallback(
@@ -77,7 +81,7 @@ export default function AnalyticsChat() {
     <div className="rounded-card border border-surface-border bg-white p-4 shadow-card">
       {/* Messages */}
       {messages.length > 0 && (
-        <div className="mb-4 max-h-80 space-y-3 overflow-y-auto">
+        <div ref={messagesContainerRef} className="mb-4 max-h-80 space-y-3 overflow-y-auto">
           {messages.map((msg, i) => (
             <div
               key={i}

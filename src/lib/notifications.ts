@@ -5,6 +5,10 @@ import {
   genericCustomerConfirmationHTML,
   leadAssignedHTML,
   inventoryAlertHTML,
+  teamInviteHTML,
+  passwordResetHTML,
+  dealStatusUpdateHTML,
+  serviceReminderHTML,
 } from "@/lib/email-templates";
 
 // ---------------------------------------------------------------------------
@@ -309,5 +313,147 @@ export async function notifyInventoryAlert(
     );
   } catch (err) {
     console.error("[notifications] notifyInventoryAlert failed:", err);
+  }
+}
+
+/**
+ * Send a team invite email to a new dealer user.
+ */
+export async function sendTeamInvite(params: {
+  inviteeEmail: string;
+  inviteeName: string;
+  role: string;
+  inviterName: string;
+  dealerName: string;
+  inviteToken: string;
+}): Promise<void> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+    const acceptUrl = `${baseUrl}/admin/accept-invite?token=${params.inviteToken}`;
+
+    const html = teamInviteHTML({
+      inviteeName: params.inviteeName,
+      dealerName: params.dealerName,
+      role: params.role,
+      inviterName: params.inviterName,
+      acceptUrl,
+    });
+
+    void dispatchEmail(
+      params.inviteeEmail,
+      `You're invited to join ${params.dealerName} on Wolfpack Auto`,
+      html,
+    ).catch((err) => {
+      console.error("[notifications] sendTeamInvite email failed:", err);
+    });
+  } catch (err) {
+    console.error("[notifications] sendTeamInvite failed:", err);
+  }
+}
+
+/**
+ * Send a password reset email.
+ */
+export async function sendPasswordReset(params: {
+  email: string;
+  name: string;
+  resetToken: string;
+  dealerName: string;
+}): Promise<void> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+    const resetUrl = `${baseUrl}/admin/reset-password?token=${params.resetToken}`;
+
+    const html = passwordResetHTML({
+      name: params.name,
+      resetUrl,
+      dealerName: params.dealerName,
+    });
+
+    void dispatchEmail(
+      params.email,
+      `Reset your password — ${params.dealerName}`,
+      html,
+    ).catch((err) => {
+      console.error("[notifications] sendPasswordReset email failed:", err);
+    });
+  } catch (err) {
+    console.error("[notifications] sendPasswordReset failed:", err);
+  }
+}
+
+/**
+ * Notify a customer that their deal status has changed.
+ */
+export async function notifyDealStatusChange(params: {
+  customerEmail: string;
+  customerName: string;
+  dealerName: string;
+  dealerPhone: string;
+  vehicleLabel: string;
+  oldStatus: string;
+  newStatus: string;
+  message?: string;
+}): Promise<void> {
+  try {
+    const html = dealStatusUpdateHTML({
+      customerName: params.customerName,
+      dealerName: params.dealerName,
+      vehicleLabel: params.vehicleLabel,
+      oldStatus: params.oldStatus,
+      newStatus: params.newStatus,
+      message: params.message ?? "",
+      dealerPhone: params.dealerPhone,
+    });
+
+    void dispatchEmail(
+      params.customerEmail,
+      `Your deal has been updated — ${params.dealerName}`,
+      html,
+    ).catch((err) => {
+      console.error("[notifications] notifyDealStatusChange email failed:", err);
+    });
+  } catch (err) {
+    console.error("[notifications] notifyDealStatusChange failed:", err);
+  }
+}
+
+/**
+ * Send a service appointment reminder to a customer.
+ */
+export async function sendServiceReminder(params: {
+  customerEmail: string;
+  customerName: string;
+  dealerName: string;
+  dealerPhone: string;
+  dealerAddress: string;
+  serviceType: string;
+  scheduledAt: string;
+  vehicleLabel: string;
+}): Promise<void> {
+  try {
+    const html = serviceReminderHTML({
+      customerName: params.customerName,
+      dealerName: params.dealerName,
+      dealerPhone: params.dealerPhone,
+      dealerAddress: params.dealerAddress,
+      serviceType: params.serviceType,
+      scheduledAt: params.scheduledAt,
+      vehicleLabel: params.vehicleLabel,
+    });
+
+    void dispatchEmail(
+      params.customerEmail,
+      `Service reminder: ${params.serviceType} — ${params.dealerName}`,
+      html,
+    ).catch((err) => {
+      console.error("[notifications] sendServiceReminder email failed:", err);
+    });
+  } catch (err) {
+    console.error("[notifications] sendServiceReminder failed:", err);
   }
 }

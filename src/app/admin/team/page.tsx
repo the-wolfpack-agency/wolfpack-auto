@@ -56,8 +56,8 @@ export default function TeamPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
-  const [invitePassword, setInvitePassword] = useState("");
   const [inviteRole, setInviteRole] = useState<string>("admin");
+  const [inviteSuccess, setInviteSuccess] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
 
@@ -91,7 +91,6 @@ export default function TeamPage() {
         body: JSON.stringify({
           name: inviteName,
           email: inviteEmail,
-          password: invitePassword,
           role: inviteRole,
         }),
       });
@@ -105,9 +104,12 @@ export default function TeamPage() {
       // Success — reset form and refresh
       setInviteName("");
       setInviteEmail("");
-      setInvitePassword("");
       setInviteRole("admin");
-      setShowInvite(false);
+      setInviteSuccess(true);
+      setTimeout(() => {
+        setInviteSuccess(false);
+        setShowInvite(false);
+      }, 3000);
       fetchUsers();
     } catch {
       setInviteError("Network error. Please try again.");
@@ -169,6 +171,11 @@ export default function TeamPage() {
               {inviteError}
             </div>
           )}
+          {inviteSuccess && (
+            <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+              Invitation sent! They'll receive an email to set up their account.
+            </div>
+          )}
 
           <form onSubmit={handleInvite} className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -200,21 +207,6 @@ export default function TeamPage() {
               />
             </div>
             <div>
-              <label htmlFor="invite-password" className="block text-sm font-medium text-gray-700">
-                Temporary Password *
-              </label>
-              <input
-                id="invite-password"
-                type="text"
-                required
-                minLength={8}
-                value={invitePassword}
-                onChange={(e) => setInvitePassword(e.target.value)}
-                placeholder="Min 8 characters"
-                className={INPUT_CLASS}
-              />
-            </div>
-            <div>
               <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700">
                 Role
               </label>
@@ -237,7 +229,7 @@ export default function TeamPage() {
                 disabled={inviteSubmitting}
                 className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {inviteSubmitting ? "Creating..." : "Create User"}
+                {inviteSubmitting ? "Sending..." : "Send Invite"}
               </button>
             </div>
           </form>

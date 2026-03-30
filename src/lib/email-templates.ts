@@ -434,3 +434,201 @@ function formatSource(source: string): string {
   };
   return map[source] ?? source;
 }
+
+// ---------------------------------------------------------------------------
+// Team invite email
+// ---------------------------------------------------------------------------
+
+export function teamInviteHTML(params: {
+  inviteeName: string;
+  dealerName: string;
+  role: string;
+  inviterName: string;
+  acceptUrl: string;
+}): string {
+  const { inviteeName, dealerName, role, inviterName, acceptUrl } = params;
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+
+  return wrapInLayout({
+    headerBg: "#1a1a2e",
+    headerTitle: "You're Invited",
+    body: `
+      <p style="margin:0 0 16px;font-size:15px;color:#333;">
+        Hi${inviteeName ? ` ${escapeHtml(inviteeName)}` : ""},
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.6;">
+        ${escapeHtml(inviterName)} has invited you to join
+        <strong>${escapeHtml(dealerName)}</strong> on Wolfpack Auto
+        as a <strong>${escapeHtml(roleLabel)}</strong>.
+      </p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${escapeHtml(acceptUrl)}"
+           style="display:inline-block;padding:14px 40px;background:#0070c7;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">
+          Accept Invitation
+        </a>
+      </div>
+      <p style="margin:0 0 8px;font-size:13px;color:#888;">
+        This invitation expires in 7 days. If you didn't expect this, you can ignore this email.
+      </p>
+      <p style="margin:0;font-size:12px;color:#aaa;word-break:break-all;">
+        ${escapeHtml(acceptUrl)}
+      </p>
+    `,
+    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Password reset email
+// ---------------------------------------------------------------------------
+
+export function passwordResetHTML(params: {
+  name: string;
+  resetUrl: string;
+  dealerName: string;
+}): string {
+  const { name, resetUrl, dealerName } = params;
+
+  return wrapInLayout({
+    headerBg: "#1a1a2e",
+    headerTitle: "Reset Your Password",
+    body: `
+      <p style="margin:0 0 16px;font-size:15px;color:#333;">
+        Hi${name ? ` ${escapeHtml(name)}` : ""},
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.6;">
+        We received a request to reset your password for your
+        <strong>${escapeHtml(dealerName)}</strong> account.
+      </p>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${escapeHtml(resetUrl)}"
+           style="display:inline-block;padding:14px 40px;background:#0070c7;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">
+          Reset Password
+        </a>
+      </div>
+      <p style="margin:0 0 8px;font-size:13px;color:#888;">
+        This link expires in 1 hour. If you didn't request a password reset, you can safely ignore this email.
+      </p>
+      <p style="margin:0;font-size:12px;color:#aaa;word-break:break-all;">
+        ${escapeHtml(resetUrl)}
+      </p>
+    `,
+    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Deal status update (customer-facing)
+// ---------------------------------------------------------------------------
+
+export function dealStatusUpdateHTML(params: {
+  customerName: string;
+  dealerName: string;
+  vehicleLabel: string;
+  oldStatus: string;
+  newStatus: string;
+  message: string;
+  dealerPhone: string;
+}): string {
+  const { customerName, dealerName, vehicleLabel, oldStatus, newStatus, message, dealerPhone } = params;
+
+  const statusColors: Record<string, string> = {
+    approved: "#059669",
+    presented: "#7c3aed",
+    accepted: "#059669",
+    funded: "#0d9488",
+    delivered: "#374151",
+  };
+  const color = statusColors[newStatus] ?? "#0070c7";
+
+  return wrapInLayout({
+    headerBg: color,
+    headerTitle: "Deal Update",
+    body: `
+      <p style="margin:0 0 16px;font-size:15px;color:#333;">
+        Hi ${escapeHtml(customerName)},
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.6;">
+        Great news! Your deal for the <strong>${escapeHtml(vehicleLabel)}</strong>
+        has been updated.
+      </p>
+      <div style="background:#f8f9fa;border:1px solid #e8e8e8;border-radius:6px;padding:16px;margin:0 0 16px;text-align:center;">
+        <span style="color:#888;font-size:13px;text-decoration:line-through;">${escapeHtml(formatDealStatus(oldStatus))}</span>
+        <span style="color:#888;margin:0 8px;">&rarr;</span>
+        <span style="color:${color};font-size:16px;font-weight:700;">${escapeHtml(formatDealStatus(newStatus))}</span>
+      </div>
+      ${message ? `<p style="margin:0 0 16px;font-size:14px;color:#555;line-height:1.6;">${escapeHtml(message)}</p>` : ""}
+      <p style="margin:0 0 4px;font-size:14px;color:#333;">
+        Questions? Call us at <a href="tel:${escapeHtml(dealerPhone)}" style="color:#0070c7;font-weight:600;">${escapeHtml(dealerPhone)}</a>
+      </p>
+    `,
+    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+  });
+}
+
+function formatDealStatus(status: string): string {
+  const map: Record<string, string> = {
+    working: "In Progress",
+    pending_approval: "Pending Approval",
+    approved: "Approved",
+    presented: "Presented",
+    accepted: "Accepted",
+    funded: "Funded",
+    delivered: "Delivered",
+  };
+  return map[status] ?? status;
+}
+
+// ---------------------------------------------------------------------------
+// Service appointment reminder
+// ---------------------------------------------------------------------------
+
+export function serviceReminderHTML(params: {
+  customerName: string;
+  dealerName: string;
+  dealerPhone: string;
+  dealerAddress: string;
+  serviceType: string;
+  scheduledAt: string;
+  vehicleLabel: string;
+}): string {
+  const { customerName, dealerName, dealerPhone, dealerAddress, serviceType, scheduledAt, vehicleLabel } = params;
+
+  return wrapInLayout({
+    headerBg: "#0070c7",
+    headerTitle: "Service Reminder",
+    body: `
+      <p style="margin:0 0 16px;font-size:15px;color:#333;">
+        Hi ${escapeHtml(customerName)},
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;color:#333;line-height:1.6;">
+        This is a reminder about your upcoming service appointment at
+        <strong>${escapeHtml(dealerName)}</strong>.
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;margin:0 0 16px;">
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;width:100px;">Vehicle</td>
+          <td style="padding:8px 16px;font-size:13px;font-weight:600;">${escapeHtml(vehicleLabel)}</td>
+        </tr>
+        <tr style="background:#f8f9fa;">
+          <td style="padding:8px 16px;color:#666;font-size:13px;">Service</td>
+          <td style="padding:8px 16px;font-size:13px;">${escapeHtml(serviceType)}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 16px;color:#666;font-size:13px;">Date &amp; Time</td>
+          <td style="padding:8px 16px;font-size:13px;font-weight:600;">${escapeHtml(scheduledAt)}</td>
+        </tr>
+        <tr style="background:#f8f9fa;">
+          <td style="padding:8px 16px;color:#666;font-size:13px;">Location</td>
+          <td style="padding:8px 16px;font-size:13px;">${escapeHtml(dealerAddress)}</td>
+        </tr>
+      </table>
+      <p style="margin:0;font-size:14px;color:#555;">
+        Need to reschedule? Call us at
+        <a href="tel:${escapeHtml(dealerPhone)}" style="color:#0070c7;font-weight:600;">${escapeHtml(dealerPhone)}</a>
+      </p>
+    `,
+    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+  });
+}
