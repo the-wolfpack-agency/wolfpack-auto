@@ -426,17 +426,15 @@ export default async function AnalyticsBrainPage() {
 
       {/* Top Insights — clean summaries, no raw text dumps */}
       <div>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Top Insights</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Key findings from visitor behavior across {grouped.size} categories.
-            </p>
-          </div>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Top Insights</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Key findings from visitor behavior across {grouped.size} categories.
+          </p>
           {insights.length > 0 && (
             <a
               href="/admin/analytics-brain/all"
-              className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+              className="mt-3 inline-block rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
               data-track="brain_view_all_insights"
             >
               View all {insights.length} insights
