@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Lead, LeadStatus, LeadTemperature } from "@/types/lead";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { decryptPII } from "@/lib/crypto";
 
 /** Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */
 const DEALER_ID =
@@ -406,8 +407,15 @@ export async function GET(request: NextRequest) {
         ),
       ]);
 
+      // Decrypt PII fields before returning to admin UI
+      const decryptedLeads = dataResult.rows.map((row: Record<string, unknown>) => ({
+        ...row,
+        email: typeof row.email === "string" ? decryptPII(row.email) : row.email,
+        phone: typeof row.phone === "string" ? decryptPII(row.phone) : row.phone,
+      }));
+
       return NextResponse.json({
-        leads: dataResult.rows,
+        leads: decryptedLeads,
         total: parseInt((countResult.rows as any[])[0]?.count ?? "0", 10),
         page,
         page_size: pageSize,

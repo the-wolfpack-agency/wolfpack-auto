@@ -5,6 +5,7 @@
  * Requires admin authentication.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { exportCustomerData } from "@/lib/privacy";
 import { trackCompliance } from "@/lib/analytics-hooks";
@@ -37,11 +38,12 @@ export async function POST(request: NextRequest) {
   try {
     const exportData = await exportCustomerData(email, dealerId);
 
-    // Track compliance event — fire-and-forget
+    // Track compliance event — fire-and-forget (hash email, never log raw PII)
     try {
-      trackCompliance("compliance.check_run", dealerId, {
+      const emailHash = createHash("sha256").update(email).digest("hex").slice(0, 16);
+      trackCompliance("compliance.data_export", dealerId, {
         action: "data_export",
-        customer_email: email,
+        email_hash: emailHash,
         categories_exported: Object.keys(exportData).length,
       });
     } catch { /* analytics must never throw */ }

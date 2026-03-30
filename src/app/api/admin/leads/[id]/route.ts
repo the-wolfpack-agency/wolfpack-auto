@@ -4,6 +4,7 @@ import type { LeadStatus, LeadTemperature } from "@/types/lead";
 import { auditLog } from "@/lib/audit-log";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackLead } from "@/lib/analytics-hooks";
+import { decryptPII } from "@/lib/crypto";
 
 /** Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */
 const DEALER_ID =
@@ -52,7 +53,14 @@ export async function GET(
       if ((result.rows as any[]).length === 0) {
         return NextResponse.json({ error: "Lead not found" }, { status: 404 });
       }
-      return NextResponse.json({ lead: result.rows[0] });
+      const row = result.rows[0] as Record<string, unknown>;
+      return NextResponse.json({
+        lead: {
+          ...row,
+          email: typeof row.email === "string" ? decryptPII(row.email) : row.email,
+          phone: typeof row.phone === "string" ? decryptPII(row.phone) : row.phone,
+        },
+      });
     } catch (err) {
       console.error("[api/admin/leads/[id]] DB error:", err);
     }

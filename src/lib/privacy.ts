@@ -9,6 +9,7 @@
  */
 
 import { query } from "@/lib/db";
+import { decryptPII } from "@/lib/crypto";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -158,13 +159,26 @@ export async function exportCustomerData(
     exported_at: new Date().toISOString(),
   };
 
+  /** PII column names that may be encrypted in the database. */
+  const PII_COLUMNS = new Set(["email", "customer_email", "recipient_email", "phone"]);
+
   for (const { table, email_col, label } of CUSTOMER_TABLES) {
     try {
       const result = await query(
         `SELECT * FROM ${table} WHERE ${email_col} = $1 AND dealer_id = $2`,
         [normalizedEmail, dealerId],
       );
-      exportData[label] = result.rows;
+      // Decrypt any encrypted PII fields before returning to the customer
+      const decryptedRows = result.rows.map((row: Record<string, unknown>) => {
+        const out = { ...row };
+        for (const col of Object.keys(out)) {
+          if (PII_COLUMNS.has(col) && typeof out[col] === "string") {
+            out[col] = decryptPII(out[col] as string);
+          }
+        }
+        return out;
+      });
+      exportData[label] = decryptedRows;
     } catch {
       // Table may not exist — return empty array
       exportData[label] = [];

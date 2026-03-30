@@ -153,19 +153,39 @@ let flushTimer: ReturnType<typeof setTimeout> | null = null;
 /** Event types that are always tracked regardless of consent level. */
 const ESSENTIAL_EVENT_TYPES = new Set(["page_view"]);
 
-function enqueueEvent(event: AnalyticsEvent): void {
-  // Respect cookie consent: if consent is not "all", only allow essential events.
-  if (!ESSENTIAL_EVENT_TYPES.has(event.event_type)) {
-    try {
-      const consent =
-        typeof localStorage !== "undefined"
-          ? localStorage.getItem("cookie_consent")
-          : null;
-      if (consent !== "all") return;
-    } catch {
-      // localStorage unavailable — skip non-essential events
-      return;
+/** Check if analytics consent is granted (cookie or localStorage). */
+function hasAnalyticsConsent(): boolean {
+  try {
+    // Primary: check cookie (set by CookieConsent component)
+    if (typeof document !== "undefined") {
+      const cookieMatch = document.cookie.match(/(?:^|; )wolfpack_consent=([^;]*)/);
+      const consentVal = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+      if (consentVal === "accepted") return true;
+      if (consentVal === "custom") {
+        const prefsMatch = document.cookie.match(/(?:^|; )wolfpack_consent_prefs=([^;]*)/);
+        if (prefsMatch) {
+          try {
+            const prefs = JSON.parse(decodeURIComponent(prefsMatch[1]));
+            return !!prefs.analytics;
+          } catch { return false; }
+        }
+        return false;
+      }
     }
+    // Fallback: check localStorage (backward compatibility)
+    if (typeof localStorage !== "undefined") {
+      return localStorage.getItem("cookie_consent") === "all";
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return false;
+}
+
+function enqueueEvent(event: AnalyticsEvent): void {
+  // Respect cookie consent: if consent is not granted, only allow essential events.
+  if (!ESSENTIAL_EVENT_TYPES.has(event.event_type)) {
+    if (!hasAnalyticsConsent()) return;
   }
 
   eventBuffer.push(event);

@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Track compliance event — fire-and-forget
     try {
-      trackCompliance("compliance.check_run", dealerId, {
+      trackCompliance("compliance.data_deletion", dealerId, {
         action: "data_deletion",
         email_hash: emailHash,
         categories_deleted: result.data_categories_deleted.length,
