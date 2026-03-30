@@ -150,21 +150,40 @@ export async function POST(request: NextRequest) {
       passwordHash = await hash(password, 12);
     }
 
-    const result = await query(
-      `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active, invite_token, invite_expires_at, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-       RETURNING id, dealer_id, email, name, role, is_active, created_at`,
-      [
-        dealerId,
-        email.toLowerCase(),
-        name,
-        passwordHash,
-        cleanRole,
-        !!password,                                             // active only if password set
-        password ? null : inviteToken,                          // invite token only if no password
-        password ? null : new Date(Date.now() + 7 * 86400000), // 7-day expiry
-      ],
-    );
+    // Try with invite columns first; fall back to basic insert if migration 039 hasn't run
+    let result;
+    try {
+      result = await query(
+        `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active, invite_token, invite_expires_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+         RETURNING id, dealer_id, email, name, role, is_active, created_at`,
+        [
+          dealerId,
+          email.toLowerCase(),
+          name,
+          passwordHash,
+          cleanRole,
+          !!password,
+          password ? null : inviteToken,
+          password ? null : new Date(Date.now() + 7 * 86400000),
+        ],
+      );
+    } catch (insertErr: unknown) {
+      // Column doesn't exist yet — fall back to basic insert (pre-migration 039)
+      const msg = insertErr instanceof Error ? insertErr.message : String(insertErr);
+      if (msg.includes("invite_token") || msg.includes("42703")) {
+        // Pre-migration 039: no invite columns, password_hash is NOT NULL
+        // Use empty string placeholder — user must be re-invited after migration
+        result = await query(
+          `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+           RETURNING id, dealer_id, email, name, role, is_active, created_at`,
+          [dealerId, email.toLowerCase(), name, passwordHash ?? "", cleanRole, !!password],
+        );
+      } else {
+        throw insertErr;
+      }
+    }
 
     try {
       trackSystem(password ? "team.user_created" : "team.user_invited", dealerId, { email, role: cleanRole });

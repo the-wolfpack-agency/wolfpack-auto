@@ -89,6 +89,12 @@ const API_ENDPOINTS = [
   { method: "GET", path: "/api/health" },
   { method: "GET", path: "/api/health/deep" },
 
+  // Invite flow
+  { method: "POST", path: "/api/admin/accept-invite", body: { token: "test", password: "TestPass1!" } },
+
+  // VIN decode
+  { method: "GET", path: "/api/admin/vin-decode?vin=1HGCV1F34PA000001" },
+
   // Public
   { method: "GET", path: "/api/inventory" },
   { method: "GET", path: "/api/auth/session" },

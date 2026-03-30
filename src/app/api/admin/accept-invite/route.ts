@@ -84,7 +84,15 @@ export async function POST(request: NextRequest) {
       message: "Invitation accepted",
       user: { email: user.email, name: user.name, role: user.role },
     });
-  } catch (err) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // If invite_token column doesn't exist, migration 039 hasn't run
+    if (msg.includes("invite_token") || msg.includes("42703")) {
+      return NextResponse.json(
+        { error: "Invite system not yet configured. Run migration 039." },
+        { status: 400 },
+      );
+    }
     console.error("[accept-invite] Error:", err);
     return NextResponse.json(
       { error: "Failed to accept invitation" },
