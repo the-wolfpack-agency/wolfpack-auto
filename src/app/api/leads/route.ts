@@ -192,6 +192,14 @@ export async function POST(request: NextRequest) {
 
     const created = result.rows[0];
 
+    // Track lead creation analytics event
+    trackLead("lead.created", lead.dealer_id, {
+      lead_id: created.id,
+      source: lead.source,
+      has_phone: !!lead.phone?.trim(),
+      has_vehicle_id: !!lead.vehicle_id,
+    });
+
     // Score the lead immediately so it appears scored from first view
     void (async () => {
       try {
@@ -223,6 +231,14 @@ export async function POST(request: NextRequest) {
             created.id,
           ],
         );
+
+        // Track lead scoring analytics event
+        trackLead("lead.scored", lead.dealer_id, {
+          lead_id: created.id,
+          score: leadScore.score,
+          tier: leadScore.tier,
+          source: lead.source,
+        });
       } catch (scoreErr) {
         console.error("[api/leads] Lead scoring failed:", scoreErr);
       }

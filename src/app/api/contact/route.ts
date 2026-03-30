@@ -3,6 +3,7 @@ import { z } from "zod";
 import { trackServerEvent } from "@/lib/analytics";
 import { encryptPII } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit-log";
+import { trackLead } from "@/lib/analytics-hooks";
 
 /** Strip HTML tags and escape remaining special characters to prevent stored XSS. */
 function sanitizeInput(str: string): string {
@@ -214,7 +215,13 @@ export async function POST(request: NextRequest) {
         }
       })();
 
-      // Track analytics server-side
+      // Track analytics: typed lead event + server event
+      trackLead("lead.created", dealerId, {
+        lead_id: created.id,
+        source: "website_form",
+        contact_form: true,
+        subject: data.subject,
+      });
       void trackServerEvent("contact_form_submission", {
         subject: data.subject,
         source: "server",
