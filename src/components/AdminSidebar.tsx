@@ -231,6 +231,11 @@ export default function AdminSidebar() {
   const [dealers, setDealers] = useState<DealerOption[]>([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [gettingStartedProgress, setGettingStartedProgress] = useState<{
+    completed: number;
+    total: number;
+    allDone: boolean;
+  } | null>(null);
   const { track } = useAnalytics();
 
   // Auto-expand section containing the active page
@@ -287,6 +292,30 @@ export default function AdminSidebar() {
   useEffect(() => {
     fetchDealers();
   }, [fetchDealers]);
+
+  // Fetch getting-started checklist progress
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchProgress() {
+      try {
+        const res = await fetch("/api/admin/onboarding/status");
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        if (cancelled) return;
+        const steps = json.steps as { completed: boolean }[];
+        const completed = steps.filter((s) => s.completed).length;
+        setGettingStartedProgress({
+          completed,
+          total: steps.length,
+          allDone: json.completed === true,
+        });
+      } catch {
+        // Silently ignore — sidebar should never break
+      }
+    }
+    fetchProgress();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSwitchDealer = async (dealerId: string) => {
     try {
@@ -375,6 +404,34 @@ export default function AdminSidebar() {
 
       {/* Navigation — grouped into collapsible sections */}
       <nav aria-label="Admin navigation" className="flex-1 overflow-y-auto px-3 py-4">
+        {/* Getting Started — shown until all checklist items are complete */}
+        {gettingStartedProgress && !gettingStartedProgress.allDone && (
+          <a
+            href="/admin/getting-started"
+            onClick={() => setMobileOpen(false)}
+            className={`mb-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              pathname === "/admin/getting-started"
+                ? "bg-brand-600/20 text-brand-400"
+                : "bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white"
+            }`}
+          >
+            <svg
+              className="h-5 w-5 shrink-0 text-brand-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <span className="flex-1">Getting Started</span>
+            <span className="inline-flex items-center rounded-full bg-brand-600 px-2 py-0.5 text-xs font-bold text-white">
+              {gettingStartedProgress.completed}/{gettingStartedProgress.total}
+            </span>
+          </a>
+        )}
+
         <ul className="space-y-1" role="list">
           {NAV_SECTIONS.map((section) => {
             const isOpen = expandedSections.has(section.id);
