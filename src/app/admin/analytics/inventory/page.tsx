@@ -223,7 +223,7 @@ export default function InventoryAnalyticsPage() {
         </p>
         {/* Desktop: full table */}
         <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="min-w-full text-sm tabular-nums">
             <thead>
               <tr className="border-b border-surface-border">
                 <th className="pb-2 text-left font-semibold text-gray-500 text-xs uppercase">Vehicle</th>

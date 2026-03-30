@@ -89,14 +89,10 @@ export default async function OemProgramsPage() {
             Incentive programs, certification tiers, brand standards, and co-op advertising.
           </p>
         </div>
-        <button
-          type="button"
-          disabled
-          title="Coming soon — create programs via the OEM API"
-          className="self-start cursor-not-allowed rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white opacity-60 shadow-sm"
-        >
+        <span className="self-start inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-400 shadow-sm">
           + New Program
-        </button>
+          <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-500">Soon</span>
+        </span>
       </div>
 
       {programs.length === 0 ? (
