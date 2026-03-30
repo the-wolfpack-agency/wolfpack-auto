@@ -52,7 +52,7 @@ export async function GET() {
     const dealerCount = await query(
       `SELECT
         COUNT(*)::int AS total,
-        COUNT(*) FILTER (WHERE status = 'active')::int AS active
+        COUNT(*) FILTER (WHERE is_active = true)::int AS active
        FROM dealers`,
     );
 
@@ -63,15 +63,15 @@ export async function GET() {
     const dealStats = await query(
       `SELECT
         COUNT(*)::int AS cnt,
-        COALESCE(SUM(total_amount), 0)::numeric AS revenue
+        COALESCE(SUM(total_gross), 0)::numeric AS revenue
        FROM deals
        WHERE created_at >= date_trunc('month', CURRENT_DATE)`,
     );
 
     const topPerformer = await query(
-      `SELECT d.name, COALESCE(SUM(dl.total_amount), 0)::numeric AS revenue
+      `SELECT d.name, COALESCE(SUM(dl.total_gross), 0)::numeric AS revenue
        FROM dealers d
-       LEFT JOIN deals dl ON dl.dealer_id = d.id
+       LEFT JOIN deals dl ON dl.dealer_id = d.id::text
          AND dl.created_at >= date_trunc('month', CURRENT_DATE)
        GROUP BY d.id, d.name
        ORDER BY revenue DESC
