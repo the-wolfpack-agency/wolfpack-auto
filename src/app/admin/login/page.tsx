@@ -363,7 +363,18 @@ function LoginForm() {
           </form>
         )}
 
-        <p className="mt-8 text-center text-xs text-gray-500">
+        {step === "credentials" && (
+          <p className="mt-6 text-center">
+            <a
+              href="/admin/reset-password"
+              className="text-sm text-gray-400 underline hover:text-gray-200"
+            >
+              Forgot password?
+            </a>
+          </p>
+        )}
+
+        <p className="mt-4 text-center text-xs text-gray-500">
           Contact your dealership administrator if you need access.
         </p>
       </div>

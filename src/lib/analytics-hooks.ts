@@ -184,6 +184,9 @@ export type SystemEvent =
   | "team.user_created"
   | "team.user_updated"
   | "team.user_deactivated"
+  | "team.invite_accepted"
+  | "team.password_reset"
+  | "team.password_reset_requested"
   | "agency.dealer_created"
   | "agency.dealer_toggled"
   | "agency.dealer_switched";
