@@ -191,7 +191,14 @@ export type SystemEvent =
   | "agency.dealer_created"
   | "agency.dealer_toggled"
   | "agency.dealer_switched"
-  | "agency.api_key_created";
+  | "agency.api_key_created"
+  | "agency.bulk_provision"
+  | "demo.created"
+  | "demo.validated"
+  | "demo.converted"
+  | "location.created"
+  | "location.updated"
+  | "location.deleted";
 
 export type WebhookEvent =
   | "webhook.delivered"
