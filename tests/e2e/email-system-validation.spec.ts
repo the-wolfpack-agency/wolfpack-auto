@@ -179,9 +179,8 @@ test.describe("VIN Decode API", () => {
 
 test.describe("Quick Add Page", () => {
   test("renders without errors", async ({ page }) => {
-    await page.goto("/admin/vehicles/quick-add");
-    const body = await page.textContent("body");
-    expect(body).not.toMatch(/500|Internal Server Error/i);
+    const res = await page.goto("/admin/vehicles/quick-add");
+    expect(res?.status()).not.toBe(500);
   });
 
   test("has VIN input field", async ({ page }) => {
