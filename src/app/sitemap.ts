@@ -9,8 +9,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/trade-in`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/contact`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${base}/hours`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
-    { url: `${base}/directions`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
     { url: `${base}/service-booking`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
   ];
 }
