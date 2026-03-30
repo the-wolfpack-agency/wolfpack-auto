@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Manage your vehicle inventory.",
 };
 
-const DEALER_ID = process.env.DEALER_ID ?? "default";
+const DEALER_ID = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 interface InventoryVehicle {
   id: string;

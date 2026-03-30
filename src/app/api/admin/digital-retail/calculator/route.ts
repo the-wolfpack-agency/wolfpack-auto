@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     tax_rate = 7.0,
   } = body;
 
-  try { trackRetail("retail.calculator_used", process.env.DEALER_ID ?? "default", { deal_type, vehicle_price }); } catch {}
+  try { trackRetail("retail.calculator_used", process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001", { deal_type, vehicle_price }); } catch {}
 
   // --- Input validation: reject negative/extreme values ---
   if (typeof vehicle_price !== "number" || vehicle_price <= 0) {

@@ -58,7 +58,7 @@ const BODY_STYLES = [
   "Wagon", "Van", "Minivan", "Crossover", "Pickup",
 ];
 
-const DEALER_ID = process.env.NEXT_PUBLIC_DEALER_ID ?? "default";
+const DEALER_ID = process.env.NEXT_PUBLIC_DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/i;
 

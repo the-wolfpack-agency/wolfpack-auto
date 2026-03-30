@@ -54,7 +54,7 @@ interface Recommendation {
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const DEALER_ID = process.env.NEXT_PUBLIC_DEALER_ID ?? "default";
+const DEALER_ID = process.env.NEXT_PUBLIC_DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 const DMS_PROVIDERS = [
   { value: "GENERIC_CSV", label: "CSV / Generic" },

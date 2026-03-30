@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Try to create a lead via the /api/leads endpoint internally
-  const dealerId = process.env.DEALER_ID ?? "default";
+  const dealerId = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
   if (process.env.DATABASE_URL) {
     try {

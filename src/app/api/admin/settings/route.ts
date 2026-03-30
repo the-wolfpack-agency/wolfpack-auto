@@ -171,6 +171,8 @@ export async function PUT(req: NextRequest) {
       WHERE id = $1
       RETURNING id, name, tagline, phone, email,
                 address, primary_color, secondary_color, accent_color,
+                font_family, title_template, meta_description,
+                webhook_url, webhook_events,
                 business_hours, social, logo_url
     `;
 
