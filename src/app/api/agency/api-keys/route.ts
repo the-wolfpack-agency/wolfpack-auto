@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 import crypto from "crypto";
 
 /* -------------------------------------------------------------------------- */
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
   const now = new Date().toISOString();
 
   if (!process.env.DATABASE_URL) {
-    // Shadow mode — return generated key (only time full key is shown)
+    try { trackSystem("agency.api_key_created", authResult.user.dealer_id, { name, prefix }); } catch { /* */ }
     return NextResponse.json(
       {
         key: {
@@ -126,6 +127,8 @@ export async function POST(request: NextRequest) {
        VALUES ($1, $2, $3, $4, true)`,
       [id, name, prefix, keyHash],
     );
+
+    try { trackSystem("agency.api_key_created", authResult.user.dealer_id, { name, prefix }); } catch { /* */ }
 
     return NextResponse.json(
       {
