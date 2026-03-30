@@ -316,18 +316,38 @@ export default function ReviewManagementPage() {
                     >
                       Respond
                     </button>
-                    {!review.flagged && (
-                      <button
-                        onClick={() =>
-                          setReviews((prev) =>
-                            prev.map((r) => (r.id === review.id ? { ...r, flagged: true } : r)),
-                          )
-                        }
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                      >
-                        Flag
-                      </button>
-                    )}
+                    <button
+                      onClick={() =>
+                        setReviews((prev) =>
+                          prev.map((r) => (r.id === review.id ? { ...r, flagged: !r.flagged } : r)),
+                        )
+                      }
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                        review.flagged
+                          ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                          : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {review.flagged ? "Unflag" : "Flag"}
+                    </button>
+                  </div>
+                )}
+                {review.responded && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() =>
+                        setReviews((prev) =>
+                          prev.map((r) => (r.id === review.id ? { ...r, flagged: !r.flagged } : r)),
+                        )
+                      }
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${
+                        review.flagged
+                          ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
+                          : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {review.flagged ? "Unflag" : "Flag"}
+                    </button>
                   </div>
                 )}
               </div>

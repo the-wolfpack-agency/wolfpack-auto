@@ -12,17 +12,42 @@ interface DealerData {
   sales_hours: Array<{ day: string; open: string; close: string; closed?: boolean }>;
 }
 
+const MOCK_DEALERS: Record<string, DealerData> = {
+  "wolfpack-motors": {
+    id: "1", name: "Wolfpack Motors", slug: "wolfpack-motors",
+    phone: "(919) 555-0100", email: "sales@wolfpackmotors.com",
+    address: { street: "1234 Capital Blvd", city: "Raleigh", state: "NC", zip: "27604" },
+    branding: { primary_color: "#0070c7" },
+    sales_hours: [
+      { day: "Mon-Fri", open: "9:00 AM", close: "8:00 PM" },
+      { day: "Saturday", open: "9:00 AM", close: "6:00 PM" },
+      { day: "Sunday", open: "12:00 PM", close: "5:00 PM" },
+    ],
+  },
+  "triangle-auto": {
+    id: "2", name: "Triangle Auto Group", slug: "triangle-auto",
+    phone: "(919) 555-0200", email: "info@triangleauto.com",
+    address: { street: "5678 Glenwood Ave", city: "Durham", state: "NC", zip: "27701" },
+    branding: { primary_color: "#1a5632" },
+    sales_hours: [
+      { day: "Mon-Fri", open: "9:00 AM", close: "7:00 PM" },
+      { day: "Saturday", open: "10:00 AM", close: "5:00 PM" },
+      { day: "Sunday", closed: true, open: "", close: "" },
+    ],
+  },
+};
+
 async function getDealer(slug: string): Promise<DealerData | null> {
-  if (!process.env.DATABASE_URL) return null;
+  if (!process.env.DATABASE_URL) return MOCK_DEALERS[slug] ?? null;
   try {
     const { query } = await import("@/lib/db");
     const result = await query<DealerData>(
       `SELECT id, name, slug, phone, email, address, branding, sales_hours FROM dealers WHERE slug = $1 AND is_active = true LIMIT 1`,
       [slug],
     );
-    return result.rows[0] ?? null;
+    return result.rows[0] ?? MOCK_DEALERS[slug] ?? null;
   } catch {
-    return null;
+    return MOCK_DEALERS[slug] ?? null;
   }
 }
 
@@ -39,11 +64,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function DealerSubPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   
-  // Skip dynamic route for hardcoded dealers (they have their own pages)
-  if (slug === "summit-auto" || slug === "mile-high-motors") {
-    notFound();
-  }
-
   const dealer = await getDealer(slug);
   if (!dealer) notFound();
 

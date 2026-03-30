@@ -278,7 +278,7 @@ export default function WebhooksPage() {
                   <span className="font-medium">All events (*)</span>
                 </label>
                 {!selectAll && (
-                  <div className="ml-4 grid grid-cols-2 gap-1 sm:grid-cols-3">
+                  <div className="ml-4 grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
                     {AVAILABLE_EVENTS.map((evt) => (
                       <label key={evt} className="flex items-center gap-2 text-sm text-gray-700">
                         <input

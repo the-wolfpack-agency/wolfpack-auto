@@ -234,9 +234,13 @@ export default function AgencyPage() {
                   <td className="whitespace-nowrap px-4 py-3">
                     <a
                       href={`/dealers/${dealer.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                      title="Open public dealer page"
                     >
                       {dealer.name}
+                      <span className="ml-1 text-xs text-gray-400">&#8599;</span>
                     </a>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">

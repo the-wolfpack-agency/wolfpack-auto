@@ -198,7 +198,7 @@ export default function OnboardingPage() {
           type="button"
           onClick={back}
           disabled={step === 0}
-          className="rounded-lg border border-gray-600 px-5 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg border border-gray-400 bg-gray-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-30"
         >
           Back
         </button>
