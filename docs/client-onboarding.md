@@ -61,8 +61,16 @@ Option C: **DMS feed** — configure in Settings → Integrations
 
 ### Step 4: Create Admin Users (5 minutes)
 1. Navigate to Settings → Team
-2. Add admin users with email addresses
-3. Each user receives an email to set up their password + MFA
+2. Click **"Send Invite"** for each team member — enter their name and email address
+3. The user receives an invitation email with a unique link
+4. They click the link, which opens `/admin/accept-invite?token=...`
+5. On the accept page, they set their password and are immediately active
+6. Invitation tokens expire after **7 days** — resend from the Team page if needed
+
+No temporary passwords are involved. The invite flow is:
+- Admin sends invite → user gets email → clicks "Accept Invitation" → sets password → active
+
+**Password reset:** Users who forget their password can click "Forgot password?" on the login page. A reset email is sent with a time-limited token. The reset flow uses email enumeration prevention (always shows the same confirmation message regardless of whether the email exists).
 
 ### Step 5: Configure Integrations (as needed)
 | Integration | Where to Configure | Time |

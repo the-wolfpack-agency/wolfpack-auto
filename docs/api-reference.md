@@ -31,6 +31,55 @@ NextAuth.js handler. Supports credentials-based login with optional MFA.
 
 **Response:** NextAuth session JWT
 
+### `POST /api/admin/reset-password`
+Request a password reset email. Always returns 200 to prevent email enumeration.
+
+**Auth required:** No
+**Shadow mode:** Yes
+
+**Body:**
+```json
+{
+  "email": "string"
+}
+```
+
+**Response:** `{ "message": "Reset email sent" }`
+
+### `PUT /api/admin/reset-password`
+Set a new password using a reset token.
+
+**Auth required:** No
+**Shadow mode:** No -- requires DB
+
+**Body:**
+```json
+{
+  "token": "string",
+  "password": "string (min 8 chars)"
+}
+```
+
+**Response:** `{ "message": "Password reset" }`
+**Errors:** 400 (missing fields, short password, invalid/expired token)
+
+### `POST /api/admin/accept-invite`
+Accept a team invitation by setting the user's password. No auth required (token-based).
+
+**Auth required:** No
+**Shadow mode:** No -- requires DB
+
+**Body:**
+```json
+{
+  "token": "string",
+  "password": "string (min 8 chars)"
+}
+```
+
+**Response:** `{ "message": "Invitation accepted", "user": { "email": "string", "name": "string", "role": "string" } }`
+**Errors:** 400 (missing fields, short password, invalid/expired token)
+
 ---
 
 ## Health
@@ -603,6 +652,37 @@ Export analytics data.
 
 **Auth required:** Yes
 **Shadow mode:** Yes
+
+### `GET /api/admin/analytics/platform-health`
+Returns a comprehensive platform health report including friction hotspots, feature adoption, form health, page engagement, and automated recommendations.
+
+**Auth required:** Yes
+**Shadow mode:** Yes
+
+**Response:**
+```json
+{
+  "report": {
+    "period": "string",
+    "generated_at": "ISO date",
+    "summary": {
+      "total_sessions": 0,
+      "avg_session_duration_seconds": 0,
+      "avg_pages_per_session": 0,
+      "overall_bounce_rate": 0,
+      "total_friction_events": 0,
+      "friction_trend": "improving | stable | worsening",
+      "active_features": 0,
+      "total_features": 0
+    },
+    "friction_hotspots": [],
+    "feature_adoption": [],
+    "form_health": [],
+    "page_engagement": [],
+    "recommendations": []
+  }
+}
+```
 
 ---
 

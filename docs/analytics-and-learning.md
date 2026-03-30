@@ -285,6 +285,22 @@ On Vercel (serverless), the in-memory event buffer resets on every cold start. T
 
 ---
 
+## Platform Health — Self-Improving UX Monitoring
+
+The platform monitors its own user experience through the Platform Health dashboard (`/admin/analytics/platform-health`). This closes the feedback loop between user behavior and product improvement.
+
+**Friction Detection:** Aggregates rage clicks, dead clicks, and form abandonment events by page. Each hotspot is classified by severity (critical/high/medium/low) and compared week-over-week to track improvement trends.
+
+**Feature Adoption:** Tracks usage of all 20 admin modules. Surfaces unused features for onboarding improvement or removal consideration.
+
+**Form Health:** Measures start-to-completion rates for every form. Identifies the specific field that causes the most abandonment.
+
+**Automated Recommendations:** Generates plain-English suggestions based on friction patterns, adoption gaps, bounce rates, and form health. Examples: "High rage clicks on Deal Desking page — a UI element may be unresponsive" or "Trade-In Wizard has 35% abandonment — mileage field may need an auto-estimate helper."
+
+**Health Score:** Composite 0-100 score based on friction events, bounce rate, feature adoption, session depth, and trend direction.
+
+---
+
 ## Related Documentation
 
 - [Platform Map](./platform-map.md) -- analytics events per module

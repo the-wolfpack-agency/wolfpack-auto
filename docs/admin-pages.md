@@ -579,6 +579,22 @@ Every admin page in the Wolfpack Auto platform, with its path, purpose, key UI e
 
 ---
 
+## Platform Health
+**Path:** `/admin/analytics/platform-health`
+**What it does:** Self-improving analytics dashboard that monitors the platform's own UX health. Shows friction hotspots (rage clicks, dead clicks, form abandonment), feature adoption rates (20 admin modules), form completion rates with top abandon fields, page engagement metrics, friction trend (improving/stable/worsening), health score (0-100), and automated plain-English recommendations.
+**Key UI elements:**
+- Friction hotspot cards (rage clicks, dead clicks, form abandonment)
+- Feature adoption table (20 admin modules with usage rates)
+- Form health with completion rates and top abandon fields
+- Page engagement with bounce rates
+- Friction trend indicator (improving/stable/worsening)
+- Health score (0-100)
+- Automated plain-English recommendations
+
+**Connected API routes:** `/api/admin/analytics/platform-health`
+
+---
+
 ## Marketing
 **Path:** `/admin/marketing`
 **What it does:** Marketing campaign management and performance tracking.
@@ -793,6 +809,32 @@ Every admin page in the Wolfpack Auto platform, with its path, purpose, key UI e
 - Error messages for rate limiting ("Too many login attempts. Please try again in 15 minutes.")
 
 **Connected API routes:** `/api/auth/[...nextauth]`
+
+---
+
+## Accept Invite
+**Path:** `/admin/accept-invite?token=...`
+**What it does:** Password setup page for invited team members. Reached via email link. Sets password, activates the user account, redirects to login on success.
+**Key UI elements:**
+- Password input field (min 8 characters)
+- Confirm password field
+- "Set Password" button
+- Error display for invalid/expired tokens
+
+**Connected API routes:** `/api/admin/accept-invite`
+
+---
+
+## Reset Password
+**Path:** `/admin/reset-password`
+**What it does:** Two-step flow: without token shows email input form (request reset link), with `?token=...` shows new password form. Dark theme matching login page.
+**Key UI elements:**
+- Email input (request reset state)
+- Password + confirm password inputs (token state)
+- Submit button
+- Success/error messages
+
+**Connected API routes:** `POST /api/admin/reset-password`, `PUT /api/admin/reset-password`
 
 ---
 

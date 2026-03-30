@@ -33,13 +33,18 @@ The app starts at [http://localhost:3000](http://localhost:3000). Admin panel at
 
 - **55+ admin pages** -- grouped into 8 collapsible sidebar sections for intuitive navigation
 - **80+ API routes** -- all with shadow mode fallback (work without a database)
-- **2,500+ automated tests** -- unit, E2E, security regression, mutation testing, platform integrity validation
+- **2,800+ automated tests** -- unit, E2E, security regression, mutation testing, platform integrity validation (~500 added March 30)
 - **Document compliance engine** -- 20+ regulatory rules (TILA, FCRA, ECOA, FTC, GLBA)
 - **Behavioral analytics brain** -- 30+ signals, closed-loop learning, compound insights
 - **Zero-token security scanner** -- 298 patterns across 5 languages
 - **Multi-tenant architecture** -- subdomain routing, RLS, dealer isolation
 - **PII encryption** -- AES-256-GCM for customer data at rest
 - **Circuit breaker** -- automatic shadow mode failover on DB outage
+- **Platform Health** -- self-improving analytics dashboard that monitors UX friction, feature adoption, and generates automated recommendations
+- **Email system** -- 11 production-ready HTML templates, 9 fire-and-forget dispatchers (Resend SDK)
+- **Team invite flow** -- email-based invitations with token-based accept page, no temporary passwords
+- **Password reset** -- token-based reset with email enumeration prevention
+- **ProdValidator score: 96/100** -- external validation from AgenticQA
 - **System health dashboard** -- real-time monitoring of all dependencies
 
 ## Project Structure

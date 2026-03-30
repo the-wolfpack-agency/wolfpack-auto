@@ -374,4 +374,16 @@ Authenticate as demo user, perform real actions, verify data in DB:
 | useApi hook | 3 | Module exports, fetch pattern |
 | Total | 19 | |
 
+### Invite Flow Tests (`tests/e2e/invite-flow.spec.ts`) — 48 tests (16x3 browsers)
+Team invite API (create with/without password, validation), accept invite API (token validation, short password, invalid token), accept invite page rendering, team page invite form (no password field, "Send Invite" button).
+
+### Email System Validation (`tests/e2e/email-system-validation.spec.ts`) — 105 tests (35x3 browsers)
+Source-level validation: 11 email templates exist, 9 dispatchers exist, analytics events wired for invite lifecycle, migration 039 present, VIN decode API, Quick Add page, cookie consent, DMS provider names (no generics), all 7 mobile UI fixes verified.
+
+### Password Reset Tests (`tests/e2e/password-reset.spec.ts`) — 51 tests (17x3 browsers)
+Request reset API (email validation, enumeration prevention), set password API (token + password validation), reset page rendering (both states), login page forgot password link, source-level analytics/migration/template checks.
+
+### Platform Health Tests (`tests/e2e/platform-health.spec.ts`) — 72 tests (24x3 browsers)
+Platform health API shape validation, friction hotspot structure, feature adoption (20 modules), form health with completion rates, page engagement with bounce rates, recommendations generation. End-to-end pipeline: POST friction/form/page_view events -> query health API -> verify consumed. EventCollector <-> API column alignment verification.
+
 ### Final Test Count: ~2,400 tests across 161+ files
