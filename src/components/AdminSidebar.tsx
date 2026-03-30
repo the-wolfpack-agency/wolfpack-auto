@@ -110,6 +110,7 @@ const NAV_SECTIONS: NavSection[] = [
     icon: InventoryIcon,
     items: [
       { href: "/admin/inventory", label: "Inventory", icon: InventoryIcon },
+      { href: "/admin/vehicles/quick-add", label: "Quick Add", icon: PlusIcon },
       { href: "/admin/vehicles/new", label: "Add Vehicle", icon: PlusIcon },
       { href: "/admin/intake", label: "Intake", icon: IntakeIcon },
       { href: "/admin/trade-in", label: "Trade-Ins", icon: TradeInIcon },
