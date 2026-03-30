@@ -311,6 +311,14 @@ export default function PricingIntelligencePage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("immediate");
+
+  // Auto-select the first tab that has items when report loads/changes
+  useEffect(() => {
+    if (!report) return;
+    if (report.immediateAction.length > 0) setActiveTab("immediate");
+    else if (report.soonAction.length > 0) setActiveTab("soon");
+    else if (report.monitorAction.length > 0) setActiveTab("monitor");
+  }, [report]);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
