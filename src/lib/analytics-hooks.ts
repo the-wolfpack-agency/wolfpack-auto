@@ -182,6 +182,7 @@ export type SystemEvent =
   | "system.settings_updated"
   | "system.task_created"
   | "team.user_created"
+  | "team.user_invited"
   | "team.user_updated"
   | "team.user_deactivated"
   | "team.invite_accepted"
@@ -189,7 +190,8 @@ export type SystemEvent =
   | "team.password_reset_requested"
   | "agency.dealer_created"
   | "agency.dealer_toggled"
-  | "agency.dealer_switched";
+  | "agency.dealer_switched"
+  | "agency.api_key_created";
 
 export type WebhookEvent =
   | "webhook.delivered"
