@@ -215,16 +215,19 @@ export async function GET() {
     const bounceRate = bs.total > 0 ? Number(bs.bounced) / Number(bs.total) : 0;
 
     // --- Friction events by page ---
+    // EventCollector uses event_type for the signal category:
+    //   rage_click, dead_click, form_abandonment, exit_intent
+    // Query by event_type to match the actual data pipeline.
     const frictionData = await query(`
       SELECT
         page,
-        COUNT(*) FILTER (WHERE action = 'rage_click') AS rage_clicks,
-        COUNT(*) FILTER (WHERE action = 'dead_click') AS dead_clicks,
-        COUNT(*) FILTER (WHERE action = 'form_abandonment' OR action = 'form_abandoned') AS form_abandonments,
+        COUNT(*) FILTER (WHERE event_type = 'rage_click') AS rage_clicks,
+        COUNT(*) FILTER (WHERE event_type = 'dead_click') AS dead_clicks,
+        COUNT(*) FILTER (WHERE event_type = 'form_abandonment') AS form_abandonments,
         COUNT(*) AS total
       FROM analytics_events
       WHERE timestamp >= $1
-        AND action IN ('rage_click', 'dead_click', 'form_abandonment', 'form_abandoned', 'exit_intent')
+        AND event_type IN ('rage_click', 'dead_click', 'form_abandonment', 'exit_intent')
       GROUP BY page
       ORDER BY total DESC
       LIMIT 20
@@ -251,7 +254,7 @@ export async function GET() {
         COUNT(*) FILTER (WHERE timestamp >= $1) AS this_week,
         COUNT(*) FILTER (WHERE timestamp < $1 AND timestamp >= $2) AS last_week
       FROM analytics_events
-      WHERE action IN ('rage_click', 'dead_click', 'form_abandonment', 'form_abandoned')
+      WHERE event_type IN ('rage_click', 'dead_click', 'form_abandonment')
         AND timestamp >= $2
     `, [weekAgo, twoWeeksAgo]);
 
@@ -296,18 +299,22 @@ export async function GET() {
     const activeFeatures = featureAdoption.filter((f) => f.unique_sessions > 0).length;
 
     // --- Form health ---
+    // EventCollector form events:
+    //   event_type=form_interaction, action=field_focus (start)
+    //   event_type=form_interaction, action=form_submit (complete)
+    //   event_type=form_abandonment, action=form_abandoned (abandon)
     const formStarts = await query(`
       SELECT
         page,
         COALESCE(metadata->>'form_name', 'Unknown') AS form_name,
-        COUNT(*) FILTER (WHERE action IN ('form_started', 'form_focus', 'form_interaction')) AS starts,
-        COUNT(*) FILTER (WHERE action IN ('form_submitted', 'form_completed')) AS completions,
-        MAX(metadata->>'abandon_field') AS top_abandon_field
+        COUNT(*) FILTER (WHERE action = 'field_focus') AS starts,
+        COUNT(*) FILTER (WHERE action = 'form_submit') AS completions,
+        MAX(CASE WHEN event_type = 'form_abandonment' THEN metadata->>'last_field' END) AS top_abandon_field
       FROM analytics_events
       WHERE timestamp >= $1
-        AND action IN ('form_started', 'form_focus', 'form_interaction', 'form_submitted', 'form_completed', 'form_abandonment', 'form_abandoned')
+        AND event_type IN ('form_interaction', 'form_abandonment')
       GROUP BY page, COALESCE(metadata->>'form_name', 'Unknown')
-      HAVING COUNT(*) FILTER (WHERE action IN ('form_started', 'form_focus', 'form_interaction')) > 0
+      HAVING COUNT(*) FILTER (WHERE action = 'field_focus') > 0
       ORDER BY starts DESC
       LIMIT 15
     `, [weekAgo]);
