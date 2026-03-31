@@ -9,6 +9,7 @@ import FinancingDisclaimer from "@/components/FinancingDisclaimer";
 import CARSRuleDisclosures from "@/components/CARSRuleDisclosures";
 import EVTaxCreditBadge from "@/components/EVTaxCreditBadge";
 import EVRangeCalculator from "@/components/EVRangeCalculator";
+import ShoppersAlsoViewed from "@/components/ShoppersAlsoViewed";
 
 export const dynamic = "force-dynamic";
 
@@ -367,6 +368,9 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
             ))}
           </div>
         </section>
+
+        {/* Shoppers Also Viewed — collaborative filtering recommendations */}
+        <ShoppersAlsoViewed vin={vin} />
       </div>
     </div>
   );

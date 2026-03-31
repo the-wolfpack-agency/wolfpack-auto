@@ -73,6 +73,15 @@ interface AnalyticsContextValue {
     action: "add" | "remove" | "view" | "winner",
     metadata: { vins: string[]; selected_vin?: string },
   ) => void;
+  /** Track A/B test variant assignment */
+  trackABAssignment: (testName: string, variant: string) => void;
+  /** Track A/B test conversion */
+  trackABConversion: (testName: string, variant: string, value?: number) => void;
+  /** Track push notification engagement */
+  trackPushEvent: (
+    action: "push_permission_granted" | "push_permission_denied" | "push_received" | "push_clicked" | "push_dismissed",
+    metadata?: Record<string, unknown>,
+  ) => void;
   /** Get current session ID */
   getSessionId: () => string;
 }
@@ -98,6 +107,9 @@ export function useAnalytics(): AnalyticsContextValue {
       trackConversion: () => {},
       trackVideo: () => {},
       trackComparison: () => {},
+      trackABAssignment: () => {},
+      trackABConversion: () => {},
+      trackPushEvent: () => {},
       getSessionId: () => "",
     };
   }
@@ -373,6 +385,50 @@ export default function EventCollector({
           vehicle_count: metadata.vins.length,
           ...(metadata.selected_vin ? { selected_vin: metadata.selected_vin } : {}),
         }),
+      );
+    },
+    [buildEvent],
+  );
+
+  // --- A/B test tracking ---
+  const trackABAssignment = useCallback(
+    (testName: string, variant: string) => {
+      enqueueEvent(
+        buildEvent("ab_test_assignment", "ab_assignment", {
+          test_name: testName,
+          variant,
+        }),
+      );
+    },
+    [buildEvent],
+  );
+
+  const trackABConversion = useCallback(
+    (testName: string, variant: string, value?: number) => {
+      enqueueEvent(
+        buildEvent("ab_test_conversion", "ab_conversion", {
+          test_name: testName,
+          variant,
+          ...(value !== undefined ? { conversion_value: value } : {}),
+        }),
+      );
+    },
+    [buildEvent],
+  );
+
+  // --- Push notification engagement tracking ---
+  const trackPushEvent = useCallback(
+    (
+      action:
+        | "push_permission_granted"
+        | "push_permission_denied"
+        | "push_received"
+        | "push_clicked"
+        | "push_dismissed",
+      metadata?: Record<string, unknown>,
+    ) => {
+      enqueueEvent(
+        buildEvent("push_engagement", action, metadata ?? {}),
       );
     },
     [buildEvent],
@@ -1987,6 +2043,9 @@ export default function EventCollector({
     trackConversion,
     trackVideo,
     trackComparison,
+    trackABAssignment,
+    trackABConversion,
+    trackPushEvent,
     getSessionId: getSessionIdFn,
   };
 

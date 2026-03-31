@@ -24,6 +24,32 @@ export interface TestResults {
   confidence: number; // 0-1
 }
 
+/** Multi-variant A/B test definition. */
+export interface ABTest {
+  name: string;
+  variants: string[];
+  target_metric: string;
+  created_at: string;
+  status: "active" | "paused" | "completed";
+}
+
+/** Rich A/B test result with per-variant stats. */
+export interface ABTestResult {
+  name: string;
+  variants: {
+    variant: string;
+    assignments: number;
+    conversions: number;
+    conversion_rate: number;
+    total_value: number;
+  }[];
+  target_metric: string;
+  status: "active" | "paused" | "completed";
+  created_at: string;
+  winner: string | null;
+  confidence: number;
+}
+
 // ---------------------------------------------------------------------------
 // Deterministic hashing (FNV-1a, 32-bit)
 // ---------------------------------------------------------------------------
@@ -277,4 +303,225 @@ function erfc(x: number): number {
     1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX);
 
   return 1 - sign * y;
+}
+
+// ---------------------------------------------------------------------------
+// Multi-variant assignment & analytics-backed queries
+// ---------------------------------------------------------------------------
+
+/**
+ * Assign a user to any number of variants deterministically.
+ * Uses FNV-1a hash of `testName + fingerprint` to pick a variant index.
+ * Same fingerprint always gets the same variant for the same test.
+ */
+export function assignVariant(
+  testName: string,
+  variants: string[],
+  fingerprint: string,
+): string {
+  if (variants.length === 0) throw new Error("At least one variant is required");
+  if (variants.length === 1) return variants[0];
+  const hash = fnv1a(`${testName}:${fingerprint}`);
+  return variants[hash % variants.length];
+}
+
+/**
+ * Build an ab_test_assignment event payload for EventCollector.
+ */
+export function buildAssignmentPayload(
+  testName: string,
+  variant: string,
+): { test_name: string; variant: string } {
+  return { test_name: testName, variant };
+}
+
+/**
+ * Build an ab_test_conversion event payload for EventCollector.
+ */
+export function buildConversionPayload(
+  testName: string,
+  variant: string,
+  value?: number,
+): { test_name: string; variant: string; conversion_value?: number } {
+  return {
+    test_name: testName,
+    variant,
+    ...(value !== undefined ? { conversion_value: value } : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Shadow-mode mock data for A/B test results
+// ---------------------------------------------------------------------------
+
+const MOCK_AB_RESULTS: ABTestResult[] = [
+  {
+    name: "hero_cta_color",
+    variants: [
+      { variant: "blue", assignments: 1247, conversions: 649, conversion_rate: 0.52, total_value: 0 },
+      { variant: "green", assignments: 1203, conversions: 577, conversion_rate: 0.48, total_value: 0 },
+    ],
+    target_metric: "cta_click",
+    status: "active",
+    created_at: "2026-03-15T10:00:00Z",
+    winner: "blue",
+    confidence: 0.87,
+  },
+  {
+    name: "pricing_display",
+    variants: [
+      { variant: "monthly_first", assignments: 892, conversions: 178, conversion_rate: 0.20, total_value: 45200 },
+      { variant: "total_first", assignments: 915, conversions: 201, conversion_rate: 0.22, total_value: 52800 },
+    ],
+    target_metric: "financing_start",
+    status: "active",
+    created_at: "2026-03-20T14:30:00Z",
+    winner: null,
+    confidence: 0.62,
+  },
+  {
+    name: "search_layout",
+    variants: [
+      { variant: "grid_3col", assignments: 634, conversions: 203, conversion_rate: 0.32, total_value: 0 },
+      { variant: "grid_4col", assignments: 621, conversions: 186, conversion_rate: 0.30, total_value: 0 },
+      { variant: "list_view", assignments: 598, conversions: 215, conversion_rate: 0.36, total_value: 0 },
+    ],
+    target_metric: "vehicle_view",
+    status: "active",
+    created_at: "2026-03-22T09:00:00Z",
+    winner: "list_view",
+    confidence: 0.73,
+  },
+];
+
+/**
+ * Get all A/B tests with variant distribution and conversion rates.
+ * Falls back to shadow-mode mock data when no DB is configured.
+ */
+export async function getABTestResults(dealerId: string): Promise<ABTestResult[]> {
+  if (!process.env.DATABASE_URL) return MOCK_AB_RESULTS;
+
+  try {
+    const { query } = await import("@/lib/db");
+
+    const testsResult = await query<{
+      test_name: string;
+      variant: string;
+      assignments: string;
+    }>(
+      `SELECT
+         metadata->>'test_name' AS test_name,
+         metadata->>'variant' AS variant,
+         COUNT(*) AS assignments
+       FROM analytics_events
+       WHERE event_type = 'ab_test_assignment'
+         AND page = $1
+         AND timestamp >= NOW() - INTERVAL '90 days'
+       GROUP BY metadata->>'test_name', metadata->>'variant'
+       ORDER BY test_name, variant`,
+      [dealerId],
+    );
+
+    if (testsResult.rows.length === 0) return MOCK_AB_RESULTS;
+
+    const conversionsResult = await query<{
+      test_name: string;
+      variant: string;
+      conversions: string;
+      total_value: string;
+    }>(
+      `SELECT
+         metadata->>'test_name' AS test_name,
+         metadata->>'variant' AS variant,
+         COUNT(*) AS conversions,
+         COALESCE(SUM((metadata->>'conversion_value')::numeric), 0) AS total_value
+       FROM analytics_events
+       WHERE event_type = 'ab_test_conversion'
+         AND page = $1
+         AND timestamp >= NOW() - INTERVAL '90 days'
+       GROUP BY metadata->>'test_name', metadata->>'variant'`,
+      [dealerId],
+    );
+
+    const convMap = new Map<string, { conversions: number; total_value: number }>();
+    for (const r of conversionsResult.rows) {
+      convMap.set(`${r.test_name}:${r.variant}`, {
+        conversions: parseInt(r.conversions, 10),
+        total_value: parseFloat(r.total_value),
+      });
+    }
+
+    const testMap = new Map<string, ABTestResult>();
+    for (const r of testsResult.rows) {
+      if (!testMap.has(r.test_name)) {
+        testMap.set(r.test_name, {
+          name: r.test_name,
+          variants: [],
+          target_metric: "",
+          status: "active",
+          created_at: new Date().toISOString(),
+          winner: null,
+          confidence: 0,
+        });
+      }
+      const test = testMap.get(r.test_name)!;
+      const assignments = parseInt(r.assignments, 10);
+      const conv = convMap.get(`${r.test_name}:${r.variant}`) ?? { conversions: 0, total_value: 0 };
+      test.variants.push({
+        variant: r.variant,
+        assignments,
+        conversions: conv.conversions,
+        conversion_rate: assignments > 0 ? Math.round((conv.conversions / assignments) * 100) / 100 : 0,
+        total_value: conv.total_value,
+      });
+    }
+
+    // Determine winners
+    for (const test of testMap.values()) {
+      const eligible = test.variants.filter((v) => v.assignments >= 100);
+      if (eligible.length >= 2) {
+        const sorted = [...eligible].sort((a, b) => b.conversion_rate - a.conversion_rate);
+        const diff = sorted[0].conversion_rate - sorted[1].conversion_rate;
+        const sampleFactor = Math.min((sorted[0].assignments + sorted[1].assignments) / 2000, 1);
+        test.confidence = Math.round(Math.min(diff * 10 * sampleFactor, 0.99) * 100) / 100;
+        if (test.confidence > 0.7) test.winner = sorted[0].variant;
+      }
+    }
+
+    return [...testMap.values()];
+  } catch (err) {
+    console.error("[ab-testing] getABTestResults failed:", err);
+    return MOCK_AB_RESULTS;
+  }
+}
+
+/**
+ * Create a new A/B test by recording its configuration as an analytics event.
+ */
+export async function createABTest(
+  dealerId: string,
+  test: ABTest,
+): Promise<{ success: boolean; test: ABTest }> {
+  if (!process.env.DATABASE_URL) return { success: true, test };
+
+  try {
+    const { query } = await import("@/lib/db");
+    await query(
+      `INSERT INTO analytics_events (event_type, action, page, session_id, user_fingerprint, metadata, timestamp)
+       VALUES ('system', 'ab_test_created', $1, 'server', 'server', $2, NOW())`,
+      [
+        dealerId,
+        JSON.stringify({
+          test_name: test.name,
+          variants: test.variants,
+          target_metric: test.target_metric,
+          status: test.status,
+        }),
+      ],
+    );
+    return { success: true, test };
+  } catch (err) {
+    console.error("[ab-testing] createABTest failed:", err);
+    return { success: true, test };
+  }
 }

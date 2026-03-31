@@ -216,7 +216,12 @@ export type SystemEvent =
   | "system.email_opened"
   | "system.email_clicked"
   | "system.email_bounced"
-  | "system.email_complained";
+  | "system.email_complained"
+  | "system.recommendation_served"
+  | "system.ab_test_created"
+  | "system.push_subscription_added"
+  | "system.push_notification_sent"
+  | "system.push_notification_broadcast";
 
 export type WebhookEvent =
   | "webhook.delivered"
