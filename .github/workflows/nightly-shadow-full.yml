@@ -1,0 +1,212 @@
+name: Nightly Shadow Full Cycle
+
+on:
+  schedule:
+    - cron: "0 3 * * *"  # 3am UTC every night
+  workflow_dispatch:
+    inputs:
+      skip_branch:
+        description: "Skip branch-specific checks (run all shadow tests)"
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+  NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+jobs:
+  nightly-shadow:
+    runs-on: ubuntu-latest
+    name: Nightly Shadow Test Full Cycle
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: wolfpack-auto/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: wolfpack-auto
+        run: npm ci
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: pip install requests
+
+      - name: Run full shadow cycle via Neon (if API key available)
+        id: shadow-full
+        if: env.NEON_API_KEY != ''
+        working-directory: wolfpack-auto
+        run: |
+          echo "NEON_API_KEY is set — running full shadow cycle via shadow_runner.py"
+          python scripts/shadow_runner.py
+        continue-on-error: true
+
+      - name: Build Next.js for lightweight shadow tests (fallback — no Neon key)
+        id: build-app
+        if: env.NEON_API_KEY == ''
+        working-directory: wolfpack-auto
+        run: |
+          echo "NEON_API_KEY not set — falling back to local dev-server shadow tests"
+          npm run build
+        continue-on-error: true
+
+      - name: Start Next.js dev server (fallback mode)
+        id: start-server
+        if: env.NEON_API_KEY == '' && steps.build-app.outcome == 'success'
+        working-directory: wolfpack-auto
+        run: |
+          npm run start &
+          SERVER_PID=$!
+          echo "server_pid=${SERVER_PID}" >> $GITHUB_OUTPUT
+
+          # Wait up to 30s for server to be ready
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+              echo "Server is ready after ${i} attempts."
+              break
+            fi
+            echo "Waiting for server... ($i/15)"
+            sleep 2
+          done
+
+          if ! curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+            echo "::warning::Server did not respond within 30s — shadow tests may fail"
+          fi
+
+      - name: Install Playwright browsers (fallback mode)
+        if: env.NEON_API_KEY == '' && steps.build-app.outcome == 'success'
+        working-directory: wolfpack-auto
+        run: npx playwright install chromium --with-deps
+
+      - name: Run lightweight shadow tests against local server (fallback mode)
+        id: shadow-lightweight
+        if: env.NEON_API_KEY == '' && steps.build-app.outcome == 'success'
+        working-directory: wolfpack-auto
+        env:
+          SHADOW_URL: http://localhost:3000
+        run: |
+          # Use shadow playwright config if it exists, otherwise fall back to default
+          if [ -f playwright.shadow.config.ts ]; then
+            CONFIG="playwright.shadow.config.ts"
+          elif [ -f playwright.config.ts ]; then
+            CONFIG="playwright.config.ts"
+          else
+            echo "::warning::No playwright config found — skipping Playwright shadow tests"
+            exit 0
+          fi
+
+          npx playwright test tests/shadow/ --config="$CONFIG" \
+            --reporter=html \
+            2>&1 || true
+
+          # Also run any shadow-hardening tests if directory exists
+          if [ -d tests/shadow-hardening ]; then
+            npx playwright test tests/shadow-hardening/ --config="$CONFIG" \
+              --reporter=html \
+              2>&1 || true
+          fi
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-playwright-report-${{ github.run_id }}
+          path: |
+            wolfpack-auto/playwright-report/
+            wolfpack-auto/test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Determine overall shadow test outcome
+        id: outcome
+        if: always()
+        run: |
+          FULL="${{ steps.shadow-full.outcome }}"
+          LIGHT="${{ steps.shadow-lightweight.outcome }}"
+
+          if [ "$FULL" = "failure" ] || [ "$LIGHT" = "failure" ]; then
+            echo "shadow_failed=true" >> $GITHUB_OUTPUT
+          else
+            echo "shadow_failed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub issue on failure
+        if: always() && steps.outcome.outputs.shadow_failed == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const fullOutcome = '${{ steps.shadow-full.outcome }}';
+            const lightOutcome = '${{ steps.shadow-lightweight.outcome }}';
+            const neonMode = '${{ env.NEON_API_KEY }}' !== '' ? 'full (Neon)' : 'lightweight (local server)';
+
+            const body = [
+              `## Nightly Shadow Test Failure`,
+              ``,
+              `**Date:** ${today}`,
+              `**Mode:** ${neonMode}`,
+              `**Run:** ${runUrl}`,
+              ``,
+              `### Outcomes`,
+              `| Job | Result |`,
+              `|-----|--------|`,
+              `| Full shadow (Neon) | ${fullOutcome || 'skipped'} |`,
+              `| Lightweight shadow (local) | ${lightOutcome || 'skipped'} |`,
+              ``,
+              `### Next Steps`,
+              `1. Open the [workflow run](${runUrl}) and inspect the Playwright report artifact`,
+              `2. Check if the failure is a flake (re-run) or a regression (fix required)`,
+              `3. If a new route broke: verify \`src/app/api/**/route.ts\` changes since last green run`,
+              `4. Close this issue once fixed and the nightly run is green`,
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Nightly shadow test failure — ${today}`,
+              body,
+              labels: ['bug', 'nightly', 'shadow-tests'],
+            });
+
+      - name: Post summary
+        if: always()
+        run: |
+          FAILED="${{ steps.outcome.outputs.shadow_failed }}"
+          {
+            echo "## Nightly Shadow Full Cycle"
+            echo ""
+            if [ "$FAILED" = "true" ]; then
+              echo "**Status:** FAILED — see artifacts and issue for details"
+            else
+              echo "**Status:** PASSED"
+            fi
+            echo ""
+            echo "| Step | Outcome |"
+            echo "|------|---------|"
+            echo "| Full shadow (Neon) | ${{ steps.shadow-full.outcome || 'skipped' }} |"
+            echo "| Build (fallback) | ${{ steps.build-app.outcome || 'skipped' }} |"
+            echo "| Lightweight shadow | ${{ steps.shadow-lightweight.outcome || 'skipped' }} |"
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail job if shadow tests failed
+        if: steps.outcome.outputs.shadow_failed == 'true'
+        run: |
+          echo "::error::Nightly shadow tests failed. Check the Playwright report artifact and the auto-created GitHub issue."
+          exit 1

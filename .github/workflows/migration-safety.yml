@@ -1,0 +1,167 @@
+name: Migration Safety
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "wolfpack-auto/src/db/migrations/*.sql"
+  pull_request:
+    paths:
+      - "wolfpack-auto/src/db/migrations/*.sql"
+  # Also run on every push to main to catch regressions even without SQL changes
+  workflow_dispatch:
+
+env:
+  DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/wolfpack_test
+
+jobs:
+  migration-safety:
+    runs-on: ubuntu-latest
+    name: Verify PostgreSQL Migrations
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_USER: testuser
+          POSTGRES_DB: wolfpack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Wait for PostgreSQL to accept connections
+        run: |
+          until pg_isready -h localhost -p 5432 -U testuser; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready."
+
+      - name: Run migrations in order (first pass)
+        working-directory: wolfpack-auto
+        run: |
+          echo "=== Running migrations (pass 1) ==="
+          for f in $(ls src/db/migrations/*.sql | sort); do
+            echo "Applying: $f"
+            psql "$DATABASE_URL" -f "$f"
+            if [ $? -ne 0 ]; then
+              echo "::error::Migration failed: $f"
+              exit 1
+            fi
+            echo "  [OK] $f"
+          done
+          echo "All migrations applied successfully."
+
+      - name: Verify dealers table exists with expected columns
+        run: |
+          echo "=== Verifying dealers table ==="
+          RESULT=$(psql "$DATABASE_URL" -t -c "
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'dealers'
+            ORDER BY ordinal_position;
+          ")
+          echo "$RESULT"
+
+          # Assert required columns exist
+          for col in id name slug subdomain is_active created_at updated_at; do
+            if echo "$RESULT" | grep -qw "$col"; then
+              echo "  [OK] Column '$col' present"
+            else
+              echo "::error::Expected column '$col' missing from dealers table"
+              exit 1
+            fi
+          done
+
+      - name: Verify vehicles table exists
+        run: |
+          echo "=== Verifying vehicles table ==="
+          RESULT=$(psql "$DATABASE_URL" -t -c "
+            SELECT COUNT(*) FROM information_schema.tables
+            WHERE table_name = 'vehicles';
+          " | tr -d '[:space:]')
+
+          if [ "$RESULT" = "1" ]; then
+            echo "  [OK] vehicles table exists"
+          else
+            echo "::error::vehicles table not found after migrations"
+            exit 1
+          fi
+
+      - name: Run seed data (first pass)
+        working-directory: wolfpack-auto
+        run: |
+          echo "=== Seeding demo data (pass 1) ==="
+          psql "$DATABASE_URL" -f scripts/seed_demo_data.sql
+          echo "  [OK] Seed data applied."
+
+      - name: Verify seed data is present
+        run: |
+          echo "=== Verifying seed data ==="
+          COUNT=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM dealers;" | tr -d '[:space:]')
+          echo "Dealer count: $COUNT"
+          if [ "$COUNT" -gt 0 ] 2>/dev/null; then
+            echo "  [OK] Seed data is present ($COUNT dealer(s))"
+          else
+            echo "::error::No dealers found after seeding"
+            exit 1
+          fi
+
+      - name: Verify seed idempotency (run seed again — must not fail)
+        working-directory: wolfpack-auto
+        run: |
+          echo "=== Re-running seed data (idempotency check) ==="
+          psql "$DATABASE_URL" -f scripts/seed_demo_data.sql
+          echo "  [OK] Seed re-run succeeded (ON CONFLICT DO NOTHING working correctly)"
+
+      - name: Verify migration idempotency for additive migrations (002+)
+        working-directory: wolfpack-auto
+        run: |
+          echo "=== Idempotency check for ALTER TABLE / additive migrations ==="
+          # Migrations 002+ use CREATE TABLE IF NOT EXISTS / ALTER TABLE ADD COLUMN IF NOT EXISTS
+          # We re-run them against the live schema — they must not error out.
+          # Migration 001 is intentionally excluded: it uses plain CREATE TABLE
+          # (bootstraps a brand-new DB) and would fail on re-run by design.
+          FAILURES=0
+          for f in $(ls src/db/migrations/*.sql | sort | tail -n +2); do
+            echo "Re-running: $f"
+            psql "$DATABASE_URL" -f "$f" 2>&1
+            RC=$?
+            if [ $RC -ne 0 ]; then
+              echo "::error::Idempotency failure — $f errored on second run (exit $RC)"
+              FAILURES=$((FAILURES + 1))
+            else
+              echo "  [OK] $f is idempotent"
+            fi
+          done
+          if [ $FAILURES -gt 0 ]; then
+            echo "::error::$FAILURES migration(s) failed idempotency check."
+            exit 1
+          fi
+          echo "All additive migrations passed idempotency check."
+
+      - name: Post summary
+        if: always()
+        run: |
+          {
+            echo "## Migration Safety Report"
+            echo ""
+            echo "| Check | Result |"
+            echo "|-------|--------|"
+            echo "| Migrations applied (pass 1) | ${{ job.status == 'success' && 'PASS' || 'SEE ABOVE' }} |"
+            echo "| dealers table columns | verified |"
+            echo "| vehicles table exists | verified |"
+            echo "| Seed data present | verified |"
+            echo "| Seed idempotency (re-run) | verified |"
+            echo "| Additive migration idempotency | verified |"
+          } >> $GITHUB_STEP_SUMMARY

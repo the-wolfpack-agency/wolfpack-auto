@@ -1,0 +1,212 @@
+name: SDET Coverage Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "wolfpack-auto/src/app/api/**/route.ts"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL for route coverage check"
+        required: false
+        default: "http://localhost:3000"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sdet-coverage:
+    runs-on: ubuntu-latest
+    name: SDET - Detect and Generate Missing Route Tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install anthropic requests
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: wolfpack-auto/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: wolfpack-auto
+        run: npm ci
+
+      - name: Scan all routes for coverage gaps
+        id: coverage-scan
+        working-directory: wolfpack-auto
+        run: |
+          python scripts/sdet_watch_routes.py > coverage-report.txt 2>&1
+          EXIT_CODE=$?
+          cat coverage-report.txt
+
+          # Parse counts for summary
+          COVERED=$(grep -E "^Covered routes" coverage-report.txt | grep -oE "[0-9]+" || echo "0")
+          UNCOVERED=$(grep -E "^Uncovered routes" coverage-report.txt | grep -oE "[0-9]+" || echo "0")
+          echo "covered_count=${COVERED}" >> $GITHUB_OUTPUT
+          echo "uncovered_count=${UNCOVERED}" >> $GITHUB_OUTPUT
+
+          # Don't fail here — we report and then try generation below
+          exit 0
+
+      - name: Detect new route files in this PR
+        id: detect-new-routes
+        run: |
+          # Get files changed in this PR vs base
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD 2>/dev/null || \
+                    git diff --name-only HEAD~1...HEAD 2>/dev/null || echo "")
+
+          # Filter for route.ts files inside wolfpack-auto
+          NEW_ROUTES=$(echo "$CHANGED" | grep -E "wolfpack-auto/src/app/api/.+/route\.ts" || true)
+
+          echo "--- New/modified route files in this PR ---"
+          echo "${NEW_ROUTES:-none}"
+
+          # Write to file for next step (handle empty list)
+          if [ -n "$NEW_ROUTES" ]; then
+            echo "$NEW_ROUTES" > /tmp/new_routes.txt
+            echo "has_new_routes=true" >> $GITHUB_OUTPUT
+          else
+            echo "" > /tmp/new_routes.txt
+            echo "has_new_routes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Auto-generate tests for new routes
+        id: auto-generate
+        if: steps.detect-new-routes.outputs.has_new_routes == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          GENERATION_FAILURES=0
+          GENERATION_SUCCESSES=0
+          SKIPPED_NO_KEY=0
+
+          while IFS= read -r route_file; do
+            [ -z "$route_file" ] && continue
+
+            # Strip the wolfpack-auto/ prefix — sdet_auto_coverage.py adds it back
+            RELATIVE=$(echo "$route_file" | sed 's|^wolfpack-auto/||')
+
+            echo "=== Processing: $RELATIVE ==="
+
+            if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+              echo "ANTHROPIC_API_KEY not set — skipping generation for $RELATIVE"
+              SKIPPED_NO_KEY=$((SKIPPED_NO_KEY + 1))
+              continue
+            fi
+
+            python wolfpack-auto/scripts/sdet_auto_coverage.py \
+              --route-file "$RELATIVE" \
+              --base-url "http://localhost:3000"
+
+            if [ $? -eq 0 ]; then
+              echo "  [OK] Generated for $RELATIVE"
+              GENERATION_SUCCESSES=$((GENERATION_SUCCESSES + 1))
+            else
+              echo "  [FAIL] Generation failed for $RELATIVE"
+              GENERATION_FAILURES=$((GENERATION_FAILURES + 1))
+            fi
+          done < /tmp/new_routes.txt
+
+          echo "generation_failures=${GENERATION_FAILURES}" >> $GITHUB_OUTPUT
+          echo "generation_successes=${GENERATION_SUCCESSES}" >> $GITHUB_OUTPUT
+          echo "skipped_no_key=${SKIPPED_NO_KEY}" >> $GITHUB_OUTPUT
+
+      - name: Commit generated tests
+        if: steps.auto-generate.outputs.generation_successes != '0'
+        run: |
+          git config user.name "AgenticQA SDET Bot"
+          git config user.email "agenticqa-bot@users.noreply.github.com"
+
+          # Stage any newly generated spec files
+          git add "wolfpack-auto/tests/shadow-hardening/auto/*.spec.ts" 2>/dev/null || true
+          git add "wolfpack-auto/tests/" 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No new generated files to commit."
+          else
+            git commit -m "test(sdet): auto-generate Playwright tests for new API routes [skip ci]"
+            git push
+            echo "Generated tests committed and pushed."
+          fi
+
+      - name: Re-scan coverage after generation
+        id: coverage-rescan
+        if: steps.auto-generate.outputs.generation_successes != '0'
+        working-directory: wolfpack-auto
+        run: |
+          python scripts/sdet_watch_routes.py > coverage-report.txt 2>&1
+          cat coverage-report.txt
+          COVERED=$(grep -E "^Covered routes" coverage-report.txt | grep -oE "[0-9]+" || echo "0")
+          UNCOVERED=$(grep -E "^Uncovered routes" coverage-report.txt | grep -oE "[0-9]+" || echo "0")
+          echo "covered_count=${COVERED}" >> $GITHUB_OUTPUT
+          echo "uncovered_count=${UNCOVERED}" >> $GITHUB_OUTPUT
+
+      - name: Post coverage summary to GitHub Step Summary
+        if: always()
+        run: |
+          COVERED="${{ steps.coverage-rescan.outputs.covered_count || steps.coverage-scan.outputs.covered_count }}"
+          UNCOVERED="${{ steps.coverage-rescan.outputs.uncovered_count || steps.coverage-scan.outputs.uncovered_count }}"
+          GEN_SUCCESSES="${{ steps.auto-generate.outputs.generation_successes || '0' }}"
+          GEN_FAILURES="${{ steps.auto-generate.outputs.generation_failures || '0' }}"
+          SKIPPED="${{ steps.auto-generate.outputs.skipped_no_key || '0' }}"
+
+          {
+            echo "## SDET Coverage Report"
+            echo ""
+            echo "| Metric | Count |"
+            echo "|--------|-------|"
+            echo "| Routes with coverage | ${COVERED:-0} |"
+            echo "| Routes without coverage | ${UNCOVERED:-0} |"
+            echo "| Tests auto-generated this PR | ${GEN_SUCCESSES} |"
+            echo "| Generation failures | ${GEN_FAILURES} |"
+            echo "| Skipped (no API key) | ${SKIPPED} |"
+            echo ""
+            if [ -f wolfpack-auto/coverage-report.txt ]; then
+              echo "<details><summary>Full coverage scan output</summary>"
+              echo ""
+              echo '```'
+              cat wolfpack-auto/coverage-report.txt
+              echo '```'
+              echo ""
+              echo "</details>"
+            fi
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if new routes have zero coverage after generation attempt
+        if: steps.detect-new-routes.outputs.has_new_routes == 'true'
+        run: |
+          GEN_FAILURES="${{ steps.auto-generate.outputs.generation_failures || '0' }}"
+          SKIPPED="${{ steps.auto-generate.outputs.skipped_no_key || '0' }}"
+
+          if [ "${GEN_FAILURES}" -gt 0 ]; then
+            echo "::error::${GEN_FAILURES} new route(s) have no test coverage and generation failed."
+            echo "::error::Fix the generation errors or add tests manually before merging."
+            exit 1
+          fi
+
+          if [ "${SKIPPED}" -gt 0 ]; then
+            echo "::warning::${SKIPPED} route(s) skipped test generation — ANTHROPIC_API_KEY not set."
+            echo "::warning::Add the secret or generate tests manually to ensure full coverage."
+            # Do not fail — missing API key is a config gap, not a code gap
+          fi
+
+          echo "All new routes are covered (or generation succeeded)."
