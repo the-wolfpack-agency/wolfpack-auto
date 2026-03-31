@@ -27,6 +27,7 @@ import {
   useEffect,
   useRef,
   type ReactNode,
+  type RefObject,
 } from "react";
 
 /* ------------------------------------------------------------------ */
@@ -61,6 +62,17 @@ interface AnalyticsContextValue {
     action: string,
     metadata?: Record<string, unknown>,
   ) => void;
+  /** Attach video tracking to a <video> element ref */
+  trackVideo: (
+    ref: RefObject<HTMLVideoElement | null>,
+    videoId: string,
+    title: string,
+  ) => void;
+  /** Track vehicle comparison actions (add/remove/view/winner) */
+  trackComparison: (
+    action: "add" | "remove" | "view" | "winner",
+    metadata: { vins: string[]; selected_vin?: string },
+  ) => void;
   /** Get current session ID */
   getSessionId: () => string;
 }
@@ -84,6 +96,8 @@ export function useAnalytics(): AnalyticsContextValue {
       trackVehicleView: () => {},
       trackSearch: () => {},
       trackConversion: () => {},
+      trackVideo: () => {},
+      trackComparison: () => {},
       getSessionId: () => "",
     };
   }
@@ -341,6 +355,124 @@ export default function EventCollector({
     },
     [buildEvent],
   );
+
+  const trackComparison = useCallback(
+    (
+      action: "add" | "remove" | "view" | "winner",
+      metadata: { vins: string[]; selected_vin?: string },
+    ) => {
+      const eventMap: Record<string, string> = {
+        add: "vehicle_compare_add",
+        remove: "vehicle_compare_remove",
+        view: "vehicle_compare_view",
+        winner: "vehicle_compare_winner",
+      };
+      enqueueEvent(
+        buildEvent(eventMap[action], `compare_${action}`, {
+          vins: metadata.vins,
+          vehicle_count: metadata.vins.length,
+          ...(metadata.selected_vin ? { selected_vin: metadata.selected_vin } : {}),
+        }),
+      );
+    },
+    [buildEvent],
+  );
+
+  // --- Video watch-through tracking ---
+  const videoCleanups = useRef(new Map<string, () => void>());
+
+  const trackVideo = useCallback(
+    (
+      ref: RefObject<HTMLVideoElement | null>,
+      videoId: string,
+      title: string,
+    ) => {
+      // Defer attachment until next tick so the ref is populated
+      setTimeout(() => {
+        const el = ref.current;
+        if (!el) return;
+
+        // Prevent duplicate listeners for the same videoId
+        if (videoCleanups.current.has(videoId)) {
+          videoCleanups.current.get(videoId)!();
+        }
+
+        const milestonesHit = new Set<number>();
+
+        const meta = () => ({
+          video_id: videoId,
+          video_title: title,
+          duration: el.duration || 0,
+          current_time: el.currentTime || 0,
+          percentage: el.duration
+            ? Math.round((el.currentTime / el.duration) * 100)
+            : 0,
+        });
+
+        function onPlay() {
+          enqueueEvent(buildEvent("video", "video_play", meta()));
+        }
+
+        function onPause() {
+          enqueueEvent(buildEvent("video", "video_pause", meta()));
+        }
+
+        function onEnded() {
+          if (!milestonesHit.has(100)) {
+            milestonesHit.add(100);
+            enqueueEvent(buildEvent("video", "video_progress", { ...meta(), milestone: 100 }));
+          }
+          enqueueEvent(buildEvent("video", "video_complete", meta()));
+        }
+
+        function onTimeUpdate() {
+          if (!el || !el.duration) return;
+          const pct = Math.round((el.currentTime / el.duration) * 100);
+          for (const milestone of [25, 50, 75]) {
+            if (pct >= milestone && !milestonesHit.has(milestone)) {
+              milestonesHit.add(milestone);
+              enqueueEvent(
+                buildEvent("video", "video_progress", { ...meta(), milestone }),
+              );
+            }
+          }
+        }
+
+        function onSeeked() {
+          // Detect replay: user seeks back to near the start after reaching 75%+
+          if (el && el.currentTime < el.duration * 0.1 && milestonesHit.has(75)) {
+            enqueueEvent(buildEvent("video", "video_replay", meta()));
+            milestonesHit.clear();
+          }
+        }
+
+        el.addEventListener("play", onPlay);
+        el.addEventListener("pause", onPause);
+        el.addEventListener("ended", onEnded);
+        el.addEventListener("timeupdate", onTimeUpdate);
+        el.addEventListener("seeked", onSeeked);
+
+        const cleanup = () => {
+          el.removeEventListener("play", onPlay);
+          el.removeEventListener("pause", onPause);
+          el.removeEventListener("ended", onEnded);
+          el.removeEventListener("timeupdate", onTimeUpdate);
+          el.removeEventListener("seeked", onSeeked);
+        };
+
+        videoCleanups.current.set(videoId, cleanup);
+      }, 0);
+    },
+    [buildEvent],
+  );
+
+  // Cleanup all video listeners on unmount
+  useEffect(() => {
+    return () => {
+      videoCleanups.current.forEach((cleanup) => cleanup());
+      videoCleanups.current.clear();
+    };
+  }, []);
 
   const getSessionIdFn = useCallback(() => sessionId.current, []);
 
@@ -1723,6 +1855,92 @@ export default function EventCollector({
     return () => (conn as unknown as EventTarget).removeEventListener?.("change", handleChange);
   }, [buildEvent]);
 
+
+  // --- 28. Price range dwell tracking (IntersectionObserver on vehicle cards) ---
+  useEffect(() => {
+    const cards = document.querySelectorAll("[data-price]");
+    if (cards.length === 0) return;
+
+    type BracketKey = "0_15K" | "15K_25K" | "25K_35K" | "35K_50K" | "50K_plus";
+
+    function priceToBracket(price: number): BracketKey {
+      if (price < 15000) return "0_15K";
+      if (price < 25000) return "15K_25K";
+      if (price < 35000) return "25K_35K";
+      if (price < 50000) return "35K_50K";
+      return "50K_plus";
+    }
+
+    const bracketDwell = new Map<BracketKey, number>();
+    const bracketVehicles = new Map<BracketKey, Set<string>>();
+    const visibleSince = new Map<Element, number>();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const now = Date.now();
+        for (const entry of entries) {
+          const el = entry.target as HTMLElement;
+          const priceVal = parseInt(el.getAttribute("data-price") ?? "0", 10);
+          if (priceVal <= 0) continue;
+          const bracket = priceToBracket(priceVal);
+
+          if (entry.isIntersecting) {
+            visibleSince.set(entry.target, now);
+          } else {
+            const startTime = visibleSince.get(entry.target);
+            if (startTime) {
+              const duration = now - startTime;
+              bracketDwell.set(bracket, (bracketDwell.get(bracket) ?? 0) + duration);
+              const vin = el.getAttribute("data-vin") ?? el.getAttribute("href")?.split("/").pop() ?? "unknown";
+              if (!bracketVehicles.has(bracket)) bracketVehicles.set(bracket, new Set());
+              bracketVehicles.get(bracket)!.add(vin);
+              visibleSince.delete(entry.target);
+            }
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+
+    cards.forEach((card) => observer.observe(card));
+
+    function emitDwellSummary() {
+      const now = Date.now();
+      for (const [el, startTime] of visibleSince.entries()) {
+        const htmlEl = el as HTMLElement;
+        const priceVal = parseInt(htmlEl.getAttribute("data-price") ?? "0", 10);
+        if (priceVal <= 0) continue;
+        const bracket = priceToBracket(priceVal);
+        bracketDwell.set(bracket, (bracketDwell.get(bracket) ?? 0) + (now - startTime));
+        const vin = htmlEl.getAttribute("data-vin") ?? htmlEl.getAttribute("href")?.split("/").pop() ?? "unknown";
+        if (!bracketVehicles.has(bracket)) bracketVehicles.set(bracket, new Set());
+        bracketVehicles.get(bracket)!.add(vin);
+      }
+
+      for (const [bracket, ms] of bracketDwell.entries()) {
+        if (ms < 500) continue;
+        const vehicles = bracketVehicles.get(bracket);
+        enqueueEvent(
+          buildEvent("price_range_dwell", "bracket_dwell_summary", {
+            bracket,
+            seconds: Math.round(ms / 100) / 10,
+            vehicles_viewed: vehicles?.size ?? 0,
+            page: window.location.pathname,
+          }),
+        );
+      }
+    }
+
+    window.addEventListener("beforeunload", emitDwellSummary);
+    const handleVisDwell = () => { if (document.hidden) emitDwellSummary(); };
+    document.addEventListener("visibilitychange", handleVisDwell);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("beforeunload", emitDwellSummary);
+      document.removeEventListener("visibilitychange", handleVisDwell);
+    };
+  }, [buildEvent]);
   // --- Flush on page unload ---
   useEffect(() => {
     function handleUnload() {
@@ -1767,6 +1985,8 @@ export default function EventCollector({
     trackVehicleView,
     trackSearch,
     trackConversion,
+    trackVideo,
+    trackComparison,
     getSessionId: getSessionIdFn,
   };
 
@@ -1775,4 +1995,72 @@ export default function EventCollector({
       {children}
     </AnalyticsContext.Provider>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/*  useVideoTracking — standalone hook for video analytics             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Hook that attaches play/pause/progress/complete/replay tracking to a
+ * <video> element ref. Call once per video; milestones fire only once
+ * per session per video.
+ *
+ * Usage:
+ *   const videoRef = useRef<HTMLVideoElement>(null);
+ *   useVideoTracking(videoRef, "walkaround-123", "2024 Ford F-150 Walkaround");
+ *   return <video ref={videoRef} src="..." />;
+ */
+export function useVideoTracking(
+  ref: RefObject<HTMLVideoElement | null>,
+  videoId: string,
+  title: string,
+): void {
+  const { trackVideo } = useAnalytics();
+
+  useEffect(() => {
+    trackVideo(ref, videoId, title);
+    // Only re-attach if videoId changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId]);
+}
+
+/* ------------------------------------------------------------------ */
+/*  VideoTracker — wrapper component for auto-tracking <video> children */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Wraps a <video> element and automatically tracks all playback events.
+ *
+ * Usage:
+ *   <VideoTracker videoId="walk-123" title="2024 F-150 Walkaround">
+ *     <video src="/videos/walkaround.mp4" controls />
+ *   </VideoTracker>
+ */
+export function VideoTracker({
+  videoId,
+  title,
+  children,
+}: {
+  videoId: string;
+  title: string;
+  children: ReactNode;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const { trackVideo } = useAnalytics();
+
+  useEffect(() => {
+    // Find the <video> element inside the container
+    const container = containerRef.current;
+    if (!container) return;
+    const videoEl = container.querySelector("video");
+    if (videoEl) {
+      videoRef.current = videoEl;
+      trackVideo(videoRef, videoId, title);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId]);
+
+  return <div ref={containerRef}>{children}</div>;
 }

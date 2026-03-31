@@ -210,7 +210,12 @@ export type SystemEvent =
   | "system.vehicle_history_expired"
   | "system.inventory_exported"
   | "system.vehicle_photo_uploaded"
-  | "document.buyers_guide_generated";
+  | "document.buyers_guide_generated"
+  | "system.email_delivered"
+  | "system.email_opened"
+  | "system.email_clicked"
+  | "system.email_bounced"
+  | "system.email_complained";
 
 export type WebhookEvent =
   | "webhook.delivered"
