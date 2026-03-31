@@ -126,6 +126,7 @@ const NAV_SECTIONS: NavSection[] = [
     icon: LendersIcon,
     items: [
       { href: "/admin/lenders", label: "Lenders", icon: LendersIcon },
+      { href: "/admin/lender-routing", label: "Lender Routing", icon: LendersIcon },
       { href: "/admin/credit", label: "Credit Bureau", icon: CreditIcon },
       { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
     ],
