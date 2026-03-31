@@ -116,7 +116,7 @@ test.describe("2. Inventory", () => {
     if (hasSearch) {
       await searchInput.fill("Toyota");
       // Wait for results to filter
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState("domcontentloaded");
 
       const body = await page.locator("body").innerText().catch(() => "");
       expect(body, "filtered results should mention Toyota").toContain("Toyota");

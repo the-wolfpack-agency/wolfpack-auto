@@ -158,7 +158,7 @@ test.describe("Auth flow: login with wrong credentials", () => {
     await submitBtn.click();
 
     // Allow the form to process
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("domcontentloaded");
 
     // Either: error message appears in UI, or redirect back to login, or
     // (in demo mode) the page navigates somewhere without crashing

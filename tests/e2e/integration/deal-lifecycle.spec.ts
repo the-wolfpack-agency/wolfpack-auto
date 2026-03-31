@@ -250,7 +250,7 @@ test.describe("Deal Lifecycle", () => {
     const { browserLogin } = await import("./helpers");
     await browserLogin(page);
     await page.goto("/admin/deals", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("load");
     const content = await page.textContent("body");
     expect(content).toBeTruthy();
     expect(content!.length).toBeGreaterThan(50);

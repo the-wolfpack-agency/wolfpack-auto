@@ -13,7 +13,13 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
 
     // Navigate to a page
     await page.goto("/inventory");
-    await page.waitForTimeout(6000); // Wait for flush interval (5s)
+
+    // Wait for the analytics flush by polling the API until the count increases
+    await expect(async () => {
+      const afterRes = await request.get("/api/analytics/events");
+      const after = await afterRes.json();
+      expect(after.events_by_type.page_view ?? 0).toBeGreaterThan(beforeViews);
+    }).toPass({ timeout: 10_000 });
 
     // Check that page_view was recorded
     const afterRes = await request.get("/api/analytics/events");
@@ -33,7 +39,13 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
 
     // Click a navigation link
     await page.click('a[href="/inventory"]');
-    await page.waitForTimeout(6000);
+
+    // Wait for the analytics flush by polling the API until the count increases
+    await expect(async () => {
+      const res = await request.get("/api/analytics/events");
+      const data = await res.json();
+      expect(data.events_by_type.click ?? 0).toBeGreaterThan(beforeClicks);
+    }).toPass({ timeout: 10_000 });
 
     const afterRes = await request.get("/api/analytics/events");
     const after = await afterRes.json();
@@ -55,7 +67,13 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
     await page.fill("#contact-first-name", "Test");
     await page.click("#contact-last-name");
     await page.fill("#contact-last-name", "User");
-    await page.waitForTimeout(6000);
+
+    // Wait for the analytics flush by polling the API until the count increases
+    await expect(async () => {
+      const res = await request.get("/api/analytics/events");
+      const data = await res.json();
+      expect(data.events_by_type.form_interaction ?? 0).toBeGreaterThan(beforeForms);
+    }).toPass({ timeout: 10_000 });
 
     const afterRes = await request.get("/api/analytics/events");
     const after = await afterRes.json();
@@ -75,7 +93,13 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
     await page.evaluate(() => {
       window.scrollTo({ top: document.body.scrollHeight, behavior: "instant" });
     });
-    await page.waitForTimeout(6000);
+
+    // Wait for the analytics flush by polling the API until the count increases
+    await expect(async () => {
+      const res = await request.get("/api/analytics/events");
+      const data = await res.json();
+      expect(data.events_by_type.scroll ?? 0).toBeGreaterThan(beforeScrolls);
+    }).toPass({ timeout: 10_000 });
 
     const afterRes = await request.get("/api/analytics/events");
     const after = await afterRes.json();
@@ -96,7 +120,13 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
     const chatBubble = page.locator('[aria-label="Open chat"]');
     if (await chatBubble.isVisible()) {
       await chatBubble.click();
-      await page.waitForTimeout(6000);
+
+      // Wait for the analytics flush by polling the API until the count increases
+      await expect(async () => {
+        const res = await request.get("/api/analytics/events");
+        const data = await res.json();
+        expect(data.events_by_type.chat_interaction ?? 0).toBeGreaterThan(beforeChat);
+      }).toPass({ timeout: 10_000 });
 
       const afterRes = await request.get("/api/analytics/events");
       const after = await afterRes.json();
@@ -113,7 +143,10 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
   test("session ID persists across page navigations", async ({ page }) => {
     await page.goto("/");
     // Wait for React effects to hydrate and set sessionStorage
-    await page.waitForTimeout(2000);
+    await expect(async () => {
+      const sid = await page.evaluate(() => sessionStorage.getItem("wolfpack_analytics_session"));
+      expect(sid).toBeTruthy();
+    }).toPass({ timeout: 5_000 });
 
     // Get session ID from sessionStorage
     const sessionId1 = await page.evaluate(() =>
@@ -124,7 +157,7 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
 
     // Navigate to another page
     await page.goto("/inventory");
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("domcontentloaded");
 
     const sessionId2 = await page.evaluate(() =>
       sessionStorage.getItem("wolfpack_analytics_session"),
@@ -138,7 +171,11 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.waitForTimeout(2000);
+    // Wait for React effects to hydrate and set localStorage
+    await expect(async () => {
+      const fp = await page.evaluate(() => localStorage.getItem("wolfpack_analytics_fp"));
+      expect(fp).toBeTruthy();
+    }).toPass({ timeout: 5_000 });
 
     const fp1 = await page.evaluate(() =>
       localStorage.getItem("wolfpack_analytics_fp"),
@@ -149,7 +186,7 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
     // Clear sessionStorage (new session) but keep localStorage
     await page.evaluate(() => sessionStorage.clear());
     await page.goto("/inventory");
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("domcontentloaded");
 
     const fp2 = await page.evaluate(() =>
       localStorage.getItem("wolfpack_analytics_fp"),
@@ -173,7 +210,7 @@ test.describe("Analytics UI Integration — EventCollector in browser", () => {
     await page.fill("#contact-last-name", "Smith");
     await page.fill("#contact-email", "john@example.com");
     await page.fill("#contact-phone", "303-555-1234");
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("domcontentloaded");
 
     // Check that PII is NOT in analytics storage
     const sessionData = await page.evaluate(() => {

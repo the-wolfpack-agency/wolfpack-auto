@@ -574,7 +574,7 @@ test.describe("Lender Routing Page — Rendering", () => {
   test("Stats cards visible — Active Submissions, Approval Rate, Best Rate, Avg Response", async ({
     page,
   }) => {
-    await page.goto("/admin/lender-routing", { waitUntil: "networkidle" });
+    await page.goto("/admin/lender-routing", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading submissions...", {
@@ -595,7 +595,7 @@ test.describe("Lender Routing Page — Rendering", () => {
   });
 
   test("Submissions table is present after loading", async ({ page }) => {
-    await page.goto("/admin/lender-routing", { waitUntil: "networkidle" });
+    await page.goto("/admin/lender-routing", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading submissions...", {
@@ -615,7 +615,7 @@ test.describe("Lender Routing Page — Rendering", () => {
   });
 
   test("Filter dropdowns are present", async ({ page }) => {
-    await page.goto("/admin/lender-routing", { waitUntil: "networkidle" });
+    await page.goto("/admin/lender-routing", { waitUntil: "domcontentloaded" });
 
     // Status filter select should be visible
     const selects = page.locator("select");

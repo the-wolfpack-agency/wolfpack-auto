@@ -52,7 +52,7 @@ for (const pg of ADMIN_PAGES) {
     test(pg.path + " renders expected content", async ({ page }) => {
       const ok = await safeNav(page, pg.path);
       if (!ok) { test.skip(true, pg.label + " returned non-2xx"); return; }
-      await page.waitForTimeout(2000);
+      await page.waitForLoadState("load");
       const body = await page.locator("body").textContent();
       expect(body).not.toMatch(/internal server error/i);
       expect(body!.length).toBeGreaterThan(50);

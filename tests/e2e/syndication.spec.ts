@@ -360,7 +360,7 @@ test.describe("Syndication admin page", () => {
   test("stats cards are visible (Total Listings, Active Platforms, Last Sync, Error Rate)", async ({
     page,
   }) => {
-    await page.goto("/admin/syndication", { waitUntil: "networkidle" });
+    await page.goto("/admin/syndication", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete — feeds load asynchronously
     await page.waitForSelector("text=Loading syndication feeds...", {
@@ -378,7 +378,7 @@ test.describe("Syndication admin page", () => {
   test("platform cards are visible with names (AutoTrader, Cars.com, CarGurus, etc.)", async ({
     page,
   }) => {
-    await page.goto("/admin/syndication", { waitUntil: "networkidle" });
+    await page.goto("/admin/syndication", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading syndication feeds...", {
@@ -406,7 +406,7 @@ test.describe("Syndication admin page", () => {
   test("platform cards show status badges (Active/Inactive/Errors)", async ({
     page,
   }) => {
-    await page.goto("/admin/syndication", { waitUntil: "networkidle" });
+    await page.goto("/admin/syndication", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading syndication feeds...", {
@@ -422,7 +422,7 @@ test.describe("Syndication admin page", () => {
   });
 
   test("Configure button opens config modal", async ({ page }) => {
-    await page.goto("/admin/syndication", { waitUntil: "networkidle" });
+    await page.goto("/admin/syndication", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading syndication feeds...", {
@@ -456,7 +456,7 @@ test.describe("Syndication admin page", () => {
   });
 
   test("Export Feed button opens export modal", async ({ page }) => {
-    await page.goto("/admin/syndication", { waitUntil: "networkidle" });
+    await page.goto("/admin/syndication", { waitUntil: "domcontentloaded" });
 
     // Click the "Export Feed" button in the header
     const exportBtn = page.locator("button", { hasText: "Export Feed" });
@@ -480,7 +480,7 @@ test.describe("Syndication admin page", () => {
   test("Sync History table is visible with correct column headers", async ({
     page,
   }) => {
-    await page.goto("/admin/syndication", { waitUntil: "networkidle" });
+    await page.goto("/admin/syndication", { waitUntil: "domcontentloaded" });
 
     const historyHeading = page.locator("h2", { hasText: "Sync History" });
     await expect(historyHeading).toBeVisible();

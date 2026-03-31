@@ -41,7 +41,6 @@ test.describe("Cookie consent banner", () => {
   test("banner appears on first visit (no prior consent)", async ({ page }) => {
     // Do NOT pre-accept — we want to see the banner
     await page.goto("/", { waitUntil: "load" });
-    await page.waitForTimeout(500);
 
     const banner = page.locator("#wolfpack-cookie").or(
       page.locator('[aria-label*="cookie" i], [aria-label*="consent" i]')
@@ -56,7 +55,6 @@ test.describe("Cookie consent banner", () => {
 
   test("accepting consent hides the banner", async ({ page }) => {
     await page.goto("/", { waitUntil: "load" });
-    await page.waitForTimeout(500);
 
     const acceptBtn = page.locator(
       'button:has-text("Accept Essential"), button:has-text("Accept All"), button:has-text("Got it")'
@@ -74,7 +72,6 @@ test.describe("Cookie consent banner", () => {
   test("consent is persisted after page reload", async ({ page }) => {
     // Accept on first load
     await page.goto("/", { waitUntil: "load" });
-    await page.waitForTimeout(500);
 
     const acceptBtn = page.locator(
       'button:has-text("Accept Essential"), button:has-text("Accept All"), button:has-text("Got it")'
@@ -86,7 +83,6 @@ test.describe("Cookie consent banner", () => {
 
     // Reload — banner must not reappear
     await page.reload({ waitUntil: "load" });
-    await page.waitForTimeout(500);
     const bannerAgain = await acceptBtn.first().isVisible({ timeout: 3_000 }).catch(() => false);
     expect(bannerAgain, "Cookie banner reappeared after consent").toBe(false);
   });
@@ -110,7 +106,6 @@ test.describe("Chat widget: public pages", () => {
     await acceptCookies(page);
     for (const path of PUBLIC_PAGES_WITH_CHAT) {
       await page.goto(path, { waitUntil: "load" });
-      await page.waitForTimeout(300);
 
       const bubble = page.locator('button[aria-label="Open chat assistant"]');
       await expect(bubble).toBeVisible({ timeout: 8_000 });
@@ -120,7 +115,6 @@ test.describe("Chat widget: public pages", () => {
   test("chat opens, sends message, and closes", async ({ page }) => {
     await acceptCookies(page);
     await page.goto("/", { waitUntil: "load" });
-    await page.waitForTimeout(500);
 
     const bubble = page.locator('button[aria-label="Open chat assistant"]');
     await expect(bubble).toBeVisible({ timeout: 8_000 });
@@ -143,11 +137,10 @@ test.describe("Chat widget: public pages", () => {
     // Send
     const sendBtn = panel.locator('button[aria-label="Send message"]');
     await sendBtn.click();
-    await page.waitForTimeout(2_000);
 
     // Message log visible
     const log = panel.locator("[role='log']");
-    await expect(log).toBeVisible();
+    await expect(log).toBeVisible({ timeout: 5_000 });
 
     // Close
     const closeBtn = panel.locator('button[aria-label="Close chat"]');
@@ -158,9 +151,9 @@ test.describe("Chat widget: public pages", () => {
   test("Escape key closes chat panel", async ({ page }) => {
     await acceptCookies(page);
     await page.goto("/", { waitUntil: "load" });
-    await page.waitForTimeout(300);
 
     const bubble = page.locator('button[aria-label="Open chat assistant"]');
+    await expect(bubble).toBeVisible({ timeout: 8_000 });
     await bubble.click({ force: true });
 
     const panel = page.locator("div[role='dialog']").filter({
@@ -175,9 +168,9 @@ test.describe("Chat widget: public pages", () => {
   test("chat input attributes correct", async ({ page }) => {
     await acceptCookies(page);
     await page.goto("/", { waitUntil: "load" });
-    await page.waitForTimeout(300);
 
     const bubble = page.locator('button[aria-label="Open chat assistant"]');
+    await expect(bubble).toBeVisible({ timeout: 8_000 });
     await bubble.click({ force: true });
     const panel = page.locator("div[role='dialog']").filter({
       has: page.locator('button[aria-label="Close chat"]'),
@@ -266,7 +259,6 @@ test.describe("VDP payment calculator", () => {
     await calcBtn.click();
 
     // Estimated payment result should appear
-    await page.waitForTimeout(500);
     const result = page.locator("text=/\\$[0-9,]+\\/mo|per month|monthly payment/i");
     await expect(result.first()).toBeVisible({ timeout: 5_000 });
   });
@@ -297,8 +289,6 @@ test.describe("Financing calculator", () => {
     const hasCta = await calcBtn.count().then((c) => c > 0);
     if (hasCta) await calcBtn.first().click();
 
-    await page.waitForTimeout(500);
-
     // Estimated monthly payment is displayed somewhere
     const estPayment = page.locator("text=/Estimated Monthly Payment/i");
     await expect(estPayment).toBeVisible({ timeout: 5_000 });
@@ -326,9 +316,7 @@ test.describe("Contact form: full submission", () => {
     await page.locator("button[type='submit']:has-text('Send Message')").click();
 
     // Success state OR form persists without crashing
-    await page.waitForTimeout(3_000);
-    const bodyText = await page.locator("body").textContent();
-    expect(bodyText?.toLowerCase()).toMatch(/sent|success|thank you|received/);
+    await expect(page.locator("text=/sent|success|thank you|received/i").first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("empty form submission shows all required field errors", async ({ page }) => {

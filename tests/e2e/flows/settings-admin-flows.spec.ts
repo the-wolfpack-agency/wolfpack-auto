@@ -111,7 +111,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   test("stat cards show Total Tasks, Completed This Week, Pending, Recognitions Sent", async ({
     page,
   }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     for (const label of ["Total Tasks", "Completed This Week", "Pending", "Recognitions Sent"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
@@ -120,7 +120,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   test("task cards render with title, status badge, priority badge, assigned to, due date", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const taskCard = page.locator(".shadow-sm h3").first();
     if (await taskCard.isVisible()) {
       // Status badge

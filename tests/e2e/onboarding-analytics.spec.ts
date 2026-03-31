@@ -149,7 +149,7 @@ test.describe("Onboarding Analytics: drop-off tracking", () => {
     }
 
     // Wait for the page to render and fire any tracking beacons
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("load");
 
     // Verify the page rendered step 1 — this is the minimum for drop-off tracking
     const body = await page.textContent("body");
@@ -163,7 +163,7 @@ test.describe("Onboarding Analytics: drop-off tracking", () => {
     const ok = await safeNavigate(page, "/admin/onboarding");
     if (!ok) return;
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("load");
 
     const stored = await page.evaluate(() => {
       return localStorage.getItem("wolfpack_onboarding_progress");

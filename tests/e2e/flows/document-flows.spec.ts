@@ -37,14 +37,14 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("stat cards show Total Documents, Unsigned, Deals with Docs, Missing Signatures", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     for (const label of ["Total Documents", "Unsigned", "Deals with Docs", "Missing Signatures"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
   });
 
   test("documents table renders with Document, Type, Signed, Actions columns", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const table = page.locator("table");
     if ((await table.count()) > 0) {
       await expect(page.locator("th:has-text('Document')")).toBeVisible();
@@ -55,11 +55,11 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("filter by document type — select Purchase Agreement", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     // The type filter is the first select on the page
     const typeFilter = page.locator("select").first();
     await typeFilter.selectOption({ value: "purchase_agreement" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // After filter, all visible type badges should be Purchase Agreement
     const typeBadges = page.locator("tbody span.rounded-full");
     const count = await typeBadges.count();
@@ -70,13 +70,13 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("filter by document type — reset to All Types", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     const typeFilter = page.locator("select").first();
     await typeFilter.selectOption({ value: "purchase_agreement" });
-    await page.waitForTimeout(1_000);
+    await page.waitForLoadState("domcontentloaded");
     // Reset
     await typeFilter.selectOption({ value: "" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // Should show all types or empty state
     const rows = page.locator("tbody tr");
     const rowCount = await rows.count();
@@ -85,10 +85,10 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("filter by Deal ID text input", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     const dealFilter = page.locator('input[placeholder="Filter by Deal ID"]');
     await dealFilter.fill("deal-001");
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // Filter applied — should narrow results or show empty
   });
 
@@ -118,7 +118,7 @@ test.describe("Document Vault — browser flows", () => {
     await page.fill('textarea[placeholder="Additional notes about this document"]', "E2E test document upload");
 
     await page.click("button[type='submit']:has-text('Upload Document')");
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
 
     // Form should close on success, or show error
     const formStillOpen = await page.locator("h2:has-text('Upload Document')").isVisible();
@@ -129,7 +129,7 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("sign button appears on unsigned documents", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const signBtn = page.locator("button:has-text('Sign')").first();
     const unsignedText = page.locator("text=Unsigned").first();
     // Either we have unsigned docs with sign buttons, or all are signed
@@ -140,26 +140,25 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("clicking Sign marks document as signed — checkmark appears", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const signBtn = page.locator("button:has-text('Sign')").first();
     if (await signBtn.isVisible()) {
       // Find the row before clicking
       const row = signBtn.locator("xpath=ancestor::tr");
       await signBtn.click();
-      await page.waitForTimeout(1_500);
       // The signed column should now show "Signed" text
-      await expect(row.locator("text=Signed")).toBeVisible();
+      await expect(row.locator("text=Signed")).toBeVisible({ timeout: 5_000 });
     }
   });
 
   test("delete button removes document from the table", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const rows = page.locator("tbody tr");
     const initialCount = await rows.count();
     if (initialCount > 0) {
       const deleteBtn = page.locator("button:has-text('Delete')").first();
       await deleteBtn.click();
-      await page.waitForTimeout(1_500);
+      await page.waitForLoadState("networkidle");
       const newCount = await rows.count();
       expect(newCount).toBeLessThanOrEqual(initialCount);
     }

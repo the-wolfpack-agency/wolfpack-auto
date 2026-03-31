@@ -137,7 +137,7 @@ export async function testChatWidget(page: Page) {
 
   // Just verify the ChatWidget renders without errors (the bubble is present)
   // The component is a client component so it hydrates after load
-  await page.waitForTimeout(500); // Allow hydration
+  await page.waitForLoadState("domcontentloaded");
 }
 
 // ---------------------------------------------------------------------------
@@ -208,7 +208,7 @@ export async function testNoConsoleErrors(page: Page) {
     }
   });
 
-  await page.waitForTimeout(2000); // Allow time for any async errors
+  await page.waitForLoadState("domcontentloaded");
 
   expect(
     errors,
@@ -221,10 +221,8 @@ export async function testNoConsoleErrors(page: Page) {
 // ---------------------------------------------------------------------------
 
 export async function testImagesLoad(page: Page) {
-  // Wait for network to settle
-  await page.waitForLoadState("networkidle").catch(() => {
-    // networkidle may not resolve if there are long-polling connections
-  });
+  // Wait for DOM to be ready
+  await page.waitForLoadState("domcontentloaded");
 
   const images = page.locator("img");
   const count = await images.count();
@@ -257,7 +255,7 @@ export async function testImagesLoad(page: Page) {
 
 export async function testAnalyticsCollector(page: Page) {
   // Wait for React hydration and EventCollector to initialize
-  await page.waitForTimeout(2500);
+  await page.waitForLoadState("load");
 
   // Session ID must be set (proves EventCollector mounted and ran)
   const sessionId = await page.evaluate(() =>
@@ -289,7 +287,7 @@ export async function testAnalyticsEventFiring(
 
   // Interact with the page to produce events
   await page.click("body");
-  await page.waitForTimeout(6000); // Wait for flush interval
+  await page.waitForLoadState("load");
 
   // Verify events were sent
   const afterRes = await request.get("/api/analytics/events");
@@ -313,7 +311,7 @@ export async function testResponsive(page: Page) {
 
   for (const vp of viewports) {
     await page.setViewportSize({ width: vp.width, height: vp.height });
-    await page.waitForTimeout(300); // Allow reflow
+    await page.waitForLoadState("domcontentloaded");
 
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     expect(

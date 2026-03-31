@@ -157,7 +157,7 @@ for (const pg of ALL_PAGES) {
     test("chat widget renders on page", async ({ page }) => {
       // The ChatWidget component renders as a fixed-position element
       // Wait for hydration
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState("load");
 
       // Look for the chat bubble or dialog
       const chatElements = page.locator(

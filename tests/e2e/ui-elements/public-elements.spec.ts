@@ -21,7 +21,7 @@ for (const pg of PUBLIC_PAGES) {
     test(pg.path + " renders expected content", async ({ page }) => {
       const resp = await page.goto(pg.path, { waitUntil: "domcontentloaded", timeout: 15_000 });
       if (!resp || resp.status() >= 400) { test.skip(true, pg.label + " returned " + resp?.status()); return; }
-      await page.waitForTimeout(2000);
+      await page.waitForLoadState("load");
       const body = await page.locator("body").textContent();
       expect(body).not.toMatch(/internal server error/i);
       expect(body!.length).toBeGreaterThan(50);

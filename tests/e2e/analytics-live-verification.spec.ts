@@ -158,7 +158,7 @@ test.describe.serial("Analytics Live Verification", () => {
 
   test("12. Verify admin dashboard is reachable", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("load");
     const body = await page.textContent("body");
     // Page loads — either admin dashboard or login redirect
     expect(body!.length).toBeGreaterThan(50);
@@ -171,10 +171,10 @@ test.describe.serial("Analytics Live Verification", () => {
       await emailInput.first().fill("demo@wolfpackauto.com");
       await page.locator('input[name="password"], input[type="password"]').first().fill("demo");
       await page.locator('button[type="submit"]').first().click();
-      await page.waitForTimeout(2000);
+      await page.waitForLoadState("domcontentloaded");
     }
     await page.goto("/admin/analytics", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("load");
     const body = await page.textContent("body");
     expect(body!.length).toBeGreaterThan(100);
   });

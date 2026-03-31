@@ -178,6 +178,6 @@ export async function browserLogin(page: Page): Promise<void> {
     await emailInput.first().fill("demo@wolfpackauto.com");
     await passwordInput.first().fill("demo");
     await submitBtn.first().click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("domcontentloaded");
   }
 }

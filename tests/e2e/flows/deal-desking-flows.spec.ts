@@ -84,7 +84,7 @@ test.describe("Deal Desking -- Deal List", () => {
     const select = page.locator("select").filter({ hasText: "All Statuses" }).first();
     await select.selectOption("working");
     // Wait for the fetch triggered by the filter
-    await page.waitForTimeout(600);
+    await page.waitForLoadState("domcontentloaded");
 
     const body = await page.locator("body").textContent();
     // Either we see a "Working" badge or we see "No deals found"
@@ -122,7 +122,7 @@ test.describe("Deal Desking -- Deal List", () => {
     await page.getByRole("button", { name: /create deal/i }).click();
 
     // Wait for modal to close and list to refresh
-    await page.waitForTimeout(1500);
+    await expect(page.getByText("New Deal Worksheet")).not.toBeVisible({ timeout: 10_000 });
 
     // Verify the deal appears (or the modal closed successfully)
     const modalStillOpen = await page.getByText("New Deal Worksheet").isVisible().catch(() => false);
@@ -241,11 +241,8 @@ test.describe("Deal Desking -- Deal Worksheet", () => {
     // Click Calculate
     await page.getByRole("button", { name: /calculate payment/i }).click();
 
-    // Wait for result
-    await page.waitForTimeout(1500);
-
     // Monthly payment should appear
-    await expect(page.getByText("/mo")).toBeVisible();
+    await expect(page.getByText("/mo")).toBeVisible({ timeout: 5_000 });
   });
 
   test("payment calculator: Lease tab shows residual and money factor fields", async ({ page }) => {
@@ -273,7 +270,9 @@ test.describe("Deal Desking -- Deal Worksheet", () => {
 
     // Calculate
     await page.getByRole("button", { name: /calculate payment/i }).click();
-    await page.waitForTimeout(1500);
+
+    // Wait for calculation result
+    await expect(page.getByText(/\/mo|Residual|Monthly/i).first()).toBeVisible({ timeout: 5_000 });
 
     // Residual value should appear in results
     const body = await page.locator("body").textContent();

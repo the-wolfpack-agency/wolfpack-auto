@@ -59,8 +59,6 @@ test.describe("Production Readiness", () => {
     await expect(counter).toBeVisible();
     const initialText = await counter.textContent();
     await page.keyboard.press("ArrowRight");
-    // Wait for counter to update
-    await page.waitForTimeout(200);
     const nextText = await lightbox.locator('text=/\\d+ \\/ \\d+/').textContent();
     expect(nextText).not.toBe(initialText);
   });

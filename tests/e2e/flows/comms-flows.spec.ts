@@ -75,7 +75,7 @@ test.describe("Comms -- Templates", () => {
       return;
     }
     await createBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
 
     // Fill template name
     const nameInput = page.getByLabel(/name/i).first();
@@ -118,7 +118,7 @@ test.describe("Comms -- Templates", () => {
     const saveBtn = page.getByRole("button", { name: /save|create|submit/i }).first();
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("networkidle");
     }
   });
 
@@ -135,7 +135,7 @@ test.describe("Comms -- Templates", () => {
       return;
     }
     await createBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
 
     // Fill name
     const nameInput = page.getByLabel(/name/i).first();
@@ -159,7 +159,7 @@ test.describe("Comms -- Templates", () => {
     const saveBtn = page.getByRole("button", { name: /save|create|submit/i }).first();
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("networkidle");
     }
   });
 
@@ -174,7 +174,7 @@ test.describe("Comms -- Templates", () => {
     const createBtn = page.getByRole("button", { name: /new template|create/i });
     if (await createBtn.isVisible().catch(() => false)) {
       await createBtn.click();
-      await page.waitForTimeout(300);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     // Check for variable insertion buttons
@@ -206,7 +206,7 @@ test.describe("Comms -- Templates", () => {
     const createBtn = page.getByRole("button", { name: /new template|create/i });
     if (await createBtn.isVisible().catch(() => false)) {
       await createBtn.click();
-      await page.waitForTimeout(300);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     const varBtn = page.getByText("{first_name}");
@@ -217,7 +217,6 @@ test.describe("Comms -- Templates", () => {
 
     // Click the variable button
     await varBtn.click();
-    await page.waitForTimeout(300);
 
     // Check that the body textarea contains {first_name}
     const textarea = page.locator("textarea").first();
@@ -238,7 +237,7 @@ test.describe("Comms -- Templates", () => {
     const channelFilter = page.locator("select").filter({ hasText: /all|email|sms/i }).first();
     if (await channelFilter.isVisible().catch(() => false)) {
       await channelFilter.selectOption("email");
-      await page.waitForTimeout(600);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     const body = await page.locator("body").textContent();
@@ -275,7 +274,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
       return;
     }
     await createBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
 
     // Fill name
     const nameInput = page.getByLabel(/name/i).first();
@@ -293,7 +292,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
     const saveBtn = page.getByRole("button", { name: /save|create|submit/i }).first();
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("networkidle");
     }
   });
 
@@ -305,7 +304,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
     }
 
     // Wait for data to load
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("networkidle");
 
     // Look for toggle/switch elements
     const toggles = page.locator('button[role="switch"], input[type="checkbox"]');
@@ -319,7 +318,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
     const firstToggle = toggles.first();
     const initialState = await firstToggle.isChecked().catch(() => null);
     await firstToggle.click();
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("domcontentloaded");
 
     // State should have changed
     const body = await page.locator("body").textContent();
@@ -333,7 +332,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
       return;
     }
 
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("networkidle");
     const body = await page.locator("body").textContent();
 
     // At least check that trigger labels vocabulary exists
@@ -389,12 +388,12 @@ test.describe("Comms -- Message Log", () => {
         const options = await selects.first().locator("option").allTextContents();
         if (options.some((o) => /email/i.test(o))) {
           await selects.first().selectOption("email");
-          await page.waitForTimeout(600);
+          await page.waitForLoadState("domcontentloaded");
         }
       }
     } else {
       await channelSelect.selectOption("email");
-      await page.waitForTimeout(600);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     const body = await page.locator("body").textContent();
@@ -416,7 +415,7 @@ test.describe("Comms -- Message Log", () => {
       const options = await selects.nth(i).locator("option").allTextContents();
       if (options.some((o) => /delivered/i.test(o))) {
         await selects.nth(i).selectOption("delivered");
-        await page.waitForTimeout(600);
+        await page.waitForLoadState("domcontentloaded");
         break;
       }
     }
@@ -432,7 +431,7 @@ test.describe("Comms -- Message Log", () => {
       return;
     }
 
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // If there are messages, they should show channel/status/recipient

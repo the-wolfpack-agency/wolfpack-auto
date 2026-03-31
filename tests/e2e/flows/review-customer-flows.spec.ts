@@ -39,23 +39,22 @@ test.describe("Review Management — browser flows", () => {
   test("displays stat cards — Avg Rating, Total Reviews, Response Rate, By Platform", async ({
     page,
   }) => {
-    await page.waitForTimeout(1_500);
+    await expect(page.locator("text=Avg Rating")).toBeVisible({ timeout: 5_000 });
     for (const label of ["Avg Rating", "Total Reviews", "Response Rate", "By Platform"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
   });
 
   test("avg rating stat shows a number out of 5", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const ratingCard = page.locator("text=/\\/5/").first();
-    await expect(ratingCard).toBeVisible();
+    await expect(ratingCard).toBeVisible({ timeout: 5_000 });
   });
 
   test("filter by platform — select Google", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const platformFilter = page.locator("select").first();
+    await expect(platformFilter).toBeVisible({ timeout: 5_000 });
     await platformFilter.selectOption({ value: "google" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // All visible platform labels should be Google
     const platformLabels = page.locator("text=on Google");
     const count = await platformLabels.count();
@@ -66,17 +65,17 @@ test.describe("Review Management — browser flows", () => {
   });
 
   test("filter by rating — select 5 Stars", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const ratingFilter = page.locator("select").nth(1);
+    await expect(ratingFilter).toBeVisible({ timeout: 5_000 });
     await ratingFilter.selectOption({ value: "5" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("filter by responded status — select Needs Response", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const respondedFilter = page.locator("select").nth(2);
+    await expect(respondedFilter).toBeVisible({ timeout: 5_000 });
     await respondedFilter.selectOption({ value: "false" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // Should show only reviews with "Needs Response" badge
     const needsResponse = page.locator("text=Needs Response");
     if (await needsResponse.first().isVisible()) {
@@ -87,7 +86,6 @@ test.describe("Review Management — browser flows", () => {
   test("review cards show reviewer name, stars, date, platform badge, and response status", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
     const reviewCards = page.locator(".shadow-sm").filter({ hasText: /\u2605/ }); // star character
     if ((await reviewCards.count()) > 0) {
       const firstCard = reviewCards.first();
@@ -103,7 +101,6 @@ test.describe("Review Management — browser flows", () => {
   test("clicking 'Respond' on unresponded review opens response form with template buttons and textarea", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
     const respondBtn = page.locator("button:has-text('Respond')").first();
     if (await respondBtn.isVisible()) {
       await respondBtn.click();
@@ -118,11 +115,10 @@ test.describe("Review Management — browser flows", () => {
   test("click response template — verify textarea populates with template text", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
     const respondBtn = page.locator("button:has-text('Respond')").first();
     if (await respondBtn.isVisible()) {
       await respondBtn.click();
-      await page.waitForTimeout(500);
+      await expect(page.locator("textarea[placeholder='Type your response...']")).toBeVisible({ timeout: 2_000 });
       // Click first template button (they are small buttons with template names)
       const templateBtn = page.locator(".bg-brand-50.text-brand-600").first();
       if (await templateBtn.isVisible()) {
@@ -135,7 +131,6 @@ test.describe("Review Management — browser flows", () => {
   });
 
   test("type response and submit — verify 'Responded' badge appears", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const respondBtn = page.locator("button:has-text('Respond')").first();
     if (await respondBtn.isVisible()) {
       await respondBtn.click();
@@ -144,26 +139,22 @@ test.describe("Review Management — browser flows", () => {
         "Thank you so much for the wonderful review! We truly appreciate your business."
       );
       await page.click("button:has-text('Submit Response')");
-      await page.waitForTimeout(2_000);
       // The review should now show "Responded" badge
       const respondedBadge = page.locator("text=Responded").first();
-      await expect(respondedBadge).toBeVisible();
+      await expect(respondedBadge).toBeVisible({ timeout: 5_000 });
     }
   });
 
   test("flag inappropriate review — verify 'Flagged' badge appears", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const flagBtn = page.locator("button:has-text('Flag')").first();
     if (await flagBtn.isVisible()) {
       const card = flagBtn.locator("xpath=ancestor::div[contains(@class,'shadow-sm')]");
       await flagBtn.click();
-      await page.waitForTimeout(500);
-      await expect(card.locator("text=Flagged")).toBeVisible();
+      await expect(card.locator("text=Flagged")).toBeVisible({ timeout: 2_000 });
     }
   });
 
   test("cancel button closes response form", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const respondBtn = page.locator("button:has-text('Respond')").first();
     if (await respondBtn.isVisible()) {
       await respondBtn.click();
@@ -190,14 +181,13 @@ test.describe("Customer List — browser flows", () => {
   });
 
   test("stat cards show Total Customers, Active, Prospects, Total LTV", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await expect(page.locator("text=Total Customers")).toBeVisible({ timeout: 5_000 });
     for (const label of ["Total Customers", "Active", "Prospects", "Total LTV"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
   });
 
   test("customer table renders with Name, Email, Status, LTV columns", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const table = page.locator("table");
     if ((await table.count()) > 0) {
       await expect(page.locator("th:has-text('Name')")).toBeVisible();
@@ -207,18 +197,18 @@ test.describe("Customer List — browser flows", () => {
   });
 
   test("search customers by name", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const searchInput = page.locator('input[placeholder*="Search by name"]');
+    await expect(searchInput).toBeVisible({ timeout: 5_000 });
     await searchInput.fill("Sarah");
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // Results should filter
   });
 
   test("filter by status — select Active", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const statusFilter = page.locator("select");
+    await expect(statusFilter).toBeVisible({ timeout: 5_000 });
     await statusFilter.selectOption({ value: "active" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // All status badges should be Active
     const badges = page.locator("tbody span.capitalize");
     const count = await badges.count();
@@ -229,13 +219,12 @@ test.describe("Customer List — browser flows", () => {
   });
 
   test("clicking '360' button navigates to customer detail page", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const viewBtn = page.locator("a:has-text('360')").first();
     if (await viewBtn.isVisible()) {
       const href = await viewBtn.getAttribute("href");
       expect(href).toMatch(/\/admin\/customers\//);
       await viewBtn.click();
-      await page.waitForTimeout(2_000);
+      await page.waitForLoadState("domcontentloaded");
       // Should be on customer 360 page
       const bodyText = await page.locator("body").textContent();
       // Either loads the customer or shows "not found"
@@ -252,9 +241,8 @@ test.describe("Customer 360 Page — browser flows", () => {
       test.skip(true, "Customers page returned non-2xx");
       return;
     }
-    await page.waitForTimeout(2_000);
     const viewBtn = page.locator("a:has-text('360')").first();
-    if (!(await viewBtn.isVisible())) {
+    if (!(await viewBtn.isVisible({ timeout: 5_000 }).catch(() => false))) {
       test.skip(true, "No customers available to view 360");
       return;
     }
@@ -263,15 +251,14 @@ test.describe("Customer 360 Page — browser flows", () => {
   });
 
   test("customer 360 page loads with customer name and contact info", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     // Should have a name heading or error
+    await page.waitForLoadState("domcontentloaded");
     const hasName = await page.locator("h1").isVisible();
     const hasError = await page.locator("text=Customer not found").isVisible();
     expect(hasName || hasError).toBeTruthy();
   });
 
   test("tab bar shows Overview, Deals, Service, Comms, Activity tabs", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     if (await page.locator("text=Customer not found").isVisible()) return;
 
     for (const tab of ["Overview", "Deals", "Service", "Comms", "Activity"]) {
@@ -280,18 +267,16 @@ test.describe("Customer 360 Page — browser flows", () => {
   });
 
   test("Overview tab shows Lifetime Value stat card", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     if (await page.locator("text=Customer not found").isVisible()) return;
 
-    await expect(page.locator("text=Lifetime Value")).toBeVisible();
+    await expect(page.locator("text=Lifetime Value")).toBeVisible({ timeout: 5_000 });
   });
 
   test("clicking Deals tab shows purchase table", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     if (await page.locator("text=Customer not found").isVisible()) return;
 
     await page.click("button:has-text('Deals')");
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("domcontentloaded");
     // Should show a table with Date, Vehicle, Price columns
     const table = page.locator("table");
     if ((await table.count()) > 0) {
@@ -301,11 +286,10 @@ test.describe("Customer 360 Page — browser flows", () => {
   });
 
   test("clicking Service tab shows service history", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     if (await page.locator("text=Customer not found").isVisible()) return;
 
     await page.click("button:has-text('Service')");
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("domcontentloaded");
     // Service table or empty state
     const table = page.locator("table");
     if ((await table.count()) > 0) {
@@ -315,11 +299,10 @@ test.describe("Customer 360 Page — browser flows", () => {
   });
 
   test("clicking Comms tab shows communications list", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     if (await page.locator("text=Customer not found").isVisible()) return;
 
     await page.click("button:has-text('Comms')");
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("domcontentloaded");
     // Either communication items or "No communications" message
     const hasComms = await page.locator("text=email, text=sms, text=phone").first().isVisible().catch(() => false);
     const hasEmpty = await page.locator("text=No communications").isVisible().catch(() => false);
@@ -327,18 +310,16 @@ test.describe("Customer 360 Page — browser flows", () => {
   });
 
   test("clicking Activity tab shows behavioral signals", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     if (await page.locator("text=Customer not found").isVisible()) return;
 
     await page.click("button:has-text('Activity')");
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("domcontentloaded");
     // Either activity cards or empty state
   });
 
   test("timeline sidebar renders on 360 page", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     if (await page.locator("text=Customer not found").isVisible()) return;
 
-    await expect(page.locator("h2:has-text('Timeline')")).toBeVisible();
+    await expect(page.locator("h2:has-text('Timeline')")).toBeVisible({ timeout: 5_000 });
   });
 });

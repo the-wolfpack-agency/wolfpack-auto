@@ -44,7 +44,6 @@ test.describe("Public Pages — every page must render for customers", () => {
       ).toBe(200);
 
       // Must have visible content
-      await page.waitForTimeout(500);
       const bodyText = await page.locator("body").innerText();
       expect(
         bodyText.trim().length,

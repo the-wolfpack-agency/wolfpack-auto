@@ -288,7 +288,7 @@ test.describe("Onboarding wizard localStorage persistence", () => {
     if (!ok) return;
 
     // Wait for page to initialize and potentially write to localStorage
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("load");
 
     const stored = await page.evaluate(() => {
       return localStorage.getItem("wolfpack_onboarding_progress");
@@ -339,7 +339,7 @@ test.describe("Onboarding wizard localStorage persistence", () => {
 
     // Reload and check the data was restored
     await page.reload({ waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("load");
 
     const body = await page.textContent("body");
     // The page should not be on step 0 if it restored step 1

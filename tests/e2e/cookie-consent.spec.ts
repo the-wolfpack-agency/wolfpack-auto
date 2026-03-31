@@ -110,9 +110,7 @@ test.describe("Cookie consent -- accept flow", () => {
     await page.goto("/inventory", { waitUntil: "domcontentloaded" });
 
     // Banner should NOT reappear
-    // Wait a moment for any potential re-render
-    await page.waitForTimeout(1_000);
-    await expect(banner).not.toBeVisible();
+    await expect(banner).not.toBeVisible({ timeout: 5_000 });
   });
 });
 
@@ -171,8 +169,7 @@ test.describe("Cookie consent -- essential only flow", () => {
     await expect(banner).not.toBeVisible({ timeout: 5_000 });
 
     await page.goto("/inventory", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1_000);
-    await expect(banner).not.toBeVisible();
+    await expect(banner).not.toBeVisible({ timeout: 5_000 });
   });
 });
 

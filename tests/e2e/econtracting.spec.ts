@@ -405,7 +405,7 @@ test.describe("eContracting Page — /admin/econtracting", () => {
   });
 
   test("stats cards are visible", async ({ page }) => {
-    await page.goto("/admin/econtracting", { waitUntil: "networkidle" });
+    await page.goto("/admin/econtracting", { waitUntil: "domcontentloaded" });
 
     // Stats cards render immediately with computed values from the fetched data
     await expect(page.locator("text=Total Contracts")).toBeVisible();
@@ -415,7 +415,7 @@ test.describe("eContracting Page — /admin/econtracting", () => {
   });
 
   test("contract table displays after loading", async ({ page }) => {
-    await page.goto("/admin/econtracting", { waitUntil: "networkidle" });
+    await page.goto("/admin/econtracting", { waitUntil: "domcontentloaded" });
 
     // Wait for contracts to load (loading state disappears)
     await page.waitForSelector("text=Loading contracts...", {

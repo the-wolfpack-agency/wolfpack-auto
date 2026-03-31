@@ -13,7 +13,6 @@ import path from "path";
 test.describe("Logo Upload — Settings Branding", () => {
   test("settings page renders logo uploader", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     // The file input should exist (hidden but present)
     const fileInput = page.locator("#logo-upload");
@@ -96,13 +95,18 @@ test.describe("Logo Upload — Settings Branding", () => {
 
   test("full upload flow: upload → preview → remove", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     const fileInput = page.locator("#logo-upload");
 
     // Create a tiny PNG in memory and set it on the file input
     const pngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
     const pngBuffer = Buffer.from(pngBase64, "base64");
+
+    // Wait for upload response after setting file
+    const uploadResponse = page.waitForResponse(
+      (res) => res.url().includes("/api/admin/settings/logo") && res.request().method() === "POST",
+      { timeout: 10_000 },
+    );
 
     await fileInput.setInputFiles({
       name: "test-logo.png",
@@ -111,7 +115,7 @@ test.describe("Logo Upload — Settings Branding", () => {
     });
 
     // Wait for upload to complete
-    await page.waitForTimeout(2000);
+    await uploadResponse;
 
     // Success message should appear (or preview should update)
     const successOrPreview = page.locator("text=Logo saved successfully, img[alt='Dealer logo preview']").first();
@@ -123,7 +127,10 @@ test.describe("Logo Upload — Settings Branding", () => {
     const removeBtn = page.getByText("Remove logo");
     if (await removeBtn.isVisible()) {
       await removeBtn.click();
-      await page.waitForTimeout(1000);
+      await page.waitForResponse(
+        (res) => res.url().includes("/api/admin/settings/logo") && res.request().method() === "DELETE",
+        { timeout: 5_000 },
+      ).catch(() => {});
       // Preview should be gone
       const previewGone = await page.locator("img[alt='Dealer logo preview']").isVisible().catch(() => false);
       // It's OK if the default upload icon appears instead
@@ -146,7 +153,6 @@ test.describe("Branding Form — Save Colors & Font", () => {
 
   test("branding form does NOT submit to a 404 route", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     const oldForm = page.locator('form[action="/api/admin/settings/branding"]');
     const count = await oldForm.count();
@@ -155,7 +161,6 @@ test.describe("Branding Form — Save Colors & Font", () => {
 
   test("Save Branding button triggers client-side save", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     const putPromise = page.waitForResponse(
       (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",
@@ -173,7 +178,6 @@ test.describe("Branding Form — Save Colors & Font", () => {
 
   test("settings page has no forms with action attributes (all use client-side fetch)", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     const formActions = await page.$$eval("form[action]", (forms) =>
       forms.map((f) => f.getAttribute("action")).filter(Boolean),
@@ -200,7 +204,6 @@ test.describe("SEO Settings Form", () => {
 
   test("Save SEO Settings button triggers client-side save", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     const putPromise = page.waitForResponse(
       (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",
@@ -233,7 +236,6 @@ test.describe("Webhook Settings Form", () => {
 
   test("Save Webhook button triggers client-side save", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     // Fill in a webhook URL so the form has data to send
     const urlInput = page.locator("#webhook-url");
@@ -258,7 +260,6 @@ test.describe("Webhook Settings Form", () => {
 test.describe("Dealer Info Form", () => {
   test("Save Dealer Info button triggers client-side save", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     const putPromise = page.waitForResponse(
       (res) => res.url().includes("/api/admin/settings") && res.request().method() === "PUT",

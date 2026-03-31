@@ -14,7 +14,7 @@ async function loginBrowser(page: any) {
     await email.first().fill("demo@wolfpackauto.com");
     await page.locator('input[name="password"], input[type="password"]').first().fill("demo");
     await page.locator('button[type="submit"]').first().click();
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("networkidle");
   }
 }
 
@@ -49,7 +49,7 @@ test.describe("Dashboard Increment Validation", () => {
     // Login and get baseline from dashboard
     await loginBrowser(page);
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const beforeText = await page.textContent("body") ?? "";
 
     // Create a lead via public API (no auth needed)
@@ -67,9 +67,8 @@ test.describe("Dashboard Increment Validation", () => {
     });
 
     // Refresh dashboard
-    await page.waitForTimeout(1000);
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const afterText = await page.textContent("body") ?? "";
 
     // Dashboard should show content and not be blank
@@ -82,7 +81,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("2. Dashboard stats are non-zero numbers", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
 
     // Find all stat card values — they should be numbers, not "---" or "undefined"
     const cards = page.locator('[class*="card"], [class*="stat"]');
@@ -102,7 +101,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("3. Inventory page shows vehicle count after adding vehicle data", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/inventory", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     // Should show vehicles or empty state — never error
     expect(body.length).toBeGreaterThan(100);
@@ -115,7 +114,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("4. Leads page shows leads with status badges", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/leads", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     // Should have lead-related content
@@ -126,7 +125,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("5. Analytics page shows event data", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/analytics", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     expect(body).not.toContain("Internal Server Error");
@@ -135,7 +134,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("6. Service page shows appointment and RO counts", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/service", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     const hasService = body.includes("Appointment") || body.includes("appointment") || body.includes("Service") || body.includes("Repair");
@@ -145,7 +144,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("7. Reviews page shows average rating", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/reviews", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     const hasReviews = body.includes("Rating") || body.includes("rating") || body.includes("Review") || body.includes("review") || body.includes("star");
@@ -155,7 +154,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("8. Accounting page shows MTD stats", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/accounting", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     const hasAccounting = body.includes("Gross") || body.includes("gross") || body.includes("Revenue") || body.includes("Sale") || body.includes("Unit");
@@ -165,7 +164,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("9. Deals page shows pipeline data", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/deals", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     const hasDeals = body.includes("Deal") || body.includes("deal") || body.includes("Pipeline") || body.includes("Gross");
@@ -175,7 +174,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("10. System health page shows all dependencies", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/system", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     const hasHealth = body.includes("Health") || body.includes("health") || body.includes("Database") || body.includes("Status");
@@ -214,7 +213,7 @@ test.describe("Dashboard Increment Validation", () => {
     // Login and check leads page
     await loginBrowser(page);
     await page.goto("/admin/leads", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
 
     // The lead should appear (or shadow data should show)
@@ -226,7 +225,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("13. Webhook page shows configuration options", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/webhooks", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     const hasWebhooks = body.includes("Webhook") || body.includes("webhook") || body.includes("URL") || body.includes("Event");
@@ -236,7 +235,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("14. Security page shows scan results", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/security", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(100);
     const hasSecurity = body.includes("Security") || body.includes("security") || body.includes("Scan") || body.includes("Finding");
@@ -246,7 +245,7 @@ test.describe("Dashboard Increment Validation", () => {
   test("15. Knowledge base page loads", async ({ page }) => {
     await loginBrowser(page);
     await page.goto("/admin/knowledge", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
     const body = await page.textContent("body") ?? "";
     expect(body.length).toBeGreaterThan(50);
     expect(body).not.toContain("Internal Server Error");

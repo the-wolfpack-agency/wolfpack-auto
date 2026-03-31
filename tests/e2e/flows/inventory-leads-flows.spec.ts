@@ -45,7 +45,6 @@ test.describe("Inventory — browser flows", () => {
   });
 
   test("vehicle rows show year/make/model, trim, color, and thumbnail", async ({ page }) => {
-    await page.waitForTimeout(1_000);
     const firstRow = page.locator("tbody tr").first();
     if (await firstRow.isVisible()) {
       // Vehicle name (year make model)
@@ -62,7 +61,7 @@ test.describe("Inventory — browser flows", () => {
     const searchInput = page.locator("#inv-search");
     await searchInput.fill("Honda");
     await page.click("button:has-text('Search')");
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
     // URL should contain search=Honda
     expect(page.url()).toContain("search=Honda");
   });
@@ -70,31 +69,31 @@ test.describe("Inventory — browser flows", () => {
   test("filter by status — click 'Available'", async ({ page }) => {
     const availableLink = page.locator("a:has-text('Available')").first();
     await availableLink.click();
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
     expect(page.url()).toContain("status=available");
   });
 
   test("filter by status — click 'Sold'", async ({ page }) => {
     const soldLink = page.locator("a:has-text('Sold')");
     await soldLink.click();
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
     expect(page.url()).toContain("status=sold");
   });
 
   test("filter by status — click 'All' resets filter", async ({ page }) => {
     // First filter to available
     await page.locator("a:has-text('Available')").first().click();
-    await page.waitForTimeout(1_000);
+    await page.waitForLoadState("domcontentloaded");
     // Then click All
     await page.locator("nav[aria-label='Filter by status'] a:has-text('All')").click();
-    await page.waitForTimeout(1_000);
+    await page.waitForLoadState("domcontentloaded");
     expect(page.url()).not.toContain("status=available");
   });
 
   test("sort by price — click Price column header", async ({ page }) => {
     const priceLink = page.locator("a[aria-label='Sort by price']");
     await priceLink.click();
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
     expect(page.url()).toContain("sort=price");
   });
 
@@ -137,14 +136,13 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("stat cards show Total, Hot Leads, Unassigned, New Today", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await expect(page.locator("text=Total")).toBeVisible({ timeout: 5_000 });
     for (const label of ["Total", "Hot Leads", "Unassigned", "New Today"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
   });
 
   test("leads table renders with Name, Status columns and checkboxes", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const table = page.locator("table");
     await expect(table).toBeVisible({ timeout: 8_000 });
     await expect(page.locator("th:has-text('Name')")).toBeVisible();
@@ -154,28 +152,28 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("filter leads by status — select 'New'", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     // Status filter is the first select after the search input
     const statusSelect = page.locator("select").first();
+    await expect(statusSelect).toBeVisible({ timeout: 5_000 });
     await statusSelect.selectOption({ label: "New" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // All visible status badges should be "New"
     const badges = page.locator("tbody span.rounded-full").filter({ hasText: "New" });
     // At least verify the filter was applied
   });
 
   test("filter leads by temperature — select 'Hot'", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const tempSelect = page.locator("select").nth(1);
+    await expect(tempSelect).toBeVisible({ timeout: 5_000 });
     await tempSelect.selectOption({ label: "Hot" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("search leads by name", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const searchInput = page.locator("#lead-search");
+    await expect(searchInput).toBeVisible({ timeout: 5_000 });
     await searchInput.fill("Sarah");
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // Results should filter based on debounced search
   });
 

@@ -41,7 +41,6 @@ test.describe("No static form actions in admin pages", () => {
   for (const { path, name } of ADMIN_PAGES_WITH_FORMS) {
     test(`${name} (${path}) has no forms posting to API routes`, async ({ page }) => {
       await page.goto(path, { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(500);
 
       // Collect form actions that target API routes (the dangerous ones).
       // Same-page GET forms (e.g. search/filter) are valid HTML behavior.
@@ -135,7 +134,6 @@ test.describe("All API endpoints return non-404", () => {
 test.describe("Public form submissions", () => {
   test("trade-in form renders and has no static action", async ({ page }) => {
     await page.goto("/trade-in", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     const formActions = await page.$$eval("form[action]", (forms) =>
       forms.map((f) => f.getAttribute("action")).filter(Boolean),

@@ -359,7 +359,7 @@ test.describe("MFA flow: admin login page", () => {
         await emailInput.first().fill("bad@example.com");
         await passwordInput.first().fill("badpassword");
         await page.locator('button[type="submit"]').first().click();
-        await page.waitForTimeout(2_000);
+        await page.waitForLoadState("domcontentloaded");
 
         // Page should still be functional — not a blank crash or 500
         const bodyText = await page.textContent("body");

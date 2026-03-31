@@ -113,8 +113,6 @@ test.describe("Admin Pages — every page must render content", () => {
       ).toBe(200);
 
       // 3. Must have visible text content (not a blank white page)
-      // Wait briefly for client-side hydration
-      await page.waitForTimeout(500);
       const bodyText = await page.locator("body").innerText();
       expect(
         bodyText.trim().length,

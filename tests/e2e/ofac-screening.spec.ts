@@ -476,7 +476,7 @@ test.describe("OFAC Compliance page — /admin/ofac", () => {
   });
 
   test("stats cards are visible", async ({ page }) => {
-    await page.goto("/admin/ofac", { waitUntil: "networkidle" });
+    await page.goto("/admin/ofac", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading screenings...", {
@@ -507,7 +507,7 @@ test.describe("OFAC Compliance page — /admin/ofac", () => {
   });
 
   test("screening table is present", async ({ page }) => {
-    await page.goto("/admin/ofac", { waitUntil: "networkidle" });
+    await page.goto("/admin/ofac", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading screenings...", {

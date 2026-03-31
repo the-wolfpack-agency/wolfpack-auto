@@ -365,7 +365,7 @@ test.describe("Page — /admin/vehicle-history", () => {
   });
 
   test("stats cards are visible", async ({ page }) => {
-    await page.goto("/admin/vehicle-history", { waitUntil: "networkidle" });
+    await page.goto("/admin/vehicle-history", { waitUntil: "domcontentloaded" });
 
     // Wait for loading to complete
     await page.waitForSelector("text=Loading reports...", {
