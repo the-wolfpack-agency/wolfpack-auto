@@ -208,8 +208,11 @@ test.describe("Tier 4: Component → Brain Data Flow", () => {
     const compareBtn = page.locator('[data-track="compare-toggle"]').first();
     await compareBtn.click();
 
-    // Wait for event to flush
-    await page.waitForTimeout(6000);
+    // Wait for event batch flush to fire
+    await page.waitForRequest(
+      (req) => req.url().includes("/api/analytics/events"),
+      { timeout: 15_000 }
+    );
 
     const after = await (await request.get("/api/analytics/events")).json();
     const afterCount = after.events_by_type?.vehicle_comparison ?? 0;
@@ -225,7 +228,11 @@ test.describe("Tier 4: Component → Brain Data Flow", () => {
     const thumb = page.locator('button[aria-label="View photo 2"]');
     await thumb.click();
 
-    await page.waitForTimeout(6000);
+    // Wait for event batch flush to fire
+    await page.waitForRequest(
+      (req) => req.url().includes("/api/analytics/events"),
+      { timeout: 15_000 }
+    );
 
     const after = await (await request.get("/api/analytics/events")).json();
     const afterCount = after.events_by_type?.gallery_interaction ?? 0;

@@ -19,7 +19,7 @@ test.describe('XSS injection resistance', () => {
     });
 
     await page.goto(`/inventory?q=${encodeURIComponent(payload)}`);
-    await page.waitForTimeout(1000);
+    await page.locator("body").waitFor({ state: "visible" });
 
     expect(alertFired, 'XSS script tag was executed').toBe(false);
 
@@ -40,7 +40,7 @@ test.describe('XSS injection resistance', () => {
     });
 
     await page.goto(`/inventory?q=${encodeURIComponent(payload)}`);
-    await page.waitForTimeout(1000);
+    await page.locator("body").waitFor({ state: "visible" });
 
     expect(alertFired, 'Attribute injection XSS was executed').toBe(false);
 
@@ -58,7 +58,6 @@ test.describe('XSS injection resistance', () => {
       });
 
       await page.goto(`/inventory?q=${encodeURIComponent(payload)}`);
-      await page.waitForTimeout(500);
 
       expect(alertFired, `XSS payload executed: ${payload}`).toBe(false);
     }
@@ -118,7 +117,7 @@ test.describe('XSS injection resistance', () => {
 
       if ((await submitButton.count()) > 0) {
         await submitButton.click();
-        await page.waitForTimeout(1000);
+        await page.waitForLoadState("domcontentloaded");
       }
 
       expect(alertFired, 'XSS in contact form message was executed').toBe(false);

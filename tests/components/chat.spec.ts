@@ -30,7 +30,6 @@ test.describe("Chat Widget", () => {
     });
     // Use load (not domcontentloaded) so React hydration is complete before tests run
     await page.goto("/", { waitUntil: "load" });
-    await page.waitForTimeout(300);
   });
 
   test("chat bubble visible on page load", async ({ page }) => {
@@ -55,10 +54,8 @@ test.describe("Chat Widget", () => {
     await sendBtn.click();
 
     // Wait for response (typing indicator then assistant message)
-    await page.waitForTimeout(3_000);
-
     const log = panel.locator("[role='log']");
-    await expect(log).toBeVisible();
+    await expect(log).toBeVisible({ timeout: 10_000 });
   });
 
   test("close button closes panel", async ({ page }) => {
@@ -89,7 +86,6 @@ test.describe("Chat Widget", () => {
 
   test("chat panel does not appear on admin pages", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(500);
 
     // ChatWidget is not rendered in admin — bubble must not exist
     const bubble = page.locator('button[aria-label="Open chat assistant"]');

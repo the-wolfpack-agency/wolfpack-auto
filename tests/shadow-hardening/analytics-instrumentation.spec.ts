@@ -19,8 +19,11 @@ test.describe("Analytics instrumentation", () => {
     page,
   }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    // Allow analytics scripts to initialize
-    await page.waitForTimeout(1500);
+    // Wait for analytics scripts to initialize and set the session key
+    await page.waitForFunction(
+      () => sessionStorage.getItem("wolfpack_analytics_session") !== null,
+      { timeout: 10_000 }
+    );
 
     const sessionValue = await page.evaluate(() => {
       return sessionStorage.getItem("wolfpack_analytics_session");
@@ -40,7 +43,11 @@ test.describe("Analytics instrumentation", () => {
     page,
   }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1500);
+    // Wait for analytics scripts to initialize and set the fingerprint key
+    await page.waitForFunction(
+      () => localStorage.getItem("wolfpack_analytics_fp") !== null,
+      { timeout: 10_000 }
+    );
 
     const fpValue = await page.evaluate(() => {
       return localStorage.getItem("wolfpack_analytics_fp");
@@ -68,7 +75,12 @@ test.describe("Analytics instrumentation", () => {
     });
 
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1000);
+
+    // Set up a promise to wait for the analytics batch request
+    const analyticsRequestPromise = page.waitForRequest(
+      (req) => req.url().includes("/api/analytics/events"),
+      { timeout: 15_000 }
+    );
 
     // Click any visible link or button to trigger tracking
     const clickable = page.locator("a[href], button").first();
@@ -78,8 +90,8 @@ test.describe("Analytics instrumentation", () => {
       });
     }
 
-    // Wait for the batch flush interval (5s) plus margin
-    await page.waitForTimeout(6000);
+    // Wait for the batch flush to fire the analytics request
+    await analyticsRequestPromise;
 
     expect(
       analyticsRequests.length,
@@ -101,12 +113,21 @@ test.describe("Analytics instrumentation", () => {
     });
 
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    // Wait for the batch flush (5s interval)
-    await page.waitForTimeout(6000);
+    // Wait for the first batch flush containing page_view
+    await page.waitForRequest(
+      (req) => req.url().includes("/api/analytics/events") && (req.postData() || "").includes("page_view"),
+      { timeout: 15_000 }
+    ).catch(() => {
+      // First page may not flush before navigation; continue
+    });
 
     // Navigate to a second page to trigger another page_view
     await page.goto("/inventory", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(6000);
+    // Wait for the batch flush containing page_view from second navigation
+    await page.waitForRequest(
+      (req) => req.url().includes("/api/analytics/events"),
+      { timeout: 15_000 }
+    );
 
     expect(
       analyticsPayloads.length,

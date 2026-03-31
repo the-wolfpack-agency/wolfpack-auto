@@ -28,8 +28,7 @@ for (const path of PAGES) {
       });
 
       await page.goto(path, { waitUntil: "domcontentloaded" });
-      // Allow a brief settle for any deferred scripts
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("load");
 
       expect(errors).toEqual([]);
     });

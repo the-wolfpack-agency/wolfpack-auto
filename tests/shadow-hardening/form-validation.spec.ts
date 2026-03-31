@@ -36,9 +36,9 @@ test.describe("Form validation: /contact", () => {
     });
 
     await submitButton.click();
-    await page.waitForTimeout(500);
 
     // JS validation should block submission and show role="alert" error paragraphs
+    await page.locator('p[role="alert"]').first().waitFor({ timeout: 5_000 });
     const errorAlerts = page.locator('p[role="alert"]');
     const alertCount = await errorAlerts.count();
 
@@ -84,7 +84,7 @@ test.describe("Form validation: /contact", () => {
     // Submit the form
     const submitButton = page.locator('button[type="submit"]');
     await submitButton.click();
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("domcontentloaded");
 
     expect(
       capturedRequest,

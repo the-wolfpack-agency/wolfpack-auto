@@ -95,7 +95,7 @@ test.describe("UI Render — Public Pages (customer-facing)", () => {
       expect(response?.status(), `${path} returned ${response?.status()}`).toBe(200);
 
       // Has visible content (not blank)
-      await page.waitForTimeout(500);
+      await page.locator("body").waitFor({ state: "visible" });
       const bodyText = await page.locator("body").innerText();
       expect(bodyText.trim().length, `${path} is blank`).toBeGreaterThan(10);
 
@@ -139,7 +139,7 @@ test.describe("UI Render — Admin Pages (dealer dashboard)", () => {
       expect(response?.status(), `${path} returned ${response?.status()}`).toBe(200);
 
       // Has visible content
-      await page.waitForTimeout(500);
+      await page.locator("body").waitFor({ state: "visible" });
       const bodyText = await page.locator("body").innerText();
       expect(bodyText.trim().length, `${path} is blank`).toBeGreaterThan(10);
 
@@ -195,7 +195,7 @@ test.describe("UI Render — Cross-Cutting Checks", () => {
 
   test("no React error boundary fallback visible", async ({ page }) => {
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1000);
+    await page.locator("body").waitFor({ state: "visible" });
 
     // Common React error boundary patterns
     const content = await page.content();
@@ -206,7 +206,7 @@ test.describe("UI Render — Cross-Cutting Checks", () => {
 
   test("inventory page loads real vehicle data or empty state", async ({ page }) => {
     await page.goto("/inventory", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1000);
+    await page.locator("body").waitFor({ state: "visible" });
 
     const content = await page.content();
 

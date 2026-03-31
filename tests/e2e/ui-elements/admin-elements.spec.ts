@@ -75,7 +75,7 @@ test.describe("UI Deep: Settings", () => {
   test("has 14+ time inputs for sales hours", async ({ page }) => {
     const ok = await safeNav(page, "/admin/settings");
     if (!ok) { test.skip(true, "Settings non-2xx"); return; }
-    await page.waitForTimeout(2000);
+    await page.locator('input[type="time"]').first().waitFor({ timeout: 8_000 });
     const count = await page.locator('input[type="time"]').count();
     expect(count).toBeGreaterThanOrEqual(14);
   });
@@ -83,7 +83,7 @@ test.describe("UI Deep: Settings", () => {
   test("has 2+ color pickers for branding", async ({ page }) => {
     const ok = await safeNav(page, "/admin/settings");
     if (!ok) { test.skip(true, "Settings non-2xx"); return; }
-    await page.waitForTimeout(2000);
+    await page.locator('input[type="color"]').first().waitFor({ timeout: 8_000 });
     const count = await page.locator('input[type="color"]').count();
     expect(count).toBeGreaterThanOrEqual(2);
   });

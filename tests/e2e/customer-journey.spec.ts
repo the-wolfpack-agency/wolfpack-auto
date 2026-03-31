@@ -23,7 +23,7 @@ test.describe("Customer journey: search, view, inquire", () => {
       await searchInput.fill("SUV");
       // Trigger search — press Enter or wait for auto-search
       await searchInput.press("Enter");
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     // 3. Verify vehicle cards appear — look for links to /inventory/
@@ -109,8 +109,9 @@ test.describe("Customer journey: chat widget", () => {
     await chatInput.first().fill("Do you have any trucks under $40k?");
     await chatInput.first().press("Enter");
 
-    // 5. Wait for response
-    await page.waitForTimeout(3000);
+    // 5. Wait for response — look for at least one assistant message to appear
+    const assistantMsg = page.locator('[data-role="assistant"], [class*="message"]').first();
+    await assistantMsg.waitFor({ state: "attached", timeout: 10_000 });
 
     // 6. Verify response appeared (not just the welcome message)
     // There should be at least 2 messages: welcome + our query + response
@@ -154,7 +155,7 @@ test.describe("Customer journey: inventory browsing with filters", () => {
       } else {
         await el.click();
       }
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("domcontentloaded");
 
       // Verify results updated (page still has vehicle cards)
       const filteredCards = page.locator('a[href*="/inventory/"]');
@@ -178,7 +179,7 @@ test.describe("Customer journey: inventory browsing with filters", () => {
       } else {
         await el.click();
       }
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     // 5. Verify the page still works and has content
