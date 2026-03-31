@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -106,6 +106,8 @@ export default function DocumentsPage() {
   const [formLeadId, setFormLeadId] = useState("");
   const [formVin, setFormVin] = useState("");
   const [formNotes, setFormNotes] = useState("");
+  const [formFile, setFormFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Signing
@@ -215,20 +217,18 @@ export default function DocumentsPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch("/api/admin/documents", {
+      const fd = new FormData();
+      fd.append("name", formName.trim());
+      fd.append("doc_type", formType);
+      if (formDealId.trim()) fd.append("deal_id", formDealId.trim());
+      if (formLeadId.trim()) fd.append("lead_id", formLeadId.trim());
+      if (formVin.trim()) fd.append("vehicle_vin", formVin.trim());
+      if (formNotes.trim()) fd.append("notes", formNotes.trim());
+      if (formFile) fd.append("file", formFile);
+
+      const res = await fetch("/api/admin/documents/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formName.trim(),
-          doc_type: formType,
-          deal_id: formDealId.trim() || null,
-          lead_id: formLeadId.trim() || null,
-          vehicle_vin: formVin.trim() || null,
-          notes: formNotes.trim() || null,
-          mime_type: "application/pdf",
-          file_size_bytes: null,
-          tags: [],
-        }),
+        body: fd,
       });
 
       const data = (await res.json()) as { error?: string; document?: Document };
@@ -247,6 +247,7 @@ export default function DocumentsPage() {
       setFormLeadId("");
       setFormVin("");
       setFormNotes("");
+      setFormFile(null);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Unexpected error.");
     } finally {
@@ -363,15 +364,47 @@ export default function DocumentsPage() {
               </div>
             </div>
 
-            {/* File picker placeholder */}
+            {/* File picker */}
             <div>
               <label className="block text-sm font-medium text-gray-700">File</label>
-              <div className="mt-1.5 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-8 text-center">
+              <div
+                className={`mt-1.5 flex items-center justify-center rounded-lg border-2 border-dashed px-6 py-8 text-center transition-colors ${
+                  formFile ? "border-brand-500 bg-brand-50" : "border-gray-300 hover:border-gray-400"
+                }`}
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-brand-500", "bg-brand-50"); }}
+                onDragLeave={(e) => { e.currentTarget.classList.remove("border-brand-500", "bg-brand-50"); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove("border-brand-500", "bg-brand-50");
+                  const f = e.dataTransfer.files[0];
+                  if (f) setFormFile(f);
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                role="button"
+                tabIndex={0}
+              >
                 <div>
-                  <p className="text-sm text-gray-500">Drag and drop a file, or click to browse</p>
-                  <p className="mt-1 text-xs text-gray-400">PDF, JPG, PNG up to 25MB. File upload requires Vercel Blob in production.</p>
+                  {formFile ? (
+                    <>
+                      <p className="text-sm font-medium text-brand-700">{formFile.name}</p>
+                      <p className="mt-1 text-xs text-gray-500">{(formFile.size / 1024 / 1024).toFixed(1)} MB</p>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setFormFile(null); }} className="mt-2 text-xs text-red-600 hover:underline">Remove</button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-500">Drag and drop a file, or click to browse</p>
+                      <p className="mt-1 text-xs text-gray-400">PDF, JPG, PNG up to 25MB</p>
+                    </>
+                  )}
                 </div>
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) setFormFile(f); }}
+              />
             </div>
 
             <div>
