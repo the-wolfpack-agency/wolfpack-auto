@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getDashboardStats, getRecentLeads } from "@/lib/data";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { HotLeadsWidget } from "@/components/HotLeadsWidget";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -88,6 +89,11 @@ export default async function AdminDashboardPage() {
           value={vehicles.sold}
           icon={<TagIcon />}
         />
+      </div>
+
+      {/* Hot Leads Widget */}
+      <div className="mt-8">
+        <HotLeadsWidget />
       </div>
 
       {/* Recent Leads Table */}

@@ -55,6 +55,7 @@ const ADMIN_GET_ROUTES = [
   "/api/admin/webhooks/deliveries",
   // "/api/admin/domains", — requires dealerId query param
 
+  "/api/admin/alerts",
   "/api/admin/engagement-reports",
   "/api/admin/fi-products",
   "/api/admin/good-faith",
