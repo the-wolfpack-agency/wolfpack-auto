@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getVehicleByVin, type VehicleDetail } from "@/lib/data";
+import CompareTracker, { CompareWinnerLink } from "@/components/CompareTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,10 @@ export default async function ComparePage({
     return String(v[spec.key] ?? "—");
   }
 
+  const allVins = vehicles.map((v) => v.vin);
+
   return (
+    <CompareTracker vins={allVins}>
     <div className="bg-surface-muted min-h-screen">
       {/* Header */}
       <div className="bg-gradient-to-r from-brand-800 to-brand-950 py-10">
@@ -112,12 +116,14 @@ export default async function ComparePage({
                           >
                             View Details
                           </a>
-                          <a
+                          <CompareWinnerLink
+                            vin={v.vin}
+                            allVins={allVins}
                             href={`/contact?subject=test_drive&vehicle=${encodeURIComponent(`${v.year} ${v.make} ${v.model} ${v.trim}`)}&vin=${v.vin}`}
                             className="flex-1 rounded-lg bg-brand-600 px-3 py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-brand-700"
                           >
                             Test Drive
-                          </a>
+                          </CompareWinnerLink>
                         </div>
                       </div>
                     </th>
@@ -188,5 +194,6 @@ export default async function ComparePage({
         )}
       </div>
     </div>
+    </CompareTracker>
   );
 }

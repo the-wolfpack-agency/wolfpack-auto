@@ -40,7 +40,7 @@ export function useCompare() {
 
 export function CompareButton({ vin }: { vin: string }) {
   const { toggle, isSelected, vins } = useCompare();
-  const { track } = useAnalytics();
+  const { trackComparison } = useAnalytics();
   const selected = isSelected(vin);
 
   return (
@@ -51,11 +51,10 @@ export function CompareButton({ vin }: { vin: string }) {
         e.stopPropagation();
         const wasSelected = isSelected(vin);
         toggle(vin);
-        track("vehicle_comparison", wasSelected ? "removed_from_compare" : "added_to_compare", {
-          vin,
-          compare_count: wasSelected ? vins.length - 1 : vins.length + 1,
-          compared_with: vins.filter((v) => v !== vin).slice(0, 3),
-        });
+        const nextVins = wasSelected
+          ? vins.filter((v) => v !== vin)
+          : [...vins, vin].slice(0, MAX_COMPARE);
+        trackComparison(wasSelected ? "remove" : "add", { vins: nextVins });
       }}
       className={`absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold backdrop-blur-sm transition-all ${
         selected
@@ -76,7 +75,7 @@ export function CompareButton({ vin }: { vin: string }) {
 
 export default function CompareBar() {
   const { vins, clear, count } = useCompare();
-  const { track } = useAnalytics();
+  const { trackComparison } = useAnalytics();
 
   if (count === 0) return null;
 
@@ -101,10 +100,7 @@ export default function CompareBar() {
           </button>
           <a
             href={`/inventory/compare?vins=${vins.join(",")}`}
-            onClick={() => track("vehicle_comparison", "compare_initiated", {
-              vins,
-              vehicle_count: count,
-            })}
+            onClick={() => trackComparison("view", { vins })}
             className={`rounded-lg px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-all ${
               count >= 2
                 ? "bg-brand-600 hover:bg-brand-700"

@@ -145,6 +145,8 @@ export default async function InventoryPage({
                 <a
                   key={v.vin}
                   href={`/inventory/${v.vin}`}
+                  data-price={v.price}
+                  data-vin={v.vin}
                   className="group overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1"
                 >
                   <div className={`relative h-48 bg-gradient-to-br ${v.gradient}`}>
