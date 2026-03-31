@@ -57,7 +57,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npm run build && npm run start",
+    command: "DATABASE_URL= npm run build && DATABASE_URL= npm run start",
     url: "http://localhost:3000/inventory",
     reuseExistingServer: true,
     // Production build + start takes longer, but serves pages 5-10x faster
