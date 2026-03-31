@@ -52,7 +52,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // Dashboard should show key metrics
@@ -67,7 +67,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // Table headers or data should include these concepts
@@ -82,7 +82,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
     const monthSelect = page.locator("select").first();
 
     // Capture current body text
@@ -96,7 +96,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
     }
 
     await monthSelect.selectOption({ index: 1 });
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("domcontentloaded");
 
     // Page should have re-rendered (data may or may not differ)
     const afterBody = await page.locator("body").textContent();
@@ -110,7 +110,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // Should have some salesperson-related content or an empty state
@@ -164,7 +164,7 @@ test.describe("Accounting -- Commissions", () => {
     }
 
     await payPeriodSelect.selectOption({ index: 1 });
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("domcontentloaded");
 
     const body = await page.locator("body").textContent();
     expect(body).not.toMatch(/500.*internal server error/i);
@@ -177,7 +177,7 @@ test.describe("Accounting -- Commissions", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // Should show role labels or indicate no commissions
@@ -193,7 +193,7 @@ test.describe("Accounting -- Commissions", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     const hasTotals = /unpaid|paid|total/i.test(body ?? "");
@@ -207,7 +207,7 @@ test.describe("Accounting -- Commissions", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const markPaidBtn = page.getByRole("button", { name: /mark.*paid/i }).first();
     if (!(await markPaidBtn.isVisible().catch(() => false))) {
@@ -216,7 +216,7 @@ test.describe("Accounting -- Commissions", () => {
     }
 
     await markPaidBtn.click();
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("domcontentloaded");
 
     // After marking paid, the button should disappear or change
     const body = await page.locator("body").textContent();
@@ -277,7 +277,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
       await qbCard.click();
     }
 
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("domcontentloaded");
 
     const body = await page.locator("body").textContent();
     expect(body).not.toMatch(/500.*internal server error/i);
@@ -296,7 +296,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
     const downloadBtn = page.getByRole("button", { name: /download|export/i });
     if (await downloadBtn.isVisible().catch(() => false)) {
       await downloadBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     // Either a download happened or an alert/error was shown (both acceptable)
@@ -311,7 +311,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // Chart of accounts should show standard dealer accounts
@@ -326,7 +326,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
       return;
     }
 
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("networkidle");
 
     const addBtn = page.getByRole("button", { name: /add.*account|new.*account/i });
     if (!(await addBtn.isVisible().catch(() => false))) {
@@ -335,7 +335,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
     }
 
     await addBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
 
     // Fill account code
     const codeInput = page.getByLabel(/code|number/i).first();
@@ -359,7 +359,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
     const saveBtn = page.getByRole("button", { name: /add|save|create/i }).first();
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     const body = await page.locator("body").textContent();
@@ -373,7 +373,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
       return;
     }
 
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // Should see account type labels
@@ -393,7 +393,6 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
     if (count >= 2) {
       await dateInputs.first().fill("2026-03-01");
       await dateInputs.nth(1).fill("2026-03-31");
-      await page.waitForTimeout(300);
     }
 
     const body = await page.locator("body").textContent();

@@ -134,7 +134,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   test("create task form has title, description, assignee, due date, priority fields", async ({
     page,
   }) => {
-    await page.waitForTimeout(1_000);
+    await page.locator("h2:has-text('Assign New Task')").waitFor({ timeout: 10_000 });
     await expect(page.locator("h2:has-text('Assign New Task')")).toBeVisible();
     await expect(page.locator("label:has-text('Task Title')")).toBeVisible();
     await expect(page.locator("label:has-text('Description')")).toBeVisible();
@@ -144,7 +144,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   });
 
   test("fill and submit new task — verify success message or task appears", async ({ page }) => {
-    await page.waitForTimeout(1_000);
+    await page.locator("h2:has-text('Assign New Task')").waitFor({ timeout: 10_000 });
     await page.fill('input[placeholder="e.g. Follow up with leads"]', "E2E Test — Call back internet leads");
     await page.fill('textarea[placeholder="Additional details"]', "Follow up with 3 new internet leads from today");
     await page.fill('input[placeholder="Employee name"]', "Mike Thompson");
@@ -154,7 +154,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
     await page.selectOption("select", { value: "high" });
 
     await page.click("button:has-text('Create Task')");
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
 
     // Should show success message
     const success = page.locator("text=Task created successfully");
@@ -166,26 +166,26 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   });
 
   test("mark task complete — click 'Mark Complete' button", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const completeBtn = page.locator("button:has-text('Mark Complete')").first();
     if (await completeBtn.isVisible()) {
       await completeBtn.click();
-      await page.waitForTimeout(1_000);
+      await page.waitForLoadState("domcontentloaded");
       // Status should change to Completed
     }
   });
 
   test("start button progresses task from pending to in-progress", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const startBtn = page.locator("button:has-text('Start')").first();
     if (await startBtn.isVisible()) {
       await startBtn.click();
-      await page.waitForTimeout(1_000);
+      await page.waitForLoadState("domcontentloaded");
     }
   });
 
   test("Recognize tab renders with shoutout form", async ({ page }) => {
-    await page.waitForTimeout(1_000);
+    await page.waitForLoadState("networkidle");
     await page.click("button:has-text('Recognize')");
     await expect(page.locator("h2:has-text('Send a Shoutout')")).toBeVisible();
     await expect(page.locator("label:has-text('Employee Name')")).toBeVisible();
@@ -256,7 +256,7 @@ test.describe("Marketing Campaigns — browser flows", () => {
   });
 
   test("campaign cards or list renders with name, budget, status", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     // Look for campaign-related data
     const hasCampaigns =
       (await page.locator("text=/Budget|ROI|Leads Generated/i").first().isVisible().catch(() => false)) ||
@@ -271,7 +271,7 @@ test.describe("Marketing Campaigns — browser flows", () => {
     const addBtn = page.locator("button:has-text('Create'), button:has-text('New Campaign'), button:has-text('Add')").first();
     if (await addBtn.isVisible()) {
       await addBtn.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("domcontentloaded");
 
       // Fill form fields that exist
       const nameInput = page.locator('input[placeholder*="name"], input[placeholder*="Name"]').first();
@@ -287,7 +287,7 @@ test.describe("Marketing Campaigns — browser flows", () => {
       const submitBtn = page.locator("button[type='submit']").first();
       if (await submitBtn.isVisible()) {
         await submitBtn.click();
-        await page.waitForTimeout(2_000);
+        await page.waitForLoadState("domcontentloaded");
       }
     }
   });

@@ -39,7 +39,7 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("displays stat cards — Total Lenders, Active, Portals, Best Rate", async ({ page }) => {
-    await page.waitForTimeout(1_500); // wait for API fetch
+    await page.locator("text=Total Lenders").waitFor({ timeout: 10_000 });
     const statLabels = ["Total Lenders", "Active", "Portals", "Best Rate"];
     for (const label of statLabels) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
@@ -47,14 +47,14 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("lender cards render with names and portal badges", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     // Cards should show lender names as h3 or no-lender fallback
     const cards = page.locator(".shadow-card h3, text=/No lenders configured/i");
     await expect(cards.first()).toBeVisible({ timeout: 8_000 });
   });
 
   test("lender cards display portal type badges (RouteOne, DealerTrack, CUDL, Direct)", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     // Portal badges are rendered as rounded-full spans
     const portalBadges = page.locator("span.rounded-full");
     const count = await portalBadges.count();
@@ -89,7 +89,7 @@ test.describe("Lender Portal — browser flows", () => {
     await page.click("button[type='submit']:has-text('Add Lender')");
 
     // Either form closes (success) or an error div appears
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
     const formStillVisible = await page.locator("h2:has-text('Add Lender')").isVisible();
     if (formStillVisible) {
       // Check for error message
@@ -99,7 +99,7 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("clicking 'View Rate Sheet' reveals rate tiers table with columns", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     const rateButton = page.locator("button:has-text('View Rate Sheet')").first();
     if (await rateButton.isVisible()) {
       await rateButton.click();
@@ -111,7 +111,7 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("clicking 'Hide Rate Sheet' collapses the rate tiers table", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     const viewButton = page.locator("button:has-text('View Rate Sheet')").first();
     if (await viewButton.isVisible()) {
       await viewButton.click();
@@ -123,14 +123,14 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("toggle lender active/inactive — verify status text changes", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     const deactivateBtn = page.locator("button:has-text('Deactivate')").first();
     if (await deactivateBtn.isVisible()) {
       // Find the card's status before toggle
       const card = deactivateBtn.locator("xpath=ancestor::div[contains(@class,'shadow-card')]");
       await expect(card.locator("text=Active")).toBeVisible();
       await deactivateBtn.click();
-      await page.waitForTimeout(1_000);
+      await page.waitForLoadState("domcontentloaded");
       // After toggle, button should say "Activate" and status "Inactive"
       await expect(card.locator("text=Inactive")).toBeVisible();
     }
@@ -166,7 +166,7 @@ test.describe("Credit Bureau — browser flows", () => {
   });
 
   test("displays stat cards — Total Pulls, Average Score, Hard Pulls, Soft Pulls", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.locator("text=Total Pulls").waitFor({ timeout: 10_000 });
     for (const label of ["Total Pulls", "Average Score", "Hard Pulls", "Soft Pulls"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
@@ -221,7 +221,7 @@ test.describe("Credit Bureau — browser flows", () => {
     await page.click("button[type='submit']:has-text('Pull Credit')");
 
     // Wait for result or error
-    await page.waitForTimeout(3_000);
+    await page.waitForLoadState("networkidle");
     // Either the Credit Report Result section or an error appears
     const resultVisible = await page.locator("text=Credit Report Result").isVisible();
     const errorVisible = await page.locator(".text-red-700").isVisible();
@@ -235,7 +235,7 @@ test.describe("Credit Bureau — browser flows", () => {
     await page.selectOption("select >> nth=0", { value: "equifax" });
     await page.locator('input[type="checkbox"]').check();
     await page.click("button[type='submit']:has-text('Pull Credit')");
-    await page.waitForTimeout(3_000);
+    await page.waitForLoadState("networkidle");
 
     if (await page.locator("text=Credit Report Result").isVisible()) {
       // Score appears as a large number
@@ -250,7 +250,7 @@ test.describe("Credit Bureau — browser flows", () => {
   test("credit history table renders with Date, Applicant, Bureau, Type, Score columns", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const table = page.locator("table");
     if ((await table.count()) > 0) {
       for (const col of ["Date", "Applicant", "Bureau", "Type", "Score"]) {
@@ -260,7 +260,7 @@ test.describe("Credit Bureau — browser flows", () => {
   });
 
   test("score distribution sidebar renders with tier labels", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const distribution = page.locator("text=Score Distribution");
     if (await distribution.isVisible()) {
       await expect(page.locator("text=Excellent")).toBeVisible();

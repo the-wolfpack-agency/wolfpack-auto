@@ -163,7 +163,6 @@ test.describe("All nav links present", () => {
       const expanded = await header.getAttribute("aria-expanded");
       if (expanded === "false") {
         await header.click();
-        await page.waitForTimeout(250);
       }
     }
 
@@ -188,7 +187,6 @@ test.describe("All nav links present", () => {
       const expanded = await header.getAttribute("aria-expanded");
       if (expanded === "false") {
         await header.click();
-        await page.waitForTimeout(200);
       }
     }
 
@@ -268,7 +266,6 @@ test.describe("Section toggle behavior", () => {
     // Open sales and inventory
     await sidebar.locator('button[data-section="sales"]').click();
     await sidebar.locator('button[data-section="inventory"]').click();
-    await page.waitForTimeout(300);
 
     // Both should be expanded
     await expect(sidebar.locator('button[data-section="sales"]')).toHaveAttribute("aria-expanded", "true");
@@ -409,7 +406,6 @@ test.describe("Backward compatibility", () => {
       const expanded = await header.getAttribute("aria-expanded");
       if (expanded === "false") {
         await header.click();
-        await page.waitForTimeout(200);
       }
     }
 
@@ -493,7 +489,6 @@ test.describe("Sidebar analytics events", () => {
     // Toggle a section
     const salesButton = sidebar.locator('button[data-section="sales"]');
     await salesButton.click();
-    await page.waitForTimeout(500);
 
     // The EventCollector batches events, so we just verify the click was possible
     // (analytics event capture is verified by the EventCollector's own tests)

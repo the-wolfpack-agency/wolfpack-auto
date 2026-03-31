@@ -178,30 +178,28 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("click lead row to expand detail panel", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const firstRow = page.locator("tbody tr").first();
     if (await firstRow.isVisible()) {
       await firstRow.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("domcontentloaded");
       // The expand arrow should rotate and detail panel should appear
       // Detail panel is a LeadDetailPanel component rendered as a tr
     }
   });
 
   test("select-all checkbox selects all visible leads", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const selectAll = page.locator("input[aria-label='Select all leads']");
     await selectAll.check();
-    await page.waitForTimeout(500);
     // Bulk action bar should appear
     await expect(page.locator("text=/selected/i")).toBeVisible();
   });
 
   test("bulk select shows bulk action bar with status and assign options", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const selectAll = page.locator("input[aria-label='Select all leads']");
     await selectAll.check();
-    await page.waitForTimeout(500);
     // Bulk action bar
     await expect(page.locator("text=selected")).toBeVisible();
     await expect(page.locator("text=Change Status")).toBeVisible();
@@ -210,34 +208,31 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("clear selection button removes bulk action bar", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const selectAll = page.locator("input[aria-label='Select all leads']");
     await selectAll.check();
-    await page.waitForTimeout(500);
     await page.click("button:has-text('Clear selection')");
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
     await expect(page.locator("text=/\\d+ selected/")).not.toBeVisible();
   });
 
   test("individual lead checkbox toggles selection", async ({ page }) => {
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     const firstCheckbox = page.locator("tbody input[type='checkbox']").first();
     if (await firstCheckbox.isVisible()) {
       await firstCheckbox.check();
-      await page.waitForTimeout(300);
-      await expect(page.locator("text=1 selected")).toBeVisible();
+      await expect(page.locator("text=1 selected")).toBeVisible({ timeout: 5_000 });
       await firstCheckbox.uncheck();
-      await page.waitForTimeout(300);
     }
   });
 
   test("sort direction toggle button works", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     const sortBtn = page.locator("button[aria-label*='Sort']");
     if (await sortBtn.isVisible()) {
       const initialText = await sortBtn.textContent();
       await sortBtn.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("domcontentloaded");
       const newText = await sortBtn.textContent();
       expect(newText).not.toBe(initialText);
     }
@@ -253,7 +248,7 @@ test.describe("Trade-In Submissions — browser flow", () => {
     const ok = await safeNavigate(page, "/admin/trade-in");
     if (!ok) { test.skip(true, "Trade-in page returned non-2xx"); return; }
 
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     // Page should show trade-in related content
     const body = await page.locator("body").textContent();
     expect(body).not.toMatch(/500.*internal server error/i);
@@ -271,7 +266,7 @@ test.describe("Pricing Intelligence — browser flow", () => {
     const ok = await safeNavigate(page, "/admin/pricing");
     if (!ok) { test.skip(true, "Pricing page returned non-2xx"); return; }
 
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("networkidle");
     const body = await page.locator("body").textContent();
     expect(body).not.toMatch(/500.*internal server error/i);
     // Look for pricing-related content

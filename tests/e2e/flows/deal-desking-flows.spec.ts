@@ -334,7 +334,6 @@ test.describe("Deal Desking -- Deal Worksheet", () => {
 
     // Click first product
     await checkboxes.first().check();
-    await page.waitForTimeout(500);
 
     // Running total should show "Products selected" and "Retail total"
     await expect(page.getByText("Products selected")).toBeVisible();
@@ -367,7 +366,6 @@ test.describe("Deal Desking -- Deal Worksheet", () => {
     // Select first two products
     await checkboxes.nth(0).check();
     await checkboxes.nth(1).check();
-    await page.waitForTimeout(500);
 
     // Verify count shows 2
     const summaryText = await page.getByText("Products selected").locator("..").textContent();
@@ -399,11 +397,9 @@ test.describe("Deal Desking -- Deal Worksheet", () => {
 
     // Check then uncheck
     await checkboxes.first().check();
-    await page.waitForTimeout(300);
-    await expect(page.getByText("Products selected")).toBeVisible();
+    await expect(page.getByText("Products selected")).toBeVisible({ timeout: 5_000 });
 
     await checkboxes.first().uncheck();
-    await page.waitForTimeout(300);
 
     // Summary should disappear when no products selected
     await expect(page.getByText("Products selected")).not.toBeVisible();
@@ -439,7 +435,7 @@ test.describe("Deal Desking -- Deal Worksheet", () => {
     // Capture current status text
     const btnText = await advanceBtn.textContent();
     await advanceBtn.click();
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("domcontentloaded");
 
     // The advance button text should change (next status in flow)
     const newBtnText = await advanceBtn.textContent().catch(() => "");

@@ -119,7 +119,7 @@ test.describe("Service -- Appointments", () => {
 
     // Submit
     await page.getByRole("button", { name: /create appointment/i }).click();
-    await page.waitForTimeout(1500);
+    await page.waitForLoadState("domcontentloaded");
 
     // Form should close
     const formStillOpen = await page.getByRole("button", { name: /create appointment/i }).isVisible().catch(() => false);
@@ -144,7 +144,7 @@ test.describe("Service -- Appointments", () => {
 
     // Filter by "scheduled"
     await statusSelect.selectOption("scheduled");
-    await page.waitForTimeout(600);
+    await page.waitForLoadState("domcontentloaded");
 
     const body = await page.locator("body").textContent();
     const valid = /Scheduled/i.test(body ?? "") || /No appointments/i.test(body ?? "");
@@ -160,7 +160,7 @@ test.describe("Service -- Appointments", () => {
 
     const dateInput = page.locator('input[type="date"]').first();
     await dateInput.fill("2026-01-01");
-    await page.waitForTimeout(600);
+    await page.waitForLoadState("domcontentloaded");
 
     // Should either show appointments for that date or empty state
     const body = await page.locator("body").textContent();
@@ -177,13 +177,13 @@ test.describe("Service -- Appointments", () => {
     // Set a filter
     const statusSelect = page.locator("select").filter({ hasText: "All Statuses" }).first();
     await statusSelect.selectOption("completed");
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
 
     // Clear Filters button should appear
     const clearBtn = page.getByText("Clear Filters");
     if (await clearBtn.isVisible().catch(() => false)) {
       await clearBtn.click();
-      await page.waitForTimeout(300);
+      await page.waitForLoadState("domcontentloaded");
 
       // Status filter should reset to "All Statuses"
       const value = await statusSelect.inputValue();
@@ -246,7 +246,7 @@ test.describe("Service -- Repair Orders", () => {
       await newBtn.click();
     }
 
-    await page.waitForTimeout(500);
+    await page.waitForLoadState("domcontentloaded");
 
     // Fill customer info
     const nameInput = page.getByLabel(/customer name/i);
@@ -279,7 +279,7 @@ test.describe("Service -- Repair Orders", () => {
       const submitBtn = page.getByRole("button", { name: /create.*r\.?o|create repair order|save/i });
       if (await submitBtn.isVisible().catch(() => false)) {
         await submitBtn.click();
-        await page.waitForTimeout(1500);
+        await page.waitForLoadState("domcontentloaded");
       }
     }
   });
@@ -332,11 +332,11 @@ test.describe("Service -- Parts Inventory", () => {
       const textInputs = page.locator('input[type="text"], input[type="search"]');
       if ((await textInputs.count()) > 0) {
         await textInputs.first().fill("brake");
-        await page.waitForTimeout(500);
+        await page.waitForLoadState("domcontentloaded");
       }
     } else {
       await searchInput.fill("brake");
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     // Results should be filtered (or show no results)
@@ -355,7 +355,7 @@ test.describe("Service -- Parts Inventory", () => {
     const lowStockToggle = page.getByLabel(/low stock/i);
     if (await lowStockToggle.isVisible().catch(() => false)) {
       await lowStockToggle.check();
-      await page.waitForTimeout(600);
+      await page.waitForLoadState("domcontentloaded");
 
       const body = await page.locator("body").textContent();
       expect(body).toBeDefined();
@@ -364,7 +364,7 @@ test.describe("Service -- Parts Inventory", () => {
       const lowStockBtn = page.getByText(/low stock/i);
       if (await lowStockBtn.isVisible().catch(() => false)) {
         await lowStockBtn.click();
-        await page.waitForTimeout(600);
+        await page.waitForLoadState("domcontentloaded");
       }
     }
   });
@@ -383,7 +383,7 @@ test.describe("Service -- Parts Inventory", () => {
     }
 
     await addBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
 
     // Fill part details
     const partNumInput = page.getByLabel(/part number/i);
@@ -424,7 +424,7 @@ test.describe("Service -- Parts Inventory", () => {
     const submitBtn = page.getByRole("button", { name: /add part|create|save/i });
     if (await submitBtn.isVisible().catch(() => false)) {
       await submitBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("domcontentloaded");
     }
   });
 
@@ -441,7 +441,7 @@ test.describe("Service -- Parts Inventory", () => {
       expect(options.length).toBeGreaterThan(1);
 
       await catSelect.selectOption({ index: 1 });
-      await page.waitForTimeout(600);
+      await page.waitForLoadState("domcontentloaded");
     }
   });
 });
@@ -475,7 +475,7 @@ test.describe("Service -- Technicians", () => {
     }
 
     await addBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForLoadState("domcontentloaded");
 
     // Fill form
     const nameInput = page.getByLabel(/^name/i);
@@ -503,7 +503,7 @@ test.describe("Service -- Technicians", () => {
     const submitBtn = page.getByRole("button", { name: /add tech|create|save/i });
     if (await submitBtn.isVisible().catch(() => false)) {
       await submitBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForLoadState("domcontentloaded");
     }
   });
 
@@ -515,7 +515,7 @@ test.describe("Service -- Technicians", () => {
     }
 
     // Wait for data to load
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState("networkidle");
 
     const body = await page.locator("body").textContent();
     // At least one status label should appear
@@ -556,14 +556,14 @@ test.describe("Service -- Public Booking Wizard", () => {
     const maintenanceBtn = page.getByText(/oil change|maintenance/i).first();
     if (await maintenanceBtn.isVisible().catch(() => false)) {
       await maintenanceBtn.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("domcontentloaded");
     }
 
     // Try to advance via Next button
     const nextBtn = page.getByRole("button", { name: /next|continue/i });
     if (await nextBtn.isVisible().catch(() => false)) {
       await nextBtn.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("domcontentloaded");
     }
   });
 
@@ -586,7 +586,7 @@ test.describe("Service -- Public Booking Wizard", () => {
       const nextBtn = page.getByRole("button", { name: /next|continue/i });
       if (await nextBtn.isVisible().catch(() => false)) {
         await nextBtn.click();
-        await page.waitForTimeout(500);
+        await page.waitForLoadState("domcontentloaded");
       }
     }
 

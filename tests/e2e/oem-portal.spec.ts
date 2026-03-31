@@ -228,7 +228,7 @@ test.describe("OEM portal: dealers page", () => {
     // Scope to main content — sidebar may have overlapping OEM links
     const main = page.locator("main#admin-main-content");
     // Wait for client-side data fetch to complete
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     // Either a data table or an empty-state message
     const hasTable = await main.locator("table").isVisible({ timeout: 8_000 }).catch(() => false);
     const hasEmptyState = await main.getByText(/no dealers found/i)
@@ -279,7 +279,7 @@ test.describe("OEM portal: programs page", () => {
 
     const main = page.locator("main#admin-main-content");
     // Wait for client-side data fetch
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("networkidle");
     // Empty state shows template program cards
     const hasProgramCard = await main.locator(".rounded-xl.border").filter({ hasText: /incentive|certification|brand standard|training|co-op/i })
       .first().isVisible({ timeout: 8_000 }).catch(() => false);
@@ -459,7 +459,6 @@ test.describe("OEM portal: admin chrome isolation", () => {
         return;
       }
 
-      await page.waitForTimeout(500);
       const chatBubble = page.locator('button[aria-label="Open chat assistant"]');
       await expect(chatBubble).not.toBeVisible({ timeout: 3_000 });
     });
@@ -481,7 +480,6 @@ test.describe("OEM portal: desktop layout", () => {
         test.info().annotations.push({ type: "skip", description: `${path} not accessible` });
         return;
       }
-      await page.waitForTimeout(300);
 
       // Desktop hamburger must NOT be visible
       const hamburger = page.locator('button[aria-label="Open menu"]');
@@ -532,7 +530,6 @@ test.describe("OEM portal: mobile layout", () => {
         test.info().annotations.push({ type: "skip", description: `${path} not accessible` });
         return;
       }
-      await page.waitForTimeout(300);
 
       // Hamburger button visible on mobile
       const hamburger = page.locator('button[aria-label="Open menu"]');
@@ -557,11 +554,10 @@ test.describe("OEM portal: mobile layout", () => {
         test.info().annotations.push({ type: "skip", description: `${path} not accessible` });
         return;
       }
-      await page.waitForTimeout(300);
 
       const hamburger = page.locator('button[aria-label="Open menu"]');
       await hamburger.click();
-      await page.waitForTimeout(300);
+      await page.waitForLoadState("domcontentloaded");
 
       // OEM Network link visible in mobile drawer
       const oemLink = page.locator('[aria-label="Admin navigation"] a[href="/admin/oem"]');
@@ -592,7 +588,6 @@ test.describe("OEM portal: responsive — no overflow", () => {
         test.info().annotations.push({ type: "skip", description: `${path} not accessible` });
         return;
       }
-      await page.waitForTimeout(300);
 
       const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
       expect(bodyWidth).toBeLessThanOrEqual(376);
@@ -631,7 +626,7 @@ test.describe("OEM portal: no JavaScript errors", () => {
         test.info().annotations.push({ type: "skip", description: `${path} not accessible` });
         return;
       }
-      await page.waitForTimeout(1_500);
+      await page.waitForLoadState("networkidle");
 
       expect(
         errors,

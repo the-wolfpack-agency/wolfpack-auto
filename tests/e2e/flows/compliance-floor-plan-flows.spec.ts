@@ -39,7 +39,7 @@ test.describe("Compliance Checks — browser flows", () => {
   test("displays stat cards — Total Checks, Clear, Flagged/Blocked, Review Required", async ({
     page,
   }) => {
-    await page.waitForTimeout(1_500);
+    await page.locator("text=Total Checks").waitFor({ timeout: 10_000 });
     for (const label of ["Total Checks", "Clear", "Flagged", "Review Required"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
@@ -59,7 +59,7 @@ test.describe("Compliance Checks — browser flows", () => {
     await page.selectOption("form select", { value: "red_flags" });
     await page.fill('input[placeholder="lead-042"]', "lead-e2e-001");
     await page.click("button[type='submit']:has-text('Run Check')");
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
     // Form should close on success or the table should have the new check
   });
 
@@ -68,7 +68,7 @@ test.describe("Compliance Checks — browser flows", () => {
     await page.fill('input[placeholder="John Smith"]', "OFAC Test Person");
     await page.selectOption("form select", { value: "ofac" });
     await page.click("button[type='submit']:has-text('Run Check')");
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
     // Look for the result in the table
     const resultBadge = page.locator("tbody span.rounded-full").last();
     if (await resultBadge.isVisible()) {
@@ -80,7 +80,6 @@ test.describe("Compliance Checks — browser flows", () => {
   test("compliance table renders with Date, Customer, Type, Result, Flags, Reviewer, Actions columns", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
     const table = page.locator("table");
     if ((await table.count()) > 0) {
       for (const col of ["Date", "Customer", "Type", "Result", "Flags", "Reviewer", "Actions"]) {
@@ -90,10 +89,10 @@ test.describe("Compliance Checks — browser flows", () => {
   });
 
   test("filter by check type — select OFAC", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.locator("select").first().waitFor({ timeout: 10_000 });
     const typeFilter = page.locator("select").first();
     await typeFilter.selectOption({ value: "ofac" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
     // All type badges in the table should be OFAC
     const badges = page.locator("tbody span.rounded-full").filter({ hasText: /Red Flags|OFAC|ID Verification/ });
     const count = await badges.count();
@@ -105,14 +104,13 @@ test.describe("Compliance Checks — browser flows", () => {
   });
 
   test("filter by result — select Flagged", async ({ page }) => {
-    await page.waitForTimeout(1_500);
+    await page.locator("select").nth(1).waitFor({ timeout: 10_000 });
     const resultFilter = page.locator("select").nth(1);
     await resultFilter.selectOption({ value: "flagged" });
-    await page.waitForTimeout(1_500);
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("click Review button on flagged check — verify review modal opens", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const reviewBtn = page.locator("button:has-text('Review')").first();
     if (await reviewBtn.isVisible()) {
       await reviewBtn.click();
@@ -124,14 +122,13 @@ test.describe("Compliance Checks — browser flows", () => {
   });
 
   test("fill review notes, toggle override, submit review", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const reviewBtn = page.locator("button:has-text('Review')").first();
     if (await reviewBtn.isVisible()) {
       await reviewBtn.click();
       await page.fill("textarea", "E2E test — verified identity documents, clearing manually.");
       await page.locator('input[type="checkbox"]').check();
       await page.click("button:has-text('Submit Review')");
-      await page.waitForTimeout(2_000);
+      await page.waitForLoadState("domcontentloaded");
       // Modal should close
       await expect(page.locator("h3:has-text('Review:')")).not.toBeVisible();
     }
@@ -163,14 +160,13 @@ test.describe("Floor Plan Management — browser flows", () => {
   test("displays stat cards — Vehicles on Plan, Total Principal, Daily Interest, Avg Days Floored", async ({
     page,
   }) => {
-    await page.waitForTimeout(1_500);
+    await page.locator("text=Vehicles on Plan").waitFor({ timeout: 10_000 });
     for (const label of ["Vehicles on Plan", "Total Principal", "Daily Interest", "Avg Days Floored"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
   });
 
   test("curtailment alerts section renders when applicable", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     // This is conditional — only shows when vehicles are near curtailment
     const alerts = page.locator("text=Curtailment Alerts");
     // We don't fail if absent, just verify structure when present
@@ -212,13 +208,12 @@ test.describe("Floor Plan Management — browser flows", () => {
     // Funded date already has default value
 
     await page.click("button[type='submit']:has-text('Add Vehicle')");
-    await page.waitForTimeout(2_000);
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("active floor plan table renders with Vehicle, Lender, Principal, Days, Interest, Status columns", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
     const table = page.locator("table").first();
     if ((await table.count()) > 0) {
       for (const col of ["Vehicle", "Lender", "Principal", "Days", "Interest", "Status"]) {
@@ -228,7 +223,6 @@ test.describe("Floor Plan Management — browser flows", () => {
   });
 
   test("Pay Off button visible on active vehicles", async ({ page }) => {
-    await page.waitForTimeout(2_000);
     const payoffBtn = page.locator("button:has-text('Pay Off')").first();
     if (await payoffBtn.isVisible()) {
       // Verify the button is in an active line row
@@ -238,12 +232,11 @@ test.describe("Floor Plan Management — browser flows", () => {
   });
 
   test("sort toggle changes between Oldest First and Newest First", async ({ page }) => {
-    await page.waitForTimeout(1_500);
     const sortBtn = page.locator("button:has-text('Sort:')");
     if (await sortBtn.isVisible()) {
       const initialText = await sortBtn.textContent();
       await sortBtn.click();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState("domcontentloaded");
       const newText = await sortBtn.textContent();
       expect(newText).not.toBe(initialText);
     }
@@ -252,7 +245,6 @@ test.describe("Floor Plan Management — browser flows", () => {
   test("closed/inactive lines section renders with Paid Off status when present", async ({
     page,
   }) => {
-    await page.waitForTimeout(2_000);
     const closedSection = page.locator("h2:has-text('Closed')");
     if (await closedSection.isVisible()) {
       await expect(page.locator("text=Paid Off").first()).toBeVisible();

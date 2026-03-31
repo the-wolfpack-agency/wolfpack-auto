@@ -77,7 +77,7 @@ test.describe("Admin workflow: Quick Add vehicle", () => {
 
     // Enter a valid 17-character VIN
     await vinInput.first().fill("1HGCV1F34PA000001");
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState("networkidle");
 
     // Verify decoded data appeared — look for year, make, or model
     const decodedInfo = page.locator(
@@ -148,7 +148,7 @@ test.describe("Admin workflow: vehicle edit pre-population", () => {
     }
 
     // Wait for loading to finish
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
 
     // Page should NOT still be showing "Loading vehicle data..."
     const loadingText = page.locator('text="Loading vehicle data..."');
@@ -201,7 +201,7 @@ test.describe("Admin workflow: analytics dashboard", () => {
     }
 
     // Wait for dashboard to load — check for stat cards or loading state
-    await page.waitForTimeout(3000);
+    await page.waitForLoadState("networkidle");
 
     // Verify some dashboard content rendered
     const dashboardContent = page.locator(
@@ -231,7 +231,7 @@ test.describe("Admin workflow: analytics dashboard", () => {
 
       // Submit — press Enter or click a send button
       await chatInput.first().press("Enter");
-      await page.waitForTimeout(3000);
+      await page.waitForLoadState("networkidle");
 
       // Verify some response appeared
       const responseArea = page.locator(
@@ -335,7 +335,6 @@ test.describe("Admin layout regression: no double header or sidebar overlap", ()
         });
         return;
       }
-      await page.waitForTimeout(300);
 
       // On desktop the hamburger must NOT be visible (sidebar always shown)
       const hamburger = page.locator('button[aria-label="Open menu"]');
@@ -375,7 +374,6 @@ test.describe("Admin layout regression: no double header or sidebar overlap", ()
         });
         return;
       }
-      await page.waitForTimeout(300);
 
       // Hamburger button must be visible on mobile
       const hamburger = page.locator('button[aria-label="Open menu"]');
@@ -397,7 +395,6 @@ test.describe("Admin layout regression: no double header or sidebar overlap", ()
 
   test("admin pages: no chat bubble rendered", async ({ page }) => {
     await safeNavigate(page, "/admin");
-    await page.waitForTimeout(500);
 
     const bubble = page.locator('button[aria-label="Open chat assistant"]');
     await expect(bubble).not.toBeVisible({ timeout: 3_000 });
