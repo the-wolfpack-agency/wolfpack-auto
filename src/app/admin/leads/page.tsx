@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import LeadDetailPanel from "@/components/LeadDetailPanel";
 import type {
   Lead,
@@ -20,6 +21,7 @@ const STATUS_OPTIONS: { value: LeadStatus | ""; label: string }[] = [
   { value: "appointment_set", label: "Appointment Set" },
   { value: "sold", label: "Sold" },
   { value: "lost", label: "Lost" },
+  { value: "converted", label: "Converted" },
 ];
 
 const TEMP_OPTIONS: { value: LeadTemperature | ""; label: string }[] = [
@@ -44,6 +46,7 @@ const STATUS_BADGE: Record<LeadStatus, string> = {
   appointment_set: "bg-purple-50 text-purple-700 ring-purple-600/20",
   sold: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
   lost: "bg-gray-100 text-gray-500 ring-gray-400/20",
+  converted: "bg-teal-50 text-teal-700 ring-teal-600/20",
 };
 
 const STATUS_LABEL: Record<LeadStatus, string> = {
@@ -53,6 +56,7 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
   appointment_set: "Appointment Set",
   sold: "Sold",
   lost: "Lost",
+  converted: "Converted",
 };
 
 const TEMP_BADGE: Record<LeadTemperature, string> = {
@@ -544,14 +548,34 @@ export default function LeadsManagementPage() {
                       <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
                         {formatDate(lead.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">
-                        <span
-                          className={`inline-block transition-transform ${
-                            expandedId === lead.id ? "rotate-90" : ""
-                          }`}
-                        >
-                          &#9654;
-                        </span>
+                      <td
+                        className="whitespace-nowrap px-4 py-3 text-sm"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center gap-2">
+                          {lead.status !== "converted" && lead.status !== "sold" && lead.status !== "lost" && (
+                            <Link
+                              href={`/admin/deals?from_lead=${lead.id}`}
+                              className="inline-flex items-center rounded-md bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/20 transition-colors hover:bg-brand-100"
+                              title="Convert to Deal"
+                            >
+                              Convert
+                            </Link>
+                          )}
+                          <span
+                            className={`inline-block cursor-pointer text-gray-400 transition-transform ${
+                              expandedId === lead.id ? "rotate-90" : ""
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedId((prev) =>
+                                prev === lead.id ? null : lead.id,
+                              );
+                            }}
+                          >
+                            &#9654;
+                          </span>
+                        </div>
                       </td>
                     </tr>
                     {expandedId === lead.id && (

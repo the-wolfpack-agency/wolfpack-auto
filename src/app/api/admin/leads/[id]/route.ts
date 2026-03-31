@@ -16,7 +16,7 @@ const DEALER_ID =
 
 const updateSchema = z.object({
   status: z
-    .enum(["new", "contacted", "qualified", "appointment_set", "sold", "lost"])
+    .enum(["new", "contacted", "qualified", "appointment_set", "sold", "lost", "converted"])
     .optional(),
   temperature: z.enum(["hot", "warm", "cool", "cold"]).optional(),
   assigned_to: z.string().max(200).nullable().optional(),

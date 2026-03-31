@@ -17,7 +17,8 @@ export type LeadStatus =
   | "qualified"
   | "appointment_set"
   | "sold"
-  | "lost";
+  | "lost"
+  | "converted";
 
 export type LeadTemperature = "hot" | "warm" | "cool" | "cold";
 

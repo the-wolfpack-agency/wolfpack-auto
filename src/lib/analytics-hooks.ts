@@ -209,7 +209,8 @@ export type SystemEvent =
   | "system.vehicle_history_attached"
   | "system.vehicle_history_expired"
   | "system.inventory_exported"
-  | "system.vehicle_photo_uploaded";
+  | "system.vehicle_photo_uploaded"
+  | "document.buyers_guide_generated";
 
 export type WebhookEvent =
   | "webhook.delivered"

@@ -326,7 +326,7 @@ const SAMPLE_LEADS: Lead[] = [
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
-const VALID_STATUSES: LeadStatus[] = ["new", "contacted", "qualified", "appointment_set", "sold", "lost"];
+const VALID_STATUSES: LeadStatus[] = ["new", "contacted", "qualified", "appointment_set", "sold", "lost", "converted"];
 const VALID_TEMPS: LeadTemperature[] = ["hot", "warm", "cool", "cold"];
 const VALID_SORT = ["date", "temperature", "status", "name"];
 
@@ -335,7 +335,7 @@ function temperatureRank(t: LeadTemperature): number {
 }
 
 function statusRank(s: LeadStatus): number {
-  return { new: 0, contacted: 1, qualified: 2, appointment_set: 3, sold: 4, lost: 5 }[s];
+  return { new: 0, contacted: 1, qualified: 2, appointment_set: 3, sold: 4, lost: 5, converted: 6 }[s];
 }
 
 /* -------------------------------------------------------------------------- */

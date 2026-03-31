@@ -9,6 +9,7 @@ const navLinks = [
   { href: "/trade-in", label: "Trade-In" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
+  { href: "/help", label: "Help" },
 ];
 
 export default function MobileMenu() {

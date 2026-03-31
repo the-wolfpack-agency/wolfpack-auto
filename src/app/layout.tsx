@@ -21,6 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
       index: true,
       follow: true,
     },
+    manifest: "/manifest.json",
     openGraph: {
       title: dealer.name,
       description:
@@ -122,6 +123,7 @@ export default async function RootLayout({
                 { label: "Trade-In", href: "/trade-in" },
                 { label: "About", href: "/about" },
                 { label: "Contact", href: "/contact" },
+                { label: "Help", href: "/help" },
               ].map((link) => (
                 <li key={link.label}>
                   <a
@@ -214,6 +216,7 @@ export default async function RootLayout({
                     { label: "About Us", href: "/about" },
                     { label: "Contact Us", href: "/contact" },
                     { label: "Value My Trade-In", href: "/trade-in" },
+                    { label: "Help & FAQ", href: "/help" },
                   ].map((link) => (
                     <li key={link.label}>
                       <a href={link.href} className="text-sm transition-colors hover:text-white">

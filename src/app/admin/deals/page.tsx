@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 /* -------------------------------------------------------------------------- */
@@ -103,6 +104,9 @@ function fmtDate(iso: string): string {
 /* -------------------------------------------------------------------------- */
 
 export default function DealDeskingPage() {
+  const searchParams = useSearchParams();
+  const fromLeadId = searchParams.get("from_lead");
+
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,6 +118,13 @@ export default function DealDeskingPage() {
 
   /* New Deal modal */
   const [showNewDeal, setShowNewDeal] = useState(false);
+  const [fromLeadData, setFromLeadData] = useState<{
+    lead_id: string;
+    customer_name: string;
+    customer_email: string;
+    customer_phone: string;
+    vehicle_interest: string;
+  } | null>(null);
   const [newDealForm, setNewDealForm] = useState({
     customer_name: "",
     customer_email: "",
@@ -127,6 +138,45 @@ export default function DealDeskingPage() {
     deal_type: "retail",
   });
   const [creating, setCreating] = useState(false);
+
+  /* Auto-open new deal modal when ?from_lead= is present */
+  useEffect(() => {
+    if (!fromLeadId) return;
+
+    async function fetchLead() {
+      try {
+        const res = await fetch(`/api/admin/leads/${fromLeadId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const lead = data.lead ?? data;
+
+        const customerName = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim();
+
+        setFromLeadData({
+          lead_id: fromLeadId!,
+          customer_name: customerName,
+          customer_email: lead.email ?? "",
+          customer_phone: lead.phone ?? "",
+          vehicle_interest: lead.vehicle_interest ?? "",
+        });
+
+        setNewDealForm((prev) => ({
+          ...prev,
+          customer_name: customerName,
+          customer_email: lead.email ?? "",
+          customer_phone: lead.phone ?? "",
+        }));
+
+        setShowNewDeal(true);
+      } catch (err) {
+        console.error("Failed to fetch lead for conversion:", err);
+        // Still open the modal — user can fill manually
+        setShowNewDeal(true);
+      }
+    }
+
+    fetchLead();
+  }, [fromLeadId]);
 
   /* Fetch deals */
   const fetchDeals = useCallback(async () => {
@@ -179,22 +229,43 @@ export default function DealDeskingPage() {
     return Array.from(set).sort();
   }, [deals]);
 
-  /* Create new deal */
+  /* Create new deal (or convert from lead) */
   const handleCreate = async () => {
     if (!newDealForm.customer_name || !newDealForm.vehicle_vin || !newDealForm.selling_price) return;
     setCreating(true);
     try {
-      const res = await fetch("/api/admin/deals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newDealForm,
-          selling_price: Number(newDealForm.selling_price),
-          vehicle_year: newDealForm.vehicle_year ? Number(newDealForm.vehicle_year) : null,
-        }),
-      });
+      let res: Response;
+
+      if (fromLeadData) {
+        // Use the lead conversion endpoint
+        res = await fetch(`/api/admin/leads/${fromLeadData.lead_id}/convert`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...newDealForm,
+            customer_name: newDealForm.customer_name,
+            customer_email: newDealForm.customer_email,
+            customer_phone: newDealForm.customer_phone,
+            selling_price: Number(newDealForm.selling_price),
+            vehicle_year: newDealForm.vehicle_year ? Number(newDealForm.vehicle_year) : null,
+          }),
+        });
+      } else {
+        // Standard deal creation
+        res = await fetch("/api/admin/deals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...newDealForm,
+            selling_price: Number(newDealForm.selling_price),
+            vehicle_year: newDealForm.vehicle_year ? Number(newDealForm.vehicle_year) : null,
+          }),
+        });
+      }
+
       if (res.ok) {
         setShowNewDeal(false);
+        setFromLeadData(null);
         setNewDealForm({
           customer_name: "",
           customer_email: "",
@@ -424,7 +495,9 @@ export default function DealDeskingPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto">
           <div className="w-full max-w-lg rounded-t-2xl sm:rounded-card bg-white p-6 shadow-xl max-h-[95dvh] overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">New Deal Worksheet</h2>
+              <h2 className="text-lg font-bold text-gray-900">
+                {fromLeadData ? "Convert Lead to Deal" : "New Deal Worksheet"}
+              </h2>
               <button
                 onClick={() => setShowNewDeal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -434,6 +507,19 @@ export default function DealDeskingPage() {
                 </svg>
               </button>
             </div>
+
+            {fromLeadData && (
+              <div className="mt-3 rounded-lg border border-brand-200 bg-brand-50 p-3">
+                <p className="text-sm font-medium text-brand-800">
+                  Converting lead: {fromLeadData.customer_name}
+                </p>
+                {fromLeadData.vehicle_interest && (
+                  <p className="mt-0.5 text-xs text-brand-600">
+                    Interested in: {fromLeadData.vehicle_interest}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">

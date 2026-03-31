@@ -346,12 +346,23 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                       {formatDate(v.created_at)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
-                      <a
-                        href={`/admin/inventory/${v.vin}/edit`}
-                        className="rounded-md px-2.5 py-1.5 text-xs font-medium text-brand-600 ring-1 ring-inset ring-brand-200 transition-colors hover:bg-brand-50"
-                      >
-                        Edit
-                      </a>
+                      <div className="flex items-center justify-end gap-2">
+                        <a
+                          href={`/api/admin/vehicles/${v.vin}/buyers-guide`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200 transition-colors hover:bg-gray-50"
+                          title="Generate FTC Buyer&apos;s Guide"
+                        >
+                          Buyer&apos;s Guide
+                        </a>
+                        <a
+                          href={`/admin/inventory/${v.vin}/edit`}
+                          className="rounded-md px-2.5 py-1.5 text-xs font-medium text-brand-600 ring-1 ring-inset ring-brand-200 transition-colors hover:bg-brand-50"
+                        >
+                          Edit
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 ))
