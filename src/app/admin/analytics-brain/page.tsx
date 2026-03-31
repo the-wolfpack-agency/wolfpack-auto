@@ -6,6 +6,7 @@ import {
   hydrateBufferFromDb,
   type BehavioralInsight,
 } from "@/lib/analytics-engine";
+import { getCalibrationHistory, type CalibrationResult } from "@/lib/prediction-calibrator";
 
 export const metadata: Metadata = {
   title: "Analytics Brain | Admin",
@@ -65,6 +66,14 @@ function confidenceBar(confidence: number): string {
 export default async function AnalyticsBrainPage() {
   // Hydrate from PostgreSQL on cold start (serverless)
   await hydrateBufferFromDb();
+
+  // Fetch latest model calibration
+  const dealerId = process.env.DEALER_ID ?? "demo-dealer";
+  let latestCalibration: CalibrationResult | null = null;
+  try {
+    const history = await getCalibrationHistory(dealerId, 1);
+    latestCalibration = history.length > 0 ? history[0] : null;
+  } catch { /* calibration is optional — never block the page */ }
 
   const insights = generateInsights();
   const stats = getBufferStats();
@@ -172,6 +181,97 @@ export default async function AnalyticsBrainPage() {
           <p className="mt-2 text-3xl font-bold text-amber-600">{alerts.length}</p>
         </div>
       </div>
+
+      {/* Model Health — Prediction Calibration */}
+      {latestCalibration && (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Model Health</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                How well the lead scoring model predicts actual purchases.
+                Last calibrated {new Date(latestCalibration.calibrated_at).toLocaleDateString("en-US", {
+                  month: "short", day: "numeric", year: "numeric",
+                })}.
+              </p>
+            </div>
+            <form action="/api/admin/analytics/calibration" method="POST">
+              <button
+                type="submit"
+                className="rounded-lg border border-indigo-300 bg-white px-4 py-2 text-sm font-medium text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50"
+                data-track="brain_recalibrate"
+              >
+                Recalibrate
+              </button>
+            </form>
+          </div>
+
+          {/* Metrics row */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Accuracy</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{(latestCalibration.accuracy * 100).toFixed(0)}%</p>
+              <p className="text-xs text-gray-400">Correct predictions</p>
+            </div>
+            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Precision</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{(latestCalibration.precision * 100).toFixed(0)}%</p>
+              <p className="text-xs text-gray-400">Hot leads that bought</p>
+            </div>
+            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Recall</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{(latestCalibration.recall * 100).toFixed(0)}%</p>
+              <p className="text-xs text-gray-400">Buyers we identified</p>
+            </div>
+            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Sample Size</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{latestCalibration.sample_size}</p>
+              <p className="text-xs text-gray-400">Leads analyzed</p>
+            </div>
+          </div>
+
+          {/* Signals row */}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            {latestCalibration.top_predictive_signals.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-emerald-700">Best Predictors</p>
+                <p className="mt-0.5 text-xs text-gray-500">Signals most strongly linked to actual purchases.</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {latestCalibration.top_predictive_signals.slice(0, 3).map((s) => (
+                    <span key={s} className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {latestCalibration.top_misleading_signals.length > 0 && (
+              <div>
+                <p className="text-sm font-semibold text-amber-700">Misleading Signals</p>
+                <p className="mt-0.5 text-xs text-gray-500">Look promising but rarely lead to sales.</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {latestCalibration.top_misleading_signals.slice(0, 3).map((s) => (
+                    <span key={s} className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Recommendations */}
+          {latestCalibration.recommendations.length > 0 && (
+            <div className="mt-4 space-y-1.5">
+              {latestCalibration.recommendations.slice(0, 3).map((rec, idx) => (
+                <p key={idx} className="text-sm text-gray-600">
+                  {rec}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Priority Alerts — clean, actionable language */}
       {alerts.length > 0 && (

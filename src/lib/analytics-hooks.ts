@@ -177,6 +177,7 @@ export type SystemEvent =
   | "system.vehicles_indexed"
   | "system.listing_generated"
   | "system.campaign_created"
+  | "system.calibration_run"
   | "system.onboarding_step"
   | "system.reward_given"
   | "system.integration_updated"
