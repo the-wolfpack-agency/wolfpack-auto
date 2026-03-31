@@ -1,0 +1,28 @@
+{
+  "name": "Wolfpack Auto",
+  "short_name": "Wolfpack",
+  "description": "Modern automotive dealer platform with lightning-fast inventory search and best-in-class security.",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/api/icon?size=192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/api/icon?size=512",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/api/icon?size=512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
