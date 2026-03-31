@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/predict-leads",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/calibrate-predictions",
