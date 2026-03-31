@@ -117,6 +117,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/intake", label: "Intake", icon: IntakeIcon },
       { href: "/admin/trade-in", label: "Trade-Ins", icon: TradeInIcon },
       { href: "/admin/floor-plan", label: "Floor Plan", icon: FloorPlanIcon },
+      { href: "/admin/vehicle-history", label: "Vehicle History", icon: VehicleHistoryIcon },
       { href: "/admin/syndication", label: "Syndication", icon: SyndicationIcon },
     ],
   },
@@ -161,6 +162,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/knowledge", label: "Knowledge Base", icon: KnowledgeIcon },
       { href: "/admin/compliance", label: "Compliance", icon: ComplianceIcon },
       { href: "/admin/compliance/checks", label: "Compliance Checks", icon: ComplianceChecksIcon },
+      { href: "/admin/ofac", label: "OFAC Screening", icon: OFACIcon },
       { href: "/admin/tasks", label: "Tasks", icon: TasksIcon },
       { href: "/admin/change-management", label: "Change Management", icon: ChangeManagementIcon },
       { href: "/admin/training", label: "Training", icon: TrainingIcon },
@@ -762,6 +764,14 @@ function TradeInIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+    </svg>
+  );
+}
+
+function VehicleHistoryIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
     </svg>
   );
 }
