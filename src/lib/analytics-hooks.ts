@@ -141,7 +141,8 @@ export type LeadEvent =
   | "lead.scored"
   | "lead.assigned"
   | "lead.updated"
-  | "lead.bulk_action";
+  | "lead.bulk_action"
+  | "lead.converted";
 
 export type SecurityEvent =
   | "security.scan_completed"
@@ -206,7 +207,9 @@ export type SystemEvent =
   | "system.econtracting_sent"
   | "system.vehicle_history_pulled"
   | "system.vehicle_history_attached"
-  | "system.vehicle_history_expired";
+  | "system.vehicle_history_expired"
+  | "system.inventory_exported"
+  | "system.vehicle_photo_uploaded";
 
 export type WebhookEvent =
   | "webhook.delivered"

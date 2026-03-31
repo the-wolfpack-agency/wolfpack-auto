@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { query } from "@/lib/db";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { placeholderVehicles } from "@/lib/placeholder-data";
+import { InventoryActions } from "@/components/admin/InventoryActions";
 
 export const metadata: Metadata = {
   title: "Inventory",
@@ -161,12 +162,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             {total} vehicle{total !== 1 ? "s" : ""} in inventory.
           </p>
         </div>
-        <a
-          href="/admin/inventory/add"
-          className="inline-flex w-full items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 sm:w-auto"
-        >
-          + Add Vehicle
-        </a>
+        <InventoryActions />
       </div>
 
       {/* Filters */}
