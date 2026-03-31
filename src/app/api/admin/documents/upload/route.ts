@@ -13,8 +13,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { trackDocument, trackSecurity } from "@/lib/analytics-hooks";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 
@@ -104,18 +102,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Local fallback
+    // Fallback: store as data URL (works on Vercel's read-only filesystem)
     if (!fileUrl) {
-      try {
-        const uploadDir = join(process.cwd(), "public", "uploads", "documents", dealerId);
-        await mkdir(uploadDir, { recursive: true });
-        const localPath = join(uploadDir, safeFilename);
-        await writeFile(localPath, buffer);
-        fileUrl = `/uploads/documents/${dealerId}/${safeFilename}`;
-      } catch (err) {
-        console.error("[documents/upload] Local write failed:", err);
-        return NextResponse.json({ error: "File storage unavailable" }, { status: 503 });
-      }
+      const base64 = buffer.toString("base64");
+      fileUrl = `data:${mimeType};base64,${base64}`;
     }
   }
 
