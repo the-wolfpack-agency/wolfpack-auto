@@ -198,7 +198,15 @@ export type SystemEvent =
   | "demo.converted"
   | "location.created"
   | "location.updated"
-  | "location.deleted";
+  | "location.deleted"
+  | "system.syndication_configured"
+  | "system.syndication_exported"
+  | "system.syndication_synced"
+  | "system.syndication_error"
+  | "system.econtracting_sent"
+  | "system.vehicle_history_pulled"
+  | "system.vehicle_history_attached"
+  | "system.vehicle_history_expired";
 
 export type WebhookEvent =
   | "webhook.delivered"
