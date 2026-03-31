@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/process-sequences",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/predict-leads",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

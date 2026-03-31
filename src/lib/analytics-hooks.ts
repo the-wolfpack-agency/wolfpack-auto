@@ -139,6 +139,7 @@ export type LeadEvent =
   | "lead.created"
   | "lead.duplicate_detected"
   | "lead.scored"
+  | "lead.predicted"
   | "lead.assigned"
   | "lead.updated"
   | "lead.bulk_action"

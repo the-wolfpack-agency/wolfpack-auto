@@ -33,6 +33,7 @@ const TEMP_OPTIONS: { value: LeadTemperature | ""; label: string }[] = [
 ];
 
 const SORT_OPTIONS = [
+  { value: "predicted", label: "Predicted Score" },
   { value: "date", label: "Date" },
   { value: "temperature", label: "Temperature" },
   { value: "status", label: "Status" },
@@ -94,6 +95,12 @@ export default function LeadsManagementPage() {
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
+  // Predictive scoring state
+  const [predictions, setPredictions] = useState<
+    Record<string, { score: number; buy_window: string; confidence: string; recommended_action: string; temperature: string; top_signals: string[] }>
+  >({});
+  const [predictLoading, setPredictLoading] = useState(false);
+
   // UI state
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -133,10 +140,52 @@ export default function LeadsManagementPage() {
     fetchLeads();
   }, [fetchLeads]);
 
+  // Fetch predictive scores
+  const fetchPredictions = useCallback(async () => {
+    setPredictLoading(true);
+    try {
+      const res = await fetch("/api/admin/leads/predict");
+      if (res.ok) {
+        const data = await res.json();
+        const map: typeof predictions = {};
+        for (const p of data.predictions ?? []) {
+          map[p.lead_id] = {
+            score: p.score,
+            buy_window: p.buy_window,
+            confidence: p.confidence,
+            recommended_action: p.recommended_action,
+            temperature: p.temperature,
+            top_signals: p.top_signals ?? [],
+          };
+        }
+        setPredictions(map);
+      }
+    } catch (err) {
+      console.error("Failed to fetch predictions:", err);
+    } finally {
+      setPredictLoading(false);
+    }
+  }, []);
+
+  // Auto-fetch predictions on mount
+  useEffect(() => {
+    fetchPredictions();
+  }, [fetchPredictions]);
+
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [statusFilter, tempFilter, assignedFilter, search, sort, sortDir]);
+
+  // When sorting by predicted score, sort locally since the server doesn't know predicted scores
+  const displayedLeads = useMemo(() => {
+    if (sort !== "predicted") return leads;
+    return [...leads].sort((a, b) => {
+      const aScore = predictions[a.id]?.score ?? a.predictive_score ?? -1;
+      const bScore = predictions[b.id]?.score ?? b.predictive_score ?? -1;
+      return sortDir === "desc" ? bScore - aScore : aScore - bScore;
+    });
+  }, [leads, sort, sortDir, predictions]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -228,20 +277,49 @@ export default function LeadsManagementPage() {
   return (
     <>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Track, assign, and convert customer inquiries.
-        </p>
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Track, assign, and convert customer inquiries.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={fetchPredictions}
+          disabled={predictLoading}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 disabled:opacity-50"
+        >
+          {predictLoading ? (
+            <>
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Scoring...
+            </>
+          ) : (
+            <>
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              Refresh Predictions
+            </>
+          )}
+        </button>
       </div>
 
       {/* Summary stats */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <MiniStat label="Total" value={total} />
         <MiniStat
           label="Hot Leads"
           value={leads.filter((l) => l.temperature === "hot").length}
           color="text-red-600"
+        />
+        <MiniStat
+          label="Likely Buyers (7d)"
+          value={
+            Object.values(predictions).filter(
+              (p) => p.buy_window === "24h" || p.buy_window === "3d" || p.buy_window === "7d",
+            ).length
+          }
+          color="text-green-600"
         />
         <MiniStat
           label="Unassigned"
@@ -453,6 +531,10 @@ export default function LeadsManagementPage() {
                 <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 sm:table-cell">
                   Score
                 </th>
+                <Th label="Predicted" sortKey="predicted" current={sort} dir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
+                  Buy Window
+                </th>
                 <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
                   Assigned
                 </th>
@@ -465,18 +547,18 @@ export default function LeadsManagementPage() {
             <tbody className="divide-y divide-surface-border">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-gray-500">
+                  <td colSpan={12} className="px-4 py-12 text-center text-sm text-gray-500">
                     Loading leads...
                   </td>
                 </tr>
               ) : leads.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-sm text-gray-500">
+                  <td colSpan={12} className="px-4 py-12 text-center text-sm text-gray-500">
                     No leads match your filters.
                   </td>
                 </tr>
               ) : (
-                leads.map((lead) => (
+                displayedLeads.map((lead) => (
                   <>
                     <tr
                       key={lead.id}
@@ -539,6 +621,18 @@ export default function LeadsManagementPage() {
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
                         )}
+                      </td>
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm sm:table-cell">
+                        <PredictedScoreBadge
+                          score={predictions[lead.id]?.score ?? lead.predictive_score ?? null}
+                          action={predictions[lead.id]?.recommended_action ?? lead.predictive_action ?? null}
+                          topSignals={predictions[lead.id]?.top_signals ?? []}
+                        />
+                      </td>
+                      <td className="hidden whitespace-nowrap px-4 py-3 text-sm lg:table-cell">
+                        <BuyWindowBadge
+                          window={predictions[lead.id]?.buy_window ?? lead.predictive_buy_window ?? null}
+                        />
                       </td>
                       <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 md:table-cell">
                         {lead.assigned_to ?? (
@@ -700,6 +794,98 @@ function IntentScoreBadge({ score }: { score: number }) {
       title={`Intent score: ${score}/100`}
     >
       {score}
+    </span>
+  );
+}
+
+function PredictedScoreBadge({
+  score,
+  action,
+  topSignals,
+}: {
+  score: number | null;
+  action: string | null;
+  topSignals: string[];
+}) {
+  if (score == null) {
+    return <span className="text-xs text-gray-400">--</span>;
+  }
+
+  let colorClass: string;
+  let barColor: string;
+  if (score >= 75) {
+    colorClass = "text-green-700";
+    barColor = "bg-green-500";
+  } else if (score >= 50) {
+    colorClass = "text-yellow-700";
+    barColor = "bg-yellow-500";
+  } else if (score >= 25) {
+    colorClass = "text-orange-700";
+    barColor = "bg-orange-500";
+  } else {
+    colorClass = "text-red-700";
+    barColor = "bg-red-400";
+  }
+
+  const tooltipText = [
+    action ? `Action: ${action}` : null,
+    ...topSignals.slice(0, 3),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return (
+    <div className="flex items-center gap-2" title={tooltipText}>
+      <div className="h-1.5 w-12 overflow-hidden rounded-full bg-gray-200">
+        <div
+          className={`h-full rounded-full ${barColor}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+      <span className={`text-xs font-bold ${colorClass}`}>{score}</span>
+    </div>
+  );
+}
+
+function BuyWindowBadge({
+  window,
+}: {
+  window: string | null;
+}) {
+  if (!window) {
+    return <span className="text-xs text-gray-400">--</span>;
+  }
+
+  const config: Record<string, { label: string; className: string }> = {
+    "24h": {
+      label: "24h",
+      className: "bg-red-100 text-red-800 ring-red-600/30 animate-pulse",
+    },
+    "3d": {
+      label: "3 days",
+      className: "bg-orange-100 text-orange-800 ring-orange-600/20",
+    },
+    "7d": {
+      label: "7 days",
+      className: "bg-yellow-100 text-yellow-800 ring-yellow-600/20",
+    },
+    "14d": {
+      label: "14 days",
+      className: "bg-blue-100 text-blue-800 ring-blue-600/20",
+    },
+    "30d+": {
+      label: "30d+",
+      className: "bg-gray-100 text-gray-600 ring-gray-400/20",
+    },
+  };
+
+  const c = config[window] ?? config["30d+"];
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${c.className}`}
+    >
+      {c.label}
     </span>
   );
 }

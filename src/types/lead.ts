@@ -85,6 +85,13 @@ export interface Lead {
   time_on_site_seconds?: number;
   return_visits?: number;
 
+  // Predictive scoring (populated by predictive-lead-scorer)
+  predictive_score?: number | null;
+  predictive_buy_window?: "24h" | "3d" | "7d" | "14d" | "30d+" | null;
+  predictive_confidence?: "high" | "medium" | "low" | null;
+  predictive_action?: string | null;
+  predicted_at?: string | null;
+
   // Metadata
   created_at: string;
   updated_at: string;
