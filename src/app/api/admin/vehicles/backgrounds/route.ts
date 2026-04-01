@@ -21,10 +21,7 @@ const appliedBackgrounds = new Map<
   { preset: string; css: string; applied_at: string }
 >();
 
-/** Exported for test access */
-export function getAppliedBackgrounds() {
-  return appliedBackgrounds;
-}
+// appliedBackgrounds is module-scoped, not exported (Next.js routes only allow HTTP handlers)
 
 /* -------------------------------------------------------------------------- */
 /* GET                                                                        */
