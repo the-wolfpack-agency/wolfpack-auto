@@ -33,7 +33,7 @@ const ENDPOINTS: EndpointDef[] = [
   { path: "/api/admin/deals", label: "deals_api", kind: "api" },
   { path: "/api/admin/analytics/dashboard", label: "analytics_api", kind: "api" },
   { path: "/api/admin/stats", label: "stats_api", kind: "api" },
-  { path: "/api/health", label: "health_api", kind: "api" },
+  { path: "/api/admin/inventory", label: "inventory_admin_api", kind: "api" },
 
   // Page routes — p95 must be < 2000ms
   { path: "/inventory", label: "inventory_page", kind: "page" },
