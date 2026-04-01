@@ -268,6 +268,16 @@ export type TemporalEvent =
   | "temporal.ready_to_close"
   | "temporal.pattern_insight";
 
+export type PricingEvent =
+  | "pricing.recommendation_viewed"
+  | "pricing.recommendation_accepted"
+  | "pricing.recommendation_rejected"
+  | "pricing.price_changed"
+  | "pricing.lot_report_viewed"
+  | "pricing.recommendations_generated"
+  | "pricing.lot_report_generated"
+  | "pricing.optimization_requested";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -290,7 +300,8 @@ export type PlatformEvent =
   | ExitDetectionEvent
   | WebhookEvent
   | JourneyEvent
-  | TemporalEvent;
+  | TemporalEvent
+  | PricingEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -570,4 +581,15 @@ export function trackTemporal(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "temporal", ...meta });
+}
+
+/**
+ * Track a pricing recommendation engine event (recommendations, optimization, price changes).
+ */
+export function trackPricing(
+  event: PricingEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "pricing", ...meta });
 }

@@ -35,6 +35,11 @@ const COMMS_CHILDREN = [
   { href: "/admin/comms/log", label: "Message Log" },
 ] as const;
 
+const PRICING_CHILDREN = [
+  { href: "/admin/pricing", label: "Overview" },
+  { href: "/admin/pricing/recommendations", label: "Recommendations" },
+] as const;
+
 const ACCOUNTING_CHILDREN = [
   { href: "/admin/accounting", label: "Dashboard" },
   { href: "/admin/accounting/commissions", label: "Commissions" },
@@ -57,6 +62,7 @@ const ITEM_CHILDREN: Record<string, readonly { href: string; label: string }[]> 
   "/admin/comms": COMMS_CHILDREN,
   "/admin/accounting": ACCOUNTING_CHILDREN,
   "/admin/documents": DOCUMENTS_CHILDREN,
+  "/admin/pricing": PRICING_CHILDREN,
 };
 
 /* -------------------------------------------------------------------------- */
