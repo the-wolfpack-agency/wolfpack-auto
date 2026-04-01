@@ -5,7 +5,7 @@
  * batch planning, performance tracking, and insights aggregation.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+/* Jest globals (describe, it, expect, beforeEach) are available automatically */
 import {
   getAvailableBackgrounds,
   getPresetById,

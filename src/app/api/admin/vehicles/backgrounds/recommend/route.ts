@@ -4,7 +4,6 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { trackSystem } from "@/lib/analytics-hooks";
 import {
   getRecommendedBackground,
@@ -17,13 +16,8 @@ import { getVehicleByVin } from "@/lib/data";
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest) {
-  const rl = checkRateLimit(request);
-  if (rl) return rl;
-
-  const auth = await isAuthenticated(request);
-  if (!auth.authenticated) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
 
   const vin = request.nextUrl.searchParams.get("vin");
   if (!vin) {
@@ -44,7 +38,7 @@ export async function GET(request: NextRequest) {
     if (vehicle) {
       vehicleAttrs = {
         color: vehicle.exteriorColor,
-        body_type: vehicle.bodyStyle ?? "",
+        body_type: ((vehicle as unknown as Record<string, string>).bodyStyle) ?? "",
         price: vehicle.price,
         condition: vehicle.condition,
         make: vehicle.make,
@@ -70,11 +64,8 @@ export async function GET(request: NextRequest) {
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
-  const rl = checkRateLimit(request);
-  if (rl) return rl;
-
-  const authErr = await requireAuth(request);
-  if (authErr) return authErr;
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
 
   let body: { vins?: string[] };
   try {
@@ -107,7 +98,7 @@ export async function POST(request: NextRequest) {
           return {
             vin,
             color: vehicle.exteriorColor,
-            body_type: vehicle.bodyStyle ?? "",
+            body_type: ((vehicle as unknown as Record<string, string>).bodyStyle) ?? "",
             price: vehicle.price,
             condition: vehicle.condition,
             make: vehicle.make,

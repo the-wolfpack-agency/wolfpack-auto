@@ -5,19 +5,13 @@
  * drive the most views, dwell time, clicks, and lead conversions.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth-guard";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackSystem } from "@/lib/analytics-hooks";
 import { getBackgroundInsights } from "@/lib/background-generator";
 
-export async function GET(request: NextRequest) {
-  const rl = checkRateLimit(request);
-  if (rl) return rl;
-
-  const auth = await isAuthenticated(request);
-  if (!auth.authenticated) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(_request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
 
   const insights = getBackgroundInsights();
 

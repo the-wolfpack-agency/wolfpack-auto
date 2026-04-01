@@ -4,7 +4,6 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { trackSystem } from "@/lib/analytics-hooks";
 import {
   getAvailableBackgrounds,
@@ -31,14 +30,9 @@ export function getAppliedBackgrounds() {
 /* GET                                                                        */
 /* -------------------------------------------------------------------------- */
 
-export async function GET(request: NextRequest) {
-  const rl = checkRateLimit(request);
-  if (rl) return rl;
-
-  const auth = await isAuthenticated(request);
-  if (!auth.authenticated) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(_request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
 
   const presets = getAvailableBackgrounds();
   return NextResponse.json({ presets, count: presets.length });
@@ -49,11 +43,8 @@ export async function GET(request: NextRequest) {
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
-  const rl = checkRateLimit(request);
-  if (rl) return rl;
-
-  const authErr = await requireAuth(request);
-  if (authErr) return authErr;
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
 
   let body: { vin?: string; preset?: string; dealer_colors?: { primary: string; secondary: string }; vehicle_color?: string };
   try {

@@ -66,26 +66,16 @@ export default function MarketingTemplatePreview({
     }
   }, [html]);
 
-  /* Download as image via html2canvas (if available) */
-  const handleDownloadImage = useCallback(async () => {
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const iframe = iframeRef.current;
-      if (!iframe?.contentDocument?.body) return;
-      const canvas = await html2canvas(iframe.contentDocument.body, {
-        useCORS: true,
-        allowTaint: true,
-        scale: 2,
-      });
-      const link = document.createElement("a");
-      link.download = "marketing-template.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    } catch {
-      // html2canvas not available — fallback message
-      alert("Image download requires html2canvas. Copy the HTML instead.");
-    }
-  }, []);
+  /* Download template as an HTML file */
+  const handleDownloadHtml = useCallback(() => {
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = "marketing-template.html";
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [html]);
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
@@ -118,10 +108,10 @@ export default function MarketingTemplatePreview({
               {copied ? "Copied!" : "Copy HTML"}
             </button>
             <button
-              onClick={handleDownloadImage}
+              onClick={handleDownloadHtml}
               className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
             >
-              Download Image
+              Download HTML
             </button>
           </div>
         </div>
