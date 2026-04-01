@@ -68,12 +68,20 @@ jobs:
       - name: Determine target URL
         id: target
         run: |
+          PROD_URL="https://wolfpack-auto.vercel.app"
           if [ -n "${{ inputs.url }}" ]; then
             echo "url=${{ inputs.url }}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event_name }}" = "deployment_status" ]; then
-            echo "url=${{ github.event.deployment_status.target_url }}" >> "$GITHUB_OUTPUT"
+            # Use deployment URL if it's production, otherwise fall back to prod URL
+            DEPLOY_URL="${{ github.event.deployment_status.target_url }}"
+            if echo "$DEPLOY_URL" | grep -q "wolfpack-auto\.vercel\.app$"; then
+              echo "url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice::Preview URL detected ($DEPLOY_URL), using production URL instead"
+              echo "url=$PROD_URL" >> "$GITHUB_OUTPUT"
+            fi
           else
-            echo "url=https://wolfpack-auto.vercel.app" >> "$GITHUB_OUTPUT"
+            echo "url=$PROD_URL" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Quick canary probe
