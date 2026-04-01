@@ -76,12 +76,24 @@ jobs:
       - run: npm ci
       - name: Install AgenticQA SRE tools
         run: pip install -q pyyaml
+      - name: Fetch SRE Auto-Fix Engine
+        run: |
+          curl -sf -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3.raw" \
+            "https://api.github.com/repos/nhomyk/AgenticQA/contents/AgenticQA/scripts/sre_autofix.py?ref=main" \
+            -o /tmp/sre_autofix.py || {
+            echo "::warning::Could not fetch SRE script from AgenticQA — falling back to local lint"
+            echo "FALLBACK=true" >> $GITHUB_ENV
+          }
       - name: Run SRE Auto-Fix Engine
         id: sre
         run: |
-          # Fetch the SRE autofix script from AgenticQA
-          curl -sf "https://raw.githubusercontent.com/nhomyk/AgenticQA/main/AgenticQA/scripts/sre_autofix.py" -o /tmp/sre_autofix.py
-          python /tmp/sre_autofix.py --path . --max-passes 3
+          if [ "$FALLBACK" = "true" ]; then
+            echo "Running fallback ESLint + tsc fix..."
+            npx eslint src/ --ext .ts,.tsx --fix --no-error-on-unmatched-pattern || true
+          else
+            python /tmp/sre_autofix.py --path . --max-passes 3
+          fi
         continue-on-error: true
       - name: Check for changes
         id: verify
