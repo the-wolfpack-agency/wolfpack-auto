@@ -8,7 +8,12 @@
 const DEFAULT_NEO4J_URL = "http://localhost:7474";
 
 function getBaseUrl(): string {
-  return process.env.NEO4J_URL ?? DEFAULT_NEO4J_URL;
+  return process.env.NEO4J_URL || DEFAULT_NEO4J_URL;
+}
+
+/** Returns true when Neo4j is explicitly disabled (NEO4J_URL set to empty). */
+function isDisabled(): boolean {
+  return process.env.NEO4J_URL === "";
 }
 
 function getAuthHeader(): string {
@@ -26,7 +31,7 @@ function getAuthHeader(): string {
 export async function executeNeo4jQueries(
   queries: string[],
 ): Promise<{ executed: number; failed: number }> {
-  if (queries.length === 0) return { executed: 0, failed: 0 };
+  if (queries.length === 0 || isDisabled()) return { executed: 0, failed: 0 };
 
   const url = `${getBaseUrl()}/db/neo4j/tx/commit`;
 
@@ -76,6 +81,7 @@ export async function executeNeo4jQueries(
  * Quick health check — returns true if Neo4j responds.
  */
 export async function neo4jHealthCheck(): Promise<boolean> {
+  if (isDisabled()) return false;
   try {
     const res = await fetch(getBaseUrl(), {
       method: "GET",
