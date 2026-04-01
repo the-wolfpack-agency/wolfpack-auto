@@ -61,18 +61,28 @@ jobs:
     needs: [pipeline-rescue]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    name: "SRE Agent: Auto-Fix Linting"
+    name: "SRE Agent: Auto-Fix"
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - run: npm ci
-      - name: ESLint auto-fix
-        run: npx eslint src/ --ext .ts,.tsx --fix --no-error-on-unmatched-pattern || true
+      - name: Install AgenticQA SRE tools
+        run: pip install -q pyyaml
+      - name: Run SRE Auto-Fix Engine
+        id: sre
+        run: |
+          # Fetch the SRE autofix script from AgenticQA
+          curl -sf "https://raw.githubusercontent.com/nhomyk/AgenticQA/main/AgenticQA/scripts/sre_autofix.py" -o /tmp/sre_autofix.py
+          python /tmp/sre_autofix.py --path . --max-passes 3
+        continue-on-error: true
       - name: Check for changes
         id: verify
         run: |
@@ -87,7 +97,7 @@ jobs:
           git config user.name "sre-agent[bot]"
           git config user.email "sre-agent[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "fix: auto-fix linting errors via SRE Agent" || true
+          git commit -m "fix: auto-fix errors via AgenticQA SRE Agent" || true
           git push origin HEAD:${{ github.ref }} || true
 
   lint:
