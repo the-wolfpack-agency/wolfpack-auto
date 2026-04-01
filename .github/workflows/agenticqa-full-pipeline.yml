@@ -200,6 +200,55 @@ jobs:
           sarif_file: agenticqa.sarif
         continue-on-error: true
 
+  load-baseline:
+    needs: [lint]
+    if: always() && needs.lint.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: "Phase 1: Load Baseline"
+    env:
+      CI: true
+      DATABASE_URL: ''
+      NEO4J_URL: ''
+      REDIS_URL: ''
+      NEXTAUTH_URL: 'http://localhost:3000'
+      NEXTAUTH_SECRET: 'ci-test-secret-not-real'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start server
+        run: |
+          DATABASE_URL= npx next start &
+          for i in {1..20}; do
+            curl -sf http://localhost:3000/api/health -o /dev/null && break
+            sleep 1
+          done
+
+      - name: Run load baseline tests
+        run: npx playwright test tests/e2e/load-baseline.spec.ts --project=chromium --reporter=github
+
+      - name: Run load test runner (k6 or fallback)
+        run: npx playwright test tests/load/load-test-runner.spec.ts --project=chromium --reporter=github --config=playwright.config.ts
+        continue-on-error: true
+
+      - name: Upload load test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-baseline-results
+          path: test-results/
+          retention-days: 7
+
   shadow-verification:
     needs: [lint]
     if: always() && needs.lint.result != 'cancelled'
@@ -486,7 +535,7 @@ jobs:
           echo "Pipeline healthy"
 
   pipeline-summary:
-    needs: [pipeline-rescue, linting-fix, lint, phase-1-testing, phase-1-compliance, shadow-verification, sdet-agent, compliance-agent, fullstack-agent, sre-agent, pipeline-health]
+    needs: [pipeline-rescue, linting-fix, lint, phase-1-testing, phase-1-compliance, shadow-verification, load-baseline, sdet-agent, compliance-agent, fullstack-agent, sre-agent, pipeline-health]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -504,6 +553,7 @@ jobs:
           echo "| 1 | Consolidated Testing | ${{ needs.phase-1-testing.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 1 | Security & Accessibility | ${{ needs.phase-1-compliance.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 1 | Shadow Mode Verification | ${{ needs.shadow-verification.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 1 | Load Baseline | ${{ needs.load-baseline.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 1 | SDET Agent | ${{ needs.sdet-agent.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 1 | Compliance Agent | ${{ needs.compliance-agent.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 2 | Fullstack Agent | ${{ needs.fullstack-agent.result }} |" >> $GITHUB_STEP_SUMMARY
