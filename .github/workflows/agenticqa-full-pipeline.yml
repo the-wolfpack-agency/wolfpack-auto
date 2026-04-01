@@ -138,7 +138,7 @@ jobs:
       - name: Run Playwright E2E tests
         id: playwright
         run: |
-          npx playwright test --project=chromium --workers=2 --reporter=github 2>&1 | tee playwright-output.log || PLAYWRIGHT_FAILED=true
+          npx playwright test --project=chromium --workers=4 --reporter=github 2>&1 | tee playwright-output.log || PLAYWRIGHT_FAILED=true
           if [ "$PLAYWRIGHT_FAILED" = "true" ]; then
             mkdir -p test-failures
             grep -i "error\|fail\|expected" playwright-output.log >> test-failures/playwright-errors.txt || true
