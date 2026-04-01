@@ -788,7 +788,7 @@ describe("DEMO_MODE detection", () => {
   });
 
   it("DEMO_MODE=false is not a blocker", () => {
-    const demoMode = "false";
+    const demoMode: string = "false";
     const isBlocker = demoMode === "true";
     expect(isBlocker).toBe(false);
   });
@@ -800,7 +800,7 @@ describe("DEMO_MODE detection", () => {
   });
 
   it("DEMO_MODE=1 is not mistakenly treated as true (strict check)", () => {
-    const demoMode = "1";
+    const demoMode: string = "1";
     const isBlocker = demoMode === "true";
     expect(isBlocker).toBe(false);
   });

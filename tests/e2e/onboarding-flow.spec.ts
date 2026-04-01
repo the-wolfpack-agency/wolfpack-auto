@@ -27,7 +27,29 @@ async function safeNavigate(
 }
 
 /** Build a valid onboarding payload for API tests. */
-function validOnboardingPayload() {
+function validOnboardingPayload(): {
+  dealership: {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    phone: string;
+    email: string;
+    website: string;
+  };
+  branding: {
+    logoFile: string | null;
+    primaryColor: string;
+    tagline: string;
+  };
+  inventory: {
+    method: "csv" | "dms" | "manual";
+    csvData?: string;
+    dmsProvider?: string;
+  };
+  team: Array<{ email: string; role: string }>;
+} {
   return {
     dealership: {
       name: `Test Dealer ${Date.now()}`,
@@ -45,7 +67,7 @@ function validOnboardingPayload() {
       tagline: "Your Trusted Dealer",
     },
     inventory: {
-      method: "manual" as const,
+      method: "manual",
     },
     team: [],
   };
