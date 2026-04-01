@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
+import RecalibrateButton from "@/components/RecalibrateButton";
 import {
   generateInsights,
   getBufferStats,
@@ -195,15 +196,7 @@ export default async function AnalyticsBrainPage() {
                 })}.
               </p>
             </div>
-            <form action="/api/admin/analytics/calibration" method="POST">
-              <button
-                type="submit"
-                className="rounded-lg border border-indigo-300 bg-white px-4 py-2 text-sm font-medium text-indigo-700 shadow-sm transition-colors hover:bg-indigo-50"
-                data-track="brain_recalibrate"
-              >
-                Recalibrate
-              </button>
-            </form>
+            <RecalibrateButton />
           </div>
 
           {/* Metrics row */}
