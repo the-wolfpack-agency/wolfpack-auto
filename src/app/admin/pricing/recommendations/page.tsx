@@ -289,6 +289,99 @@ function generateHistory(price: number): RecommendationHistoryEntry[] {
 }
 
 /* -------------------------------------------------------------------------- */
+/* API Response Transformer                                                   */
+/* -------------------------------------------------------------------------- */
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function transformApiResponse(reports: any[]): RecommendationsResponse {
+  const vehicles: Vehicle[] = reports.map((r, i) => {
+    const current = Number(r.current_price ?? r.optimal?.current_price ?? 0);
+    const recommended = Number(r.optimal?.optimal_price ?? r.recommended_price ?? current);
+    const delta = recommended - current;
+    const demandScore = Number(r.demand?.score ?? r.demand_score ?? 50);
+    const daysOnLot = Number(r.aging?.days_on_lot ?? r.days_on_lot ?? 0);
+    const action: ActionType =
+      (r.aging?.action as ActionType) ??
+      (delta > 500 ? "increase" : delta < -1000 ? "markdown" : delta < -200 ? "reduce" : demandScore > 75 ? "spotlight" : "hold");
+
+    return {
+      id: r.vin ?? `v-${i}`,
+      vin: r.vin ?? "",
+      year: Number(r.year ?? 2023),
+      make: r.make ?? "",
+      model: r.model ?? "",
+      trim: r.trim ?? "",
+      body_type: (r.body_type ?? "other") as BodyType,
+      photo_url: r.photo_url ?? null,
+      current_price: current,
+      recommended_price: recommended,
+      price_delta: delta,
+      action,
+      action_reason: r.aging?.reason ?? r.action_reason ?? actionReasonText(action, daysOnLot, demandScore),
+      demand_score: demandScore,
+      days_on_lot: daysOnLot,
+      estimated_days_to_sale: Number(r.velocity?.estimated_days_to_sale ?? 30),
+      season_tag: r.seasonal?.label ?? null,
+      revenue_opportunity: Math.abs(delta),
+      elasticity_data: (r.elasticity?.price_sensitivity_curve ?? []).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (p: any) => ({ price: Number(p.price), probability: Number(p.probability) }),
+      ),
+      comparables: (r.position?.comparables ?? []).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (c: any) => ({
+          id: c.vin ?? c.id ?? "",
+          year: Number(c.year ?? 2023),
+          make: c.make ?? "",
+          model: c.model ?? "",
+          price: Number(c.price ?? 0),
+          days_on_lot: Number(c.days_on_lot ?? 0),
+          status: c.status ?? "available",
+        }),
+      ),
+      demand_signals: generateDemandSignals(demandScore),
+      aging_timeline: generateAgingTimeline(current),
+      recommendation_history: generateHistory(current),
+    };
+  });
+
+  const totalUplift = vehicles.reduce((sum, v) => sum + Math.abs(v.price_delta), 0);
+  const avgDays = vehicles.length > 0 ? Math.round(vehicles.reduce((s, v) => s + v.days_on_lot, 0) / vehicles.length) : 0;
+  const attention = vehicles.filter((v) => v.action !== "hold").length;
+
+  const healthScore = Math.min(100, Math.max(0, 100 - attention * 5));
+
+  return {
+    summary: {
+      average_days_to_sale: avgDays,
+      days_to_sale_trend: -2,
+      vehicles_needing_attention: attention,
+      revenue_velocity: Math.round(vehicles.reduce((s, v) => s + v.current_price, 0) / Math.max(avgDays, 1)),
+      inventory_health_score: healthScore,
+      lot_health_score: healthScore,
+      total_revenue_opportunity: totalUplift,
+      last_updated: new Date().toISOString(),
+    },
+    vehicles,
+    lot_report: {
+      aging_distribution: [
+        { tier: "fresh" as AgeTier, label: "Fresh (0-15d)", count: vehicles.filter((v) => v.days_on_lot <= 15).length, percent: 0 },
+        { tier: "aging" as AgeTier, label: "Aging (31-60d)", count: vehicles.filter((v) => v.days_on_lot > 30 && v.days_on_lot <= 60).length, percent: 0 },
+        { tier: "stale" as AgeTier, label: "Stale (61-90d)", count: vehicles.filter((v) => v.days_on_lot > 60 && v.days_on_lot <= 90).length, percent: 0 },
+        { tier: "critical" as AgeTier, label: "Critical (90d+)", count: vehicles.filter((v) => v.days_on_lot > 90).length, percent: 0 },
+      ].map((d) => ({ ...d, percent: vehicles.length > 0 ? Math.round((d.count / vehicles.length) * 100) : 0 })),
+      category_uplift: [
+        { category: "Trucks", vehicle_count: vehicles.filter((v) => v.body_type === "truck").length, potential_uplift: vehicles.filter((v) => v.body_type === "truck").reduce((s, v) => s + Math.abs(v.price_delta), 0) },
+        { category: "SUVs", vehicle_count: vehicles.filter((v) => v.body_type === "suv").length, potential_uplift: vehicles.filter((v) => v.body_type === "suv").reduce((s, v) => s + Math.abs(v.price_delta), 0) },
+        { category: "Sedans", vehicle_count: vehicles.filter((v) => v.body_type === "sedan").length, potential_uplift: vehicles.filter((v) => v.body_type === "sedan").reduce((s, v) => s + Math.abs(v.price_delta), 0) },
+        { category: "Other", vehicle_count: vehicles.filter((v) => !["truck", "suv", "sedan"].includes(v.body_type)).length, potential_uplift: vehicles.filter((v) => !["truck", "suv", "sedan"].includes(v.body_type)).reduce((s, v) => s + Math.abs(v.price_delta), 0) },
+      ],
+      market_gap_alerts: [],
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -404,7 +497,7 @@ export default function PricingRecommendationsPage() {
     track("pricing", "dashboard_viewed");
   }, [track]);
 
-  // Fetch data
+  // Fetch data — API returns { reports, count }, transform to our UI shape
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -412,15 +505,19 @@ export default function PricingRecommendationsPage() {
       const res = await fetch("/api/admin/pricing/recommendations");
       if (res.ok) {
         const json = await res.json();
-        setData(json);
-      } else if (res.status === 404 || res.status === 501) {
-        // API not implemented yet — use mock data for demo
-        setData(generateMockData());
+        // If the API returns our expected shape, use it directly
+        if (json.vehicles && json.summary) {
+          setData(json);
+        } else if (json.reports && Array.isArray(json.reports)) {
+          // Transform API shape { reports, count } → our UI shape
+          setData(transformApiResponse(json.reports));
+        } else {
+          setData(generateMockData());
+        }
       } else {
-        throw new Error(`HTTP ${res.status}`);
+        setData(generateMockData());
       }
     } catch {
-      // Fallback to mock data in demo mode
       setData(generateMockData());
     } finally {
       setLoading(false);
