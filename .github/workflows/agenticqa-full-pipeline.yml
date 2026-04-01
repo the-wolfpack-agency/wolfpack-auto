@@ -120,6 +120,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     name: "Phase 1: Consolidated Testing"
+    env:
+      CI: true
+      DATABASE_URL: ''
+      NEO4J_URL: ''
+      REDIS_URL: ''
+      NEXTAUTH_URL: 'http://localhost:3000'
+      NEXTAUTH_SECRET: 'ci-test-secret-not-real'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -129,8 +136,6 @@ jobs:
 
       - name: Build production bundle
         run: npm run build
-        env:
-          DATABASE_URL: ''
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -145,9 +150,6 @@ jobs:
             echo "PLAYWRIGHT_FAILED=true" >> test-failures/summary.txt
           fi
           echo "status=completed" >> $GITHUB_OUTPUT
-        env:
-          CI: true
-          DATABASE_URL: ''
 
       - name: Upload test failures
         if: failure()
