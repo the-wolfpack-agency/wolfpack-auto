@@ -58,6 +58,16 @@ export interface SignalVector {
   latest_event_at: Date | null;
   earliest_event_at: Date | null;
   events_by_day: Map<string, number>;
+
+  // Journey stitcher signals (integrated from cross-session tracking)
+  journey_stage: "awareness" | "consideration" | "decision" | "ready_to_buy";
+  journey_session_count: number;
+  journey_narrowing_rate: number;   // 0-1
+  journey_shortlist_size: number;
+
+  // Temporal pattern signals (integrated from time-of-day analysis)
+  temporal_showroom_predicted: boolean;
+  temporal_ready_to_close: boolean;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -205,6 +215,49 @@ const SIGNAL_DEFINITIONS: WeightedSignal[] = [
     weight: -1,
     compute: (v) => v.single_page_bounce ? 1 : 0,
   },
+
+  // Journey stitcher signals (cross-session intelligence)
+  {
+    name: "journey_stage",
+    description: "Cross-session journey stage progression",
+    weight: 3,
+    compute: (v) => {
+      const stages = { awareness: 0, consideration: 0.3, decision: 0.7, ready_to_buy: 1.0 };
+      return stages[v.journey_stage] ?? 0;
+    },
+  },
+  {
+    name: "journey_narrowing",
+    description: "Narrowing vehicle search across sessions",
+    weight: 2,
+    compute: (v) => v.journey_narrowing_rate,
+  },
+  {
+    name: "journey_shortlist",
+    description: "Has shortlisted specific vehicles across sessions",
+    weight: 2,
+    compute: (v) => Math.min(1, v.journey_shortlist_size / 3),
+  },
+  {
+    name: "journey_sessions",
+    description: "Multiple return sessions showing sustained interest",
+    weight: 2,
+    compute: (v) => Math.min(1, v.journey_session_count / 5),
+  },
+
+  // Temporal pattern signals (time-of-day intelligence)
+  {
+    name: "showroom_predicted",
+    description: "Weekend morning research pattern predicts showroom visit",
+    weight: 3,
+    compute: (v) => v.temporal_showroom_predicted ? 1 : 0,
+  },
+  {
+    name: "ready_to_close",
+    description: "Temporal and journey signals indicate ready to close",
+    weight: 3,
+    compute: (v) => v.temporal_ready_to_close ? 1 : 0,
+  },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -266,6 +319,16 @@ export function aggregateSignals(events: RawEvent[]): SignalVector {
     latest_event_at: null,
     earliest_event_at: null,
     events_by_day: new Map(),
+
+    // Journey stitcher signals — default to awareness/zero
+    journey_stage: "awareness",
+    journey_session_count: 0,
+    journey_narrowing_rate: 0,
+    journey_shortlist_size: 0,
+
+    // Temporal pattern signals — default to not triggered
+    temporal_showroom_predicted: false,
+    temporal_ready_to_close: false,
   };
 
   if (events.length === 0) return vector;
@@ -433,6 +496,34 @@ export function aggregateSignals(events: RawEvent[]): SignalVector {
     }
     if (meta.time_on_page) {
       totalDwellMs += Number(meta.time_on_page) * 1000;
+    }
+
+    // Journey stitcher signals (from cross-session analytics)
+    if (action === "journey.session_start") {
+      vector.journey_session_count = Number(meta.session_number ?? 0);
+    }
+    if (action === "journey.stage_change") {
+      const stage = String(meta.to_stage ?? "awareness");
+      if (stage === "awareness" || stage === "consideration" || stage === "decision" || stage === "ready_to_buy") {
+        vector.journey_stage = stage;
+      }
+    }
+    if (action === "journey.narrowing_detected") {
+      vector.journey_narrowing_rate = Number(meta.narrowing_rate ?? 0);
+    }
+    if (action === "journey.shortlist_update") {
+      const vins = meta.vins;
+      if (Array.isArray(vins)) {
+        vector.journey_shortlist_size = vins.length;
+      }
+    }
+
+    // Temporal pattern signals
+    if (action === "temporal.showroom_predicted") {
+      vector.temporal_showroom_predicted = true;
+    }
+    if (action === "temporal.ready_to_close") {
+      vector.temporal_ready_to_close = true;
     }
   }
 

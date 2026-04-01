@@ -224,12 +224,49 @@ export type SystemEvent =
   | "system.push_notification_sent"
   | "system.push_notification_broadcast";
 
+export type SearchIntentEvent =
+  | "search_intent.classified"
+  | "search_intent.updated";
+
+export type ScrollBehaviorEvent =
+  | "scroll.hesitation"
+  | "scroll.revisit"
+  | "scroll.velocity_profile"
+  | "scroll.fast_skip";
+
+export type PhotoEngagementEvent =
+  | "photo.dwell"
+  | "photo.swipe_speed"
+  | "photo.interest_profile"
+  | "photo.buyer_type"
+  | "photo.zoom"
+  | "photo.first_clicked";
+
+export type ExitDetectionEvent =
+  | "exit.tab_switch"
+  | "exit.clipboard_copy"
+  | "exit.competitor_check"
+  | "exit.rage_compare";
+
 export type WebhookEvent =
   | "webhook.delivered"
   | "webhook.failed"
   | "webhook.config_created"
   | "webhook.config_updated"
   | "webhook.test_sent";
+
+export type JourneyEvent =
+  | "journey.session_start"
+  | "journey.stage_change"
+  | "journey.narrowing_detected"
+  | "journey.shortlist_update"
+  | "journey.return_visit";
+
+export type TemporalEvent =
+  | "temporal.session_context"
+  | "temporal.showroom_predicted"
+  | "temporal.ready_to_close"
+  | "temporal.pattern_insight";
 
 export type PlatformEvent =
   | DealEvent
@@ -247,7 +284,13 @@ export type PlatformEvent =
   | KnowledgeEvent
   | SecurityEvent
   | SystemEvent
-  | WebhookEvent;
+  | SearchIntentEvent
+  | ScrollBehaviorEvent
+  | PhotoEngagementEvent
+  | ExitDetectionEvent
+  | WebhookEvent
+  | JourneyEvent
+  | TemporalEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -461,4 +504,70 @@ export function trackWebhook(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "webhook", ...meta });
+}
+
+/**
+ * Track a search intent classification event (source, UTM, intent category).
+ */
+export function trackSearchIntent(
+  event: SearchIntentEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "search_intent", ...meta });
+}
+
+/**
+ * Track a scroll behavior event (hesitation, revisit, velocity profile).
+ */
+export function trackScrollBehavior(
+  event: ScrollBehaviorEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "scroll_behavior", ...meta });
+}
+
+/**
+ * Track a photo engagement event (dwell, swipe speed, interest profile, buyer type).
+ */
+export function trackPhotoEngagement(
+  event: PhotoEngagementEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "photo_engagement", ...meta });
+}
+
+/**
+ * Track a competitive exit detection event (tab switch, clipboard copy, competitor check).
+ */
+export function trackExitDetection(
+  event: ExitDetectionEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "exit_detection", ...meta });
+}
+
+/**
+ * Track a cross-session journey event (session start, stage change, narrowing, shortlist).
+ */
+export function trackJourney(
+  event: JourneyEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "journey", ...meta });
+}
+
+/**
+ * Track a temporal pattern event (session context, showroom predicted, ready to close).
+ */
+export function trackTemporal(
+  event: TemporalEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "temporal", ...meta });
 }

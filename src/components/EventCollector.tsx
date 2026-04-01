@@ -29,6 +29,17 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import {
+  startSession as startJourneySession,
+  recordVehicleView as journeyRecordVehicleView,
+  recordCalculatorUsed as journeyRecordCalculatorUsed,
+  recordPageView as journeyRecordPageView,
+  getJourneyState,
+} from "@/lib/journey-stitcher";
+import {
+  buildTemporalInput,
+  generateTemporalEvents,
+} from "@/lib/temporal-patterns";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -300,6 +311,46 @@ export default function EventCollector({
       window.removeEventListener("cookie_consent_change", handleConsentChange);
   }, []);
 
+  // --- Journey stitcher + temporal pattern initialization ---
+  useEffect(() => {
+    try {
+      // Start a new journey session (reads/writes localStorage)
+      const { events: journeyEvents } = startJourneySession();
+
+      // Fire all journey events into the analytics pipeline
+      for (const evt of journeyEvents) {
+        enqueueEvent({
+          event_type: evt.type.split(".")[0],
+          action: evt.type,
+          page: window.location.pathname,
+          session_id: sessionId.current,
+          user_fingerprint: fingerprint.current,
+          timestamp: new Date().toISOString(),
+          metadata: evt.data,
+        });
+      }
+
+      // Run temporal classification on session start
+      const journeyState = getJourneyState();
+      const temporalInput = buildTemporalInput(journeyState);
+      const temporalEvents = generateTemporalEvents(temporalInput);
+
+      for (const evt of temporalEvents) {
+        enqueueEvent({
+          event_type: evt.type.split(".")[0],
+          action: evt.type,
+          page: window.location.pathname,
+          session_id: sessionId.current,
+          user_fingerprint: fingerprint.current,
+          timestamp: new Date().toISOString(),
+          metadata: evt.data,
+        });
+      }
+    } catch {
+      // Journey/temporal analytics must never break the app
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // --- Core event builder ---
   const buildEvent = useCallback(
     (
@@ -344,6 +395,17 @@ export default function EventCollector({
       enqueueEvent(
         buildEvent("vehicle_view", "view_vehicle", { vin, title }),
       );
+      // Feed into journey stitcher — extract category from title (e.g. "2024 Toyota Camry" -> "Toyota")
+      try {
+        const parts = title.split(" ");
+        const category = parts.length >= 2 ? parts[1] : parts[0] || "unknown";
+        const journeyEvents = journeyRecordVehicleView(vin, category);
+        for (const evt of journeyEvents) {
+          enqueueEvent(
+            buildEvent(evt.type.split(".")[0], evt.type, evt.data),
+          );
+        }
+      } catch { /* journey analytics must never break */ }
     },
     [buildEvent],
   );
@@ -561,6 +623,9 @@ export default function EventCollector({
           user_agent: navigator.userAgent,
         }),
       );
+
+      // Record page view in journey stitcher
+      try { journeyRecordPageView(); } catch { /* never break */ }
     }
   }, [buildEvent]);
 
@@ -1399,6 +1464,14 @@ export default function EventCollector({
         // Store ranges not exact values for privacy
         value_range: categorizeValue(target.value),
       }));
+
+      // Feed calculator usage into journey stitcher
+      try {
+        const calcEvents = journeyRecordCalculatorUsed();
+        for (const evt of calcEvents) {
+          enqueueEvent(buildEvent(evt.type.split(".")[0], evt.type, evt.data));
+        }
+      } catch { /* journey analytics must never break */ }
     }
 
     document.addEventListener("change", handleChange, { passive: true });
@@ -1997,6 +2070,232 @@ export default function EventCollector({
       document.removeEventListener("visibilitychange", handleVisDwell);
     };
   }, [buildEvent]);
+  // ================================================================
+  // TIER 4 — SEARCH INTENT + SCROLL BEHAVIOR SIGNALS
+  // ================================================================
+
+  // --- 29. Search intent classification on page load ---
+  useEffect(() => {
+    import("@/lib/search-intent-classifier").then(({ classifySearchIntent }) => {
+      try {
+        const intent = classifySearchIntent();
+        enqueueEvent(
+          buildEvent("search_intent", "search_intent.classified", {
+            source: intent.source,
+            medium: intent.medium,
+            campaign: intent.campaign,
+            content: intent.content,
+            term: intent.term,
+            intent_category: intent.intent_category,
+            landing_page: intent.landing_page,
+            ...(intent.raw_query ? { raw_query: intent.raw_query } : {}),
+          }),
+        );
+      } catch {
+        /* search intent classification failed — skip silently */
+      }
+    }).catch(() => { /* module load failed — skip silently */ });
+  }, [buildEvent]);
+
+  // --- 30. Scroll velocity & hesitation tracker (section-level) ---
+  useEffect(() => {
+    // VDP section boundaries (identified by data attributes or selectors)
+    const VDP_SECTIONS = [
+      { id: "hero", selector: "[data-section='hero'], .hero, section:first-of-type" },
+      { id: "photos", selector: "[data-section='photos'], .photos, .gallery, .carousel" },
+      { id: "details", selector: "[data-section='details'], .details, .vehicle-details, .specifications" },
+      { id: "pricing", selector: "[data-section='pricing'], .pricing, [data-track-price]" },
+      { id: "payment_calculator", selector: "[data-section='payment_calculator'], .calculator, [data-track*='calc']" },
+      { id: "vehicle_history", selector: "[data-section='vehicle_history'], .vehicle-history, .carfax" },
+      { id: "similar_vehicles", selector: "[data-section='similar_vehicles'], .similar-vehicles, .recommendations" },
+    ];
+
+    // State tracking
+    let lastScrollY = window.scrollY;
+    let lastScrollTime = Date.now();
+    const sectionVelocities = new Map<string, number[]>();
+    const hesitationTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    const sectionLastSeen = new Map<string, number>(); // highest scroll position where section was passed
+    const sectionRevisitCount = new Map<string, number>();
+
+    const HESITATION_MS = 1500; // 1.5s pause = reading/hesitating
+    const FAST_SCROLL_THRESHOLD = 2000; // px/s = skipping content
+    const SAMPLE_INTERVAL_MS = 150;
+
+    /** Identify which section the user is currently viewing. */
+    function getCurrentSection(): string | null {
+      const viewportMid = window.scrollY + window.innerHeight / 2;
+
+      for (const sec of VDP_SECTIONS) {
+        const el = document.querySelector(sec.selector);
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        const top = rect.top + window.scrollY;
+        const bottom = top + rect.height;
+        if (viewportMid >= top && viewportMid <= bottom) {
+          return sec.id;
+        }
+      }
+
+      // Fallback: classify by scroll position percentage
+      const docHeight = document.documentElement.scrollHeight;
+      const pct = (window.scrollY / docHeight) * 100;
+      if (pct < 15) return "hero";
+      if (pct < 35) return "photos";
+      if (pct < 55) return "details";
+      if (pct < 70) return "pricing";
+      if (pct < 85) return "payment_calculator";
+      return "similar_vehicles";
+    }
+
+    /** Classify velocity into a human-readable bucket. */
+    function classifyVelocity(pxPerSec: number): "slow" | "medium" | "fast" | "skip" {
+      if (pxPerSec < 200) return "slow";
+      if (pxPerSec < 800) return "medium";
+      if (pxPerSec < FAST_SCROLL_THRESHOLD) return "fast";
+      return "skip";
+    }
+
+    function handleScroll() {
+      if (!hasFullConsent()) return;
+      const now = Date.now();
+      const dt = now - lastScrollTime;
+      if (dt < SAMPLE_INTERVAL_MS) return;
+
+      const dy = window.scrollY - lastScrollY;
+      const absDy = Math.abs(dy);
+      const velocityPxPerSec = (absDy / dt) * 1000;
+      const section = getCurrentSection();
+
+      if (section) {
+        // --- Track velocity per section ---
+        if (!sectionVelocities.has(section)) sectionVelocities.set(section, []);
+        sectionVelocities.get(section)!.push(velocityPxPerSec);
+
+        // --- Hesitation detection: scroll stopped ---
+        if (hesitationTimers.has(section)) {
+          clearTimeout(hesitationTimers.get(section)!);
+        }
+        const hesitationStart = now;
+        hesitationTimers.set(
+          section,
+          setTimeout(() => {
+            // Scroll didn't move for HESITATION_MS — user is reading
+            const hDuration = Date.now() - hesitationStart;
+            enqueueEvent(
+              buildEvent("scroll_behavior", "scroll.hesitation", {
+                section,
+                duration_ms: hDuration,
+                scroll_y: window.scrollY,
+                page: window.location.pathname,
+              }),
+            );
+          }, HESITATION_MS),
+        );
+
+        // --- Fast scroll-past detection ---
+        if (velocityPxPerSec > FAST_SCROLL_THRESHOLD && dy > 0) {
+          enqueueEvent(
+            buildEvent("scroll_behavior", "scroll.fast_skip", {
+              section,
+              velocity_px_per_sec: Math.round(velocityPxPerSec),
+              page: window.location.pathname,
+            }),
+          );
+        }
+
+        // --- Scroll-back (revisit) detection ---
+        if (dy < -50) {
+          // Scrolling upward — check if returning to a previously passed section
+          const prevHighest = sectionLastSeen.get(section) ?? 0;
+          if (prevHighest > 0 && window.scrollY < prevHighest) {
+            const count = (sectionRevisitCount.get(section) ?? 0) + 1;
+            sectionRevisitCount.set(section, count);
+
+            enqueueEvent(
+              buildEvent("scroll_behavior", "scroll.revisit", {
+                section,
+                revisit_count: count,
+                page: window.location.pathname,
+              }),
+            );
+          }
+        }
+
+        // Track the furthest scroll position per section
+        if (dy > 0) {
+          const prev = sectionLastSeen.get(section) ?? 0;
+          if (window.scrollY > prev) {
+            sectionLastSeen.set(section, window.scrollY);
+          }
+        }
+      }
+
+      lastScrollY = window.scrollY;
+      lastScrollTime = now;
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Emit velocity profile summary on page exit
+    function emitVelocityProfile() {
+      if (sectionVelocities.size === 0) return;
+
+      const profile: Record<string, string> = {};
+      const sectionDetails: Record<string, { avg: number; samples: number }> = {};
+      let slowestSection = "";
+      let slowestAvg = Infinity;
+
+      for (const [section, velocities] of sectionVelocities.entries()) {
+        if (velocities.length === 0) continue;
+        const avg = velocities.reduce((a, b) => a + b, 0) / velocities.length;
+        profile[section] = classifyVelocity(avg);
+        sectionDetails[section] = { avg: Math.round(avg), samples: velocities.length };
+
+        if (avg < slowestAvg) {
+          slowestAvg = avg;
+          slowestSection = section;
+        }
+      }
+
+      // Infer buyer type from where they spent the most time (slowest scroll)
+      let buyer_type = "general";
+      if (slowestSection === "pricing" || slowestSection === "payment_calculator") {
+        buyer_type = "price_buyer";
+      } else if (slowestSection === "vehicle_history") {
+        buyer_type = "trust_buyer";
+      } else if (slowestSection === "photos") {
+        buyer_type = "visual_buyer";
+      } else if (slowestSection === "details") {
+        buyer_type = "research_buyer";
+      }
+
+      enqueueEvent(
+        buildEvent("scroll_behavior", "scroll.velocity_profile", {
+          profile: JSON.stringify(profile),
+          section_details: JSON.stringify(sectionDetails),
+          buyer_type,
+          slowest_section: slowestSection,
+          total_revisits: Array.from(sectionRevisitCount.values()).reduce((a, b) => a + b, 0),
+          page: window.location.pathname,
+        }),
+      );
+    }
+
+    window.addEventListener("beforeunload", emitVelocityProfile);
+    const handleVisChange = () => {
+      if (document.hidden) emitVelocityProfile();
+    };
+    document.addEventListener("visibilitychange", handleVisChange);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("beforeunload", emitVelocityProfile);
+      document.removeEventListener("visibilitychange", handleVisChange);
+      for (const timer of hesitationTimers.values()) clearTimeout(timer);
+    };
+  }, [buildEvent]);
+
   // --- Flush on page unload ---
   useEffect(() => {
     function handleUnload() {
