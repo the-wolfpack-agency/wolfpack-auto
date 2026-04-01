@@ -73,6 +73,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
       - run: npm ci
       - name: Install AgenticQA SRE tools
         run: pip install -q pyyaml
@@ -107,9 +108,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
       - run: npm ci
-      - name: ESLint
-        run: echo "ESLint skipped — no .eslintrc config (Next.js 16 migration pending)"
       - name: TypeScript type-check
         run: npx tsc --noEmit
 
@@ -121,8 +121,12 @@ jobs:
     needs: [lint]
     if: always() && needs.lint.result != 'cancelled'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    name: "Phase 1: Consolidated Testing"
+    timeout-minutes: 20
+    name: "Phase 1: Tests (shard ${{ matrix.shard }}/${{ strategy.job-total }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     env:
       CI: true
       DATABASE_URL: ''
@@ -135,18 +139,36 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+
       - run: npm ci
 
-      - name: Build production bundle
-        run: npm run build
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright E2E tests
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**/*') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            nextjs-${{ runner.os }}-
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Run Playwright E2E tests (shard ${{ matrix.shard }}/4)
         id: playwright
         run: |
-          npx playwright test --project=chromium --workers=4 --reporter=github 2>&1 | tee playwright-output.log || PLAYWRIGHT_FAILED=true
+          npx playwright test --project=chromium --workers=4 --shard=${{ matrix.shard }}/4 --reporter=github 2>&1 | tee playwright-output.log || PLAYWRIGHT_FAILED=true
           if [ "$PLAYWRIGHT_FAILED" = "true" ]; then
             mkdir -p test-failures
             grep -i "error\|fail\|expected" playwright-output.log >> test-failures/playwright-errors.txt || true
@@ -158,7 +180,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-failures
+          name: test-failures-shard-${{ matrix.shard }}
           path: test-failures/
           retention-days: 7
 
@@ -166,7 +188,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-shard-${{ matrix.shard }}
           path: |
             playwright-output.log
             test-results/
@@ -215,10 +237,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
       - run: npm ci
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**/*') }}
+          restore-keys: nextjs-${{ runner.os }}-
 
       - name: Build production bundle
         run: npm run build
+
+      - name: Cache Playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -257,6 +294,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
       - run: npm ci
       - name: Build (shadow mode)
         run: npm run build
