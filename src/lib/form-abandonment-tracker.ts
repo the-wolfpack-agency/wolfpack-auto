@@ -431,9 +431,9 @@ export class FormAbandonmentTracker {
  *   }
  */
 export function useFormAbandonment(formId: string): (node: HTMLFormElement | null) => void {
-  // This is a client-side hook — import dynamically to avoid SSR issues
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { useRef, useCallback, useEffect } = require("react");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+  const React = require("react") as typeof import("react");
+  const { useRef, useCallback, useEffect } = React;
 
   const trackerRef = useRef<FormAbandonmentTracker | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);

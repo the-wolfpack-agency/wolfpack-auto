@@ -45,6 +45,12 @@ function emptyVector(): SignalVector {
     latest_event_at: null,
     earliest_event_at: null,
     events_by_day: new Map(),
+    journey_stage: 0,
+    journey_session_count: 0,
+    journey_narrowing_rate: 0,
+    journey_shortlist_size: 0,
+    temporal_showroom_predicted: false,
+    temporal_ready_to_close: false,
   };
 }
 

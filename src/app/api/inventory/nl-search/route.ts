@@ -87,17 +87,18 @@ export async function POST(request: NextRequest) {
     }
     if (parsed_filters.color) {
       const colorLower = parsed_filters.color.toLowerCase();
-      filtered = filtered.filter(
-        (v) =>
-          (v.exterior_color || "").toLowerCase().includes(colorLower) ||
-          (v as Record<string, unknown>).color?.toString().toLowerCase().includes(colorLower),
-      );
+      filtered = filtered.filter((v) => {
+        const rec = v as unknown as Record<string, unknown>;
+        const extColor = (rec.exterior_color as string) || (rec.color as string) || "";
+        return extColor.toLowerCase().includes(colorLower);
+      });
     }
     if (parsed_filters.fuel_type) {
-      filtered = filtered.filter(
-        (v) => v.fuel?.toLowerCase() === parsed_filters.fuel_type ||
-               v.fuel_type?.toLowerCase() === parsed_filters.fuel_type,
-      );
+      filtered = filtered.filter((v) => {
+        const rec = v as unknown as Record<string, unknown>;
+        const fuel = ((rec.fuel_type as string) || (rec.fuel as string) || "").toLowerCase();
+        return fuel === parsed_filters.fuel_type;
+      });
     }
 
     const resultCount = filtered.length;

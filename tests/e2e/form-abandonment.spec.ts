@@ -16,12 +16,12 @@ const ANALYTICS_CATEGORY = "form_abandonment_validation";
 /* ===================================================================== */
 
 async function emitValidation(
-  request: ReturnType<typeof test extends (a: infer T) => void ? never : never>,
+  request: { post: (url: string, options?: Record<string, unknown>) => Promise<unknown> },
   action: string,
   metadata: Record<string, unknown>,
 ) {
   try {
-    await (request as { post: Function }).post("/api/analytics/collect", {
+    await request.post("/api/analytics/collect", {
       data: {
         events: [
           {
