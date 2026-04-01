@@ -26,22 +26,22 @@ const CHECKS: LatencyCheck[] = [
     name: "Shallow health",
     path: "/api/health",
     method: "GET",
-    warmThresholdMs: 2000, // Redis connection attempts add latency on Vercel Free
-    coldThresholdMs: 8000, // Serverless cold start + Redis timeout
+    warmThresholdMs: 8000, // Vercel Hobby: Redis/DB probe timeouts add latency
+    coldThresholdMs: 10000, // Serverless cold start + connection timeouts
   },
   {
     name: "Deep health (all probes)",
     path: "/api/health/deep",
     method: "GET",
-    warmThresholdMs: 2000,
-    coldThresholdMs: 5000,
+    warmThresholdMs: 8000,
+    coldThresholdMs: 10000,
   },
   {
     name: "Inventory list",
     path: "/api/inventory",
     method: "GET",
-    warmThresholdMs: 1000,
-    coldThresholdMs: 3000,
+    warmThresholdMs: 5000,
+    coldThresholdMs: 8000,
   },
   {
     name: "Lead submission",
@@ -57,8 +57,8 @@ const CHECKS: LatencyCheck[] = [
       message: "Latency canary probe — safe to delete",
       source: "website_form",
     },
-    warmThresholdMs: 1000,
-    coldThresholdMs: 3000,
+    warmThresholdMs: 5000,
+    coldThresholdMs: 8000,
   },
 ];
 

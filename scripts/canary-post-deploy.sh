@@ -164,13 +164,16 @@ if [ "$EXIT_CODE" -eq 0 ]; then
 else
   log "Canary FAILED — test suite returned exit code $EXIT_CODE. Check canary-report/ for details."
 
-  # Auto-rollback if requested and Vercel CLI is available
+  # Auto-rollback if requested, Vercel CLI available, and VERCEL_TOKEN is set
   if [ "$AUTO_ROLLBACK" = true ]; then
-    log "Auto-rollback enabled — initiating Vercel rollback..."
-    if command -v vercel &> /dev/null; then
-      vercel rollback --yes 2>&1 && log "Rollback initiated successfully" || log "ERROR: Rollback failed"
+    if [ -z "$VERCEL_TOKEN" ]; then
+      log "Auto-rollback skipped — VERCEL_TOKEN not set"
+    elif command -v vercel &> /dev/null; then
+      log "Auto-rollback enabled — initiating Vercel rollback..."
+      vercel rollback --yes --token "$VERCEL_TOKEN" 2>&1 && log "Rollback initiated successfully" || log "ERROR: Rollback failed"
     elif command -v npx &> /dev/null; then
-      npx vercel rollback --yes 2>&1 && log "Rollback initiated successfully" || log "ERROR: Rollback failed"
+      log "Auto-rollback enabled — initiating Vercel rollback..."
+      npx vercel rollback --yes --token "$VERCEL_TOKEN" 2>&1 && log "Rollback initiated successfully" || log "ERROR: Rollback failed"
     else
       log "ERROR: Neither 'vercel' CLI nor 'npx' found — cannot rollback"
     fi
