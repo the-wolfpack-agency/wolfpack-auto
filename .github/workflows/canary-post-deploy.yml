@@ -38,6 +38,10 @@ concurrency:
 env:
   CANARY_SECRET: ${{ secrets.CANARY_SECRET }}
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   canary:
     name: Production Canary
@@ -55,10 +59,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: wolfpack-auto/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install Playwright
-        working-directory: wolfpack-auto
+        working-directory: .
         run: npx playwright install --with-deps chromium
 
       - name: Determine target URL
@@ -74,7 +78,7 @@ jobs:
 
       - name: Quick canary probe
         if: inputs.quick
-        working-directory: wolfpack-auto
+        working-directory: .
         run: |
           bash scripts/canary-post-deploy.sh --quick --json
         env:
@@ -82,7 +86,7 @@ jobs:
 
       - name: Full canary suite
         if: "!inputs.quick"
-        working-directory: wolfpack-auto
+        working-directory: .
         run: |
           bash scripts/canary-post-deploy.sh --rollback
         env:
@@ -95,9 +99,9 @@ jobs:
         with:
           name: canary-report-${{ github.run_id }}
           path: |
-            wolfpack-auto/canary-report/
-            wolfpack-auto/canary-report.json
-            wolfpack-auto/.agenticqa/canary_history.jsonl
+            canary-report/
+            canary-report.json
+            .agenticqa/canary_history.jsonl
           retention-days: 30
 
       - name: Comment on deployment (failure)
