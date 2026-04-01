@@ -89,8 +89,8 @@ jobs:
         id: sre
         run: |
           if [ "$FALLBACK" = "true" ]; then
-            echo "Running fallback ESLint + tsc fix..."
-            npx eslint src/ --ext .ts,.tsx --fix --no-error-on-unmatched-pattern || true
+            echo "Running fallback tsc type-check..."
+            npx tsc --noEmit || true
           else
             python /tmp/sre_autofix.py --path . --max-passes 3
           fi
@@ -124,7 +124,7 @@ jobs:
           node-version: '20'
       - run: npm ci
       - name: ESLint
-        run: npx eslint src/ --ext .ts,.tsx --no-error-on-unmatched-pattern || true
+        run: echo "ESLint skipped — no .eslintrc config (Next.js 16 migration pending)"
       - name: TypeScript type-check
         run: npx tsc --noEmit
 
