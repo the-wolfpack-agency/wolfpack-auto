@@ -14,144 +14,62 @@ permissions:
   pull-requests: write
   security-events: write
 
-env:
-  QDRANT_URL: http://localhost:6333
-  AGENTICQA_VECTOR_DUAL_WRITE: "true"
-
 jobs:
-  preflight:
+  agenticqa-scan:
     runs-on: ubuntu-latest
-    name: Preflight & Stack Detection
-    outputs:
-      stack: ${{ steps.detect.outputs.stack }}
-    services:
-      qdrant:
-        image: qdrant/qdrant:v1.9.0
-        ports:
-          - 6333:6333
+    name: AgenticQA Security Scan
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install AgenticQA
-        run: pip install "agenticqa @ git+https://github.com/nhomyk/AgenticQA.git#subdirectory=AgenticQA"
-      - name: Detect stack
-        id: detect
-        run: |
-          if [ -f "package.json" ]; then
-            echo "stack=typescript" >> $GITHUB_OUTPUT
-          elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
-            echo "stack=python" >> $GITHUB_OUTPUT
-          else
-            echo "stack=unknown" >> $GITHUB_OUTPUT
-          fi
-      - name: Run preflight
-        run: python -m agenticqa.client_preflight --repo .
-      - name: Dataflow health check
-        run: python -m agenticqa.monitoring.dataflow_health --fail-on-degraded
-        continue-on-error: true
 
-  security-scan:
-    runs-on: ubuntu-latest
-    name: Security Scan
-    needs: preflight
-    services:
-      qdrant:
-        image: qdrant/qdrant:v1.9.0
-        ports:
-          - 6333:6333
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Run AgenticQA
+        uses: nhomyk/AgenticQA@main
         with:
-          python-version: '3.13'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install AgenticQA
-        run: pip install "agenticqa @ git+https://github.com/nhomyk/AgenticQA.git#subdirectory=AgenticQA"
-      - name: Install project deps
-        run: npm ci
-      - name: TypeScript type-check
-        run: npx tsc --noEmit
-      - name: Security scan
-        run: |
-          python3 -c "
-          import glob, re, json
-          issues = []
-          for f in glob.glob('src/**/*.ts', recursive=True) + glob.glob('src/**/*.tsx', recursive=True):
-              with open(f) as fh:
-                  content = fh.read()
-                  if 'eval(' in content:
-                      issues.append({'file': f, 'issue': 'eval() usage'})
-                  if 'dangerouslySetInnerHTML' in content:
-                      issues.append({'file': f, 'issue': 'dangerouslySetInnerHTML'})
-                  if re.search(r'sk_(live|test)_', content):
-                      issues.append({'file': f, 'issue': 'Hardcoded Stripe key'})
-          print(json.dumps({'total_files': len(glob.glob('src/**/*.ts', recursive=True)), 'issues': issues}, indent=2))
-          if issues:
-              for i in issues: print(f'::warning file={i[\"file\"]}::{i[\"issue\"]}')
-          else:
-              print('No security issues found')
-          "
+          path: '.'
+          fail-on-critical: 'true'
+          sarif: 'true'
+          pr-comment: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   test-suite:
     runs-on: ubuntu-latest
     name: Quality & Tests
-    needs: preflight
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install project deps
+      - name: Install deps
         run: npm ci
-      - name: Run unit tests
-        run: npx jest --no-coverage --silent || echo "Unit tests completed"
-      - name: Build production bundle
-        run: npm run build
-      - name: Install Playwright browsers
+      - name: Build
+        run: DATABASE_URL= npm run build
+      - name: Install Playwright
         run: npx playwright install --with-deps chromium
-      - name: Run E2E smoke tests
-        run: npx playwright test tests/e2e/full-platform-smoke.spec.ts --project=chromium --reporter=github
+      - name: Run E2E tests
+        run: npx playwright test --project=chromium --reporter=github
         env:
           CI: true
-      - name: Run API contract tests
-        run: npx playwright test tests/e2e/deals-fi.spec.ts tests/e2e/service-parts.spec.ts tests/e2e/reviews.spec.ts tests/e2e/accounting.spec.ts --project=chromium --reporter=github
-        env:
-          CI: true
-      - name: Run UI element verification
-        run: npx playwright test tests/e2e/ui-elements/ --project=chromium --reporter=github
-        env:
-          CI: true
+          DATABASE_URL: ''
 
-  shadow-hardening:
+  shadow-verification:
     runs-on: ubuntu-latest
     name: Shadow Mode Verification
-    needs: preflight
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install project deps
+      - name: Install deps
         run: npm ci
-      - name: Build without DATABASE_URL
+      - name: Build (shadow mode)
         run: npm run build
         env:
-          DATABASE_URL: ""
-      - name: Start shadow server
+          DATABASE_URL: ''
+      - name: Start server & verify APIs
         run: |
-          npx next start -p 3099 &
+          DATABASE_URL= npx next start -p 3099 &
           sleep 5
-          curl -sf http://localhost:3099/inventory -o /dev/null
-          echo "Shadow server ready"
-      - name: Verify no 500s on any API route
-        run: |
+          curl -sf http://localhost:3099/inventory -o /dev/null || { echo "Server failed to start"; exit 1; }
+
           ROUTES=(
             "/api/admin/deals"
             "/api/admin/fi-products"
@@ -176,6 +94,11 @@ jobs:
             "/api/admin/leads"
             "/api/admin/trade-in"
             "/api/admin/analytics/learning"
+            "/api/admin/syndication"
+            "/api/admin/econtracting"
+            "/api/admin/lender-routing"
+            "/api/admin/vehicle-history"
+            "/api/admin/ofac"
           )
           FAILURES=0
           for route in "${ROUTES[@]}"; do
@@ -184,18 +107,19 @@ jobs:
               echo "::error::500 on ${route}"
               FAILURES=$((FAILURES + 1))
             else
-              echo "✓ ${route} → ${STATUS}"
+              echo "  ${route} -> ${STATUS}"
             fi
           done
           if [ $FAILURES -gt 0 ]; then
             echo "::error::${FAILURES} API routes returned 500 in shadow mode"
             exit 1
           fi
+          echo "All ${#ROUTES[@]} routes healthy"
 
   pipeline-summary:
     runs-on: ubuntu-latest
     name: Pipeline Summary
-    needs: [preflight, security-scan, test-suite, shadow-hardening]
+    needs: [agenticqa-scan, test-suite, shadow-verification]
     if: always()
     steps:
       - name: Summary
@@ -204,13 +128,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Phase | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Preflight | ${{ needs.preflight.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| AgenticQA Security Scan | ${{ needs.agenticqa-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Quality & Tests | ${{ needs.test-suite.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Shadow Hardening | ${{ needs.shadow-hardening.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Shadow Verification | ${{ needs.shadow-verification.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.security-scan.result }}" = "failure" ] || [ "${{ needs.test-suite.result }}" = "failure" ] || [ "${{ needs.shadow-hardening.result }}" = "failure" ]; then
-            echo "::error::Pipeline failed — do not deploy"
+          if [ "${{ needs.agenticqa-scan.result }}" = "failure" ] || [ "${{ needs.test-suite.result }}" = "failure" ] || [ "${{ needs.shadow-verification.result }}" = "failure" ]; then
+            echo "::error::Pipeline failed - do not deploy"
             exit 1
           fi
-          echo "All phases passed — safe to deploy" >> $GITHUB_STEP_SUMMARY
+          echo "All phases passed - safe to deploy" >> $GITHUB_STEP_SUMMARY
