@@ -54,6 +54,11 @@ const SERVICE_CHILDREN = [
   { href: "/admin/service/technicians", label: "Technicians" },
 ] as const;
 
+const MARKETING_CHILDREN = [
+  { href: "/admin/marketing", label: "Campaigns" },
+  { href: "/admin/marketing/templates", label: "Templates" },
+] as const;
+
 /** Map parent href → child routes for sub-navigation */
 const ITEM_CHILDREN: Record<string, readonly { href: string; label: string }[]> = {
   "/admin/analytics": ANALYTICS_CHILDREN,
@@ -63,6 +68,7 @@ const ITEM_CHILDREN: Record<string, readonly { href: string; label: string }[]> 
   "/admin/accounting": ACCOUNTING_CHILDREN,
   "/admin/documents": DOCUMENTS_CHILDREN,
   "/admin/pricing": PRICING_CHILDREN,
+  "/admin/marketing": MARKETING_CHILDREN,
 };
 
 /* -------------------------------------------------------------------------- */

@@ -278,6 +278,22 @@ export type PricingEvent =
   | "pricing.lot_report_generated"
   | "pricing.optimization_requested";
 
+export type BackgroundEvent =
+  | "background.applied"
+  | "background.batch_applied"
+  | "background.auto_recommended"
+  | "background.engagement_compared"
+  | "background.insights_viewed";
+
+export type MarketingTemplateEvent =
+  | "template.viewed"
+  | "template.populated"
+  | "template.exported_canva"
+  | "template.exported_html"
+  | "template.exported_image"
+  | "template.used_in_campaign"
+  | "template.performance_viewed";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -301,7 +317,9 @@ export type PlatformEvent =
   | WebhookEvent
   | JourneyEvent
   | TemporalEvent
-  | PricingEvent;
+  | PricingEvent
+  | BackgroundEvent
+  | MarketingTemplateEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -592,4 +610,26 @@ export function trackPricing(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "pricing", ...meta });
+}
+
+/**
+ * Track a VDP background generator event (apply, recommend, insights).
+ */
+export function trackBackground(
+  event: BackgroundEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "backgrounds", ...meta });
+}
+
+/**
+ * Track a marketing template event (view, populate, export, campaign usage).
+ */
+export function trackTemplate(
+  event: MarketingTemplateEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "marketing_templates", ...meta });
 }
