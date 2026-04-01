@@ -15,9 +15,16 @@ function createRedisClient(): Redis {
   if (!globalForRedis.__redis) {
     const url = process.env.REDIS_URL || "redis://localhost:6379";
 
-    // If REDIS_URL is explicitly empty, create a disconnected client
+    // If REDIS_URL is explicitly empty, create a no-op client that never connects
     if (process.env.REDIS_URL === "") {
-      globalForRedis.__redis = new Redis({ lazyConnect: true, enableOfflineQueue: false });
+      globalForRedis.__redis = new Redis({
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 0,
+        retryStrategy: () => null,
+      });
+      // Swallow all errors silently — this client is intentionally disconnected
+      globalForRedis.__redis.on("error", () => {});
       return globalForRedis.__redis;
     }
 
