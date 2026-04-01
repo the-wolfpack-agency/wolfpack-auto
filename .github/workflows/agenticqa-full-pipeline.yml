@@ -76,24 +76,9 @@ jobs:
       - run: npm ci
       - name: Install AgenticQA SRE tools
         run: pip install -q pyyaml
-      - name: Fetch SRE Auto-Fix Engine
-        run: |
-          curl -sf -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3.raw" \
-            "https://api.github.com/repos/nhomyk/AgenticQA/contents/AgenticQA/scripts/sre_autofix.py?ref=main" \
-            -o /tmp/sre_autofix.py || {
-            echo "::warning::Could not fetch SRE script from AgenticQA — falling back to local lint"
-            echo "FALLBACK=true" >> $GITHUB_ENV
-          }
       - name: Run SRE Auto-Fix Engine
         id: sre
-        run: |
-          if [ "$FALLBACK" = "true" ]; then
-            echo "Running fallback tsc type-check..."
-            npx tsc --noEmit || true
-          else
-            python /tmp/sre_autofix.py --path . --max-passes 3
-          fi
+        run: python scripts/sre_autofix.py --path . --max-passes 3
         continue-on-error: true
       - name: Check for changes
         id: verify
