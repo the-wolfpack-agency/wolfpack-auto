@@ -492,7 +492,96 @@ k6 orchestrator with Playwright fallback burst testing, integrated as Phase 1 pi
 | TypeScript errors | Onboarding test type narrowing issues fixed |
 | Deprecated next lint | Replaced with direct ESLint CLI calls |
 
-**Day 8 deliverables:** Full AgenticQA pipeline integration (13 jobs, auto-trigger), 29 new test files (450+ tests), all coverage gaps closed, every test tied into analytics/learning system.
+**Day 8 (morning) deliverables:** Full AgenticQA pipeline integration (13 jobs, auto-trigger), 29 new test files (450+ tests), all coverage gaps closed, every test tied into analytics/learning system.
+
+---
+
+### April 1, 2026 — Novel Analytics, AI Pricing, Backgrounds & Templates (Day 8, Afternoon)
+**Commits:** 20+
+**Tests:** 4,000+ total (500+ new)
+
+#### 8 Novel Analytics Signal Systems (55 → 80+ signals)
+Takes the platform from tracking "what" users do to understanding "why" and predicting "what happens next."
+
+| System | Signals | What It Reveals |
+|--------|---------|-----------------|
+| Search Intent Classifier | referrer, UTM, 6 intent categories | Price shopping vs. specific model vs. financing intent |
+| Scroll Velocity & Hesitation | section speed, pauses, revisits | Price buyer vs. trust buyer vs. visual buyer |
+| Photo Engagement Micro-Signals | per-photo dwell, zoom, swipe speed | Family buyer, appearance buyer, negotiator |
+| Competitive Exit Detection | tab switches, clipboard copy, quick returns | Real-time competitor comparison behavior |
+| Cross-Session Journey Stitcher | persistent visitor_id, narrowing, shortlist | Awareness → consideration → decision → ready to buy |
+| Temporal Pattern Analyzer | 6 time slots, compound signals | "Weekend morning + decision stage = showroom visit today" |
+| Form Abandonment Micro-Analytics | field hesitation, type-and-delete, hover-no-submit | Which form field kills conversions |
+| Natural Language Search + SEO | "reliable SUV under 20K" → filters, zero-result gaps | Real buyer language for content + inventory decisions |
+
+API: `POST /api/inventory/nl-search` with natural language query parsing (48 makes, ~100 models, zero LLM).
+
+#### AI-Powered Pricing Engine (Max Gross Recommendations)
+Complete pricing intelligence system that tells dealers the highest price the market will bear for each vehicle.
+
+| Module | Function |
+|--------|----------|
+| Demand Scoring (0-100) | VDP views, calculator usage, comparison wins, photo engagement, return visits |
+| Price Position Analysis | Percentile vs comparable inventory, outlier detection |
+| Velocity Prediction | Exponential decay model, days-to-sale estimate, 30-day sale probability |
+| Optimal Price | Maximizes profit_margin × sale_probability minus holding_cost_per_day |
+| Price Elasticity | 10-step sensitivity curve at $500 increments, cliff detection |
+| Aging & Markdown | 5 tiers (fresh → critical), demand-adjusted markdown schedule |
+| Seasonal Adjustments | Month-based multipliers for 10 body types |
+| Competitive Intelligence | Price clustering detection, market gap identification |
+| Lot Analytics | Health score, revenue velocity, total uplift potential |
+
+APIs: `GET /api/admin/pricing/recommendations`, `GET /api/admin/pricing/lot-report`, `POST /api/admin/pricing/optimize`
+Admin page: `/admin/pricing/recommendations` with lot health score, vehicle table, detail drawer, elasticity curves.
+
+#### VDP Background Generator
+Professional vehicle photo backgrounds without GPU processing.
+
+| Feature | Details |
+|---------|---------|
+| 8 presets | Showroom white/dark, outdoor scenic, dealer branded, urban night, minimalist, seasonal winter/summer |
+| Smart recommendations | Luxury → dark showroom, trucks → outdoor, budget used → clean white |
+| Batch processing | Auto-apply best backgrounds to entire inventory |
+| Performance tracking | Which backgrounds drive more engagement |
+| CSS-based rendering | No image processing needed, works with any photo |
+
+Admin page: `/admin/inventory/backgrounds`
+Component: `VehiclePhotoWithBackground` with IntersectionObserver view tracking.
+
+#### Canva Marketing Templates
+8 professional dealer templates with auto-population.
+
+| Template | Use Case |
+|----------|----------|
+| Vehicle Spotlight | Featured vehicle with specs overlay |
+| Weekend Sale | Bold urgency messaging, diagonal ribbon |
+| New Arrival | "Just Arrived" badge, hero photo |
+| Price Drop | Before/after price, savings callout |
+| Just Sold | Social proof, celebration style |
+| Testimonial Card | Customer quote, star rating |
+| Inventory Showcase | 3-4 vehicle grid, "Shop Our Selection" |
+| Service Special | Seasonal maintenance coupon/offer |
+
+All templates auto-populate with dealer branding (logo, colors, fonts) and vehicle data.
+Canva deep link integration, HTML export, image download.
+Admin page: `/admin/marketing/templates`
+
+#### Pipeline Optimization
+| Change | Before | After |
+|--------|--------|-------|
+| Test sharding | 1 job, 18 min | 4 parallel shards, ~5 min |
+| npm cache | 23s per job | ~5s (cached) |
+| Playwright cache | 34s per job | ~5s (cached) |
+| Next.js build cache | 119s | ~60s |
+| **Total pipeline** | **~22 min** | **~10 min** |
+
+#### Additional Fixes
+- Recalibrate button: converted from dead-end form POST to client component with loading states
+- Pricing dashboard: API response shape transformer (reports → UI model)
+- Canary latency thresholds: relaxed for Vercel Hobby tier
+- SRE agent: bundled locally instead of cross-repo fetch
+
+**Day 8 (afternoon) deliverables:** 8 novel analytics systems (80+ signals), AI pricing engine, VDP backgrounds, Canva templates, pipeline optimization (22 min → 10 min), 500+ new tests.
 
 ---
 
@@ -713,20 +802,20 @@ k6 orchestrator with Playwright fallback burst testing, integrated as Phase 1 pi
 | Metric | Value |
 |--------|-------|
 | Total project duration | 8 days (March 25 – April 1) |
-| Total commits | 140+ |
-| Admin pages | 70+ |
-| API routes | 178 |
+| Total commits | 170+ |
+| Admin pages | 75+ |
+| API routes | 195+ |
 | Database migrations | 45 |
 | Database tables | 61 |
-| Features shipped | 80+ distinct features |
+| Features shipped | 90+ distinct features |
 | DOS modules built (Day 4) | 14 modules in one session |
 | Intelligence systems (Day 7) | 7 (predictive scoring, calibration, cross-dealer, alerts, lookalike, A/B, push) |
-| Analytics signals | 55+ behavioral signals |
+| Analytics signals | 80+ behavioral signals |
 | Production services configured | 4 (Sentry, Resend, PII encryption, analytics pipeline) |
 | Bugs fixed | 25+ (including 8 critical during live demo) |
-| Test files written | 190+ |
-| Tests written | 3,500+ |
-| Lines of code (total) | ~100,000+ |
+| Test files written | 220+ |
+| Tests written | 4,000+ |
+| Lines of code (total) | ~120,000+ |
 | Lines added Day 4 alone | ~50,000 |
 | Security CVEs addressed | 5 (CVE-001 through CVE-005) + 5 OWASP gaps + 21 Dependabot |
 | Security scanner patterns | 298 across 5 languages |
