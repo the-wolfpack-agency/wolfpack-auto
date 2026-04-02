@@ -198,7 +198,7 @@ export default function PayrollDashboard() {
 
   const loadProvider = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/payroll/provider");
+      const res = await fetch("/api/admin/payroll");
       const data = await res.json();
       setProvider(data.provider ?? null);
     } catch {
@@ -210,7 +210,7 @@ export default function PayrollDashboard() {
     setEmpLoading(true);
     setEmpError("");
     try {
-      const res = await fetch("/api/admin/payroll/employees");
+      const res = await fetch("/api/admin/payroll");
       const data = await res.json();
       setEmployees(data.employees ?? []);
     } catch {
@@ -224,7 +224,7 @@ export default function PayrollDashboard() {
     setTimeLoading(true);
     setTimeError("");
     try {
-      const res = await fetch("/api/admin/payroll/time-entries");
+      const res = await fetch("/api/admin/payroll");
       const data = await res.json();
       setTimeEntries(data.entries ?? []);
     } catch {
@@ -251,7 +251,7 @@ export default function PayrollDashboard() {
   const loadPaySummary = useCallback(async () => {
     setSummaryLoading(true);
     try {
-      const res = await fetch("/api/admin/payroll/pay-period-summary");
+      const res = await fetch("/api/admin/payroll");
       const data = await res.json();
       setPaySummary(data.summary ?? null);
     } catch {

@@ -139,7 +139,7 @@ export default function PaymentsDashboard() {
 
   const loadConfig = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/payments/config");
+      const res = await fetch("/api/admin/payments");
       const data = await res.json();
       setStripeConfig(data.config ?? null);
     } catch {
@@ -151,7 +151,7 @@ export default function PaymentsDashboard() {
     setTxLoading(true);
     setTxError("");
     try {
-      const res = await fetch("/api/admin/payments/transactions");
+      const res = await fetch("/api/admin/payments");
       const data = await res.json();
       setTransactions(data.transactions ?? []);
     } catch {
@@ -196,7 +196,7 @@ export default function PaymentsDashboard() {
     setTxError("");
     setSuccessMsg("");
     try {
-      const res = await fetch("/api/admin/payments/transactions", {
+      const res = await fetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

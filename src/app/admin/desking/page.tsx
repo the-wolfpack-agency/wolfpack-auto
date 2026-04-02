@@ -137,7 +137,7 @@ export default function DeskingPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/desking/deals");
+      const res = await fetch("/api/admin/desking");
       const data = await res.json();
       setDeals(data.deals ?? []);
     } catch {
@@ -156,7 +156,7 @@ export default function DeskingPage() {
     setSuccessMsg("");
     setError("");
     try {
-      const res = await fetch("/api/admin/desking/deals", {
+      const res = await fetch("/api/admin/desking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

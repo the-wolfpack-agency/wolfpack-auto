@@ -137,7 +137,7 @@ export default function AccountingDashboard() {
     setAccountsLoading(true);
     setAccountsError("");
     try {
-      const res = await fetch("/api/admin/accounting/chart-of-accounts");
+      const res = await fetch("/api/admin/accounting/chart");
       const data = await res.json();
       setAccounts(data.accounts ?? []);
     } catch {
@@ -151,7 +151,7 @@ export default function AccountingDashboard() {
     setEntriesLoading(true);
     setEntriesError("");
     try {
-      const res = await fetch("/api/admin/accounting/journal-entries");
+      const res = await fetch("/api/admin/accounting/journal");
       const data = await res.json();
       setEntries(data.entries ?? []);
     } catch {
@@ -210,7 +210,7 @@ export default function AccountingDashboard() {
     setSubmittingEntry(true);
     setEntriesError("");
     try {
-      const res = await fetch("/api/admin/accounting/journal-entries", {
+      const res = await fetch("/api/admin/accounting/journal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

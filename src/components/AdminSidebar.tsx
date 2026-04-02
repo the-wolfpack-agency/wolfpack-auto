@@ -113,6 +113,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/leads", label: "Leads", icon: LeadsIcon },
       { href: "/admin/engagement-reports", label: "Engagement Reports", icon: EngagementReportsIcon },
       { href: "/admin/good-faith", label: "Good Faith", icon: GoodFaithIcon },
+      { href: "/admin/desking", label: "F&I Desking", icon: DealDeskingIcon },
       { href: "/admin/deals", label: "Deal Desking", icon: DealDeskingIcon },
       { href: "/admin/fi-products", label: "F&I Products", icon: FiProductsIcon },
       { href: "/admin/digital-retail", label: "Digital Retail", icon: DigitalRetailIcon },
@@ -126,6 +127,7 @@ const NAV_SECTIONS: NavSection[] = [
     icon: InventoryIcon,
     items: [
       { href: "/admin/inventory", label: "Inventory", icon: InventoryIcon },
+      { href: "/admin/inventory/backgrounds", label: "Photo Backgrounds", icon: InventoryIcon },
       { href: "/admin/vehicles/quick-add", label: "Quick Add", icon: PlusIcon },
       { href: "/admin/vehicles/new", label: "Add Vehicle", icon: PlusIcon },
       { href: "/admin/intake", label: "Intake", icon: IntakeIcon },
@@ -144,6 +146,8 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/lender-routing", label: "Lender Routing", icon: LendersIcon },
       { href: "/admin/credit", label: "Credit Bureau", icon: CreditIcon },
       { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
+      { href: "/admin/payments", label: "Payments", icon: AccountingIcon },
+      { href: "/admin/payroll", label: "Payroll", icon: AccountingIcon },
     ],
   },
   {
