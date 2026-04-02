@@ -12,8 +12,13 @@ import {
   generateProfitAndLoss,
   createDealPostingLines,
   getDefaultChartOfAccounts,
+  validateIntercompanyTransaction,
+  createIntercompanyLines,
+  consolidateBalances,
+  generateConsolidatedPnL,
   DEALER_CHART_OF_ACCOUNTS,
   type JournalEntry,
+  type IntercompanyTransaction,
 } from "@/lib/general-ledger";
 
 describe("General Ledger Engine", () => {
@@ -275,6 +280,206 @@ describe("General Ledger Engine", () => {
       const overAllow = lines.find((l) => l.account_number === "6900");
       expect(overAllow).toBeDefined();
       expect(overAllow!.debit).toBe(3000);
+    });
+  });
+
+  describe("Multi-Company Support", () => {
+    test("chart of accounts includes intercompany accounts", () => {
+      const coa = getDefaultChartOfAccounts();
+      const icReceivable = coa.find((a) => a.account_number === "1150");
+      const icPayable = coa.find((a) => a.account_number === "2050");
+      expect(icReceivable).toBeDefined();
+      expect(icReceivable!.name).toContain("Intercompany");
+      expect(icPayable).toBeDefined();
+      expect(icPayable!.name).toContain("Intercompany");
+    });
+
+    test("validates intercompany transaction — happy path", () => {
+      const tx: IntercompanyTransaction = {
+        from_company_id: "company-a",
+        to_company_id: "company-b",
+        amount: 10000,
+        description: "Management fee",
+        from_lines: [
+          { account_number: "1150", description: "IC receivable", debit: 10000, credit: 0 },
+          { account_number: "4900", description: "Management fee income", debit: 0, credit: 10000 },
+        ],
+        to_lines: [
+          { account_number: "6900", description: "Management fee expense", debit: 10000, credit: 0 },
+          { account_number: "2050", description: "IC payable", debit: 0, credit: 10000 },
+        ],
+      };
+      const result = validateIntercompanyTransaction(tx);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    test("rejects same company on both sides", () => {
+      const tx: IntercompanyTransaction = {
+        from_company_id: "company-a",
+        to_company_id: "company-a",
+        amount: 5000,
+        description: "Self-transfer",
+        from_lines: [
+          { account_number: "1010", description: "", debit: 5000, credit: 0 },
+          { account_number: "1020", description: "", debit: 0, credit: 5000 },
+        ],
+        to_lines: [
+          { account_number: "1020", description: "", debit: 5000, credit: 0 },
+          { account_number: "1010", description: "", debit: 0, credit: 5000 },
+        ],
+      };
+      const result = validateIntercompanyTransaction(tx);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.includes("must be different"))).toBe(true);
+    });
+
+    test("rejects unbalanced intercompany sides", () => {
+      const tx: IntercompanyTransaction = {
+        from_company_id: "company-a",
+        to_company_id: "company-b",
+        amount: 10000,
+        description: "Bad transfer",
+        from_lines: [
+          { account_number: "1150", description: "", debit: 10000, credit: 0 },
+          { account_number: "4900", description: "", debit: 0, credit: 9000 }, // unbalanced
+        ],
+        to_lines: [
+          { account_number: "6900", description: "", debit: 10000, credit: 0 },
+          { account_number: "2050", description: "", debit: 0, credit: 10000 },
+        ],
+      };
+      const result = validateIntercompanyTransaction(tx);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.includes("From-side"))).toBe(true);
+    });
+
+    test("creates matching intercompany journal lines", () => {
+      const { from_lines, to_lines } = createIntercompanyLines(
+        5000, "Rent allocation", "4900", "6200",
+      );
+
+      expect(from_lines).toHaveLength(2);
+      expect(to_lines).toHaveLength(2);
+
+      // From side: DR IC Receivable, CR source account
+      expect(from_lines[0].account_number).toBe("1150");
+      expect(from_lines[0].debit).toBe(5000);
+      expect(from_lines[1].credit).toBe(5000);
+
+      // To side: DR destination account, CR IC Payable
+      expect(to_lines[0].debit).toBe(5000);
+      expect(to_lines[1].account_number).toBe("2150");
+      expect(to_lines[1].credit).toBe(5000);
+
+      // Both sides balance
+      const fromTotals = calculateEntryTotals(from_lines);
+      const toTotals = calculateEntryTotals(to_lines);
+      expect(fromTotals.is_balanced).toBe(true);
+      expect(toTotals.is_balanced).toBe(true);
+    });
+
+    test("consolidates balances across companies", () => {
+      const result = consolidateBalances([
+        {
+          company_id: "co-a",
+          company_name: "Wolfpack Denver",
+          accounts: [
+            { account_number: "1010", account_name: "Cash", account_type: "asset", balance: 50000 },
+            { account_number: "4010", account_name: "New Sales", account_type: "revenue", balance: 200000 },
+            { account_number: "1150", account_name: "IC Receivable", account_type: "asset", balance: 10000 },
+          ],
+        },
+        {
+          company_id: "co-b",
+          company_name: "Wolfpack Boulder",
+          accounts: [
+            { account_number: "1010", account_name: "Cash", account_type: "asset", balance: 30000 },
+            { account_number: "4010", account_name: "New Sales", account_type: "revenue", balance: 150000 },
+            { account_number: "2050", account_name: "IC Payable", account_type: "liability", balance: 10000 },
+          ],
+        },
+      ], [
+        { account_number: "1150", amount: 10000 }, // eliminate IC receivable
+        { account_number: "2050", amount: 10000 }, // eliminate IC payable
+      ]);
+
+      // Cash should consolidate to 80000
+      const cash = result.find((r) => r.account_number === "1010");
+      expect(cash).toBeDefined();
+      expect(cash!.consolidated_balance).toBe(80000);
+      expect(cash!.company_balances).toHaveLength(2);
+
+      // Revenue should consolidate to 350000
+      const revenue = result.find((r) => r.account_number === "4010");
+      expect(revenue!.consolidated_balance).toBe(350000);
+
+      // IC accounts should be eliminated to 0
+      const icRec = result.find((r) => r.account_number === "1150");
+      expect(icRec!.consolidated_balance).toBe(0);
+      expect(icRec!.elimination_amount).toBe(10000);
+
+      const icPay = result.find((r) => r.account_number === "2050");
+      expect(icPay!.consolidated_balance).toBe(0);
+    });
+
+    test("generates consolidated P&L", () => {
+      const consolidated = consolidateBalances([
+        {
+          company_id: "co-a",
+          company_name: "Denver",
+          accounts: [
+            { account_number: "4010", account_name: "Sales", account_type: "revenue", balance: 500000 },
+            { account_number: "5010", account_name: "COGS", account_type: "cogs", balance: 350000 },
+            { account_number: "6010", account_name: "Salaries", account_type: "expense", balance: 80000 },
+          ],
+        },
+        {
+          company_id: "co-b",
+          company_name: "Boulder",
+          accounts: [
+            { account_number: "4010", account_name: "Sales", account_type: "revenue", balance: 300000 },
+            { account_number: "5010", account_name: "COGS", account_type: "cogs", balance: 210000 },
+            { account_number: "6010", account_name: "Salaries", account_type: "expense", balance: 50000 },
+          ],
+        },
+      ]);
+
+      const pnl = generateConsolidatedPnL(consolidated);
+      expect(pnl.revenue).toBe(800000);
+      expect(pnl.cogs).toBe(560000);
+      expect(pnl.gross_profit).toBe(240000);
+      expect(pnl.expenses).toBe(130000);
+      expect(pnl.net_income).toBe(110000);
+      expect(pnl.company_count).toBe(2);
+    });
+
+    test("handles single company (no consolidation needed)", () => {
+      const consolidated = consolidateBalances([
+        {
+          company_id: "co-a",
+          company_name: "Single Rooftop",
+          accounts: [
+            { account_number: "1010", account_name: "Cash", account_type: "asset", balance: 25000 },
+          ],
+        },
+      ]);
+
+      expect(consolidated).toHaveLength(1);
+      expect(consolidated[0].consolidated_balance).toBe(25000);
+      expect(consolidated[0].company_balances).toHaveLength(1);
+
+      const pnl = generateConsolidatedPnL(consolidated);
+      expect(pnl.company_count).toBe(1);
+    });
+
+    test("handles empty input", () => {
+      const consolidated = consolidateBalances([]);
+      expect(consolidated).toHaveLength(0);
+
+      const pnl = generateConsolidatedPnL([]);
+      expect(pnl.net_income).toBe(0);
+      expect(pnl.company_count).toBe(0);
     });
   });
 });

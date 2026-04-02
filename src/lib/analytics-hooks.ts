@@ -339,7 +339,12 @@ export type GLEvent =
   | "gl.deal_auto_posted"
   | "gl.service_auto_posted"
   | "gl.account_created"
-  | "gl.account_updated";
+  | "gl.account_updated"
+  | "gl.company_created"
+  | "gl.company_updated"
+  | "gl.intercompany_posted"
+  | "gl.intercompany_eliminated"
+  | "gl.consolidated_generated";
 
 export type PaymentEvent =
   | "payment.created"

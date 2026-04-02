@@ -20,6 +20,19 @@ export type AccountType = "asset" | "liability" | "equity" | "revenue" | "expens
 
 export type NormalBalance = "debit" | "credit";
 
+export interface GLCompany {
+  id: string;
+  dealer_id: string;
+  name: string;
+  code: string;
+  legal_name: string;
+  entity_type: "dealership" | "holding" | "realty" | "finance_co" | "other";
+  is_parent: boolean;
+  parent_company_id: string | null;
+  is_active: boolean;
+  fiscal_year_start: number;
+}
+
 export interface ChartAccount {
   account_number: string;
   name: string;
@@ -28,6 +41,7 @@ export interface ChartAccount {
   normal_balance: NormalBalance;
   parent_number?: string;
   is_header: boolean;
+  company_id?: string;
 }
 
 export interface JournalLine {
@@ -42,9 +56,28 @@ export interface JournalEntry {
   entry_date: string;
   description: string;
   memo?: string;
-  source_type: "manual" | "deal" | "service_ro" | "payment" | "payroll" | "adjustment" | "closing";
+  source_type: "manual" | "deal" | "service_ro" | "payment" | "payroll" | "adjustment" | "closing" | "intercompany";
   source_id?: string;
+  company_id?: string;
   lines: JournalLine[];
+}
+
+export interface IntercompanyTransaction {
+  from_company_id: string;
+  to_company_id: string;
+  amount: number;
+  description: string;
+  from_lines: JournalLine[];
+  to_lines: JournalLine[];
+}
+
+export interface ConsolidatedBalance {
+  account_number: string;
+  account_name: string;
+  account_type: AccountType;
+  company_balances: { company_id: string; company_name: string; balance: number }[];
+  elimination_amount: number;
+  consolidated_balance: number;
 }
 
 export interface TrialBalanceRow {
@@ -91,6 +124,7 @@ export const DEALER_CHART_OF_ACCOUNTS: ChartAccount[] = [
   { account_number: "1200", name: "New Vehicle Inventory", account_type: "asset", sub_type: "inventory", normal_balance: "debit", parent_number: "1000", is_header: false },
   { account_number: "1210", name: "Used Vehicle Inventory", account_type: "asset", sub_type: "inventory", normal_balance: "debit", parent_number: "1000", is_header: false },
   { account_number: "1220", name: "Parts Inventory", account_type: "asset", sub_type: "inventory", normal_balance: "debit", parent_number: "1000", is_header: false },
+  { account_number: "1150", name: "Intercompany Receivable", account_type: "asset", sub_type: "intercompany", normal_balance: "debit", parent_number: "1000", is_header: false },
   { account_number: "1300", name: "Prepaid Expenses", account_type: "asset", sub_type: "prepaid", normal_balance: "debit", parent_number: "1000", is_header: false },
   { account_number: "1400", name: "Fixed Assets", account_type: "asset", sub_type: "fixed_asset", normal_balance: "debit", parent_number: "1000", is_header: false },
   { account_number: "1410", name: "Accumulated Depreciation", account_type: "asset", sub_type: "contra_asset", normal_balance: "credit", parent_number: "1000", is_header: false },
@@ -99,6 +133,7 @@ export const DEALER_CHART_OF_ACCOUNTS: ChartAccount[] = [
   { account_number: "2000", name: "Liabilities", account_type: "liability", sub_type: "", normal_balance: "credit", is_header: true },
   { account_number: "2010", name: "Accounts Payable", account_type: "liability", sub_type: "accounts_payable", normal_balance: "credit", parent_number: "2000", is_header: false },
   { account_number: "2020", name: "Accrued Expenses", account_type: "liability", sub_type: "accrued", normal_balance: "credit", parent_number: "2000", is_header: false },
+  { account_number: "2050", name: "Intercompany Payable", account_type: "liability", sub_type: "intercompany", normal_balance: "credit", parent_number: "2000", is_header: false },
   { account_number: "2100", name: "Floor Plan - New", account_type: "liability", sub_type: "notes_payable", normal_balance: "credit", parent_number: "2000", is_header: false },
   { account_number: "2110", name: "Floor Plan - Used", account_type: "liability", sub_type: "notes_payable", normal_balance: "credit", parent_number: "2000", is_header: false },
   { account_number: "2200", name: "Sales Tax Payable", account_type: "liability", sub_type: "tax_payable", normal_balance: "credit", parent_number: "2000", is_header: false },
@@ -395,4 +430,174 @@ export function createDealPostingLines(deal: {
  */
 export function getDefaultChartOfAccounts(): ChartAccount[] {
   return [...DEALER_CHART_OF_ACCOUNTS];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Multi-Company Support                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Validate an intercompany transaction.
+ * Both sides must balance, and companies must be different.
+ */
+export function validateIntercompanyTransaction(
+  tx: IntercompanyTransaction,
+): ValidationResult {
+  const errors: string[] = [];
+
+  if (!tx.from_company_id) errors.push("from_company_id is required");
+  if (!tx.to_company_id) errors.push("to_company_id is required");
+  if (tx.from_company_id === tx.to_company_id) {
+    errors.push("from_company_id and to_company_id must be different");
+  }
+  if (tx.amount <= 0) errors.push("amount must be positive");
+  if (!tx.description) errors.push("description is required");
+
+  // Validate both sides balance
+  const fromEntry: JournalEntry = {
+    entry_date: new Date().toISOString().split("T")[0],
+    description: tx.description,
+    source_type: "intercompany",
+    company_id: tx.from_company_id,
+    lines: tx.from_lines,
+  };
+  const toEntry: JournalEntry = {
+    entry_date: new Date().toISOString().split("T")[0],
+    description: tx.description,
+    source_type: "intercompany",
+    company_id: tx.to_company_id,
+    lines: tx.to_lines,
+  };
+
+  const fromValidation = validateJournalEntry(fromEntry);
+  const toValidation = validateJournalEntry(toEntry);
+
+  if (!fromValidation.valid) {
+    errors.push(...fromValidation.errors.map((e) => `From-side: ${e}`));
+  }
+  if (!toValidation.valid) {
+    errors.push(...toValidation.errors.map((e) => `To-side: ${e}`));
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Generate intercompany journal lines for a transfer between entities.
+ * Creates matching entries on both sides using intercompany receivable/payable.
+ */
+export function createIntercompanyLines(
+  amount: number,
+  description: string,
+  fromAccountNumber: string,
+  toAccountNumber: string,
+): { from_lines: JournalLine[]; to_lines: JournalLine[] } {
+  // Intercompany receivable/payable account (convention: 1150/2150)
+  const IC_RECEIVABLE = "1150";
+  const IC_PAYABLE = "2150";
+
+  return {
+    from_lines: [
+      { account_number: IC_RECEIVABLE, description: `IC receivable: ${description}`, debit: amount, credit: 0 },
+      { account_number: fromAccountNumber, description, debit: 0, credit: amount },
+    ],
+    to_lines: [
+      { account_number: toAccountNumber, description, debit: amount, credit: 0 },
+      { account_number: IC_PAYABLE, description: `IC payable: ${description}`, debit: 0, credit: amount },
+    ],
+  };
+}
+
+/**
+ * Consolidate balances across multiple companies.
+ * Sums balances per account, applies intercompany eliminations.
+ */
+export function consolidateBalances(
+  companyBalances: {
+    company_id: string;
+    company_name: string;
+    accounts: { account_number: string; account_name: string; account_type: AccountType; balance: number }[];
+  }[],
+  eliminations: { account_number: string; amount: number }[] = [],
+): ConsolidatedBalance[] {
+  // Aggregate by account_number
+  const byAccount = new Map<string, ConsolidatedBalance>();
+
+  for (const company of companyBalances) {
+    for (const acct of company.accounts) {
+      const existing = byAccount.get(acct.account_number) ?? {
+        account_number: acct.account_number,
+        account_name: acct.account_name,
+        account_type: acct.account_type,
+        company_balances: [],
+        elimination_amount: 0,
+        consolidated_balance: 0,
+      };
+
+      existing.company_balances.push({
+        company_id: company.company_id,
+        company_name: company.company_name,
+        balance: acct.balance,
+      });
+
+      byAccount.set(acct.account_number, existing);
+    }
+  }
+
+  // Apply eliminations and calculate consolidated totals
+  const eliminationMap = new Map(eliminations.map((e) => [e.account_number, e.amount]));
+
+  const results: ConsolidatedBalance[] = [];
+  for (const [, consolidated] of byAccount) {
+    const rawTotal = consolidated.company_balances.reduce((sum, cb) => sum + cb.balance, 0);
+    consolidated.elimination_amount = eliminationMap.get(consolidated.account_number) ?? 0;
+    consolidated.consolidated_balance = Math.round(
+      (rawTotal - consolidated.elimination_amount) * 100,
+    ) / 100;
+    results.push(consolidated);
+  }
+
+  // Sort by account number
+  results.sort((a, b) => a.account_number.localeCompare(b.account_number));
+  return results;
+}
+
+/**
+ * Generate a consolidated P&L across multiple companies.
+ */
+export function generateConsolidatedPnL(
+  consolidated: ConsolidatedBalance[],
+): { revenue: number; cogs: number; gross_profit: number; expenses: number; net_income: number; company_count: number } {
+  let revenue = 0;
+  let cogs = 0;
+  let expenses = 0;
+
+  const companyIds = new Set<string>();
+
+  for (const bal of consolidated) {
+    for (const cb of bal.company_balances) {
+      companyIds.add(cb.company_id);
+    }
+
+    switch (bal.account_type) {
+      case "revenue":
+        revenue += bal.consolidated_balance;
+        break;
+      case "cogs":
+        cogs += bal.consolidated_balance;
+        break;
+      case "expense":
+        expenses += bal.consolidated_balance;
+        break;
+    }
+  }
+
+  return {
+    revenue: Math.round(revenue * 100) / 100,
+    cogs: Math.round(cogs * 100) / 100,
+    gross_profit: Math.round((revenue - cogs) * 100) / 100,
+    expenses: Math.round(expenses * 100) / 100,
+    net_income: Math.round((revenue - cogs - expenses) * 100) / 100,
+    company_count: companyIds.size,
+  };
 }
