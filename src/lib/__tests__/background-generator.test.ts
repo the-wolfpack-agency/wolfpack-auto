@@ -301,7 +301,7 @@ describe("getBackgroundInsights", () => {
     const insights = getBackgroundInsights();
     expect(insights).toHaveLength(2);
 
-    const darkInsight = insights.find((i) => i.preset === "showroom_dark");
+    const darkInsight = insights.find((i) => i.preset_id === "showroom_dark");
     expect(darkInsight).toBeDefined();
     expect(darkInsight!.total_views).toBe(150);
     expect(darkInsight!.total_clicks).toBe(15);
@@ -318,7 +318,7 @@ describe("getBackgroundInsights", () => {
     });
 
     const insights = getBackgroundInsights();
-    expect(insights[0].preset).toBe("showroom_dark");
+    expect(insights[0].preset_id).toBe("showroom_dark");
     expect(insights[0].engagement_score).toBeGreaterThan(insights[1].engagement_score);
   });
 
@@ -333,7 +333,7 @@ describe("getBackgroundInsights", () => {
     });
 
     const insights = getBackgroundInsights();
-    const min = insights.find((i) => i.preset === "minimalist");
+    const min = insights.find((i) => i.preset_id === "minimalist");
     expect(min).toBeDefined();
     expect(min!.avg_dwell_ms).toBe(2333);
   });

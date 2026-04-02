@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     module: "backgrounds",
   });
 
-  return NextResponse.json({ vin, ...rec });
+  return NextResponse.json({ ...rec, vin });
 }
 
 /* -------------------------------------------------------------------------- */

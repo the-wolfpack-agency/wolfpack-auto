@@ -1,13 +1,22 @@
 /**
- * VDP Background Generator
+ * Vehicle Background Studio — Enterprise-Grade Background System
  *
- * CSS-based vehicle photo background replacement system. Provides
- * preset backgrounds (showroom, outdoor, branded, seasonal) that
- * render via CSS gradients, filters, and blend modes -- no GPU or
- * image-processing service required for v1.
+ * Full-featured vehicle photo background management:
+ *  - 8 built-in CSS presets (showroom, scenic, branded, seasonal, etc.)
+ *  - Custom dealer-uploaded image backgrounds (stored in R2)
+ *  - AI background removal via Replicate (rembg model)
+ *  - Server-side compositing via Sharp (vehicle cutout + background)
+ *  - Smart recommendations based on vehicle attributes + engagement data
+ *  - Batch processing for entire inventory
+ *  - Full analytics integration — every action feeds the learning system
+ *  - Performance tracking with A/B comparison insights
  *
- * Future: swap CSS approach for AI background removal (e.g. Replicate
- * remove-bg) when ready. The preset IDs and analytics stay the same.
+ * Architecture:
+ *  - This module: types, presets, recommendations, scoring
+ *  - background-removal.ts: AI provider abstraction (Replicate/remove.bg)
+ *  - image-compositor.ts: Sharp compositing pipeline (cutout + bg + effects)
+ *  - API routes: CRUD, upload, remove-bg, composite, batch
+ *  - DB: custom_backgrounds, vehicle_background_assignments, background_jobs
  */
 
 /* ------------------------------------------------------------------ */
@@ -28,15 +37,94 @@ export type BackgroundCategory =
   | "studio"
   | "outdoor"
   | "branded"
-  | "seasonal";
+  | "seasonal"
+  | "lifestyle"
+  | "custom";
+
+export type BackgroundType = "preset" | "custom" | "composite";
+
+export type AppliedMethod =
+  | "manual"
+  | "auto_recommended"
+  | "batch"
+  | "ai_composite";
+
+export type JobStatus =
+  | "queued"
+  | "removing_bg"
+  | "compositing"
+  | "optimizing"
+  | "uploading"
+  | "completed"
+  | "failed";
 
 export interface BackgroundPreset {
   id: BackgroundPresetId;
   name: string;
   description: string;
-  /** CSS class or inline style snippet for the thumbnail card */
   thumbnailCSS: string;
   category: BackgroundCategory;
+}
+
+export interface CustomBackground {
+  id: string;
+  dealer_id: string;
+  name: string;
+  description: string;
+  category: BackgroundCategory;
+  tags: string[];
+  original_url: string;
+  optimized_url: string | null;
+  thumbnail_url: string | null;
+  width: number;
+  height: number;
+  file_size: number;
+  position: string;
+  fit: string;
+  overlay_opacity: number;
+  is_active: boolean;
+  is_system: boolean;
+  sort_order: number;
+  times_applied: number;
+  engagement_score: number;
+  created_at: string;
+}
+
+export interface BackgroundAssignment {
+  id: string;
+  dealer_id: string;
+  vehicle_id: string;
+  vin: string;
+  background_type: BackgroundType;
+  preset_id: string | null;
+  custom_bg_id: string | null;
+  composite_url: string | null;
+  cutout_url: string | null;
+  css_override: string | null;
+  applied_method: AppliedMethod;
+  views: number;
+  clicks: number;
+  leads_generated: number;
+  avg_dwell_ms: number;
+  created_at: string;
+}
+
+export interface BackgroundJob {
+  id: string;
+  dealer_id: string;
+  vin: string;
+  source_photo_url: string;
+  status: JobStatus;
+  progress: number;
+  error_message: string | null;
+  cutout_url: string | null;
+  composite_url: string | null;
+  ai_provider: string;
+  processing_ms: number | null;
+  cost_cents: number;
+  batch_id: string | null;
+  created_at: string;
+  completed_at: string | null;
 }
 
 export interface DealerColors {
@@ -50,12 +138,15 @@ export interface VehicleForBackground {
   body_type?: string;
   price?: number;
   condition?: string;
+  make?: string;
 }
 
-export interface BatchBackgroundPlan {
+export interface BackgroundRecommendation {
   vin: string;
   recommended_preset: BackgroundPresetId;
   reason: string;
+  confidence: number;
+  alternative_preset: BackgroundPresetId | null;
 }
 
 export interface PhotoEngagementData {
@@ -65,22 +156,64 @@ export interface PhotoEngagementData {
   leads_generated: number;
 }
 
-export interface BackgroundPerformanceRecord {
-  vin: string;
-  preset: BackgroundPresetId;
-  engagement: PhotoEngagementData;
-  recorded_at: string;
-}
-
 export interface BackgroundInsight {
-  preset: BackgroundPresetId;
+  background_type: BackgroundType;
+  preset_id: string | null;
+  custom_bg_id: string | null;
+  name: string;
   total_views: number;
   avg_dwell_ms: number;
   total_clicks: number;
   total_leads: number;
+  ctr: number;
+  lead_rate: number;
   engagement_score: number;
   sample_size: number;
 }
+
+export interface BatchPlan {
+  vin: string;
+  recommended_preset: BackgroundPresetId;
+  reason: string;
+  confidence: number;
+}
+
+export interface CompositeRequest {
+  vin: string;
+  vehicle_id: string;
+  source_photo_url: string;
+  background_type: "preset" | "custom";
+  preset_id?: BackgroundPresetId;
+  custom_bg_id?: string;
+  dealer_colors?: DealerColors;
+  options?: CompositeOptions;
+}
+
+export interface CompositeOptions {
+  add_shadow: boolean;
+  add_reflection: boolean;
+  shadow_opacity: number;
+  reflection_opacity: number;
+  vehicle_scale: number;
+  vehicle_position: "center" | "left" | "right";
+  output_width: number;
+  output_height: number;
+  output_format: "webp" | "png" | "jpeg";
+  output_quality: number;
+}
+
+export const DEFAULT_COMPOSITE_OPTIONS: CompositeOptions = {
+  add_shadow: true,
+  add_reflection: true,
+  shadow_opacity: 0.3,
+  reflection_opacity: 0.15,
+  vehicle_scale: 0.85,
+  vehicle_position: "center",
+  output_width: 1920,
+  output_height: 1080,
+  output_format: "webp",
+  output_quality: 90,
+};
 
 /* ------------------------------------------------------------------ */
 /*  Preset definitions                                                 */
@@ -152,31 +285,32 @@ const PRESETS: BackgroundPreset[] = [
   },
 ];
 
+const PRESET_MAP = new Map(PRESETS.map((p) => [p.id, p]));
+
 /* ------------------------------------------------------------------ */
 /*  Core functions                                                     */
 /* ------------------------------------------------------------------ */
 
-/**
- * Return the full list of available background presets.
- */
 export function getAvailableBackgrounds(): BackgroundPreset[] {
   return [...PRESETS];
 }
 
-/**
- * Look up a single preset by ID. Returns undefined if not found.
- */
 export function getPresetById(id: string): BackgroundPreset | undefined {
-  return PRESETS.find((p) => p.id === id);
+  return PRESET_MAP.get(id as BackgroundPresetId);
 }
 
-/**
- * Generate a CSS string for a background preset.
- *
- * - `dealer_branded` uses dealerColors when provided.
- * - `minimalist` tints toward the vehicleColor when provided.
- * - All others return their static gradient.
- */
+export function isValidPresetId(id: string): id is BackgroundPresetId {
+  return PRESET_MAP.has(id as BackgroundPresetId);
+}
+
+export function getPresetsByCategory(category: BackgroundCategory): BackgroundPreset[] {
+  return PRESETS.filter((p) => p.category === category);
+}
+
+/* ------------------------------------------------------------------ */
+/*  CSS generation                                                     */
+/* ------------------------------------------------------------------ */
+
 export function generateBackgroundCSS(
   preset: string,
   vehicleColor?: string,
@@ -213,7 +347,6 @@ export function generateBackgroundCSS(
       return "background: linear-gradient(180deg, #fceabb 0%, #f8b500 40%, #87ceeb 100%);";
 
     default:
-      // Unknown preset — fall back to white showroom
       return "background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 70%, #e0e0e0 100%);";
   }
 }
@@ -222,27 +355,31 @@ export function generateBackgroundCSS(
 /*  Recommendation engine                                              */
 /* ------------------------------------------------------------------ */
 
-/** Luxury makes that look best on dark backgrounds */
 const LUXURY_MAKES = new Set([
   "bmw", "mercedes-benz", "mercedes", "audi", "lexus", "porsche",
   "maserati", "bentley", "rolls-royce", "ferrari", "lamborghini",
   "mclaren", "aston martin", "genesis", "lucid", "rivian",
 ]);
 
-/** Body types that suit outdoor/scenic backgrounds */
 const OUTDOOR_BODIES = new Set([
   "truck", "pickup", "suv", "crossover", "off-road", "van",
 ]);
 
+const SPORT_BODIES = new Set([
+  "coupe", "convertible", "roadster", "sports car", "hatchback",
+]);
+
 /**
- * Recommend the best background preset for a single vehicle based on
- * its attributes. Heuristic rules:
+ * Recommend the best background preset for a vehicle, with confidence
+ * scoring and an alternative suggestion.
  *
- *   1. Luxury vehicles (by make or price >= $60 000) → showroom_dark
- *   2. Trucks / SUVs / crossovers → outdoor_scenic
- *   3. Used vehicles < $20 000 → showroom_white (clean presentation)
- *   4. New vehicles → minimalist
- *   5. Fallback → showroom_white
+ * Heuristic rules (in priority order):
+ *   1. Luxury vehicles (by make or price >= $60k) -> showroom_dark (0.9)
+ *   2. Sports cars / coupes -> urban_night (0.85)
+ *   3. Trucks / SUVs / crossovers -> outdoor_scenic (0.85)
+ *   4. Used vehicles < $20k -> showroom_white (0.8)
+ *   5. New vehicles -> minimalist (0.75)
+ *   6. Fallback -> showroom_white (0.6)
  */
 export function getRecommendedBackground(vehicleData: {
   color?: string;
@@ -250,7 +387,7 @@ export function getRecommendedBackground(vehicleData: {
   price?: number;
   condition?: string;
   make?: string;
-}): { preset: BackgroundPresetId; reason: string } {
+}): BackgroundRecommendation & { preset: BackgroundPresetId; reason: string } {
   const {
     body_type = "",
     price = 0,
@@ -264,39 +401,71 @@ export function getRecommendedBackground(vehicleData: {
   // 1. Luxury
   if (LUXURY_MAKES.has(lowerMake) || price >= 60_000) {
     return {
+      vin: "",
       preset: "showroom_dark",
-      reason: "Premium/luxury vehicle — dark showroom creates aspirational feel",
+      recommended_preset: "showroom_dark",
+      reason: "Premium/luxury vehicle. Dark showroom creates aspirational feel",
+      confidence: 0.9,
+      alternative_preset: "urban_night",
     };
   }
 
-  // 2. Trucks & SUVs
+  // 2. Sports
+  if (SPORT_BODIES.has(lowerBody)) {
+    return {
+      vin: "",
+      preset: "urban_night",
+      recommended_preset: "urban_night",
+      reason: "Sports/performance vehicle. Urban night backdrop highlights sleek lines",
+      confidence: 0.85,
+      alternative_preset: "showroom_dark",
+    };
+  }
+
+  // 3. Trucks & SUVs
   if (OUTDOOR_BODIES.has(lowerBody)) {
     return {
+      vin: "",
       preset: "outdoor_scenic",
-      reason: "Truck/SUV — scenic outdoor backdrop highlights capability",
+      recommended_preset: "outdoor_scenic",
+      reason: "Truck/SUV. Scenic outdoor backdrop highlights capability",
+      confidence: 0.85,
+      alternative_preset: "showroom_white",
     };
   }
 
-  // 3. Budget used
+  // 4. Budget used
   if (condition === "used" && price > 0 && price < 20_000) {
     return {
+      vin: "",
       preset: "showroom_white",
-      reason: "Affordable used vehicle — clean white studio builds trust",
+      recommended_preset: "showroom_white",
+      reason: "Affordable used vehicle. Clean white studio builds trust",
+      confidence: 0.8,
+      alternative_preset: "minimalist",
     };
   }
 
-  // 4. New
+  // 5. New
   if (condition === "new") {
     return {
+      vin: "",
       preset: "minimalist",
-      reason: "New vehicle — minimalist backdrop lets the vehicle speak",
+      recommended_preset: "minimalist",
+      reason: "New vehicle. Minimalist backdrop lets the vehicle speak",
+      confidence: 0.75,
+      alternative_preset: "showroom_white",
     };
   }
 
-  // 5. Fallback
+  // 6. Fallback
   return {
+    vin: "",
     preset: "showroom_white",
-    reason: "Default — white showroom is universally appealing",
+    recommended_preset: "showroom_white",
+    reason: "Default. White showroom is universally appealing",
+    confidence: 0.6,
+    alternative_preset: "minimalist",
   };
 }
 
@@ -305,31 +474,69 @@ export function getRecommendedBackground(vehicleData: {
  */
 export function getBatchBackgroundPlan(
   vehicles: VehicleForBackground[],
-): BatchBackgroundPlan[] {
+): BatchPlan[] {
   return vehicles.map((v) => {
     const rec = getRecommendedBackground({
       color: v.color,
       body_type: v.body_type,
       price: v.price,
       condition: v.condition,
+      make: v.make,
     });
     return {
       vin: v.vin,
       recommended_preset: rec.preset,
       reason: rec.reason,
+      confidence: rec.confidence,
     };
   });
 }
 
 /* ------------------------------------------------------------------ */
-/*  Performance tracking (in-memory for v1, Postgres later)            */
+/*  Engagement scoring                                                 */
 /* ------------------------------------------------------------------ */
 
-const performanceStore: BackgroundPerformanceRecord[] = [];
+/**
+ * Calculate engagement score from raw metrics.
+ * Weighted formula: views * 1 + dwell * 0.01 + clicks * 5 + leads * 50
+ */
+export function calculateEngagementScore(data: PhotoEngagementData): number {
+  return Math.round(
+    (data.views * 1 +
+      data.avg_dwell_ms * 0.01 +
+      data.clicks * 5 +
+      data.leads_generated * 50) *
+      100,
+  ) / 100;
+}
 
 /**
- * Record engagement data for a vehicle+preset combination.
+ * Calculate click-through rate (clicks / views).
  */
+export function calculateCTR(views: number, clicks: number): number {
+  if (views === 0) return 0;
+  return Math.round((clicks / views) * 10000) / 10000;
+}
+
+/**
+ * Calculate lead conversion rate (leads / views).
+ */
+export function calculateLeadRate(views: number, leads: number): number {
+  if (views === 0) return 0;
+  return Math.round((leads / views) * 10000) / 10000;
+}
+
+/* ------------------------------------------------------------------ */
+/*  In-memory performance tracking (fallback when DB unavailable)      */
+/* ------------------------------------------------------------------ */
+
+const performanceStore: {
+  vin: string;
+  preset: BackgroundPresetId;
+  engagement: PhotoEngagementData;
+  recorded_at: string;
+}[] = [];
+
 export function trackBackgroundPerformance(
   vin: string,
   preset: BackgroundPresetId,
@@ -343,37 +550,23 @@ export function trackBackgroundPerformance(
   });
 }
 
-/**
- * Get all stored performance records. Useful for tests and the insights API.
- */
-export function getPerformanceRecords(): BackgroundPerformanceRecord[] {
+export function getPerformanceRecords() {
   return [...performanceStore];
 }
 
-/**
- * Clear the performance store (used in tests).
- */
 export function clearPerformanceRecords(): void {
   performanceStore.length = 0;
 }
 
-/**
- * Aggregate engagement data by preset and return insights sorted by
- * engagement score (views * avg_dwell * clicks weighted).
- */
 export function getBackgroundInsights(): BackgroundInsight[] {
   const byPreset = new Map<
-    BackgroundPresetId,
+    string,
     { views: number; dwell_sum: number; clicks: number; leads: number; count: number }
   >();
 
   for (const rec of performanceStore) {
     const existing = byPreset.get(rec.preset) ?? {
-      views: 0,
-      dwell_sum: 0,
-      clicks: 0,
-      leads: 0,
-      count: 0,
+      views: 0, dwell_sum: 0, clicks: 0, leads: 0, count: 0,
     };
     existing.views += rec.engagement.views;
     existing.dwell_sum += rec.engagement.avg_dwell_ms * rec.engagement.views;
@@ -385,28 +578,94 @@ export function getBackgroundInsights(): BackgroundInsight[] {
 
   const insights: BackgroundInsight[] = [];
 
-  for (const [preset, data] of byPreset) {
+  for (const [presetId, data] of byPreset) {
     const avgDwell = data.views > 0 ? data.dwell_sum / data.views : 0;
-    // Engagement score: weighted combination
-    const score =
-      data.views * 1 +
-      avgDwell * 0.01 +
-      data.clicks * 5 +
-      data.leads * 50;
+    const score = calculateEngagementScore({
+      views: data.views,
+      avg_dwell_ms: avgDwell,
+      clicks: data.clicks,
+      leads_generated: data.leads,
+    });
+
+    const preset = getPresetById(presetId);
 
     insights.push({
-      preset,
+      background_type: "preset",
+      preset_id: presetId,
+      custom_bg_id: null,
+      name: preset?.name ?? presetId,
       total_views: data.views,
       avg_dwell_ms: Math.round(avgDwell),
       total_clicks: data.clicks,
       total_leads: data.leads,
-      engagement_score: Math.round(score * 100) / 100,
+      ctr: calculateCTR(data.views, data.clicks),
+      lead_rate: calculateLeadRate(data.views, data.leads),
+      engagement_score: score,
       sample_size: data.count,
     });
   }
 
-  // Sort descending by engagement score
   insights.sort((a, b) => b.engagement_score - a.engagement_score);
-
   return insights;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Validation helpers                                                 */
+/* ------------------------------------------------------------------ */
+
+const VALID_CATEGORIES: BackgroundCategory[] = [
+  "studio", "outdoor", "branded", "seasonal", "lifestyle", "custom",
+];
+
+const VALID_POSITIONS = [
+  "center", "top", "bottom", "left", "right",
+  "top left", "top right", "bottom left", "bottom right",
+];
+
+const VALID_FITS = ["cover", "contain", "fill", "none"];
+
+export function isValidCategory(c: string): c is BackgroundCategory {
+  return VALID_CATEGORIES.includes(c as BackgroundCategory);
+}
+
+export function isValidPosition(p: string): boolean {
+  return VALID_POSITIONS.includes(p);
+}
+
+export function isValidFit(f: string): boolean {
+  return VALID_FITS.includes(f);
+}
+
+export function validateCustomBackgroundInput(input: {
+  name?: string;
+  category?: string;
+  position?: string;
+  fit?: string;
+  overlay_opacity?: number;
+}): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!input.name || input.name.trim().length === 0) {
+    errors.push("Name is required");
+  }
+  if (input.name && input.name.length > 100) {
+    errors.push("Name must be 100 characters or fewer");
+  }
+  if (input.category && !isValidCategory(input.category)) {
+    errors.push(`Invalid category. Must be one of: ${VALID_CATEGORIES.join(", ")}`);
+  }
+  if (input.position && !isValidPosition(input.position)) {
+    errors.push(`Invalid position. Must be one of: ${VALID_POSITIONS.join(", ")}`);
+  }
+  if (input.fit && !isValidFit(input.fit)) {
+    errors.push(`Invalid fit. Must be one of: ${VALID_FITS.join(", ")}`);
+  }
+  if (
+    input.overlay_opacity !== undefined &&
+    (input.overlay_opacity < 0 || input.overlay_opacity > 1)
+  ) {
+    errors.push("Overlay opacity must be between 0 and 1");
+  }
+
+  return { valid: errors.length === 0, errors };
 }

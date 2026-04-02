@@ -1,21 +1,21 @@
 {
-  "timestamp": "2026-03-29T15:29:32.308Z",
+  "timestamp": "2026-03-29T17:56:32.572Z",
   "type": "load_test",
   "base_url": "https://wolfpack-auto.vercel.app",
-  "duration_s": 247,
+  "duration_s": 241,
   "max_vus": 50,
   "metrics": {
-    "http_reqs": 2537,
-    "http_req_duration_p95": 8428.2484,
-    "http_req_duration_avg": 1701.937957430037,
-    "http_req_failed_rate": 0.20654316121403232,
-    "inventory_latency_p95": 8777.005749999998,
-    "lead_submit_latency_p95": 431.3042499999981,
-    "admin_dashboard_latency_p95": 144.63824999999997,
-    "health_latency_p95": 2035.0181999999945,
-    "error_rate": 0.012219156484036263,
-    "total_lead_submissions": 204,
-    "total_inventory_views": 524
+    "http_reqs": 5358,
+    "http_req_duration_p95": 1961.5113,
+    "http_req_duration_avg": 453.41549085479556,
+    "http_req_failed_rate": 0.20735349010824936,
+    "inventory_latency_p95": 2021.0412,
+    "lead_submit_latency_p95": 1377.5134,
+    "admin_dashboard_latency_p95": 141.42249999999999,
+    "health_latency_p95": 2316.1883999999995,
+    "error_rate": 0,
+    "total_lead_submissions": 409,
+    "total_inventory_views": 1111
   },
   "thresholds_passed": true
 }

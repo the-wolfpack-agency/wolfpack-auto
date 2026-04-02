@@ -1,91 +1,181 @@
 /**
- * GET  /api/admin/vehicles/backgrounds — List available background presets
- * POST /api/admin/vehicles/backgrounds — Apply a background preset to a vehicle
+ * GET  /api/admin/vehicles/backgrounds — List all backgrounds (presets + custom)
+ * POST /api/admin/vehicles/backgrounds — Apply a background to a vehicle
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
-import { trackSystem } from "@/lib/analytics-hooks";
+import { trackBackground } from "@/lib/analytics-hooks";
 import {
   getAvailableBackgrounds,
   getPresetById,
   generateBackgroundCSS,
-  trackBackgroundPerformance,
+  isValidPresetId,
+  type CustomBackground,
 } from "@/lib/background-generator";
 
 /* -------------------------------------------------------------------------- */
-/* In-memory applied-backgrounds store (Postgres in production)               */
-/* -------------------------------------------------------------------------- */
-
-const appliedBackgrounds = new Map<
-  string,
-  { preset: string; css: string; applied_at: string }
->();
-
-// appliedBackgrounds is module-scoped, not exported (Next.js routes only allow HTTP handlers)
-
-/* -------------------------------------------------------------------------- */
-/* GET                                                                        */
+/* GET — list presets + custom backgrounds                                     */
 /* -------------------------------------------------------------------------- */
 
 export async function GET(_request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  const dealerId = authResult.user.dealer_id;
   const presets = getAvailableBackgrounds();
-  return NextResponse.json({ presets, count: presets.length });
+
+  // Load custom backgrounds from DB
+  let customBackgrounds: CustomBackground[] = [];
+  if (process.env.DATABASE_URL) {
+    try {
+      const { query } = await import("@/lib/db");
+      const { rows } = await query(
+        `SELECT id, dealer_id, name, description, category, tags,
+                original_url, optimized_url, thumbnail_url,
+                width, height, file_size, position, fit, overlay_opacity,
+                is_active, is_system, sort_order,
+                times_applied, engagement_score, created_at
+         FROM custom_backgrounds
+         WHERE dealer_id = $1 AND is_active = true
+         ORDER BY sort_order ASC, created_at DESC`,
+        [dealerId],
+      );
+      customBackgrounds = rows as CustomBackground[];
+    } catch (err) {
+      console.error("[api/backgrounds] Failed to load custom backgrounds:", err);
+    }
+  }
+
+  return NextResponse.json({
+    presets,
+    custom: customBackgrounds,
+    preset_count: presets.length,
+    custom_count: customBackgrounds.length,
+    total_count: presets.length + customBackgrounds.length,
+  });
 }
 
 /* -------------------------------------------------------------------------- */
-/* POST                                                                       */
+/* POST — apply a background (preset or custom) to a vehicle                   */
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
-  let body: { vin?: string; preset?: string; dealer_colors?: { primary: string; secondary: string }; vehicle_color?: string };
+  const dealerId = authResult.user.dealer_id;
+
+  let body: {
+    vin?: string;
+    vehicle_id?: string;
+    background_type?: string;
+    preset_id?: string;
+    custom_bg_id?: string;
+    dealer_colors?: { primary: string; secondary: string };
+    vehicle_color?: string;
+    method?: string;
+  };
+
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { vin, preset, dealer_colors, vehicle_color } = body;
+  const { vin, vehicle_id, background_type = "preset", preset_id, custom_bg_id, dealer_colors, vehicle_color, method = "manual" } = body;
 
   if (!vin || typeof vin !== "string") {
     return NextResponse.json({ error: "vin is required (string)" }, { status: 400 });
   }
-  if (!preset || typeof preset !== "string") {
-    return NextResponse.json({ error: "preset is required (string)" }, { status: 400 });
-  }
 
-  const presetDef = getPresetById(preset);
-  if (!presetDef) {
+  // Validate based on type
+  let css: string | null = null;
+  let presetName: string | null = null;
+
+  if (background_type === "preset") {
+    if (!preset_id || !isValidPresetId(preset_id)) {
+      return NextResponse.json(
+        { error: `Invalid preset_id. Use GET to list available presets.` },
+        { status: 400 },
+      );
+    }
+    const presetDef = getPresetById(preset_id)!;
+    css = generateBackgroundCSS(preset_id, vehicle_color, dealer_colors);
+    presetName = presetDef.name;
+  } else if (background_type === "custom") {
+    if (!custom_bg_id) {
+      return NextResponse.json(
+        { error: "custom_bg_id is required when background_type is 'custom'" },
+        { status: 400 },
+      );
+    }
+  } else if (background_type !== "composite") {
     return NextResponse.json(
-      { error: `Unknown preset: ${preset}. Use GET to list available presets.` },
+      { error: "background_type must be 'preset', 'custom', or 'composite'" },
       { status: 400 },
     );
   }
 
-  const css = generateBackgroundCSS(preset, vehicle_color, dealer_colors);
+  // Persist assignment to DB
+  if (process.env.DATABASE_URL) {
+    try {
+      const { query } = await import("@/lib/db");
 
-  appliedBackgrounds.set(vin, {
-    preset,
-    css,
-    applied_at: new Date().toISOString(),
-  });
+      // Deactivate any existing assignment for this vehicle
+      if (vehicle_id) {
+        await query(
+          `UPDATE vehicle_background_assignments SET is_active = false, updated_at = now()
+           WHERE dealer_id = $1 AND vehicle_id = $2::uuid AND is_active = true`,
+          [dealerId, vehicle_id],
+        );
+      }
 
-  trackSystem("system.vehicle_updated", vin, {
-    action: "background.applied",
-    preset,
-    module: "backgrounds",
+      // Create new assignment
+      await query(
+        `INSERT INTO vehicle_background_assignments
+           (dealer_id, vehicle_id, vin, background_type, preset_id, custom_bg_id, css_override, applied_method)
+         VALUES ($1, $2::uuid, $3, $4, $5, $6::uuid, $7, $8)`,
+        [
+          dealerId,
+          vehicle_id ?? null,
+          vin,
+          background_type,
+          preset_id ?? null,
+          custom_bg_id ?? null,
+          css,
+          method,
+        ],
+      );
+
+      // Increment times_applied on custom background
+      if (background_type === "custom" && custom_bg_id) {
+        await query(
+          `UPDATE custom_backgrounds SET times_applied = times_applied + 1, updated_at = now()
+           WHERE id = $1::uuid AND dealer_id = $2`,
+          [custom_bg_id, dealerId],
+        );
+      }
+    } catch (err) {
+      console.error("[api/backgrounds] DB error applying background:", err);
+    }
+  }
+
+  trackBackground("background.applied", dealerId, {
+    vin,
+    background_type,
+    preset_id: preset_id ?? "",
+    custom_bg_id: custom_bg_id ?? "",
+    method,
   });
 
   return NextResponse.json({
     vin,
-    preset,
-    preset_name: presetDef.name,
+    background_type,
+    preset_id: preset_id ?? null,
+    preset_name: presetName,
+    custom_bg_id: custom_bg_id ?? null,
     css,
-    applied_at: appliedBackgrounds.get(vin)!.applied_at,
+    applied_method: method,
+    applied_at: new Date().toISOString(),
   });
 }

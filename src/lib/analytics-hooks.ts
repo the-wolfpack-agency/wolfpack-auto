@@ -283,7 +283,22 @@ export type BackgroundEvent =
   | "background.batch_applied"
   | "background.auto_recommended"
   | "background.engagement_compared"
-  | "background.insights_viewed";
+  | "background.insights_viewed"
+  | "background.custom_uploaded"
+  | "background.custom_deleted"
+  | "background.custom_updated"
+  | "background.removal_started"
+  | "background.removal_completed"
+  | "background.removal_failed"
+  | "background.composite_started"
+  | "background.composite_completed"
+  | "background.composite_failed"
+  | "background.batch_composite_started"
+  | "background.batch_composite_completed"
+  | "background.preview_generated"
+  | "background.assignment_created"
+  | "background.assignment_removed"
+  | "background.performance_snapshot";
 
 export type MarketingTemplateEvent =
   | "template.viewed"
