@@ -26,15 +26,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
-          cache-dependency-path: wolfpack-auto/package-lock.json
 
       - name: Install npm dependencies
-        working-directory: wolfpack-auto
         run: npm ci
 
       - name: Set up Python 3.13
@@ -48,7 +46,7 @@ jobs:
       - name: Run full shadow cycle via Neon (if API key available)
         id: shadow-full
         if: env.NEON_API_KEY != ''
-        working-directory: wolfpack-auto
+        working-directory: .
         run: |
           echo "NEON_API_KEY is set — running full shadow cycle via shadow_runner.py"
           python scripts/shadow_runner.py
@@ -57,7 +55,7 @@ jobs:
       - name: Build Next.js for lightweight shadow tests (fallback — no Neon key)
         id: build-app
         if: env.NEON_API_KEY == ''
-        working-directory: wolfpack-auto
+        working-directory: .
         run: |
           echo "NEON_API_KEY not set — falling back to local dev-server shadow tests"
           npm run build
@@ -66,7 +64,7 @@ jobs:
       - name: Start Next.js dev server (fallback mode)
         id: start-server
         if: env.NEON_API_KEY == '' && steps.build-app.outcome == 'success'
-        working-directory: wolfpack-auto
+        working-directory: .
         run: |
           npm run start &
           SERVER_PID=$!
@@ -88,13 +86,13 @@ jobs:
 
       - name: Install Playwright browsers (fallback mode)
         if: env.NEON_API_KEY == '' && steps.build-app.outcome == 'success'
-        working-directory: wolfpack-auto
+        working-directory: .
         run: npx playwright install chromium --with-deps
 
       - name: Run lightweight shadow tests against local server (fallback mode)
         id: shadow-lightweight
         if: env.NEON_API_KEY == '' && steps.build-app.outcome == 'success'
-        working-directory: wolfpack-auto
+        working-directory: .
         env:
           SHADOW_URL: http://localhost:3000
         run: |
@@ -126,8 +124,8 @@ jobs:
         with:
           name: shadow-playwright-report-${{ github.run_id }}
           path: |
-            wolfpack-auto/playwright-report/
-            wolfpack-auto/test-results/
+            playwright-report/
+            test-results/
           retention-days: 14
           if-no-files-found: ignore
 
