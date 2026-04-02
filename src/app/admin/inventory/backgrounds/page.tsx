@@ -119,8 +119,17 @@ function renderPresetThumb(css: string): React.CSSProperties {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
+interface SystemBgMeta {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  tags: string[];
+}
+
 export default function BackgroundStudioPage() {
   const [presets, setPresets] = useState<BackgroundPreset[]>([]);
+  const [systemBgs, setSystemBgs] = useState<(CustomBg | SystemBgMeta)[]>([]);
   const [customBgs, setCustomBgs] = useState<CustomBg[]>([]);
   const [vehicles] = useState<VehicleCard[]>(DEMO_VEHICLES);
   const [selectedVins, setSelectedVins] = useState<Set<string>>(new Set());
@@ -138,11 +147,14 @@ export default function BackgroundStudioPage() {
 
   // Fetch data on mount
   useEffect(() => {
-    // Load presets + custom backgrounds
+    // Load presets + system + custom backgrounds
     fetch("/api/admin/vehicles/backgrounds")
       .then((r) => r.json())
       .then((d) => {
         setPresets(d.presets ?? []);
+        // System backgrounds from DB or fallback metadata
+        const sys = (d.system?.length > 0 ? d.system : d.system_meta) ?? [];
+        setSystemBgs(sys);
         setCustomBgs(d.custom ?? []);
       })
       .catch(() => {});
@@ -374,10 +386,54 @@ export default function BackgroundStudioPage() {
       {/* ================================================================ */}
       {tab === "manage" && (
         <>
-          {/* Preset picker */}
+          {/* Background picker */}
           <section className="rounded-2xl border border-surface-border bg-white p-6 shadow-card">
-            <h2 className="text-lg font-bold text-gray-900">Choose a Background Style</h2>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+            {/* System backgrounds (hero section) */}
+            {systemBgs.length > 0 && (
+              <>
+                <h2 className="text-lg font-bold text-gray-900">Professional Backgrounds</h2>
+                <p className="mt-1 text-sm text-gray-500">High-quality studio and outdoor backgrounds, ready to use.</p>
+                <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+                  {systemBgs.map((bg) => {
+                    const hasThumbnail = "thumbnail_url" in bg && bg.thumbnail_url;
+                    const isActive = activeCustomBg === bg.id;
+                    return (
+                      <button
+                        key={bg.id}
+                        onClick={() => { setActiveCustomBg(bg.id === activeCustomBg ? null : bg.id); setActivePreset(null); }}
+                        className={`group relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all hover:shadow-md ${
+                          isActive
+                            ? "border-brand-600 ring-2 ring-brand-200"
+                            : "border-surface-border hover:border-gray-300"
+                        }`}
+                        data-testid={`system-bg-${bg.id}`}
+                      >
+                        <div className="aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
+                          {hasThumbnail ? (
+                            <img src={(bg as CustomBg).thumbnail_url!} alt={bg.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                          ) : (
+                            <img
+                              src={`/api/admin/vehicles/backgrounds/system/${bg.id}?thumb=true`}
+                              alt={bg.name}
+                              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          )}
+                        </div>
+                        <span className="text-xs font-medium text-gray-700">{bg.name}</span>
+                        <span className="text-[10px] text-gray-400">{bg.description.split(".")[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* CSS Presets (secondary) */}
+            <h3 className={`${systemBgs.length > 0 ? "mt-6" : ""} text-sm font-semibold text-gray-700`}>
+              {systemBgs.length > 0 ? "Color Presets" : "Choose a Background Style"}
+            </h3>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
               {presets.map((p) => (
                 <button
                   key={p.id}

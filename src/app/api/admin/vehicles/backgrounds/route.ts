@@ -24,34 +24,62 @@ export async function GET(_request: NextRequest) {
   const dealerId = authResult.user.dealer_id;
   const presets = getAvailableBackgrounds();
 
-  // Load custom backgrounds from DB
+  // Load system backgrounds (available to all dealers) + dealer custom backgrounds
+  let systemBackgrounds: CustomBackground[] = [];
   let customBackgrounds: CustomBackground[] = [];
+
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      const { rows } = await query(
+
+      // System backgrounds (is_system=true, shared across all dealers)
+      const { rows: sysRows } = await query(
         `SELECT id, dealer_id, name, description, category, tags,
                 original_url, optimized_url, thumbnail_url,
                 width, height, file_size, position, fit, overlay_opacity,
                 is_active, is_system, sort_order,
                 times_applied, engagement_score, created_at
          FROM custom_backgrounds
-         WHERE dealer_id = $1 AND is_active = true
+         WHERE is_system = true AND is_active = true
+         ORDER BY sort_order ASC`,
+        [],
+      );
+      systemBackgrounds = sysRows as CustomBackground[];
+
+      // Dealer's own custom backgrounds
+      const { rows: customRows } = await query(
+        `SELECT id, dealer_id, name, description, category, tags,
+                original_url, optimized_url, thumbnail_url,
+                width, height, file_size, position, fit, overlay_opacity,
+                is_active, is_system, sort_order,
+                times_applied, engagement_score, created_at
+         FROM custom_backgrounds
+         WHERE dealer_id = $1 AND is_system = false AND is_active = true
          ORDER BY sort_order ASC, created_at DESC`,
         [dealerId],
       );
-      customBackgrounds = rows as CustomBackground[];
+      customBackgrounds = customRows as CustomBackground[];
     } catch (err) {
-      console.error("[api/backgrounds] Failed to load custom backgrounds:", err);
+      console.error("[api/backgrounds] Failed to load backgrounds:", err);
     }
+  }
+
+  // Also provide system background metadata from code (fallback when DB empty)
+  let systemMeta: { id: string; name: string; description: string; category: string; tags: string[] }[] = [];
+  if (systemBackgrounds.length === 0) {
+    const { getSystemBackgroundMeta } = await import("@/lib/system-backgrounds");
+    systemMeta = getSystemBackgroundMeta();
   }
 
   return NextResponse.json({
     presets,
+    system: systemBackgrounds,
+    system_meta: systemMeta,
     custom: customBackgrounds,
     preset_count: presets.length,
+    system_count: systemBackgrounds.length || systemMeta.length,
     custom_count: customBackgrounds.length,
-    total_count: presets.length + customBackgrounds.length,
+    total_count: presets.length + (systemBackgrounds.length || systemMeta.length) + customBackgrounds.length,
   });
 }
 
