@@ -22,7 +22,7 @@
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export type AIProvider = "replicate" | "remove_bg";
+export type AIProvider = "fal" | "replicate" | "remove_bg";
 
 export interface RemovalRequest {
   /** URL of the source vehicle photo */
@@ -66,8 +66,13 @@ export interface ProviderHealth {
 /*  Configuration                                                      */
 /* ------------------------------------------------------------------ */
 
+const FAL_REMBG_MODEL = "fal-ai/birefnet/v2";
+
 const REPLICATE_DEFAULT_MODEL =
   "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46";
+
+/** Cost per fal.ai background removal in cents (~$0.01/run) */
+const FAL_COST_CENTS = 1;
 
 /** Cost per Replicate prediction in cents (rembg is ~$0.0023/run) */
 const REPLICATE_COST_CENTS = 1;
@@ -80,6 +85,72 @@ const PROCESSING_TIMEOUT_MS = 30_000;
 
 /** Maximum source image size (15 MB) */
 const MAX_SOURCE_SIZE = 15 * 1024 * 1024;
+
+/* ------------------------------------------------------------------ */
+/*  Provider: fal.ai                                                   */
+/* ------------------------------------------------------------------ */
+
+async function removeViaFal(sourceUrl: string): Promise<RemovalResult> {
+  const apiKey = process.env.FAL_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "[background-removal] FAL_KEY not set. Get one at https://fal.ai/dashboard/keys",
+    );
+  }
+
+  const startMs = Date.now();
+
+  const res = await fetch(`https://queue.fal.run/${FAL_REMBG_MODEL}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      image_url: sourceUrl,
+      model: "General Use (Heavy)",
+      operating_resolution: "1024x1024",
+      output_format: "png",
+      sync_mode: true,
+    }),
+    signal: AbortSignal.timeout(PROCESSING_TIMEOUT_MS),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => "");
+    throw new Error(
+      `[background-removal] fal.ai API error ${res.status}: ${errBody}`,
+    );
+  }
+
+  const result = (await res.json()) as {
+    image?: { url: string; width: number; height: number; content_type: string };
+  };
+
+  if (!result.image?.url) {
+    throw new Error("[background-removal] fal.ai returned no image");
+  }
+
+  const cutoutRes = await fetch(result.image.url);
+  if (!cutoutRes.ok) {
+    throw new Error(`[background-removal] Failed to download fal.ai cutout: ${cutoutRes.status}`);
+  }
+
+  const cutoutBuffer = Buffer.from(await cutoutRes.arrayBuffer());
+  const processingMs = Date.now() - startMs;
+
+  return {
+    cutout_buffer: cutoutBuffer,
+    width: result.image.width,
+    height: result.image.height,
+    size: cutoutBuffer.length,
+    provider: "fal",
+    model: FAL_REMBG_MODEL,
+    prediction_id: null,
+    processing_ms: processingMs,
+    cost_cents: FAL_COST_CENTS,
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Provider: Replicate                                                */
@@ -294,15 +365,14 @@ async function removeViaRemoveBg(
 export async function removeBackground(
   request: RemovalRequest,
 ): Promise<RemovalResult> {
-  const provider = request.provider ?? "replicate";
+  const provider = request.provider ?? (process.env.FAL_KEY ? "fal" : "replicate");
   const model = request.model ?? REPLICATE_DEFAULT_MODEL;
 
   // If we have a buffer but no URL, we need to upload it first or base64-encode
   let sourceUrl = request.source_url;
   if (!sourceUrl && request.source_buffer) {
-    // Convert to data URI for Replicate
     const base64 = request.source_buffer.toString("base64");
-    const mime = "image/jpeg"; // assume JPEG for vehicle photos
+    const mime = "image/jpeg";
     sourceUrl = `data:${mime};base64,${base64}`;
   }
 
@@ -310,44 +380,50 @@ export async function removeBackground(
     throw new Error("[background-removal] Either source_url or source_buffer is required");
   }
 
-  // Validate source size if buffer provided
   if (request.source_buffer && request.source_buffer.length > MAX_SOURCE_SIZE) {
     throw new Error(
       `[background-removal] Source image too large (${(request.source_buffer.length / 1024 / 1024).toFixed(1)} MB > ${MAX_SOURCE_SIZE / 1024 / 1024} MB)`,
     );
   }
 
-  // Try primary provider, fall back to secondary
-  try {
-    if (provider === "replicate") {
-      return await removeViaReplicate(sourceUrl, model);
-    } else {
-      return await removeViaRemoveBg(sourceUrl);
-    }
-  } catch (primaryErr) {
-    console.error(
-      `[background-removal] Primary provider (${provider}) failed:`,
-      primaryErr instanceof Error ? primaryErr.message : primaryErr,
-    );
+  // Build provider chain: preferred first, then fallbacks
+  const providerFns: { name: AIProvider; fn: () => Promise<RemovalResult> }[] = [];
 
-    // Fallback to the other provider
-    const fallback: AIProvider = provider === "replicate" ? "remove_bg" : "replicate";
+  const addProvider = (name: AIProvider) => {
+    switch (name) {
+      case "fal":
+        providerFns.push({ name: "fal", fn: () => removeViaFal(sourceUrl!) });
+        break;
+      case "replicate":
+        providerFns.push({ name: "replicate", fn: () => removeViaReplicate(sourceUrl!, model) });
+        break;
+      case "remove_bg":
+        providerFns.push({ name: "remove_bg", fn: () => removeViaRemoveBg(sourceUrl!) });
+        break;
+    }
+  };
+
+  // Preferred provider first
+  addProvider(provider);
+  // Then fallbacks in priority order
+  for (const fallback of (["fal", "replicate", "remove_bg"] as AIProvider[])) {
+    if (fallback !== provider) addProvider(fallback);
+  }
+
+  let lastError: Error | null = null;
+
+  for (const { name, fn } of providerFns) {
     try {
-      console.log(`[background-removal] Falling back to ${fallback}`);
-      if (fallback === "replicate") {
-        return await removeViaReplicate(sourceUrl, model);
-      } else {
-        return await removeViaRemoveBg(sourceUrl);
-      }
-    } catch (fallbackErr) {
-      // Both providers failed
-      throw new Error(
-        `[background-removal] All providers failed. ` +
-          `Primary (${provider}): ${primaryErr instanceof Error ? primaryErr.message : String(primaryErr)}. ` +
-          `Fallback (${fallback}): ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}.`,
-      );
+      return await fn();
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.error(`[background-removal] ${name} failed:`, lastError.message);
     }
   }
+
+  throw new Error(
+    `[background-removal] All providers failed. Last error: ${lastError?.message ?? "unknown"}`,
+  );
 }
 
 /**
@@ -355,6 +431,11 @@ export async function removeBackground(
  */
 export function getProviderHealth(): ProviderHealth[] {
   return [
+    {
+      provider: "fal",
+      available: !!process.env.FAL_KEY,
+      reason: process.env.FAL_KEY ? undefined : "FAL_KEY not set",
+    },
     {
       provider: "replicate",
       available: !!process.env.REPLICATE_API_TOKEN,
