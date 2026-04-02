@@ -490,10 +490,169 @@ async function generateBrandedGradient(
 }
 
 /* ------------------------------------------------------------------ */
+/*  7. Premium Dealership Interior                                     */
+/* ------------------------------------------------------------------ */
+
+async function generatePremiumDealership(w: number, h: number): Promise<Buffer> {
+  const floorY = Math.round(h * 0.52);
+  const ceilH = Math.round(h * 0.06);
+  const wallBase = "#e6e2dc";
+
+  // Generate recessed LED ceiling panel strips
+  const panelCount = 7;
+  const panelW = Math.round(w * 0.08);
+  const panelSpacing = w / (panelCount + 1);
+  let ceilingPanels = "";
+  for (let i = 1; i <= panelCount; i++) {
+    const cx = Math.round(panelSpacing * i);
+    const px = cx - Math.round(panelW / 2);
+    // Recessed panel
+    ceilingPanels += `
+      <rect x="${px}" y="0" width="${panelW}" height="${ceilH}" rx="2" fill="#f8f6f2" opacity="0.9" />
+      <rect x="${px + 2}" y="2" width="${panelW - 4}" height="${ceilH - 4}" rx="1" fill="#fffef8" opacity="0.95" />`;
+    // Light cone down from panel
+    ceilingPanels += `
+      <defs>
+        <radialGradient id="cone${i}" cx="${cx}" cy="${ceilH}" r="${Math.round(w * 0.09)}" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.18" />
+          <stop offset="60%" style="stop-color:#ffffff;stop-opacity:0.04" />
+          <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+        </radialGradient>
+      </defs>
+      <rect width="${w}" height="${h}" fill="url(#cone${i})" />`;
+    // Floor reflection of each light
+    ceilingPanels += `
+      <defs>
+        <radialGradient id="flRef${i}" cx="${cx}" cy="${Math.round(h * 0.75)}" r="${Math.round(w * 0.06)}" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.07" />
+          <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="${cx}" cy="${Math.round(h * 0.78)}" rx="${Math.round(w * 0.04)}" ry="${Math.round(h * 0.02)}" fill="url(#flRef${i})" />`;
+  }
+
+  // Glass curtain wall columns (right side, perspective)
+  const colCount = 4;
+  let glassCols = "";
+  for (let i = 0; i < colCount; i++) {
+    const xBase = Math.round(w * 0.78 + i * w * 0.06);
+    const colW = Math.round(w * 0.003);
+    glassCols += `
+      <rect x="${xBase}" y="${ceilH}" width="${colW}" height="${floorY - ceilH}" fill="#b8b0a8" opacity="0.25" />`;
+  }
+  // Glass fill between columns
+  glassCols += `
+    <rect x="${Math.round(w * 0.78)}" y="${ceilH}" width="${Math.round(w * 0.22)}" height="${floorY - ceilH}" fill="#c8dce8" opacity="0.06" />`;
+  // Daylight glow through glass
+  glassCols += `
+    <defs>
+      <radialGradient id="daylight" cx="95%" cy="30%" r="30%" gradientUnits="objectBoundingBox">
+        <stop offset="0%" style="stop-color:#e8f0ff;stop-opacity:0.12" />
+        <stop offset="100%" style="stop-color:#e8f0ff;stop-opacity:0" />
+      </radialGradient>
+    </defs>
+    <rect width="${w}" height="${h}" fill="url(#daylight)" />`;
+
+  // Perspective floor grid lines (converging to vanishing point)
+  const vpX = Math.round(w * 0.48);
+  const vpY = Math.round(h * 0.44);
+  let floorGrid = "";
+  // Horizontal lines (receding)
+  for (let i = 1; i <= 8; i++) {
+    const y = floorY + Math.round((h - floorY) * (i / 8) * (i / 8)); // quadratic spacing
+    const opacity = 0.04 + (i / 8) * 0.04;
+    floorGrid += `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="#a8a098" stroke-width="0.5" opacity="${opacity}" />`;
+  }
+  // Converging lines from bottom corners to vanishing point
+  for (let i = 0; i <= 10; i++) {
+    const bx = Math.round((w / 10) * i);
+    floorGrid += `<line x1="${bx}" y1="${h}" x2="${vpX}" y2="${vpY}" stroke="#a8a098" stroke-width="0.3" opacity="0.03" />`;
+  }
+
+  // Brand accent wall (left side, subtle color stripe)
+  const accentW = Math.round(w * 0.004);
+
+  const svg = Buffer.from(`${svgHeader(w, h)}
+    <!-- Ceiling -->
+    ${linearGradient("pdCeil", [
+      { offset: "0%", color: "#f0ede8" },
+      { offset: "100%", color: "#eae6e0" },
+    ], 180)}
+    <rect x="0" y="0" width="${w}" height="${ceilH}" fill="url(#pdCeil)" />
+
+    <!-- Upper wall -->
+    ${linearGradient("pdWall", [
+      { offset: "0%", color: "#eae6e0" },
+      { offset: "30%", color: "${wallBase}" },
+      { offset: "100%", color: "#ddd8d0" },
+    ], 180)}
+    <rect x="0" y="${ceilH}" width="${w}" height="${floorY - ceilH}" fill="url(#pdWall)" />
+
+    <!-- Polished epoxy floor -->
+    ${linearGradient("pdFloor", [
+      { offset: "0%", color: "#ccc5bb" },
+      { offset: "15%", color: "#c4bdb2" },
+      { offset: "50%", color: "#bbb4a8" },
+      { offset: "100%", color: "#b0a898" },
+    ], 180)}
+    <rect x="0" y="${floorY}" width="${w}" height="${h - floorY}" fill="url(#pdFloor)" />
+
+    <!-- Floor horizon line (the key visual cue) -->
+    <line x1="0" y1="${floorY}" x2="${w}" y2="${floorY}" stroke="#c8c0b5" stroke-width="1.5" opacity="0.5" />
+    <!-- Secondary horizon glow -->
+    ${linearGradient("horizGlow", [
+      { offset: "0%", color: "#ffffff", opacity: 0.08 },
+      { offset: "100%", color: "#ffffff", opacity: 0 },
+    ], 180)}
+    <rect x="0" y="${floorY - 3}" width="${w}" height="6" fill="url(#horizGlow)" />
+
+    <!-- Floor perspective grid -->
+    ${floorGrid}
+
+    <!-- Glass curtain wall (right) -->
+    ${glassCols}
+
+    <!-- Brand accent stripe (left wall) -->
+    <rect x="${Math.round(w * 0.04)}" y="${ceilH}" width="${accentW}" height="${floorY - ceilH}" fill="#2563eb" opacity="0.2" />
+    <rect x="${Math.round(w * 0.04) + accentW + 3}" y="${ceilH}" width="${accentW}" height="${floorY - ceilH}" fill="#1e40af" opacity="0.1" />
+
+    <!-- Recessed LED ceiling panels + light cones -->
+    ${ceilingPanels}
+
+    <!-- Central floor highlight (where car sits) -->
+    ${radialGradient("carSpot", "50%", "72%", "25%", [
+      { offset: "0%", color: "#ffffff", opacity: 0.1 },
+      { offset: "50%", color: "#ffffff", opacity: 0.03 },
+      { offset: "100%", color: "#ffffff", opacity: 0 },
+    ])}
+    ${rect(w, h, "url(#carSpot)")}
+
+    <!-- Overall ambient warmth -->
+    <rect width="${w}" height="${h}" fill="#f5e8d0" opacity="0.025" />
+
+    <!-- Subtle noise for floor texture realism -->
+    ${noiseFilter("pdNoise", 0.8, 0.02)}
+
+    <!-- Professional vignette -->
+    ${vignette(w, h, 0.15)}
+  </svg>`);
+
+  return sharp(svg).png({ quality: 95 }).toBuffer();
+}
+
+/* ------------------------------------------------------------------ */
 /*  System background definitions                                      */
 /* ------------------------------------------------------------------ */
 
 export const SYSTEM_BACKGROUNDS: SystemBackgroundDef[] = [
+  {
+    id: "system_dealership",
+    name: "Modern Dealership",
+    description: "Premium dealership interior with polished epoxy floor, recessed LED panels, glass curtain walls, and perspective depth. The flagship background.",
+    category: "studio",
+    tags: ["dealership", "showroom", "premium", "modern", "flagship", "popular"],
+    generate: generatePremiumDealership,
+  },
   {
     id: "system_white_studio",
     name: "White Studio",

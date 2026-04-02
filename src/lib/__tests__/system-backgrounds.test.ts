@@ -17,8 +17,8 @@ import {
 
 describe("System Backgrounds", () => {
   describe("Definitions", () => {
-    test("has exactly 6 system backgrounds", () => {
-      expect(SYSTEM_BACKGROUNDS).toHaveLength(6);
+    test("has exactly 7 system backgrounds", () => {
+      expect(SYSTEM_BACKGROUNDS).toHaveLength(7);
     });
 
     test("each background has required fields", () => {
@@ -49,9 +49,10 @@ describe("System Backgrounds", () => {
   });
 
   describe("getSystemBackgroundIds", () => {
-    test("returns all 6 IDs", () => {
+    test("returns all 7 IDs", () => {
       const ids = getSystemBackgroundIds();
-      expect(ids).toHaveLength(6);
+      expect(ids).toHaveLength(7);
+      expect(ids).toContain("system_dealership");
       expect(ids).toContain("system_white_studio");
       expect(ids).toContain("system_dark_studio");
       expect(ids).toContain("system_showroom");
@@ -64,7 +65,7 @@ describe("System Backgrounds", () => {
   describe("getSystemBackgroundMeta", () => {
     test("returns metadata without generate function", () => {
       const meta = getSystemBackgroundMeta();
-      expect(meta).toHaveLength(6);
+      expect(meta).toHaveLength(7);
       for (const m of meta) {
         expect(m.id).toBeTruthy();
         expect(m.name).toBeTruthy();
@@ -75,6 +76,7 @@ describe("System Backgrounds", () => {
 
   describe("Individual generation", () => {
     test.each([
+      "system_dealership",
       "system_white_studio",
       "system_dark_studio",
       "system_showroom",
@@ -120,9 +122,9 @@ describe("System Backgrounds", () => {
   });
 
   describe("Batch generation", () => {
-    test("generates all 6 backgrounds", async () => {
+    test("generates all 7 backgrounds", async () => {
       const all = await generateAllSystemBackgrounds(320, 180);
-      expect(all).toHaveLength(6);
+      expect(all).toHaveLength(7);
 
       for (const bg of all) {
         expect(bg.buffer).toBeInstanceOf(Buffer);
