@@ -1,11 +1,10 @@
 name: SDET Coverage Gate
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "wolfpack-auto/src/app/api/**/route.ts"
+  # pull_request disabled until May 1 (Actions minutes budget)
+  # pull_request:
+  #   branches: [main]
+  #   paths: ["wolfpack-auto/src/app/api/**/route.ts"]
   workflow_dispatch:
     inputs:
       base_url:

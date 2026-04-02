@@ -1,15 +1,12 @@
 name: Migration Safety
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "wolfpack-auto/src/db/migrations/*.sql"
-  pull_request:
-    paths:
-      - "wolfpack-auto/src/db/migrations/*.sql"
-  # Also run on every push to main to catch regressions even without SQL changes
+  # push/pull_request disabled until May 1 (Actions minutes budget)
+  # push:
+  #   branches: [main]
+  #   paths: ["wolfpack-auto/src/db/migrations/*.sql"]
+  # pull_request:
+  #   paths: ["wolfpack-auto/src/db/migrations/*.sql"]
   workflow_dispatch:
 
 env:

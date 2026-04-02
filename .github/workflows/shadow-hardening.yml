@@ -1,9 +1,9 @@
 name: Shadow Hardening Gate
 
 on:
-  pull_request:
-    paths:
-      - "wolfpack-auto/**"
+  # pull_request disabled until May 1 (Actions minutes budget)
+  # pull_request:
+  #   paths: ["wolfpack-auto/**"]
   workflow_dispatch:
 
 env:

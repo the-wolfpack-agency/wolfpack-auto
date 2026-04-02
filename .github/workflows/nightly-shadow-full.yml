@@ -1,8 +1,9 @@
 name: Nightly Shadow Full Cycle
 
 on:
-  schedule:
-    - cron: "0 3 * * *"  # 3am UTC every night
+  # schedule disabled until May 1 (Actions minutes budget)
+  # schedule:
+  #   - cron: "0 3 * * *"  # 3am UTC every night
   workflow_dispatch:
     inputs:
       skip_branch:

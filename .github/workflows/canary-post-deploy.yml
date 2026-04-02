@@ -16,7 +16,10 @@
 name: "Canary: Post-Deploy Verification"
 
 on:
-  deployment_status:
+  # deployment_status/schedule disabled until May 1 (Actions minutes budget)
+  # deployment_status:
+  # schedule:
+  #   - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       url:
@@ -28,8 +31,6 @@ on:
         required: false
         type: boolean
         default: false
-  schedule:
-    - cron: "0 6 * * *" # Daily at 6 AM UTC
 
 concurrency:
   group: canary-${{ github.ref }}

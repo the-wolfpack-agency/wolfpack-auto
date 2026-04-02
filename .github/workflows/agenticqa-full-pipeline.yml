@@ -1,12 +1,13 @@
 name: AgenticQA Full Pipeline
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: '0 3 * * *'
+  # push/pull_request/schedule disabled until May 1 (Actions minutes budget)
+  # push:
+  #   branches: [main]
+  # pull_request:
+  #   branches: [main]
+  # schedule:
+  #   - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
       reason:
