@@ -309,6 +309,63 @@ export type MarketingTemplateEvent =
   | "template.used_in_campaign"
   | "template.performance_viewed";
 
+export type DeskingEvent =
+  | "desking.deal_created"
+  | "desking.deal_structured"
+  | "desking.deal_presented"
+  | "desking.deal_negotiated"
+  | "desking.deal_approved"
+  | "desking.deal_signed"
+  | "desking.deal_funded"
+  | "desking.deal_unwound"
+  | "desking.scenario_generated"
+  | "desking.lender_matched"
+  | "desking.lender_submitted"
+  | "desking.lender_response"
+  | "desking.fi_product_presented"
+  | "desking.fi_product_accepted"
+  | "desking.fi_product_declined"
+  | "desking.profit_analyzed";
+
+export type GLEvent =
+  | "gl.journal_posted"
+  | "gl.journal_voided"
+  | "gl.journal_reversed"
+  | "gl.period_opened"
+  | "gl.period_closed"
+  | "gl.trial_balance_generated"
+  | "gl.pnl_generated"
+  | "gl.balance_sheet_generated"
+  | "gl.deal_auto_posted"
+  | "gl.service_auto_posted"
+  | "gl.account_created"
+  | "gl.account_updated";
+
+export type PaymentEvent =
+  | "payment.created"
+  | "payment.succeeded"
+  | "payment.failed"
+  | "payment.refunded"
+  | "payment.partially_refunded"
+  | "payment.terminal_used"
+  | "payment.reconciled"
+  | "payment.discrepancy_found"
+  | "payment.account_onboarded"
+  | "payment.account_restricted";
+
+export type PayrollEvent =
+  | "payroll.employee_synced"
+  | "payroll.time_entry_created"
+  | "payroll.time_entry_approved"
+  | "payroll.commission_calculated"
+  | "payroll.commission_approved"
+  | "payroll.commission_paid"
+  | "payroll.period_summarized"
+  | "payroll.sync_completed"
+  | "payroll.sync_failed"
+  | "payroll.provider_connected"
+  | "payroll.provider_disconnected";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -327,6 +384,10 @@ export type PlatformEvent =
   | SystemEvent
   | SearchIntentEvent
   | ScrollBehaviorEvent
+  | DeskingEvent
+  | GLEvent
+  | PaymentEvent
+  | PayrollEvent
   | PhotoEngagementEvent
   | ExitDetectionEvent
   | WebhookEvent
@@ -647,4 +708,48 @@ export function trackTemplate(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "marketing_templates", ...meta });
+}
+
+/**
+ * Track an F&I desking event (deal structuring, scenarios, lender matching, product menus).
+ */
+export function trackDesking(
+  event: DeskingEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "desking", ...meta });
+}
+
+/**
+ * Track a general ledger event (journal entries, period close, financial statements).
+ */
+export function trackGL(
+  event: GLEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "general_ledger", ...meta });
+}
+
+/**
+ * Track a payment processing event (Stripe payments, refunds, terminals, reconciliation).
+ */
+export function trackPayment(
+  event: PaymentEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "payments", ...meta });
+}
+
+/**
+ * Track a payroll integration event (employee sync, time entries, commissions).
+ */
+export function trackPayroll(
+  event: PayrollEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "payroll", ...meta });
 }
