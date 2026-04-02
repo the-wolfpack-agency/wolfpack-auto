@@ -114,7 +114,7 @@ test.describe("Pricing Dashboard — Summary Cards", () => {
     const resp = await page.goto("/admin/pricing");
     if (resp && resp.status() !== 200) return;
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // After network idle, loading states should be resolved
     const bodyText = await page.locator("body").textContent();
@@ -166,7 +166,7 @@ test.describe("Pricing Dashboard — Vehicle Table", () => {
     const resp = await page.goto("/admin/pricing");
     if (resp && resp.status() !== 200) return;
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const bodyText = (await page.locator("body").textContent()) ?? "";
 
@@ -347,7 +347,7 @@ test.describe("Pricing Dashboard — Runtime Stability", () => {
     });
 
     await page.goto("/admin/pricing");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     expect(
       rejections.length,

@@ -37,14 +37,14 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("stat cards show Total Documents, Unsigned, Deals with Docs, Missing Signatures", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     for (const label of ["Total Documents", "Unsigned", "Deals with Docs", "Missing Signatures"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
   });
 
   test("documents table renders with Document, Type, Signed, Actions columns", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const table = page.locator("table");
     if ((await table.count()) > 0) {
       await expect(page.locator("th:has-text('Document')")).toBeVisible();
@@ -55,7 +55,7 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("filter by document type — select Purchase Agreement", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // The type filter is the first select on the page
     const typeFilter = page.locator("select").first();
     await typeFilter.selectOption({ value: "purchase_agreement" });
@@ -70,7 +70,7 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("filter by document type — reset to All Types", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const typeFilter = page.locator("select").first();
     await typeFilter.selectOption({ value: "purchase_agreement" });
     await page.waitForLoadState("domcontentloaded");
@@ -85,7 +85,7 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("filter by Deal ID text input", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const dealFilter = page.locator('input[placeholder="Filter by Deal ID"]');
     await dealFilter.fill("deal-001");
     await page.waitForLoadState("domcontentloaded");
@@ -118,7 +118,7 @@ test.describe("Document Vault — browser flows", () => {
     await page.fill('textarea[placeholder="Additional notes about this document"]', "E2E test document upload");
 
     await page.click("button[type='submit']:has-text('Upload Document')");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Form should close on success, or show error
     const formStillOpen = await page.locator("h2:has-text('Upload Document')").isVisible();
@@ -129,7 +129,7 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("sign button appears on unsigned documents", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const signBtn = page.locator("button:has-text('Sign')").first();
     const unsignedText = page.locator("text=Unsigned").first();
     // Either we have unsigned docs with sign buttons, or all are signed
@@ -140,7 +140,7 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("clicking Sign marks document as signed — checkmark appears", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const signBtn = page.locator("button:has-text('Sign')").first();
     if (await signBtn.isVisible()) {
       // Find the row before clicking
@@ -152,13 +152,13 @@ test.describe("Document Vault — browser flows", () => {
   });
 
   test("delete button removes document from the table", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const rows = page.locator("tbody tr");
     const initialCount = await rows.count();
     if (initialCount > 0) {
       const deleteBtn = page.locator("button:has-text('Delete')").first();
       await deleteBtn.click();
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
       const newCount = await rows.count();
       expect(newCount).toBeLessThanOrEqual(initialCount);
     }

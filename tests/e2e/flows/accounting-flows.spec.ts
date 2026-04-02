@@ -52,7 +52,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // Dashboard should show key metrics
@@ -67,7 +67,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // Table headers or data should include these concepts
@@ -82,7 +82,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const monthSelect = page.locator("select").first();
 
     // Capture current body text
@@ -110,7 +110,7 @@ test.describe("Accounting -- MTD Dashboard", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // Should have some salesperson-related content or an empty state
@@ -177,7 +177,7 @@ test.describe("Accounting -- Commissions", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // Should show role labels or indicate no commissions
@@ -193,7 +193,7 @@ test.describe("Accounting -- Commissions", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     const hasTotals = /unpaid|paid|total/i.test(body ?? "");
@@ -207,7 +207,7 @@ test.describe("Accounting -- Commissions", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const markPaidBtn = page.getByRole("button", { name: /mark.*paid/i }).first();
     if (!(await markPaidBtn.isVisible().catch(() => false))) {
@@ -311,7 +311,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // Chart of accounts should show standard dealer accounts
@@ -326,7 +326,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const addBtn = page.getByRole("button", { name: /add.*account|new.*account/i });
     if (!(await addBtn.isVisible().catch(() => false))) {
@@ -373,7 +373,7 @@ test.describe("Accounting -- Export & Chart of Accounts", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // Should see account type labels

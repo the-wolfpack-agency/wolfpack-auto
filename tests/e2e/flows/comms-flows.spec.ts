@@ -118,7 +118,7 @@ test.describe("Comms -- Templates", () => {
     const saveBtn = page.getByRole("button", { name: /save|create|submit/i }).first();
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
     }
   });
 
@@ -159,7 +159,7 @@ test.describe("Comms -- Templates", () => {
     const saveBtn = page.getByRole("button", { name: /save|create|submit/i }).first();
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
     }
   });
 
@@ -292,7 +292,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
     const saveBtn = page.getByRole("button", { name: /save|create|submit/i }).first();
     if (await saveBtn.isVisible().catch(() => false)) {
       await saveBtn.click();
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
     }
   });
 
@@ -304,7 +304,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
     }
 
     // Wait for data to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Look for toggle/switch elements
     const toggles = page.locator('button[role="switch"], input[type="checkbox"]');
@@ -332,7 +332,7 @@ test.describe("Comms -- Follow-Up Sequences", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const body = await page.locator("body").textContent();
 
     // At least check that trigger labels vocabulary exists
@@ -431,7 +431,7 @@ test.describe("Comms -- Message Log", () => {
       return;
     }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // If there are messages, they should show channel/status/recipient

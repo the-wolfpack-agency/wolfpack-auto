@@ -165,6 +165,18 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+      - name: Start production server
+        run: |
+          npm run start &
+          # Wait for server to be ready (up to 30s)
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+              echo "Server ready after $((i * 2))s"
+              break
+            fi
+            sleep 2
+          done
+
       - name: Run Playwright E2E tests (shard ${{ matrix.shard }}/4)
         id: playwright
         run: |

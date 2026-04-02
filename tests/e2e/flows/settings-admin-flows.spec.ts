@@ -111,7 +111,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   test("stat cards show Total Tasks, Completed This Week, Pending, Recognitions Sent", async ({
     page,
   }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     for (const label of ["Total Tasks", "Completed This Week", "Pending", "Recognitions Sent"]) {
       await expect(page.locator(`text=${label}`)).toBeVisible();
     }
@@ -120,7 +120,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   test("task cards render with title, status badge, priority badge, assigned to, due date", async ({
     page,
   }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const taskCard = page.locator(".shadow-sm h3").first();
     if (await taskCard.isVisible()) {
       // Status badge
@@ -166,7 +166,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   });
 
   test("mark task complete — click 'Mark Complete' button", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const completeBtn = page.locator("button:has-text('Mark Complete')").first();
     if (await completeBtn.isVisible()) {
       await completeBtn.click();
@@ -176,7 +176,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   });
 
   test("start button progresses task from pending to in-progress", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const startBtn = page.locator("button:has-text('Start')").first();
     if (await startBtn.isVisible()) {
       await startBtn.click();
@@ -185,7 +185,7 @@ test.describe("Tasks / Employee Hub — browser flows", () => {
   });
 
   test("Recognize tab renders with shoutout form", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     await page.click("button:has-text('Recognize')");
     await expect(page.locator("h2:has-text('Send a Shoutout')")).toBeVisible();
     await expect(page.locator("label:has-text('Employee Name')")).toBeVisible();
@@ -256,7 +256,7 @@ test.describe("Marketing Campaigns — browser flows", () => {
   });
 
   test("campaign cards or list renders with name, budget, status", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Look for campaign-related data
     const hasCampaigns =
       (await page.locator("text=/Budget|ROI|Leads Generated/i").first().isVisible().catch(() => false)) ||

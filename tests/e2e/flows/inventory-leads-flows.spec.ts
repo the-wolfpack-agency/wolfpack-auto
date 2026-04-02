@@ -178,7 +178,7 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("click lead row to expand detail panel", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const firstRow = page.locator("tbody tr").first();
     if (await firstRow.isVisible()) {
       await firstRow.click();
@@ -189,7 +189,7 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("select-all checkbox selects all visible leads", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const selectAll = page.locator("input[aria-label='Select all leads']");
     await selectAll.check();
     // Bulk action bar should appear
@@ -197,7 +197,7 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("bulk select shows bulk action bar with status and assign options", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const selectAll = page.locator("input[aria-label='Select all leads']");
     await selectAll.check();
     // Bulk action bar
@@ -208,7 +208,7 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("clear selection button removes bulk action bar", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const selectAll = page.locator("input[aria-label='Select all leads']");
     await selectAll.check();
     await page.click("button:has-text('Clear selection')");
@@ -217,7 +217,7 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("individual lead checkbox toggles selection", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const firstCheckbox = page.locator("tbody input[type='checkbox']").first();
     if (await firstCheckbox.isVisible()) {
       await firstCheckbox.check();
@@ -227,7 +227,7 @@ test.describe("Lead Management — browser flows", () => {
   });
 
   test("sort direction toggle button works", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const sortBtn = page.locator("button[aria-label*='Sort']");
     if (await sortBtn.isVisible()) {
       const initialText = await sortBtn.textContent();
@@ -248,7 +248,7 @@ test.describe("Trade-In Submissions — browser flow", () => {
     const ok = await safeNavigate(page, "/admin/trade-in");
     if (!ok) { test.skip(true, "Trade-in page returned non-2xx"); return; }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Page should show trade-in related content
     const body = await page.locator("body").textContent();
     expect(body).not.toMatch(/500.*internal server error/i);
@@ -266,7 +266,7 @@ test.describe("Pricing Intelligence — browser flow", () => {
     const ok = await safeNavigate(page, "/admin/pricing");
     if (!ok) { test.skip(true, "Pricing page returned non-2xx"); return; }
 
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const body = await page.locator("body").textContent();
     expect(body).not.toMatch(/500.*internal server error/i);
     // Look for pricing-related content

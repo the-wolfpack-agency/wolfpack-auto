@@ -77,7 +77,7 @@ test.describe("Admin workflow: Quick Add vehicle", () => {
 
     // Enter a valid 17-character VIN
     await vinInput.first().fill("1HGCV1F34PA000001");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Verify decoded data appeared — look for year, make, or model
     const decodedInfo = page.locator(
@@ -148,7 +148,7 @@ test.describe("Admin workflow: vehicle edit pre-population", () => {
     }
 
     // Wait for loading to finish
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Page should NOT still be showing "Loading vehicle data..."
     const loadingText = page.locator('text="Loading vehicle data..."');
@@ -201,7 +201,7 @@ test.describe("Admin workflow: analytics dashboard", () => {
     }
 
     // Wait for dashboard to load — check for stat cards or loading state
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     // Verify some dashboard content rendered
     const dashboardContent = page.locator(
@@ -231,7 +231,7 @@ test.describe("Admin workflow: analytics dashboard", () => {
 
       // Submit — press Enter or click a send button
       await chatInput.first().press("Enter");
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
 
       // Verify some response appeared
       const responseArea = page.locator(

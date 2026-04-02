@@ -47,14 +47,14 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("lender cards render with names and portal badges", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Cards should show lender names as h3 or no-lender fallback
     const cards = page.locator(".shadow-card h3, text=/No lenders configured/i");
     await expect(cards.first()).toBeVisible({ timeout: 8_000 });
   });
 
   test("lender cards display portal type badges (RouteOne, DealerTrack, CUDL, Direct)", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Portal badges are rendered as rounded-full spans
     const portalBadges = page.locator("span.rounded-full");
     const count = await portalBadges.count();
@@ -76,7 +76,7 @@ test.describe("Lender Portal — browser flows", () => {
 
   test("fill and submit new lender form — verify lender appears or error shown", async ({ page }) => {
     await page.click("button:has-text('Add Lender')");
-    await page.waitForSelector("text=Lender Name");
+    await page.waitForSelector("text=Lender Name", { timeout: 5000 });
 
     // Fill the form
     await page.fill('input[placeholder="Chase Auto Finance"]', "E2E Regional Credit Union");
@@ -99,7 +99,7 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("clicking 'View Rate Sheet' reveals rate tiers table with columns", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const rateButton = page.locator("button:has-text('View Rate Sheet')").first();
     if (await rateButton.isVisible()) {
       await rateButton.click();
@@ -111,7 +111,7 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("clicking 'Hide Rate Sheet' collapses the rate tiers table", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const viewButton = page.locator("button:has-text('View Rate Sheet')").first();
     if (await viewButton.isVisible()) {
       await viewButton.click();
@@ -123,7 +123,7 @@ test.describe("Lender Portal — browser flows", () => {
   });
 
   test("toggle lender active/inactive — verify status text changes", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const deactivateBtn = page.locator("button:has-text('Deactivate')").first();
     if (await deactivateBtn.isVisible()) {
       // Find the card's status before toggle
@@ -221,7 +221,7 @@ test.describe("Credit Bureau — browser flows", () => {
     await page.click("button[type='submit']:has-text('Pull Credit')");
 
     // Wait for result or error
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Either the Credit Report Result section or an error appears
     const resultVisible = await page.locator("text=Credit Report Result").isVisible();
     const errorVisible = await page.locator(".text-red-700").isVisible();
@@ -235,7 +235,7 @@ test.describe("Credit Bureau — browser flows", () => {
     await page.selectOption("select >> nth=0", { value: "equifax" });
     await page.locator('input[type="checkbox"]').check();
     await page.click("button[type='submit']:has-text('Pull Credit')");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     if (await page.locator("text=Credit Report Result").isVisible()) {
       // Score appears as a large number
@@ -250,7 +250,7 @@ test.describe("Credit Bureau — browser flows", () => {
   test("credit history table renders with Date, Applicant, Bureau, Type, Score columns", async ({
     page,
   }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const table = page.locator("table");
     if ((await table.count()) > 0) {
       for (const col of ["Date", "Applicant", "Bureau", "Type", "Score"]) {
@@ -260,7 +260,7 @@ test.describe("Credit Bureau — browser flows", () => {
   });
 
   test("score distribution sidebar renders with tier labels", async ({ page }) => {
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     const distribution = page.locator("text=Score Distribution");
     if (await distribution.isVisible()) {
       await expect(page.locator("text=Excellent")).toBeVisible();

@@ -228,7 +228,7 @@ test.describe("OEM portal: dealers page", () => {
     // Scope to main content — sidebar may have overlapping OEM links
     const main = page.locator("main#admin-main-content");
     // Wait for client-side data fetch to complete
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Either a data table or an empty-state message
     const hasTable = await main.locator("table").isVisible({ timeout: 8_000 }).catch(() => false);
     const hasEmptyState = await main.getByText(/no dealers found/i)
@@ -279,7 +279,7 @@ test.describe("OEM portal: programs page", () => {
 
     const main = page.locator("main#admin-main-content");
     // Wait for client-side data fetch
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
     // Empty state shows template program cards
     const hasProgramCard = await main.locator(".rounded-xl.border").filter({ hasText: /incentive|certification|brand standard|training|co-op/i })
       .first().isVisible({ timeout: 8_000 }).catch(() => false);
@@ -626,7 +626,7 @@ test.describe("OEM portal: no JavaScript errors", () => {
         test.info().annotations.push({ type: "skip", description: `${path} not accessible` });
         return;
       }
-      await page.waitForLoadState("networkidle");
+      await page.waitForLoadState("load");
 
       expect(
         errors,

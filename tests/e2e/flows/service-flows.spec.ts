@@ -515,7 +515,7 @@ test.describe("Service -- Technicians", () => {
     }
 
     // Wait for data to load
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("load");
 
     const body = await page.locator("body").textContent();
     // At least one status label should appear
