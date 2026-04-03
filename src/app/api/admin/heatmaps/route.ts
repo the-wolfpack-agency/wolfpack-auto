@@ -197,17 +197,25 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // No real data yet — return demo data so the page is always useful
-  const demoByType: Record<string, typeof DEMO_CLICK_DATA> = {
-    click: DEMO_CLICK_DATA,
-  };
-  const fallback = demoByType[type] ?? DEMO_CLICK_DATA;
+  // No real data yet — return full demo data so the page demonstrates the feature
   return NextResponse.json({
     type,
     pageUrl: page,
-    totalEvents: fallback.reduce((s, p) => s + p.count, 0),
+    totalEvents: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
     dateRange: { start: since, end: new Date().toISOString() },
-    points: fallback,
+    points: DEMO_CLICK_DATA,
+    stats: {
+      totalClicks: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
+      avgScrollDepth: 62,
+      hottestElement: "Hero CTA Button",
+    },
+    topPages: [
+      { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
+      { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
+      { url: "/inventory/2024-ford-f150", pageviews: 3210, uniqueVisitors: 2890 },
+      { url: "/financing", pageviews: 2780, uniqueVisitors: 2100 },
+      { url: "/trade-in", pageviews: 1950, uniqueVisitors: 1620 },
+    ],
     demo: true,
   });
 }
