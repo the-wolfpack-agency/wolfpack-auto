@@ -200,25 +200,35 @@ export async function GET(request: NextRequest) {
     // Fall through to demo data below
   }
 
-  // No real data yet — return full demo data so the page demonstrates the feature
+  // No real data yet — return demo data for the requested type
+  const demoTopPages = [
+    { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
+    { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
+    { url: "/inventory/2024-ford-f150", pageviews: 3210, uniqueVisitors: 2890 },
+    { url: "/financing", pageviews: 2780, uniqueVisitors: 2100 },
+    { url: "/trade-in", pageviews: 1950, uniqueVisitors: 1620 },
+  ];
+  const demoStats = { totalClicks: 2832, avgScrollDepth: 62, hottestElement: "Hero CTA Button" };
+  const demoRange = { start: since, end: new Date().toISOString() };
+
+  if (type === "scroll") {
+    return NextResponse.json({
+      type, pageUrl: page, totalEvents: DEMO_SCROLL_DATA.totalVisitors,
+      dateRange: demoRange, scrollBands: DEMO_SCROLL_DATA.scrollBands,
+      stats: demoStats, topPages: demoTopPages, demo: true,
+    });
+  }
+  if (type === "attention") {
+    return NextResponse.json({
+      type, pageUrl: page, totalEvents: 8320,
+      dateRange: demoRange, attentionZones: DEMO_ATTENTION_DATA.attentionZones,
+      stats: demoStats, topPages: demoTopPages, demo: true,
+    });
+  }
   return NextResponse.json({
-    type,
-    pageUrl: page,
+    type, pageUrl: page,
     totalEvents: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
-    dateRange: { start: since, end: new Date().toISOString() },
-    points: DEMO_CLICK_DATA,
-    stats: {
-      totalClicks: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
-      avgScrollDepth: 62,
-      hottestElement: "Hero CTA Button",
-    },
-    topPages: [
-      { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
-      { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
-      { url: "/inventory/2024-ford-f150", pageviews: 3210, uniqueVisitors: 2890 },
-      { url: "/financing", pageviews: 2780, uniqueVisitors: 2100 },
-      { url: "/trade-in", pageviews: 1950, uniqueVisitors: 1620 },
-    ],
-    demo: true,
+    dateRange: demoRange, points: DEMO_CLICK_DATA,
+    stats: demoStats, topPages: demoTopPages, demo: true,
   });
 }
