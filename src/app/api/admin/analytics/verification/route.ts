@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * Analytics Verification API
@@ -210,7 +210,7 @@ async function checkStoreConnectivity() {
 
 let latestResult: VerificationResult | null = null;
 
-export function getLatestVerification(): VerificationResult | null {
+function getLatestVerification(): VerificationResult | null {
   return latestResult;
 }
 
@@ -242,8 +242,8 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const auth = await requireAuth(request);
-  if (auth) return auth;
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const result = await runVerification();
   latestResult = result;
@@ -274,8 +274,8 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const auth = await requireAuth(request);
-  if (auth) return auth;
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   // Return latest cached result + module manifest
   return NextResponse.json({

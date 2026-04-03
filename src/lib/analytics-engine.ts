@@ -2349,7 +2349,9 @@ MERGE (s)-[:VIEWED]->(v)`,
 export async function runAggregationPipeline(): Promise<{
   insights_generated: number;
   insights_stored: number;
-  graph_queries: string[];
+  graph_queries: Array<{ statement: string; parameters: Record<string, unknown> }>;
+  graph_executed: number;
+  graph_failed: number;
   sessions_analyzed: number;
 }> {
   const buffer = getBuffer();

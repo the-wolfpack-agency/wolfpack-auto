@@ -16,7 +16,7 @@
 import {
   getDataflowWarnings,
   getPgWriteStats,
-} from "@/app/api/analytics/events/route";
+} from "@/lib/dataflow-health";
 import { getNeo4jConfigStatus } from "@/lib/neo4j-client";
 import {
   ingestEvents,

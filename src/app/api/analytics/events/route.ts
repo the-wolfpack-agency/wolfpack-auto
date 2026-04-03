@@ -5,33 +5,11 @@ import {
   getBufferStats,
   type AnalyticsEvent,
 } from "@/lib/analytics-engine";
-
-/* ------------------------------------------------------------------ */
-/*  Dataflow integrity checks                                          */
-/* ------------------------------------------------------------------ */
-
-/**
- * Returns a list of dataflow warnings for the current process.
- * Used by the health endpoint and logged on every event batch.
- */
-export function getDataflowWarnings(): string[] {
-  const warnings: string[] = [];
-  if (!process.env.DATABASE_URL) {
-    warnings.push("DATABASE_URL not set — events will NOT be persisted to PostgreSQL. DATA LOSS RISK.");
-  }
-  if (!process.env.QDRANT_URL) {
-    warnings.push("QDRANT_URL not set — insights will NOT be stored in vector DB.");
-  }
-  if (process.env.NEO4J_URL === "") {
-    warnings.push("NEO4J_URL is empty — journey graph writes are explicitly disabled.");
-  } else if (!process.env.NEO4J_URL) {
-    warnings.push("NEO4J_URL not set — journey graphs will NOT be written. DATA LOSS RISK.");
-  }
-  if (!process.env.NEO4J_PASSWORD) {
-    warnings.push("NEO4J_PASSWORD not set — using insecure default credentials.");
-  }
-  return warnings;
-}
+import {
+  getDataflowWarnings,
+  getPgWriteStats,
+  recordPgWrite,
+} from "@/lib/dataflow-health";
 
 /** Log dataflow warnings once per process lifecycle. */
 let dataflowWarningsLogged = false;
@@ -52,13 +30,6 @@ function logDataflowWarnings(): void {
 /* ------------------------------------------------------------------ */
 
 let pgMigrationDone = false;
-
-/** Track persistence stats for health reporting. */
-let pgWriteStats = { attempted: 0, succeeded: 0, failed: 0, lastError: "" };
-
-export function getPgWriteStats() {
-  return { ...pgWriteStats };
-}
 
 async function ensureEventsTable(): Promise<void> {
   if (pgMigrationDone) return;
@@ -99,11 +70,8 @@ async function ensureEventsTable(): Promise<void> {
 async function persistEventsToPg(
   events: AnalyticsEvent[],
 ): Promise<{ persisted: boolean; warning?: string }> {
-  pgWriteStats.attempted += events.length;
-
   if (!process.env.DATABASE_URL) {
-    pgWriteStats.failed += events.length;
-    pgWriteStats.lastError = "DATABASE_URL not set";
+    recordPgWrite(events.length, false, "DATABASE_URL not set");
     return {
       persisted: false,
       warning: "DATABASE_URL not set — events NOT persisted. DATA LOSS.",
@@ -142,12 +110,11 @@ async function persistEventsToPg(
       values,
     );
 
-    pgWriteStats.succeeded += events.length;
+    recordPgWrite(events.length, true);
     return { persisted: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    pgWriteStats.failed += events.length;
-    pgWriteStats.lastError = msg;
+    recordPgWrite(events.length, false, msg);
     console.error("[analytics-events] PG write failed:", msg);
     return { persisted: false, warning: `PG write failed: ${msg}` };
   }

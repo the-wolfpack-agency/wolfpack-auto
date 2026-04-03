@@ -4,6 +4,8 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,
+  // Exclude native binary packages from webpack bundling — they run server-side only
+  serverExternalPackages: ["@imgly/background-removal-node", "sharp", "onnxruntime-node"],
   // ESLint 8 + eslint-config-next 15 are incompatible (removed options).
   // TypeScript already enforces correctness; skip lint + TS during builds.
   eslint: {

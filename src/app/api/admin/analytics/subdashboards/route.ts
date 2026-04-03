@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * Sub-Dashboard Aggregation API
@@ -221,8 +221,8 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const auth = await requireAuth(request);
-  if (auth) return auth;
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   // Build base URL from request
   const proto = request.headers.get("x-forwarded-proto") ?? "http";
