@@ -100,6 +100,11 @@ const LOCAL_COST_CENTS = 0;
  * Remove background using the local U2-Net ONNX model.
  * No API keys, no network calls, no per-image cost.
  * Model files are downloaded once on first use (~40MB) and cached.
+ *
+ * Requires @imgly/background-removal-node to be installed.
+ * On Vercel (250MB function limit), this package is too large —
+ * the provider chain gracefully falls back to fal.ai/Replicate.
+ * For self-hosted deployments, install it: npm i @imgly/background-removal-node
  */
 async function removeViaLocal(
   sourceUrl: string,
@@ -107,10 +112,17 @@ async function removeViaLocal(
 ): Promise<RemovalResult> {
   const startMs = Date.now();
 
-  // Lazy import to avoid loading the model on every module import
-  const { removeBackground: localRemove } = await import(
-    "@imgly/background-removal-node"
-  );
+  // Lazy import — gracefully fails on Vercel where the package is excluded
+  let localRemove: (blob: Blob, opts: Record<string, unknown>) => Promise<Blob>;
+  try {
+    const mod = await import("@imgly/background-removal-node");
+    localRemove = mod.removeBackground;
+  } catch {
+    throw new Error(
+      "[background-removal] @imgly/background-removal-node not installed. " +
+        "Install it for zero-cost local removal: npm i @imgly/background-removal-node",
+    );
+  }
   const sharp = (await import("sharp")).default;
 
   // Prepare input: buffer takes priority over URL
@@ -437,7 +449,11 @@ async function removeViaRemoveBg(
 export async function removeBackground(
   request: RemovalRequest,
 ): Promise<RemovalResult> {
-  const provider = request.provider ?? "local";
+  // Default to local if available, otherwise fal → replicate
+  // On Vercel, local is unavailable (250MB function limit), so fal is preferred
+  const provider = request.provider ?? (
+    process.env.VERCEL ? (process.env.FAL_KEY ? "fal" : "replicate") : "local"
+  );
   const model = request.model ?? REPLICATE_DEFAULT_MODEL;
 
   // If we have a buffer but no URL, we need to upload it first or base64-encode
@@ -511,8 +527,10 @@ export function getProviderHealth(): ProviderHealth[] {
   return [
     {
       provider: "local",
-      available: true, // Always available — no API key needed
-      reason: undefined,
+      available: !process.env.VERCEL, // Available on self-hosted (not Vercel — 250MB limit)
+      reason: process.env.VERCEL
+        ? "Unavailable on Vercel (250MB function limit). Use self-hosted for zero-cost local removal."
+        : undefined,
     },
     {
       provider: "fal",
