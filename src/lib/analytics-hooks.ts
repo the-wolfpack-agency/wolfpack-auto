@@ -298,7 +298,9 @@ export type BackgroundEvent =
   | "background.preview_generated"
   | "background.assignment_created"
   | "background.assignment_removed"
-  | "background.performance_snapshot";
+  | "background.performance_snapshot"
+  | "background.local_removal_used"
+  | "background.local_removal_fallback";
 
 export type MarketingTemplateEvent =
   | "template.viewed"

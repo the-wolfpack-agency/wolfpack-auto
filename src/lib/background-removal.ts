@@ -1,16 +1,19 @@
 /**
- * AI Background Removal Service
+ * Background Removal Service
  *
- * Abstracts AI-powered background removal behind a provider interface.
- * Currently supports:
- *  - Replicate (rembg model) — primary, cheap ($0.0023/run), fast (~3s)
- *  - remove.bg API — fallback, higher quality for edge cases
+ * Abstracts background removal behind a provider interface.
+ * Provider priority:
+ *  1. Local (U2-Net via @imgly/background-removal-node) — $0.00/run, no API key
+ *  2. fal.ai (birefnet) — $0.01/run, fast (~3s)
+ *  3. Replicate (rembg) — $0.0023/run, ~3-10s
+ *  4. remove.bg — $0.10/run, highest quality fallback
  *
  * The service:
  *  1. Accepts a vehicle photo (URL or buffer)
- *  2. Sends it to the AI provider for background removal
- *  3. Returns a transparent PNG buffer of the vehicle cutout
- *  4. Tracks cost, latency, and quality metrics for the learning system
+ *  2. Runs local U2-Net model first (zero cost, zero network)
+ *  3. Falls back to external APIs if local fails
+ *  4. Returns a transparent PNG buffer of the vehicle cutout
+ *  5. Tracks provider, cost, latency, and quality metrics for the learning system
  *
  * Usage:
  *   import { removeBackground } from "@/lib/background-removal";
@@ -22,7 +25,7 @@
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export type AIProvider = "fal" | "replicate" | "remove_bg";
+export type AIProvider = "local" | "fal" | "replicate" | "remove_bg";
 
 export interface RemovalRequest {
   /** URL of the source vehicle photo */
@@ -85,6 +88,75 @@ const PROCESSING_TIMEOUT_MS = 30_000;
 
 /** Maximum source image size (15 MB) */
 const MAX_SOURCE_SIZE = 15 * 1024 * 1024;
+
+/* ------------------------------------------------------------------ */
+/*  Provider: Local (U2-Net via @imgly/background-removal-node)        */
+/* ------------------------------------------------------------------ */
+
+/** Cost per local removal in cents ($0.00 — runs entirely on CPU) */
+const LOCAL_COST_CENTS = 0;
+
+/**
+ * Remove background using the local U2-Net ONNX model.
+ * No API keys, no network calls, no per-image cost.
+ * Model files are downloaded once on first use (~40MB) and cached.
+ */
+async function removeViaLocal(
+  sourceUrl: string,
+  sourceBuffer?: Buffer,
+): Promise<RemovalResult> {
+  const startMs = Date.now();
+
+  // Lazy import to avoid loading the model on every module import
+  const { removeBackground: localRemove } = await import(
+    "@imgly/background-removal-node"
+  );
+  const sharp = (await import("sharp")).default;
+
+  // Prepare input: buffer takes priority over URL
+  let inputBlob: Blob;
+  if (sourceBuffer) {
+    inputBlob = new Blob([new Uint8Array(sourceBuffer)], { type: "image/png" });
+  } else {
+    // Fetch the image and convert to blob
+    const res = await fetch(sourceUrl, {
+      signal: AbortSignal.timeout(PROCESSING_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      throw new Error(
+        `[background-removal] Failed to fetch source image: ${res.status}`,
+      );
+    }
+    const arrayBuf = await res.arrayBuffer();
+    inputBlob = new Blob([new Uint8Array(arrayBuf)], {
+      type: res.headers.get("content-type") ?? "image/jpeg",
+    });
+  }
+
+  // Run the local U2-Net model
+  const resultBlob = await localRemove(inputBlob, {
+    output: { format: "image/png", quality: 1.0 },
+  });
+
+  // Convert blob to buffer
+  const cutoutBuffer = Buffer.from(await resultBlob.arrayBuffer());
+  const processingMs = Date.now() - startMs;
+
+  // Get dimensions
+  const metadata = await sharp(cutoutBuffer).metadata();
+
+  return {
+    cutout_buffer: cutoutBuffer,
+    width: metadata.width ?? 0,
+    height: metadata.height ?? 0,
+    size: cutoutBuffer.length,
+    provider: "local",
+    model: "u2net/imgly-onnx",
+    prediction_id: null,
+    processing_ms: processingMs,
+    cost_cents: LOCAL_COST_CENTS,
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /*  Provider: fal.ai                                                   */
@@ -365,7 +437,7 @@ async function removeViaRemoveBg(
 export async function removeBackground(
   request: RemovalRequest,
 ): Promise<RemovalResult> {
-  const provider = request.provider ?? (process.env.FAL_KEY ? "fal" : "replicate");
+  const provider = request.provider ?? "local";
   const model = request.model ?? REPLICATE_DEFAULT_MODEL;
 
   // If we have a buffer but no URL, we need to upload it first or base64-encode
@@ -391,6 +463,12 @@ export async function removeBackground(
 
   const addProvider = (name: AIProvider) => {
     switch (name) {
+      case "local":
+        providerFns.push({
+          name: "local",
+          fn: () => removeViaLocal(sourceUrl!, request.source_buffer),
+        });
+        break;
       case "fal":
         providerFns.push({ name: "fal", fn: () => removeViaFal(sourceUrl!) });
         break;
@@ -405,8 +483,8 @@ export async function removeBackground(
 
   // Preferred provider first
   addProvider(provider);
-  // Then fallbacks in priority order
-  for (const fallback of (["fal", "replicate", "remove_bg"] as AIProvider[])) {
+  // Then fallbacks in priority order: local → fal → replicate → remove_bg
+  for (const fallback of (["local", "fal", "replicate", "remove_bg"] as AIProvider[])) {
     if (fallback !== provider) addProvider(fallback);
   }
 
@@ -431,6 +509,11 @@ export async function removeBackground(
  */
 export function getProviderHealth(): ProviderHealth[] {
   return [
+    {
+      provider: "local",
+      available: true, // Always available — no API key needed
+      reason: undefined,
+    },
     {
       provider: "fal",
       available: !!process.env.FAL_KEY,
