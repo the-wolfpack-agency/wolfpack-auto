@@ -95,6 +95,27 @@ export default function HeatmapsPage() {
     fetchData();
   }, [fetchData]);
 
+  // Comparison mode state
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareDays, setCompareDays] = useState(14);
+  const [comparePoints, setComparePoints] = useState<HeatmapPoint[]>([]);
+  const [diffPoints, setDiffPoints] = useState<{ increased: HeatmapPoint[]; decreased: HeatmapPoint[]; netChangePercent: number } | null>(null);
+
+  const fetchCompareData = useCallback(() => {
+    if (!compareMode) return;
+    fetch(`/api/admin/heatmaps?page=${encodeURIComponent(page)}&type=click&days=${compareDays}&compare=true&compareDays=${days}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setComparePoints(data.points ?? []);
+        setDiffPoints(data.diff ?? null);
+      })
+      .catch(() => {});
+  }, [compareMode, page, days, compareDays]);
+
+  useEffect(() => {
+    fetchCompareData();
+  }, [fetchCompareData]);
+
   const tabs: { key: HeatmapType; label: string }[] = [
     { key: "click", label: "Clicks" },
     { key: "scroll", label: "Scroll Depth" },
@@ -180,21 +201,35 @@ export default function HeatmapsPage() {
           </div>
         </div>
 
-        {/* Type tabs */}
-        <div className="flex gap-1 mb-6 border-b border-gray-200">
-          {tabs.map((tab) => (
+        {/* Type tabs + Compare toggle */}
+        <div className="flex items-center justify-between mb-6 border-b border-gray-200">
+          <div className="flex gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setType(tab.key)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                  type === tab.key
+                    ? "border-gray-900 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {type === "click" && (
             <button
-              key={tab.key}
-              onClick={() => setType(tab.key)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
-                type === tab.key
-                  ? "border-gray-900 text-gray-900"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+              onClick={() => setCompareMode(!compareMode)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md border ${
+                compareMode
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               }`}
             >
-              {tab.label}
+              {compareMode ? "Exit Comparison" : "Compare Periods"}
             </button>
-          ))}
+          )}
         </div>
 
         {/* Content */}
@@ -258,6 +293,62 @@ export default function HeatmapsPage() {
                     ))}
                   </div>
                   <span>High</span>
+                </div>
+              </div>
+            )}
+
+            {/* Side-by-side comparison */}
+            {type === "click" && compareMode && (
+              <div className="border border-gray-200 rounded-lg p-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Side-by-Side Comparison</h3>
+                  {diffPoints && (
+                    <span className={`text-sm font-medium ${diffPoints.netChangePercent >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {diffPoints.netChangePercent >= 0 ? "+" : ""}{diffPoints.netChangePercent}% change
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Current ({days} days)</p>
+                    <div className="relative bg-gray-50 rounded-lg" style={{ height: 300 }}>
+                      {points.map((point, i) => (
+                        <div
+                          key={i}
+                          className="absolute rounded-full"
+                          style={{
+                            left: `${(point.x / 800) * 100}%`,
+                            top: `${(point.y / 1400) * 100}%`,
+                            width: Math.max(12, point.intensity * 40),
+                            height: Math.max(12, point.intensity * 40),
+                            backgroundColor: intensityColor(point.intensity),
+                            transform: "translate(-50%, -50%)",
+                            filter: `blur(${Math.max(3, point.intensity * 8)}px)`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Previous ({compareDays} days)</p>
+                    <div className="relative bg-gray-50 rounded-lg" style={{ height: 300 }}>
+                      {comparePoints.map((point, i) => (
+                        <div
+                          key={i}
+                          className="absolute rounded-full"
+                          style={{
+                            left: `${(point.x / 800) * 100}%`,
+                            top: `${(point.y / 1400) * 100}%`,
+                            width: Math.max(12, point.intensity * 40),
+                            height: Math.max(12, point.intensity * 40),
+                            backgroundColor: intensityColor(point.intensity),
+                            transform: "translate(-50%, -50%)",
+                            filter: `blur(${Math.max(3, point.intensity * 8)}px)`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

@@ -396,12 +396,38 @@ export type SessionReplayEvent =
   | "replay.viewed"
   | "replay.exported";
 
+export type LeadIngestionEvent =
+  | "lead_ingestion.batch_received"
+  | "lead_ingestion.lead_parsed"
+  | "lead_ingestion.duplicate_detected"
+  | "lead_ingestion.lead_created";
+
+export type SMSEvent =
+  | "sms.sent"
+  | "sms.received"
+  | "sms.delivery_failed"
+  | "sms.conversation_started";
+
+export type ERatingEvent =
+  | "erating.rates_requested"
+  | "erating.rates_received"
+  | "erating.product_selected"
+  | "erating.comparison_viewed";
+
+export type ErrorMonitorEvent =
+  | "error.captured"
+  | "error.correlated"
+  | "error.resolved"
+  | "error.trend_detected";
+
 export type SurveyEvent =
   | "survey.created"
   | "survey.published"
   | "survey.response_received"
   | "survey.completed"
-  | "survey.nps_calculated";
+  | "survey.nps_calculated"
+  | "survey.replay_linked"
+  | "survey.replay_viewed";
 
 export type UserTestEvent =
   | "usertest.created"
@@ -422,6 +448,33 @@ export type HouseholdEvent =
   | "household.profile_viewed"
   | "household.opportunity_identified"
   | "household.ltv_calculated";
+
+export type DataExportEvent =
+  | "export.started"
+  | "export.completed"
+  | "export.failed"
+  | "export.scheduled";
+
+export type CohortEvent =
+  | "cohort.analysis_generated"
+  | "cohort.churn_risk_detected";
+
+export type HeatmapCompareEvent =
+  | "heatmap.comparison_generated"
+  | "heatmap.diff_calculated";
+
+export type DeliveryEvent =
+  | "delivery.requested"
+  | "delivery.confirmed"
+  | "delivery.in_transit"
+  | "delivery.completed"
+  | "delivery.cancelled";
+
+export type ReputationEvent =
+  | "reputation.review_detected"
+  | "reputation.score_calculated"
+  | "reputation.alert_triggered"
+  | "reputation.response_suggested";
 
 export type PlatformEvent =
   | DealEvent
@@ -459,7 +512,16 @@ export type PlatformEvent =
   | SurveyEvent
   | UserTestEvent
   | HeatmapEvent
-  | HouseholdEvent;
+  | HouseholdEvent
+  | LeadIngestionEvent
+  | SMSEvent
+  | ERatingEvent
+  | ErrorMonitorEvent
+  | DataExportEvent
+  | CohortEvent
+  | HeatmapCompareEvent
+  | DeliveryEvent
+  | ReputationEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -893,4 +955,103 @@ export function trackHousehold(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "households", ...meta });
+}
+
+/**
+ * Track a third-party lead ingestion event (batch receive, parse, dedup, create).
+ */
+export function trackLeadIngestion(
+  event: LeadIngestionEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "lead_ingestion", ...meta });
+}
+
+/**
+ * Track an SMS messaging event (send, receive, delivery failure, conversation start).
+ */
+export function trackSMS(
+  event: SMSEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "sms", ...meta });
+}
+
+/**
+ * Track an eRating event (rate request, rate received, product selected, comparison viewed).
+ */
+export function trackERating(
+  event: ERatingEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "erating", ...meta });
+}
+
+/**
+ * Track an error monitoring event (capture, correlate, resolve, trend detected).
+ */
+export function trackErrorMonitor(
+  event: ErrorMonitorEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "error_monitor", ...meta });
+}
+
+/**
+ * Track a data warehouse export event (start, complete, fail, schedule).
+ */
+export function trackDataExport(
+  event: DataExportEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "data_export", ...meta });
+}
+
+/**
+ * Track a retention cohort analysis event (analysis generated, churn risk detected).
+ */
+export function trackCohort(
+  event: CohortEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "cohorts", ...meta });
+}
+
+/**
+ * Track a heatmap comparison event (comparison generated, diff calculated).
+ */
+export function trackHeatmapCompare(
+  event: HeatmapCompareEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "heatmap_compare", ...meta });
+}
+
+/**
+ * Track a store-to-door delivery event (request, confirm, transit, deliver, cancel).
+ */
+export function trackDelivery(
+  event: DeliveryEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "delivery", ...meta });
+}
+
+/**
+ * Track a reputation monitoring event (review detected, score calculated, alert, response).
+ */
+export function trackReputation(
+  event: ReputationEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "reputation", ...meta });
 }

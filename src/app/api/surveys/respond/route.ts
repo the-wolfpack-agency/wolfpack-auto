@@ -63,6 +63,22 @@ export async function POST(request: NextRequest) {
     [survey_id],
   );
 
+  // Auto-link to session replay if session_id provided
+  if (response.session_id && !response.session_id.startsWith("anon-")) {
+    import("@/lib/survey-replay-linker")
+      .then(({ linkSurveyToSession }) => {
+        const link = linkSurveyToSession(response.id, response.session_id);
+        import("@/lib/db").then(({ query: q }) => {
+          q(
+            `INSERT INTO survey_replay_links (id, survey_response_id, session_id, linked_at)
+             VALUES ($1, $2, $3, $4)`,
+            [link.id, link.survey_response_id, link.session_id, link.linked_at],
+          ).catch(() => {});
+        });
+      })
+      .catch(() => {});
+  }
+
   // Fire analytics event (fire-and-forget)
   import("@/lib/analytics-hooks")
     .then(({ trackSurvey }) => {

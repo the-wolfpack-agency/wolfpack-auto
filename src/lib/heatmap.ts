@@ -174,6 +174,94 @@ export function normalizeHeatmapData(
 /*  Top pages                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/*  Heatmap comparison                                                         */
+/* -------------------------------------------------------------------------- */
+
+export interface HeatmapComparison {
+  pageUrl: string;
+  periodA: { start: string; end: string };
+  periodB: { start: string; end: string };
+  heatmapA: HeatmapPoint[];
+  heatmapB: HeatmapPoint[];
+}
+
+export interface HeatmapDiff {
+  pageUrl: string;
+  /** Points where activity increased (positive intensity = more clicks in B) */
+  increased: HeatmapPoint[];
+  /** Points where activity decreased (positive intensity = fewer clicks in B) */
+  decreased: HeatmapPoint[];
+  /** Net change in total events */
+  netChangePercent: number;
+}
+
+/**
+ * Compare two heatmap datasets for the same page across different time periods.
+ */
+export function compareHeatmaps(
+  pageUrl: string,
+  heatmapA: HeatmapPoint[],
+  periodA: { start: string; end: string },
+  heatmapB: HeatmapPoint[],
+  periodB: { start: string; end: string },
+): HeatmapComparison {
+  return { pageUrl, periodA, periodB, heatmapA, heatmapB };
+}
+
+/**
+ * Compute a difference map between two heatmap datasets.
+ * Positive diff = more clicks in B; negative diff = fewer clicks in B.
+ */
+export function calculateHeatmapDiff(
+  pageUrl: string,
+  heatmapA: HeatmapPoint[],
+  heatmapB: HeatmapPoint[],
+): HeatmapDiff {
+  // Build lookup maps by position
+  const mapA = new Map<string, HeatmapPoint>();
+  for (const p of heatmapA) mapA.set(`${p.x},${p.y}`, p);
+
+  const mapB = new Map<string, HeatmapPoint>();
+  for (const p of heatmapB) mapB.set(`${p.x},${p.y}`, p);
+
+  const allKeys = new Set([...mapA.keys(), ...mapB.keys()]);
+  const increased: HeatmapPoint[] = [];
+  const decreased: HeatmapPoint[] = [];
+
+  for (const key of allKeys) {
+    const a = mapA.get(key);
+    const b = mapB.get(key);
+    const countA = a?.count ?? 0;
+    const countB = b?.count ?? 0;
+    const diff = countB - countA;
+    const [x, y] = key.split(",").map(Number);
+
+    if (diff > 0) {
+      increased.push({ x, y, count: diff, intensity: 0 });
+    } else if (diff < 0) {
+      decreased.push({ x, y, count: Math.abs(diff), intensity: 0 });
+    }
+  }
+
+  // Normalize intensities
+  const maxInc = Math.max(...increased.map((p) => p.count), 1);
+  for (const p of increased) p.intensity = p.count / maxInc;
+
+  const maxDec = Math.max(...decreased.map((p) => p.count), 1);
+  for (const p of decreased) p.intensity = p.count / maxDec;
+
+  const totalA = heatmapA.reduce((s, p) => s + p.count, 0);
+  const totalB = heatmapB.reduce((s, p) => s + p.count, 0);
+  const netChangePercent = totalA > 0 ? Math.round(((totalB - totalA) / totalA) * 100) : 0;
+
+  return { pageUrl, increased, decreased, netChangePercent };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Top pages                                                                  */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Return top pages ranked by traffic for heatmap page selection.
  * In shadow mode (no DB), returns demo data.

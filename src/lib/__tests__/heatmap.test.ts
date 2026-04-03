@@ -8,6 +8,8 @@ import {
   aggregateAttentionHeatmap,
   normalizeHeatmapData,
   getTopPages,
+  compareHeatmaps,
+  calculateHeatmapDiff,
 } from "@/lib/heatmap";
 
 /* -------------------------------------------------------------------------- */
@@ -179,6 +181,99 @@ describe("getTopPages", () => {
     for (let i = 1; i < pages.length; i++) {
       expect(pages[i - 1].pageviews).toBeGreaterThanOrEqual(pages[i].pageviews);
     }
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/*  Heatmap comparison                                                         */
+/* -------------------------------------------------------------------------- */
+
+describe("compareHeatmaps", () => {
+  it("returns comparison with both datasets and periods", () => {
+    const heatmapA = [{ x: 100, y: 200, count: 50, intensity: 1.0 }];
+    const heatmapB = [{ x: 100, y: 200, count: 75, intensity: 1.0 }];
+    const periodA = { start: "2026-03-01", end: "2026-03-07" };
+    const periodB = { start: "2026-03-08", end: "2026-03-14" };
+
+    const result = compareHeatmaps("/", heatmapA, periodA, heatmapB, periodB);
+
+    expect(result.pageUrl).toBe("/");
+    expect(result.heatmapA).toBe(heatmapA);
+    expect(result.heatmapB).toBe(heatmapB);
+    expect(result.periodA).toEqual(periodA);
+    expect(result.periodB).toEqual(periodB);
+  });
+});
+
+describe("calculateHeatmapDiff", () => {
+  it("computes increased and decreased points", () => {
+    const heatmapA = [
+      { x: 100, y: 200, count: 50, intensity: 1.0 },
+      { x: 300, y: 400, count: 30, intensity: 0.6 },
+    ];
+    const heatmapB = [
+      { x: 100, y: 200, count: 75, intensity: 1.0 }, // increased
+      { x: 300, y: 400, count: 10, intensity: 0.3 }, // decreased
+    ];
+
+    const diff = calculateHeatmapDiff("/", heatmapA, heatmapB);
+
+    expect(diff.pageUrl).toBe("/");
+    expect(diff.increased.length).toBe(1);
+    expect(diff.increased[0].count).toBe(25); // 75 - 50
+    expect(diff.decreased.length).toBe(1);
+    expect(diff.decreased[0].count).toBe(20); // 30 - 10
+  });
+
+  it("handles new points in period B", () => {
+    const heatmapA = [{ x: 100, y: 200, count: 50, intensity: 1.0 }];
+    const heatmapB = [
+      { x: 100, y: 200, count: 50, intensity: 1.0 },
+      { x: 500, y: 600, count: 20, intensity: 0.4 }, // new point
+    ];
+
+    const diff = calculateHeatmapDiff("/", heatmapA, heatmapB);
+    expect(diff.increased.length).toBe(1);
+    expect(diff.increased[0].x).toBe(500);
+  });
+
+  it("handles points removed in period B", () => {
+    const heatmapA = [
+      { x: 100, y: 200, count: 50, intensity: 1.0 },
+      { x: 500, y: 600, count: 20, intensity: 0.4 },
+    ];
+    const heatmapB = [{ x: 100, y: 200, count: 50, intensity: 1.0 }];
+
+    const diff = calculateHeatmapDiff("/", heatmapA, heatmapB);
+    expect(diff.decreased.length).toBe(1);
+    expect(diff.decreased[0].x).toBe(500);
+  });
+
+  it("calculates net change percentage", () => {
+    const heatmapA = [{ x: 100, y: 200, count: 100, intensity: 1.0 }];
+    const heatmapB = [{ x: 100, y: 200, count: 120, intensity: 1.0 }];
+
+    const diff = calculateHeatmapDiff("/", heatmapA, heatmapB);
+    expect(diff.netChangePercent).toBe(20);
+  });
+
+  it("normalizes diff intensities to 0-1", () => {
+    const heatmapA = [
+      { x: 100, y: 100, count: 10, intensity: 0.5 },
+      { x: 200, y: 200, count: 10, intensity: 0.5 },
+    ];
+    const heatmapB = [
+      { x: 100, y: 100, count: 30, intensity: 1.0 },
+      { x: 200, y: 200, count: 20, intensity: 0.7 },
+    ];
+
+    const diff = calculateHeatmapDiff("/", heatmapA, heatmapB);
+    for (const p of diff.increased) {
+      expect(p.intensity).toBeGreaterThanOrEqual(0);
+      expect(p.intensity).toBeLessThanOrEqual(1);
+    }
+    // Highest increased should be 1.0
+    expect(diff.increased.some((p) => p.intensity === 1.0)).toBe(true);
   });
 });
 
