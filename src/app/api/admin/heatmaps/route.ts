@@ -188,13 +188,16 @@ export async function GET(request: NextRequest) {
       p.intensity = p.count / maxCount;
     }
 
-    return NextResponse.json({
-      type: "click",
-      pageUrl: page,
-      totalEvents: points.reduce((s: number, p: { count: number }) => s + p.count, 0),
-      dateRange: { start: since, end: new Date().toISOString() },
-      points,
-    });
+    if (points.length > 0) {
+      return NextResponse.json({
+        type: "click",
+        pageUrl: page,
+        totalEvents: points.reduce((s: number, p: { count: number }) => s + p.count, 0),
+        dateRange: { start: since, end: new Date().toISOString() },
+        points,
+      });
+    }
+    // Fall through to demo data below
   }
 
   // No real data yet — return full demo data so the page demonstrates the feature
