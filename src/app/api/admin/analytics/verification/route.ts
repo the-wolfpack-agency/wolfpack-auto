@@ -192,7 +192,8 @@ async function checkStoreConnectivity() {
     try {
       const { neo4jHealthCheck } = await import("@/lib/neo4j-client");
       neo4jConnected = await neo4jHealthCheck();
-    } catch {
+    } catch (err) {
+      console.error("[verification] Neo4j health check failed:", (err as Error).message);
       neo4jConnected = false;
     }
   }
