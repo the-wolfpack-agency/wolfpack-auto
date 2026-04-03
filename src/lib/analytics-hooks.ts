@@ -409,6 +409,20 @@ export type UserTestEvent =
   | "usertest.task_failed"
   | "usertest.report_generated";
 
+export type HeatmapEvent =
+  | "heatmap.generated"
+  | "heatmap.viewed"
+  | "heatmap.exported"
+  | "heatmap.page_analyzed";
+
+export type HouseholdEvent =
+  | "household.detected"
+  | "household.created"
+  | "household.merged"
+  | "household.profile_viewed"
+  | "household.opportunity_identified"
+  | "household.ltv_calculated";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -443,7 +457,9 @@ export type PlatformEvent =
   | EquityMiningEvent
   | SessionReplayEvent
   | SurveyEvent
-  | UserTestEvent;
+  | UserTestEvent
+  | HeatmapEvent
+  | HouseholdEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -855,4 +871,26 @@ export function trackUserTest(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "user_testing", ...meta });
+}
+
+/**
+ * Track a heatmap visualization event (generation, viewing, export, page analysis).
+ */
+export function trackHeatmap(
+  event: HeatmapEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "heatmaps", ...meta });
+}
+
+/**
+ * Track a customer household grouping event (detection, creation, merging, profiling).
+ */
+export function trackHousehold(
+  event: HouseholdEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "households", ...meta });
 }

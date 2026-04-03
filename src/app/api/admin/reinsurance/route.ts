@@ -112,15 +112,16 @@ export async function GET(_request: NextRequest) {
     );
 
     // Calculate ROI for each program
-    const enrichedPrograms = programs.map((p: ReinsuranceProgram) => ({
+    const typedPrograms = programs as unknown as ReinsuranceProgram[];
+    const enrichedPrograms = typedPrograms.map((p) => ({
       ...p,
       roi_pct: calculateProgramROI(p),
     }));
 
     // Aggregate performance
-    const totalPremiums = programs.reduce((s: number, p: ReinsuranceProgram) => s + (p.total_premiums || 0), 0);
-    const totalClaims = programs.reduce((s: number, p: ReinsuranceProgram) => s + (p.total_claims || 0), 0);
-    const totalAdmin = programs.reduce((s: number, p: ReinsuranceProgram) => s + (p.total_admin_costs || 0), 0);
+    const totalPremiums = typedPrograms.reduce((s, p) => s + (p.total_premiums || 0), 0);
+    const totalClaims = typedPrograms.reduce((s, p) => s + (p.total_claims || 0), 0);
+    const totalAdmin = typedPrograms.reduce((s, p) => s + (p.total_admin_costs || 0), 0);
 
     // Product breakdown from claims/policies tables
     const { rows: breakdown } = await query(
@@ -171,7 +172,7 @@ export async function GET(_request: NextRequest) {
       performance,
       summary: {
         total_programs: programs.length,
-        active_programs: programs.filter((p: ReinsuranceProgram) => p.status === "active").length,
+        active_programs: typedPrograms.filter((p) => p.status === "active").length,
       },
     });
   } catch (err) {
