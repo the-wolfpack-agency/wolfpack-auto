@@ -2229,67 +2229,106 @@ export async function queryInsights(
  *   (:Session)-[:VIEWED]->(:Vehicle {vin})
  *   (:Page)-[:LEADS_TO {count}]->(:Page)
  */
-export function buildGraphQueries(sessionId: string): string[] {
+/**
+ * Build parameterized Cypher queries for a session's journey graph.
+ *
+ * Returns objects with { statement, parameters } for Neo4j's HTTP API.
+ * Uses parameterized queries (not string interpolation) to prevent
+ * Cypher injection from user-controlled data.
+ */
+export function buildGraphQueries(
+  sessionId: string,
+): Array<{ statement: string; parameters: Record<string, unknown> }> {
   const summary = buildSessionSummary(sessionId);
   const journey = buildJourney(sessionId);
   if (!summary || journey.length === 0) return [];
 
-  const queries: string[] = [];
+  const queries: Array<{ statement: string; parameters: Record<string, unknown> }> = [];
 
   // Create User + Session nodes
-  queries.push(
-    `MERGE (u:User {fingerprint: "${esc(summary.user_fingerprint)}"})
-MERGE (s:Session {id: "${esc(summary.session_id)}"})
-SET s.started_at = datetime("${summary.started_at}"),
-    s.ended_at = datetime("${summary.ended_at}"),
-    s.duration_ms = ${summary.duration_ms},
-    s.converted = ${summary.converted},
-    s.conversion_type = ${summary.conversion_type ? `"${esc(summary.conversion_type)}"` : "null"},
-    s.total_events = ${summary.total_events},
-    s.chat_messages = ${summary.chat_messages}
+  queries.push({
+    statement: `MERGE (u:User {fingerprint: $fingerprint})
+MERGE (s:Session {id: $sessionId})
+SET s.started_at = datetime($startedAt),
+    s.ended_at = datetime($endedAt),
+    s.duration_ms = $durationMs,
+    s.converted = $converted,
+    s.conversion_type = $conversionType,
+    s.total_events = $totalEvents,
+    s.chat_messages = $chatMessages
 MERGE (u)-[:HAS_SESSION]->(s)`,
-  );
+    parameters: {
+      fingerprint: summary.user_fingerprint,
+      sessionId: summary.session_id,
+      startedAt: summary.started_at,
+      endedAt: summary.ended_at,
+      durationMs: summary.duration_ms,
+      converted: summary.converted,
+      conversionType: summary.conversion_type ?? null,
+      totalEvents: summary.total_events,
+      chatMessages: summary.chat_messages,
+    },
+  });
 
   // Create Page visit chain
   for (let i = 0; i < journey.length; i++) {
     const node = journey[i];
-    queries.push(
-      `MERGE (p:Page {path: "${esc(node.page)}"})
+    queries.push({
+      statement: `MERGE (p:Page {path: $page})
 WITH p
-MATCH (s:Session {id: "${esc(summary.session_id)}"})
-MERGE (s)-[:VISITED {order: ${i}, action: "${esc(node.action)}", duration_ms: ${node.duration_ms}}]->(p)`,
-    );
+MATCH (s:Session {id: $sessionId})
+MERGE (s)-[:VISITED {order: $order, action: $action, duration_ms: $durationMs}]->(p)`,
+      parameters: {
+        page: node.page,
+        sessionId: summary.session_id,
+        order: i,
+        action: node.action,
+        durationMs: node.duration_ms,
+      },
+    });
 
     // Page-to-page transitions
     if (i > 0 && journey[i - 1].page !== node.page) {
-      queries.push(
-        `MERGE (p1:Page {path: "${esc(journey[i - 1].page)}"})
-MERGE (p2:Page {path: "${esc(node.page)}"})
+      queries.push({
+        statement: `MERGE (p1:Page {path: $fromPage})
+MERGE (p2:Page {path: $toPage})
 MERGE (p1)-[t:LEADS_TO]->(p2)
 ON CREATE SET t.count = 1
 ON MATCH SET t.count = t.count + 1`,
-      );
+        parameters: {
+          fromPage: journey[i - 1].page,
+          toPage: node.page,
+        },
+      });
     }
   }
 
   // Search queries
-  for (const query of summary.search_queries) {
-    queries.push(
-      `MERGE (sq:SearchQuery {text: "${esc(query.toLowerCase().trim())}"})
+  for (const q of summary.search_queries) {
+    queries.push({
+      statement: `MERGE (sq:SearchQuery {text: $text})
 WITH sq
-MATCH (s:Session {id: "${esc(summary.session_id)}"})
+MATCH (s:Session {id: $sessionId})
 MERGE (s)-[:SEARCHED]->(sq)`,
-    );
+      parameters: {
+        text: q.toLowerCase().trim(),
+        sessionId: summary.session_id,
+      },
+    });
   }
 
   // Vehicle views
   for (const vin of summary.vehicles_viewed) {
-    queries.push(
-      `MERGE (v:Vehicle {vin: "${esc(vin)}"})
+    queries.push({
+      statement: `MERGE (v:Vehicle {vin: $vin})
 WITH v
-MATCH (s:Session {id: "${esc(summary.session_id)}"})
+MATCH (s:Session {id: $sessionId})
 MERGE (s)-[:VIEWED]->(v)`,
-    );
+      parameters: {
+        vin,
+        sessionId: summary.session_id,
+      },
+    });
   }
 
   return queries;
@@ -2321,25 +2360,38 @@ export async function runAggregationPipeline(): Promise<{
   // Store in Qdrant
   const { stored } = await storeInsightsInVectorStore(insights);
 
-  // Build graph queries for all sessions
-  const allGraphQueries: string[] = [];
+  // Build parameterized graph queries for all sessions
+  const allGraphQueries: Array<{ statement: string; parameters: Record<string, unknown> }> = [];
   for (const [sessionId] of buffer.sessions) {
     const queries = buildGraphQueries(sessionId);
     allGraphQueries.push(...queries);
   }
 
-  // Execute graph queries against Neo4j (fire-and-forget, non-blocking)
+  // Execute graph queries against Neo4j — AWAIT so we know if it worked
+  let graphResult = { executed: 0, failed: 0 };
   if (allGraphQueries.length > 0) {
-    executeNeo4jQueries(allGraphQueries).catch((err) => {
+    try {
+      graphResult = await executeNeo4jQueries(allGraphQueries);
+    } catch (err) {
       console.error("[analytics] Neo4j graph write error:", err);
-    });
+      graphResult = { executed: 0, failed: allGraphQueries.length };
+    }
   }
+
+  // Clear processed events from buffer to prevent memory leak
+  // and duplicate insight generation. Keep the buffer structure alive.
+  const sessionsAnalyzed = buffer.sessions.size;
+  buffer.events = [];
+  buffer.sessions.clear();
+  buffer.lastFlush = Date.now();
 
   return {
     insights_generated: insights.length,
     insights_stored: stored,
     graph_queries: allGraphQueries,
-    sessions_analyzed: buffer.sessions.size,
+    graph_executed: graphResult.executed,
+    graph_failed: graphResult.failed,
+    sessions_analyzed: sessionsAnalyzed,
   };
 }
 
@@ -2388,7 +2440,5 @@ function hashStringToId(str: string): number {
   return hash || 1;
 }
 
-/** Escape strings for Cypher queries (prevent injection). */
-function esc(str: string): string {
-  return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/'/g, "\\'");
-}
+// esc() function removed — Cypher queries now use parameterized statements
+// via Neo4j's HTTP transaction API { statement, parameters } format.

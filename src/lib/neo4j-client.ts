@@ -2,23 +2,35 @@
  * Neo4j HTTP Transaction API client.
  *
  * Executes Cypher queries against Neo4j via its HTTP endpoint.
- * Fire-and-forget safe — all errors are caught so callers never crash.
+ * Requires NEO4J_URL + NEO4J_PASSWORD to be set. Fails loudly
+ * if credentials are missing — silent data loss is unacceptable.
  */
-
-const DEFAULT_NEO4J_URL = "http://localhost:7474";
-
-function getBaseUrl(): string {
-  return process.env.NEO4J_URL || DEFAULT_NEO4J_URL;
-}
 
 /** Returns true when Neo4j is explicitly disabled (NEO4J_URL set to empty). */
 function isDisabled(): boolean {
   return process.env.NEO4J_URL === "";
 }
 
+/** Returns true when Neo4j is not configured (no URL set). */
+function isUnconfigured(): boolean {
+  return !process.env.NEO4J_URL;
+}
+
+function getBaseUrl(): string | null {
+  if (!process.env.NEO4J_URL) return null;
+  return process.env.NEO4J_URL;
+}
+
 function getAuthHeader(): string {
   const user = process.env.NEO4J_USER ?? "neo4j";
-  const pass = process.env.NEO4J_PASSWORD ?? "agenticqa123";
+  const pass = process.env.NEO4J_PASSWORD;
+  if (!pass) {
+    console.error(
+      "[neo4j-client] NEO4J_PASSWORD not set — refusing to use hardcoded defaults. " +
+        "Set NEO4J_PASSWORD in your environment.",
+    );
+    throw new Error("NEO4J_PASSWORD is required");
+  }
   return "Basic " + Buffer.from(`${user}:${pass}`).toString("base64");
 }
 
@@ -29,13 +41,24 @@ function getAuthHeader(): string {
  * Returns the count of successfully executed vs failed statements.
  */
 export async function executeNeo4jQueries(
-  queries: string[],
+  queries: Array<string | { statement: string; parameters?: Record<string, unknown> }>,
 ): Promise<{ executed: number; failed: number }> {
   if (queries.length === 0 || isDisabled()) return { executed: 0, failed: 0 };
 
-  const url = `${getBaseUrl()}/db/neo4j/tx/commit`;
+  const baseUrl = getBaseUrl();
+  if (!baseUrl) {
+    console.warn(
+      `[neo4j-client] NEO4J_URL not set — ${queries.length} graph queries will NOT be executed. Journey data is being lost.`,
+    );
+    return { executed: 0, failed: queries.length };
+  }
 
-  const statements = queries.map((q) => ({ statement: q }));
+  const url = `${baseUrl}/db/neo4j/tx/commit`;
+
+  // Support both raw strings (legacy) and parameterized { statement, parameters } objects
+  const statements = queries.map((q) =>
+    typeof q === "string" ? { statement: q } : q,
+  );
 
   try {
     const res = await fetch(url, {
@@ -71,8 +94,10 @@ export async function executeNeo4jQueries(
 
     return { executed, failed };
   } catch (err) {
-    // Neo4j unavailable — silently skip
-    console.warn("[neo4j-client] Neo4j unreachable, skipping graph write:", (err as Error).message);
+    console.error(
+      "[neo4j-client] Neo4j unreachable — graph write FAILED:",
+      (err as Error).message,
+    );
     return { executed: 0, failed: queries.length };
   }
 }
@@ -81,9 +106,11 @@ export async function executeNeo4jQueries(
  * Quick health check — returns true if Neo4j responds.
  */
 export async function neo4jHealthCheck(): Promise<boolean> {
-  if (isDisabled()) return false;
+  if (isDisabled() || isUnconfigured()) return false;
   try {
-    const res = await fetch(getBaseUrl(), {
+    const baseUrl = getBaseUrl();
+    if (!baseUrl) return false;
+    const res = await fetch(baseUrl, {
       method: "GET",
       headers: { Authorization: getAuthHeader() },
       signal: AbortSignal.timeout(3_000),
@@ -92,4 +119,19 @@ export async function neo4jHealthCheck(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Returns configuration status for diagnostics.
+ */
+export function getNeo4jConfigStatus(): {
+  configured: boolean;
+  disabled: boolean;
+  hasPassword: boolean;
+} {
+  return {
+    configured: !isUnconfigured(),
+    disabled: isDisabled(),
+    hasPassword: !!process.env.NEO4J_PASSWORD,
+  };
 }

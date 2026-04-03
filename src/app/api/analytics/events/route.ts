@@ -7,10 +7,58 @@ import {
 } from "@/lib/analytics-engine";
 
 /* ------------------------------------------------------------------ */
-/*  PostgreSQL event persistence (fire-and-forget)                     */
+/*  Dataflow integrity checks                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Returns a list of dataflow warnings for the current process.
+ * Used by the health endpoint and logged on every event batch.
+ */
+export function getDataflowWarnings(): string[] {
+  const warnings: string[] = [];
+  if (!process.env.DATABASE_URL) {
+    warnings.push("DATABASE_URL not set — events will NOT be persisted to PostgreSQL. DATA LOSS RISK.");
+  }
+  if (!process.env.QDRANT_URL) {
+    warnings.push("QDRANT_URL not set — insights will NOT be stored in vector DB.");
+  }
+  if (process.env.NEO4J_URL === "") {
+    warnings.push("NEO4J_URL is empty — journey graph writes are explicitly disabled.");
+  } else if (!process.env.NEO4J_URL) {
+    warnings.push("NEO4J_URL not set — journey graphs will NOT be written. DATA LOSS RISK.");
+  }
+  if (!process.env.NEO4J_PASSWORD) {
+    warnings.push("NEO4J_PASSWORD not set — using insecure default credentials.");
+  }
+  return warnings;
+}
+
+/** Log dataflow warnings once per process lifecycle. */
+let dataflowWarningsLogged = false;
+function logDataflowWarnings(): void {
+  if (dataflowWarningsLogged) return;
+  dataflowWarningsLogged = true;
+  const warnings = getDataflowWarnings();
+  if (warnings.length > 0) {
+    console.error(
+      `[DATAFLOW ALARM] ${warnings.length} data pipeline issue(s) detected:\n` +
+        warnings.map((w) => `  ⚠ ${w}`).join("\n"),
+    );
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  PostgreSQL event persistence                                       */
 /* ------------------------------------------------------------------ */
 
 let pgMigrationDone = false;
+
+/** Track persistence stats for health reporting. */
+let pgWriteStats = { attempted: 0, succeeded: 0, failed: 0, lastError: "" };
+
+export function getPgWriteStats() {
+  return { ...pgWriteStats };
+}
 
 async function ensureEventsTable(): Promise<void> {
   if (pgMigrationDone) return;
@@ -44,10 +92,24 @@ async function ensureEventsTable(): Promise<void> {
 
 /**
  * Persist a batch of events to PostgreSQL.
- * Fire-and-forget — callers should not await this.
+ *
+ * IMPORTANT: This is awaited in the request handler. If DATABASE_URL
+ * is missing, it returns a warning — never silently drops data.
  */
-async function persistEventsToPg(events: AnalyticsEvent[]): Promise<void> {
-  if (!process.env.DATABASE_URL) return;
+async function persistEventsToPg(
+  events: AnalyticsEvent[],
+): Promise<{ persisted: boolean; warning?: string }> {
+  pgWriteStats.attempted += events.length;
+
+  if (!process.env.DATABASE_URL) {
+    pgWriteStats.failed += events.length;
+    pgWriteStats.lastError = "DATABASE_URL not set";
+    return {
+      persisted: false,
+      warning: "DATABASE_URL not set — events NOT persisted. DATA LOSS.",
+    };
+  }
+
   try {
     await ensureEventsTable();
     const { query } = await import("@/lib/db");
@@ -79,8 +141,15 @@ async function persistEventsToPg(events: AnalyticsEvent[]): Promise<void> {
        VALUES ${rows.join(", ")}`,
       values,
     );
+
+    pgWriteStats.succeeded += events.length;
+    return { persisted: true };
   } catch (err) {
-    console.error("[analytics-events] PG write failed:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    pgWriteStats.failed += events.length;
+    pgWriteStats.lastError = msg;
+    console.error("[analytics-events] PG write failed:", msg);
+    return { persisted: false, warning: `PG write failed: ${msg}` };
   }
 }
 
@@ -119,6 +188,9 @@ let eventsSinceLastAggregation = 0;
 
 export async function POST(request: NextRequest) {
   try {
+    // Log dataflow warnings once per process
+    logDataflowWarnings();
+
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
       request.headers.get("x-real-ip") ??
@@ -148,26 +220,31 @@ export async function POST(request: NextRequest) {
     const result = ingestEvents(capped);
     eventsSinceLastAggregation += result.accepted;
 
-    // Persist to PostgreSQL (fire-and-forget — don't block the response)
-    void persistEventsToPg(capped);
+    // Persist to PostgreSQL — AWAIT, don't fire-and-forget.
+    // Data loss is unacceptable. If PG write fails, we surface it.
+    const pgResult = await persistEventsToPg(capped);
+
+    // Collect warnings for response
+    const warnings: string[] = [];
+    if (pgResult.warning) warnings.push(pgResult.warning);
 
     // Trigger aggregation pipeline when threshold reached
     let aggregation = null;
     if (eventsSinceLastAggregation >= AGGREGATION_THRESHOLD) {
       eventsSinceLastAggregation = 0;
-      // Run async — don't block the response
       aggregation = runAggregationPipeline().catch((err) => {
         console.error("[analytics] Aggregation pipeline error:", err);
         return null;
       });
     }
 
-    // If aggregation was triggered, await it (it's fast)
+    // If aggregation was triggered, await it
     const pipelineResult = aggregation ? await aggregation : null;
 
     return NextResponse.json({
       accepted: result.accepted,
       buffered: result.buffered,
+      persisted: pgResult.persisted,
       pipeline: pipelineResult
         ? {
             insights: pipelineResult.insights_generated,
@@ -175,6 +252,7 @@ export async function POST(request: NextRequest) {
             sessions: pipelineResult.sessions_analyzed,
           }
         : null,
+      warnings: warnings.length > 0 ? warnings : undefined,
     });
   } catch {
     return NextResponse.json(
@@ -190,5 +268,20 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   const stats = getBufferStats();
-  return NextResponse.json(stats);
+  const warnings = getDataflowWarnings();
+  const pgStats = getPgWriteStats();
+
+  return NextResponse.json({
+    ...stats,
+    dataflow: {
+      healthy: warnings.length === 0,
+      warnings,
+      pg_writes: pgStats,
+      stores: {
+        postgresql: !!process.env.DATABASE_URL,
+        qdrant: !!process.env.QDRANT_URL,
+        neo4j: !!process.env.NEO4J_URL && process.env.NEO4J_URL !== "",
+      },
+    },
+  });
 }
