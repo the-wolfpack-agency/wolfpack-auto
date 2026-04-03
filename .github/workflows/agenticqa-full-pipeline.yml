@@ -58,8 +58,24 @@ jobs:
           fi
           echo "Pipeline health: OK (${REPAIR_COUNT} recent repairs)"
 
-  linting-fix:
+  lint:
     needs: [pipeline-rescue]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    name: "Code Linting"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: TypeScript type-check
+        run: npx tsc --noEmit
+
+  linting-fix:
+    needs: [lint]
+    if: always() && needs.lint.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: "SRE Agent: Auto-Fix"
@@ -98,21 +114,6 @@ jobs:
           git add -A
           git commit -m "fix: auto-fix errors via AgenticQA SRE Agent" || true
           git push origin HEAD:${{ github.ref }} || true
-
-  lint:
-    needs: [linting-fix]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    name: "Code Linting"
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: npm ci
-      - name: TypeScript type-check
-        run: npx tsc --noEmit
 
   # ──────────────────────────────────────────────────
   # Phase 1: Testing & Compliance (parallel)
