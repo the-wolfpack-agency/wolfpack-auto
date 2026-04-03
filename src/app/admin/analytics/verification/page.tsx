@@ -65,7 +65,6 @@ export default function AnalyticsVerificationPage() {
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load existing results + subdashboard status on mount
   useEffect(() => {
     Promise.all([
       fetch("/api/admin/analytics/verification").then((r) => {
@@ -102,25 +101,26 @@ export default function AnalyticsVerificationPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-white mb-4">Analytics Verification</h1>
-        <div className="text-gray-400">Loading...</div>
+        <h1 className="text-2xl font-bold text-gray-900">Analytics Verification</h1>
+        <div className="mt-4 text-gray-500">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Analytics Verification</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-gray-900">Analytics Verification</h1>
+          <p className="mt-1 text-sm text-gray-500">
             Fires a test event through every analytics module and verifies it persists.
           </p>
         </div>
         <button
           onClick={runVerification}
           disabled={running}
-          className="px-5 py-2.5 bg-brand-600 text-white rounded-lg font-medium hover:bg-brand-500 disabled:opacity-50 transition-colors"
+          className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-500 disabled:opacity-50"
           data-testid="run-verification-btn"
         >
           {running ? "Running..." : "Run Verification"}
@@ -129,24 +129,24 @@ export default function AnalyticsVerificationPage() {
 
       {/* ---- Score Card ---- */}
       {verification && (
-        <div className="mb-6 p-5 bg-brand-950 border border-brand-800 rounded-xl">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-6">
             <div
               className={`text-5xl font-extrabold ${
                 verification.score >= 90
-                  ? "text-green-400"
+                  ? "text-green-600"
                   : verification.score >= 70
-                    ? "text-yellow-400"
-                    : "text-red-400"
+                    ? "text-yellow-600"
+                    : "text-red-600"
               }`}
             >
               {verification.score}%
             </div>
             <div>
-              <div className="text-white font-semibold text-lg">
+              <div className="text-lg font-semibold text-gray-900">
                 {verification.passed}/{verification.total_modules} modules firing
               </div>
-              <div className="text-gray-400 text-sm">
+              <div className="text-sm text-gray-500">
                 Last run: {new Date(verification.timestamp).toLocaleString()}
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function AnalyticsVerificationPage() {
 
       {/* ---- Data Stores ---- */}
       {verification && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {[
             {
               name: "PostgreSQL",
@@ -176,22 +176,22 @@ export default function AnalyticsVerificationPage() {
           ].map((store) => (
             <div
               key={store.name}
-              className={`p-4 rounded-lg border ${
+              className={`rounded-xl border p-4 shadow-sm ${
                 store.ok
-                  ? "border-green-800 bg-green-950/30"
-                  : "border-red-800 bg-red-950/30"
+                  ? "border-green-200 bg-green-50"
+                  : "border-red-200 bg-red-50"
               }`}
               data-testid={`store-${store.name.toLowerCase()}`}
             >
               <div className="flex items-center gap-2">
                 <div
-                  className={`w-2.5 h-2.5 rounded-full ${
-                    store.ok ? "bg-green-400" : "bg-red-400"
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    store.ok ? "bg-green-500" : "bg-red-500"
                   }`}
                 />
-                <span className="text-white font-medium text-sm">{store.name}</span>
+                <span className="text-sm font-semibold text-gray-900">{store.name}</span>
               </div>
-              <div className="text-gray-400 text-xs mt-1">{store.detail}</div>
+              <div className="mt-1 text-xs text-gray-500">{store.detail}</div>
             </div>
           ))}
         </div>
@@ -199,46 +199,46 @@ export default function AnalyticsVerificationPage() {
 
       {/* ---- Module Results ---- */}
       {verification && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-3">Module Results</h2>
-          <div className="border border-brand-800 rounded-lg overflow-hidden">
+        <div>
+          <h2 className="mb-3 border-b border-gray-200 pb-2 text-lg font-bold text-gray-900">
+            Module Results
+          </h2>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="w-full text-sm" data-testid="module-results-table">
               <thead>
-                <tr className="bg-brand-950 text-gray-400 text-left">
-                  <th className="px-4 py-2.5 font-medium">Module</th>
-                  <th className="px-4 py-2.5 font-medium">Event</th>
-                  <th className="px-4 py-2.5 font-medium text-center">Fired</th>
-                  <th className="px-4 py-2.5 font-medium text-center">Persisted</th>
-                  <th className="px-4 py-2.5 font-medium text-right">Latency</th>
+                <tr className="border-b border-gray-100 bg-gray-50 text-left text-gray-500">
+                  <th className="px-4 py-3 font-medium">Module</th>
+                  <th className="px-4 py-3 font-medium">Event</th>
+                  <th className="px-4 py-3 font-medium text-center">Fired</th>
+                  <th className="px-4 py-3 font-medium text-center">Persisted</th>
+                  <th className="px-4 py-3 font-medium text-right">Latency</th>
                 </tr>
               </thead>
               <tbody>
                 {verification.modules.map((m) => (
                   <tr
                     key={m.module}
-                    className="border-t border-brand-800 hover:bg-brand-950/50"
+                    className="border-t border-gray-100 hover:bg-gray-50"
                   >
-                    <td className="px-4 py-2 text-white font-medium">{m.module}</td>
-                    <td className="px-4 py-2 text-gray-400 font-mono text-xs">
+                    <td className="px-4 py-2.5 font-medium text-gray-900">{m.module}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-gray-500">
                       {m.event}
                     </td>
-                    <td className="px-4 py-2 text-center">
+                    <td className="px-4 py-2.5 text-center">
                       {m.fired ? (
-                        <span className="text-green-400">Pass</span>
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Pass</span>
                       ) : (
-                        <span className="text-red-400" title={m.error}>
-                          Fail
-                        </span>
+                        <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700" title={m.error}>Fail</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-center">
+                    <td className="px-4 py-2.5 text-center">
                       {m.persisted ? (
-                        <span className="text-green-400">Yes</span>
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Yes</span>
                       ) : (
-                        <span className="text-gray-500">No</span>
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">No</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right text-gray-400">
+                    <td className="px-4 py-2.5 text-right text-gray-500">
                       {m.latency_ms}ms
                     </td>
                   </tr>
@@ -252,50 +252,50 @@ export default function AnalyticsVerificationPage() {
       {/* ---- Sub-Dashboard Health ---- */}
       {subdashboards && (
         <div>
-          <h2 className="text-lg font-semibold text-white mb-3">
+          <h2 className="mb-3 border-b border-gray-200 pb-2 text-lg font-bold text-gray-900">
             Sub-Dashboard Health
-            <span className="text-gray-400 font-normal text-sm ml-2">
+            <span className="ml-2 text-sm font-normal text-gray-500">
               {subdashboards.summary.healthy}/{subdashboards.summary.total} healthy
             </span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {subdashboards.subdashboards.map((sub) => (
               <a
                 key={sub.path}
                 href={sub.path}
-                className={`block p-4 rounded-lg border transition-colors hover:border-brand-600 ${
+                className={`block rounded-xl border p-4 shadow-sm transition-colors hover:border-brand-400 ${
                   sub.healthy
-                    ? "border-brand-800 bg-brand-950/50"
-                    : "border-red-800 bg-red-950/20"
+                    ? "border-gray-200 bg-white"
+                    : "border-red-200 bg-red-50"
                 }`}
                 data-testid={`subdashboard-${sub.name.toLowerCase().replace(/\s/g, "-")}`}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div
-                    className={`w-2 h-2 rounded-full ${
-                      sub.healthy ? "bg-green-400" : "bg-red-400"
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      sub.healthy ? "bg-green-500" : "bg-red-500"
                     }`}
                   />
-                  <span className="text-white font-medium text-sm">{sub.name}</span>
-                  <span className="text-xs text-gray-500 ml-auto">{sub.category}</span>
+                  <span className="text-sm font-semibold text-gray-900">{sub.name}</span>
+                  <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                    {sub.category}
+                  </span>
                 </div>
-                <p className="text-gray-500 text-xs">{sub.description}</p>
+                <p className="text-xs text-gray-500">{sub.description}</p>
                 {Object.keys(sub.key_metrics).length > 0 && (
-                  <div className="flex gap-3 mt-2">
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                     {Object.entries(sub.key_metrics)
                       .slice(0, 3)
                       .map(([k, v]) => (
-                        <div key={k} className="text-xs">
-                          <span className="text-gray-500">
-                            {k.replace(/_/g, " ")}:
-                          </span>{" "}
-                          <span className="text-white font-medium">{String(v)}</span>
-                        </div>
+                        <span key={k} className="text-xs text-gray-500">
+                          {k.replace(/_/g, " ")}:{" "}
+                          <span className="font-semibold text-gray-700">{String(v)}</span>
+                        </span>
                       ))}
                   </div>
                 )}
                 {sub.error && (
-                  <div className="text-red-400 text-xs mt-1">{sub.error}</div>
+                  <p className="mt-1 text-xs text-red-600">{sub.error}</p>
                 )}
               </a>
             ))}
@@ -305,9 +305,9 @@ export default function AnalyticsVerificationPage() {
 
       {/* ---- Empty State ---- */}
       {!verification && !subdashboards && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-lg mb-2">No verification results yet</p>
-          <p className="text-sm">Click "Run Verification" to test all analytics modules</p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16 shadow-sm">
+          <p className="text-lg font-semibold text-gray-900">No verification results yet</p>
+          <p className="mt-1 text-sm text-gray-500">Click &ldquo;Run Verification&rdquo; to test all analytics modules</p>
         </div>
       )}
     </div>
