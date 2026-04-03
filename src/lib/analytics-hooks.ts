@@ -311,6 +311,14 @@ export type MarketingTemplateEvent =
   | "template.used_in_campaign"
   | "template.performance_viewed";
 
+export type EquityMiningEvent =
+  | "equity.scan_started"
+  | "equity.scan_completed"
+  | "equity.opportunity_identified"
+  | "equity.opportunity_contacted"
+  | "equity.opportunity_converted"
+  | "equity.appraisal_generated";
+
 export type DeskingEvent =
   | "desking.deal_created"
   | "desking.deal_structured"
@@ -373,6 +381,15 @@ export type PayrollEvent =
   | "payroll.provider_connected"
   | "payroll.provider_disconnected";
 
+export type ReinsuranceEvent =
+  | "reinsurance.program_created"
+  | "reinsurance.program_updated"
+  | "reinsurance.premium_calculated"
+  | "reinsurance.claim_filed"
+  | "reinsurance.claim_paid"
+  | "reinsurance.report_generated"
+  | "reinsurance.risk_assessed";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -395,6 +412,7 @@ export type PlatformEvent =
   | GLEvent
   | PaymentEvent
   | PayrollEvent
+  | ReinsuranceEvent
   | PhotoEngagementEvent
   | ExitDetectionEvent
   | WebhookEvent
@@ -402,7 +420,8 @@ export type PlatformEvent =
   | TemporalEvent
   | PricingEvent
   | BackgroundEvent
-  | MarketingTemplateEvent;
+  | MarketingTemplateEvent
+  | EquityMiningEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -759,4 +778,26 @@ export function trackPayroll(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "payroll", ...meta });
+}
+
+/**
+ * Track an equity mining event (scans, opportunities, conversions).
+ */
+export function trackEquityMining(
+  event: EquityMiningEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "equity_mining", ...meta });
+}
+
+/**
+ * Track a reinsurance program event (program CRUD, premiums, claims, reports, risk).
+ */
+export function trackReinsurance(
+  event: ReinsuranceEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "reinsurance", ...meta });
 }

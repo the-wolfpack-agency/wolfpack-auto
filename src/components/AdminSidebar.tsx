@@ -120,6 +120,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/digital-retail", label: "Digital Retail", icon: DigitalRetailIcon },
       { href: "/admin/econtracting", label: "eContracting", icon: EContractingIcon },
       { href: "/admin/pricing", label: "Pricing", icon: PricingIcon },
+      { href: "/admin/equity-mining", label: "Equity Mining", icon: EquityMiningIcon },
     ],
   },
   {
@@ -149,6 +150,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
       { href: "/admin/payments", label: "Payments", icon: AccountingIcon },
       { href: "/admin/payroll", label: "Payroll", icon: AccountingIcon },
+      { href: "/admin/reinsurance", label: "Reinsurance", icon: ReinsuranceIcon },
     ],
   },
   {
@@ -819,6 +821,14 @@ function PricingIcon({ className }: { className?: string }) {
   );
 }
 
+function EquityMiningIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
+    </svg>
+  );
+}
+
 function TasksIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
@@ -1048,6 +1058,14 @@ function AgencyIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+    </svg>
+  );
+}
+
+function ReinsuranceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
     </svg>
   );
 }
