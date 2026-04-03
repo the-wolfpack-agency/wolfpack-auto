@@ -197,11 +197,17 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Scroll and attention follow similar patterns
+  // No real data yet — return demo data so the page is always useful
+  const demoByType: Record<string, typeof DEMO_CLICK_DATA> = {
+    click: DEMO_CLICK_DATA,
+  };
+  const fallback = demoByType[type] ?? DEMO_CLICK_DATA;
   return NextResponse.json({
     type,
     pageUrl: page,
-    totalEvents: 0,
+    totalEvents: fallback.reduce((s, p) => s + p.count, 0),
     dateRange: { start: since, end: new Date().toISOString() },
+    points: fallback,
+    demo: true,
   });
 }
