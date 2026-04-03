@@ -190,7 +190,8 @@ describe("populateTemplate", () => {
     expect(html.length).toBeGreaterThan(100);
     expect(html).toContain("Test Motors");
     expect(html).toContain("$32,995");
-    expect(html).toContain("2025 Toyota Camry");
+    // When custom.headline is set ("Spring Sale"), it replaces the vehicle title in the heading
+    expect(html).toContain("Spring Sale");
   });
 
   test("populates weekend-sale template", () => {
