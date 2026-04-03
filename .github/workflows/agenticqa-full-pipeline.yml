@@ -120,8 +120,8 @@ jobs:
   # ──────────────────────────────────────────────────
 
   phase-1-testing:
-    needs: [lint]
-    if: always() && needs.lint.result != 'cancelled'
+    needs: [linting-fix]
+    if: always() && needs.linting-fix.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     name: "Phase 1: Tests (shard ${{ matrix.shard }}/${{ strategy.job-total }})"
@@ -209,8 +209,8 @@ jobs:
           retention-days: 7
 
   phase-1-compliance:
-    needs: [lint]
-    if: always() && needs.lint.result != 'cancelled'
+    needs: [linting-fix]
+    if: always() && needs.linting-fix.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: "Phase 1: Security & Accessibility"
@@ -234,8 +234,8 @@ jobs:
         continue-on-error: true
 
   load-baseline:
-    needs: [lint]
-    if: always() && needs.lint.result != 'cancelled'
+    needs: [linting-fix]
+    if: always() && needs.linting-fix.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     name: "Phase 1: Load Baseline"
@@ -298,8 +298,8 @@ jobs:
           retention-days: 7
 
   shadow-verification:
-    needs: [lint]
-    if: always() && needs.lint.result != 'cancelled'
+    needs: [linting-fix]
+    if: always() && needs.linting-fix.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: "Phase 1: Shadow Mode Verification"
