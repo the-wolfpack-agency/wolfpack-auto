@@ -14,6 +14,10 @@ import {
  * Returns the latest calibration result plus full history.
  */
 export async function GET() {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ calibrated: false, message: "No database configured" });
+  }
+
   const auth = await requireAuth();
   if (!isAuthenticated(auth)) return auth;
 

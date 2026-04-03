@@ -11,6 +11,10 @@ import { trackSystem } from "@/lib/analytics-hooks";
  * Requires authentication.
  */
 export async function GET() {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ tests: [], count: 0 });
+  }
+
   const auth = await requireAuth();
   if (!isAuthenticated(auth)) return auth;
 

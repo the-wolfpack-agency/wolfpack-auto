@@ -1,4 +1,8 @@
 /**
+ * @jest-environment jsdom
+ */
+
+/**
  * Unit tests for src/lib/exit-detection-tracker.ts
  *
  * Tests clipboard content classification, rage compare detection,

@@ -22,6 +22,10 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ id: "demo", name: "Demo Background", url: "", format: "webp" });
+  }
+
   const { id } = await params;
   const { searchParams } = request.nextUrl;
 

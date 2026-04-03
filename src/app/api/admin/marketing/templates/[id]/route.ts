@@ -16,6 +16,10 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ templates: [] });
+  }
+
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 

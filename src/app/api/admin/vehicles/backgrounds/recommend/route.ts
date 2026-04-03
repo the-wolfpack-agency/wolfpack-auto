@@ -16,6 +16,10 @@ import { getVehicleByVin } from "@/lib/data";
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ recommendations: [] });
+  }
+
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 

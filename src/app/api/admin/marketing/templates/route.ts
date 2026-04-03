@@ -15,6 +15,10 @@ import { trackSystem } from "@/lib/analytics-hooks";
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ templates: [] });
+  }
+
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 

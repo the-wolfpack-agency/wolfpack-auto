@@ -7,6 +7,10 @@ import { trackDesking } from "@/lib/analytics-hooks";
 import { generateDealScenarios, type DealStructure } from "@/lib/fi-desking";
 
 export async function POST(request: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ scenarios: [], count: 0 });
+  }
+
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
   const dealerId = authResult.user.dealer_id;

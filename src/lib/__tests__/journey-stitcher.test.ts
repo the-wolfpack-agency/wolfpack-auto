@@ -1,4 +1,8 @@
 /**
+ * @jest-environment jsdom
+ */
+
+/**
  * Unit tests for src/lib/journey-stitcher.ts
  *
  * Tests cross-session journey stitching: visitor ID persistence, session

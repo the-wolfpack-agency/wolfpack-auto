@@ -8,6 +8,10 @@ import { getTemplatePerformance } from "@/lib/canva-integration";
 /* -------------------------------------------------------------------------- */
 
 export async function GET() {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ templates: [] });
+  }
+
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 

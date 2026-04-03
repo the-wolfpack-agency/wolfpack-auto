@@ -1,4 +1,8 @@
 /**
+ * @jest-environment jsdom
+ */
+
+/**
  * Unit tests for src/lib/form-abandonment-tracker.ts
  *
  * Tests the FormAbandonmentTracker class, field-level tracking,

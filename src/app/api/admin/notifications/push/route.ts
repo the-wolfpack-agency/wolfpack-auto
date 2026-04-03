@@ -14,6 +14,10 @@ import { trackSystem } from "@/lib/analytics-hooks";
  * List push subscriptions for the authenticated dealer.
  */
 export async function GET() {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ sent: false, message: "No database configured" });
+  }
+
   const auth = await requireAuth();
   if (!isAuthenticated(auth)) return auth;
 

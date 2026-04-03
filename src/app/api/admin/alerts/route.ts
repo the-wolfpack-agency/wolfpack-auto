@@ -17,6 +17,10 @@ import { trackServerEvent } from "@/lib/analytics";
 /* -------------------------------------------------------------------------- */
 
 export async function GET() {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ alerts: [], stats: { total: 0, critical: 0, warning: 0, info: 0 } });
+  }
+
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
   const dealerId = getDealerId(authResult);

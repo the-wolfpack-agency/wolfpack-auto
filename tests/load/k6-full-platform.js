@@ -242,7 +242,7 @@ export function handleSummary(data) {
         data.metrics?.inventory_views?.values?.count || 0,
     },
     thresholds_passed: Object.entries(data.root_group?.checks || {}).every(
-      // eslint-disable-next-line no-unused-vars
+       
       ([_, v]) => v.fails === 0,
     ),
   };

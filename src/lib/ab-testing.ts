@@ -89,9 +89,13 @@ function redisKey(test: string, variant: Variant, type: "views" | "conv"): strin
 async function getRedis(): Promise<import("ioredis").default | null> {
   try {
     const { redis } = await import("@/lib/redis");
-    // Quick connectivity check — if Redis is unreachable, ioredis will throw.
-    await redis.ping();
-    return redis;
+    // Quick connectivity check with 2s timeout — don't let a missing Redis
+    // block the entire request. Falls back to in-memory store.
+    const pingResult = await Promise.race([
+      redis.ping(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 2_000)),
+    ]);
+    return pingResult ? redis : null;
   } catch {
     return null;
   }
