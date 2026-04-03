@@ -21,13 +21,22 @@ export async function GET(request: NextRequest) {
     "@/lib/delivery-scheduling"
   );
 
-  if (date) {
-    const slots = await getAvailableSlots(dealerId, date);
-    return NextResponse.json({ slots });
-  }
+  try {
+    if (date) {
+      const slots = await getAvailableSlots(dealerId, date);
+      return NextResponse.json({ slots });
+    }
 
-  const deliveries = await getDeliveryHistory(dealerId);
-  return NextResponse.json({ deliveries });
+    const deliveries = await getDeliveryHistory(dealerId);
+    return NextResponse.json({ deliveries });
+  } catch (err) {
+    // Table may not exist yet — return empty data gracefully
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ deliveries: [], slots: [], summary: { total: 0, pending: 0, in_transit: 0, delivered: 0 } });
+    }
+    throw err;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
