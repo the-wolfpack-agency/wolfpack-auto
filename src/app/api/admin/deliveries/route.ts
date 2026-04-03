@@ -7,6 +7,9 @@ import { getDealerId } from "@/lib/get-dealer-id";
 /* -------------------------------------------------------------------------- */
 
 export async function GET(request: NextRequest) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ deliveries: [], slots: [], summary: { total: 0, pending: 0, in_transit: 0, delivered: 0 } });
+  }
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
