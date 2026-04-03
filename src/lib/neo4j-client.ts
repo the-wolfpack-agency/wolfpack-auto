@@ -1,9 +1,12 @@
 /**
- * Neo4j HTTP Transaction API client.
+ * Neo4j client — supports both Aura (Query API v2) and self-hosted (HTTP tx).
  *
- * Executes Cypher queries against Neo4j via its HTTP endpoint.
+ * Executes Cypher queries against Neo4j via HTTP.
  * Requires NEO4J_URL + NEO4J_PASSWORD to be set. Fails loudly
  * if credentials are missing — silent data loss is unacceptable.
+ *
+ * Auto-detects Aura (*.databases.neo4j.io) vs self-hosted and uses
+ * the appropriate API endpoint.
  */
 
 /** Returns true when Neo4j is explicitly disabled (NEO4J_URL set to empty). */
@@ -18,7 +21,19 @@ function isUnconfigured(): boolean {
 
 function getBaseUrl(): string | null {
   if (!process.env.NEO4J_URL) return null;
-  return process.env.NEO4J_URL;
+  // Normalize: neo4j+s:// → https://, bolt+s:// → https://
+  let url = process.env.NEO4J_URL;
+  if (url.startsWith("neo4j+s://")) url = url.replace("neo4j+s://", "https://");
+  if (url.startsWith("neo4j://")) url = url.replace("neo4j://", "http://");
+  if (url.startsWith("bolt+s://")) url = url.replace("bolt+s://", "https://");
+  if (url.startsWith("bolt://")) url = url.replace("bolt://", "http://");
+  return url;
+}
+
+/** Returns true if the Neo4j URL points to Aura (uses Query API v2). */
+function isAura(): boolean {
+  const url = process.env.NEO4J_URL ?? "";
+  return url.includes(".databases.neo4j.io");
 }
 
 function getAuthHeader(): string {
@@ -34,31 +49,65 @@ function getAuthHeader(): string {
   return "Basic " + Buffer.from(`${user}:${pass}`).toString("base64");
 }
 
-/**
- * Execute an array of Cypher queries against Neo4j's HTTP transaction API.
- *
- * Uses the commit endpoint so each call is a single atomic transaction.
- * Returns the count of successfully executed vs failed statements.
- */
-export async function executeNeo4jQueries(
-  queries: Array<string | { statement: string; parameters?: Record<string, unknown> }>,
-): Promise<{ executed: number; failed: number }> {
-  if (queries.length === 0 || isDisabled()) return { executed: 0, failed: 0 };
+/* ------------------------------------------------------------------ */
+/*  Aura Query API v2                                                   */
+/* ------------------------------------------------------------------ */
 
-  const baseUrl = getBaseUrl();
-  if (!baseUrl) {
-    console.warn(
-      `[neo4j-client] NEO4J_URL not set — ${queries.length} graph queries will NOT be executed. Journey data is being lost.`,
-    );
-    return { executed: 0, failed: queries.length };
+async function executeViaQueryApi(
+  baseUrl: string,
+  queries: Array<{ statement: string; parameters?: Record<string, unknown> }>,
+): Promise<{ executed: number; failed: number }> {
+  let executed = 0;
+  let failed = 0;
+
+  // Query API v2 executes one statement at a time
+  for (const q of queries) {
+    try {
+      const res = await fetch(`${baseUrl}/db/neo4j/query/v2`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getAuthHeader(),
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          statement: q.statement,
+          parameters: q.parameters ?? {},
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+
+      if (res.status === 202 || res.ok) {
+        const body = await res.json();
+        if (body.errors && body.errors.length > 0) {
+          console.warn("[neo4j-client] Query error:", body.errors[0]);
+          failed++;
+        } else {
+          executed++;
+        }
+      } else {
+        const errText = await res.text().catch(() => "(no body)");
+        console.error(`[neo4j-client] HTTP ${res.status}:`, errText);
+        failed++;
+      }
+    } catch (err) {
+      console.error("[neo4j-client] Query failed:", (err as Error).message);
+      failed++;
+    }
   }
 
-  const url = `${baseUrl}/db/neo4j/tx/commit`;
+  return { executed, failed };
+}
 
-  // Support both raw strings (legacy) and parameterized { statement, parameters } objects
-  const statements = queries.map((q) =>
-    typeof q === "string" ? { statement: q } : q,
-  );
+/* ------------------------------------------------------------------ */
+/*  Self-hosted HTTP Transaction API                                    */
+/* ------------------------------------------------------------------ */
+
+async function executeViaTxApi(
+  baseUrl: string,
+  queries: Array<{ statement: string; parameters?: Record<string, unknown> }>,
+): Promise<{ executed: number; failed: number }> {
+  const url = `${baseUrl}/db/neo4j/tx/commit`;
 
   try {
     const res = await fetch(url, {
@@ -68,7 +117,7 @@ export async function executeNeo4jQueries(
         Authorization: getAuthHeader(),
         Accept: "application/json",
       },
-      body: JSON.stringify({ statements }),
+      body: JSON.stringify({ statements: queries }),
       signal: AbortSignal.timeout(10_000),
     });
 
@@ -102,6 +151,39 @@ export async function executeNeo4jQueries(
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Public API                                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Execute an array of Cypher queries against Neo4j.
+ * Auto-detects Aura (Query API v2) vs self-hosted (HTTP tx).
+ */
+export async function executeNeo4jQueries(
+  queries: Array<string | { statement: string; parameters?: Record<string, unknown> }>,
+): Promise<{ executed: number; failed: number }> {
+  if (queries.length === 0 || isDisabled()) return { executed: 0, failed: 0 };
+
+  const baseUrl = getBaseUrl();
+  if (!baseUrl) {
+    console.warn(
+      `[neo4j-client] NEO4J_URL not set — ${queries.length} graph queries will NOT be executed. Journey data is being lost.`,
+    );
+    return { executed: 0, failed: queries.length };
+  }
+
+  // Normalize all queries to parameterized format
+  const normalized = queries.map((q) =>
+    typeof q === "string" ? { statement: q } : q,
+  );
+
+  if (isAura()) {
+    return executeViaQueryApi(baseUrl, normalized);
+  } else {
+    return executeViaTxApi(baseUrl, normalized);
+  }
+}
+
 /**
  * Quick health check — returns true if Neo4j responds.
  */
@@ -110,12 +192,29 @@ export async function neo4jHealthCheck(): Promise<boolean> {
   try {
     const baseUrl = getBaseUrl();
     if (!baseUrl) return false;
-    const res = await fetch(baseUrl, {
-      method: "GET",
-      headers: { Authorization: getAuthHeader() },
-      signal: AbortSignal.timeout(3_000),
-    });
-    return res.ok;
+
+    if (isAura()) {
+      // Aura: test via Query API
+      const res = await fetch(`${baseUrl}/db/neo4j/query/v2`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: getAuthHeader(),
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ statement: "RETURN 1" }),
+        signal: AbortSignal.timeout(5_000),
+      });
+      return res.status === 202 || res.ok;
+    } else {
+      // Self-hosted: test via root endpoint
+      const res = await fetch(baseUrl, {
+        method: "GET",
+        headers: { Authorization: getAuthHeader() },
+        signal: AbortSignal.timeout(3_000),
+      });
+      return res.ok;
+    }
   } catch {
     return false;
   }
@@ -128,10 +227,12 @@ export function getNeo4jConfigStatus(): {
   configured: boolean;
   disabled: boolean;
   hasPassword: boolean;
+  isAura: boolean;
 } {
   return {
     configured: !isUnconfigured(),
     disabled: isDisabled(),
     hasPassword: !!process.env.NEO4J_PASSWORD,
+    isAura: isAura(),
   };
 }
