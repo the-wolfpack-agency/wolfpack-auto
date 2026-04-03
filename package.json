@@ -45,7 +45,6 @@
     "@aws-sdk/client-s3": "^3.600.0",
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@elastic/elasticsearch": "^8.13.0",
-    "@imgly/background-removal-node": "^1.4.5",
     "@sentry/nextjs": "^10.46.0",
     "@types/qrcode": "^1.5.6",
     "acme-client": "^5.4.0",
