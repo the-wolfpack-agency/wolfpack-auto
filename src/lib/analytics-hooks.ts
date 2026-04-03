@@ -390,6 +390,25 @@ export type ReinsuranceEvent =
   | "reinsurance.report_generated"
   | "reinsurance.risk_assessed";
 
+export type SessionReplayEvent =
+  | "replay.recording_started"
+  | "replay.recording_stopped"
+  | "replay.viewed"
+  | "replay.exported";
+
+export type SurveyEvent =
+  | "survey.created"
+  | "survey.published"
+  | "survey.response_received"
+  | "survey.completed"
+  | "survey.nps_calculated";
+
+export type UserTestEvent =
+  | "usertest.created"
+  | "usertest.task_completed"
+  | "usertest.task_failed"
+  | "usertest.report_generated";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -421,7 +440,10 @@ export type PlatformEvent =
   | PricingEvent
   | BackgroundEvent
   | MarketingTemplateEvent
-  | EquityMiningEvent;
+  | EquityMiningEvent
+  | SessionReplayEvent
+  | SurveyEvent
+  | UserTestEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -800,4 +822,37 @@ export function trackReinsurance(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "reinsurance", ...meta });
+}
+
+/**
+ * Track a session replay event (recording start/stop, playback, export).
+ */
+export function trackSessionReplay(
+  event: SessionReplayEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "session_replay", ...meta });
+}
+
+/**
+ * Track a survey event (creation, publication, responses, NPS calculation).
+ */
+export function trackSurvey(
+  event: SurveyEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "surveys", ...meta });
+}
+
+/**
+ * Track a user testing event (test creation, task completion/failure, report generation).
+ */
+export function trackUserTest(
+  event: UserTestEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "user_testing", ...meta });
 }

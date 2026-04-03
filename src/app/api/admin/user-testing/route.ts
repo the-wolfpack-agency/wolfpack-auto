@@ -1,0 +1,208 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { createTest, type CreateTestConfig, type UserTest } from "@/lib/user-testing";
+
+/* -------------------------------------------------------------------------- */
+/*  Demo data (shadow mode — no DATABASE_URL)                                  */
+/* -------------------------------------------------------------------------- */
+
+const DEMO_TESTS: UserTest[] = [
+  {
+    id: "test-demo-001",
+    dealer_id: "demo",
+    title: "Find a vehicle under $30k",
+    description: "Can visitors easily find affordable vehicles using the inventory search?",
+    tasks: [
+      {
+        id: "task-demo-001-0",
+        title: "Navigate to inventory",
+        description: "Find the inventory page from the homepage",
+        success_url_pattern: "/inventory*",
+        max_duration_seconds: 30,
+        order: 0,
+      },
+      {
+        id: "task-demo-001-1",
+        title: "Apply price filter",
+        description: "Use the price filter to find vehicles under $30,000",
+        success_url_pattern: "/inventory*",
+        success_selector: ".price-filter",
+        max_duration_seconds: 45,
+        order: 1,
+      },
+      {
+        id: "task-demo-001-2",
+        title: "View a vehicle detail page",
+        description: "Click on a vehicle to see its details",
+        success_url_pattern: "/inventory/*",
+        max_duration_seconds: 30,
+        order: 2,
+      },
+    ],
+    created_at: "2026-04-01T10:00:00Z",
+    updated_at: "2026-04-02T14:30:00Z",
+    active: true,
+    total_participants: 24,
+  },
+  {
+    id: "test-demo-002",
+    dealer_id: "demo",
+    title: "Schedule a test drive",
+    description: "How easily can visitors schedule a test drive for a vehicle?",
+    tasks: [
+      {
+        id: "task-demo-002-0",
+        title: "Find a vehicle",
+        description: "Browse to any vehicle detail page",
+        success_url_pattern: "/inventory/*",
+        max_duration_seconds: 60,
+        order: 0,
+      },
+      {
+        id: "task-demo-002-1",
+        title: "Click test drive button",
+        description: "Find and click the schedule test drive button",
+        success_url_pattern: "/inventory/*",
+        success_selector: "#schedule-test-drive",
+        max_duration_seconds: 30,
+        order: 1,
+      },
+      {
+        id: "task-demo-002-2",
+        title: "Submit the form",
+        description: "Fill out and submit the test drive form",
+        success_url_pattern: "/test-drive/confirmation*",
+        max_duration_seconds: 120,
+        order: 2,
+      },
+    ],
+    created_at: "2026-03-28T09:00:00Z",
+    updated_at: "2026-04-01T16:00:00Z",
+    active: true,
+    total_participants: 18,
+  },
+  {
+    id: "test-demo-003",
+    dealer_id: "demo",
+    title: "Complete a trade-in valuation",
+    description: "Can visitors get a trade-in estimate without assistance?",
+    tasks: [
+      {
+        id: "task-demo-003-0",
+        title: "Navigate to trade-in page",
+        description: "Find the trade-in valuation tool",
+        success_url_pattern: "/trade-in*",
+        max_duration_seconds: 45,
+        order: 0,
+      },
+      {
+        id: "task-demo-003-1",
+        title: "Enter vehicle information",
+        description: "Fill in year, make, model, and condition",
+        success_url_pattern: "/trade-in*",
+        success_selector: "#trade-in-submit",
+        max_duration_seconds: 90,
+        order: 1,
+      },
+    ],
+    created_at: "2026-03-25T11:00:00Z",
+    updated_at: "2026-03-30T09:00:00Z",
+    active: false,
+    total_participants: 31,
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/*  GET /api/admin/user-testing                                                */
+/* -------------------------------------------------------------------------- */
+
+export async function GET(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
+
+  // --- Shadow mode ---
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ tests: DEMO_TESTS });
+  }
+
+  // --- Live mode ---
+  const dealerId = getDealerId(authResult);
+  const { query } = await import("@/lib/db");
+
+  const rows = await query(
+    `SELECT t.*,
+            COALESCE(r.cnt, 0) AS total_participants
+     FROM user_tests t
+     LEFT JOIN (
+       SELECT test_id, COUNT(DISTINCT participant_id) AS cnt
+       FROM test_recordings
+       GROUP BY test_id
+     ) r ON r.test_id = t.id
+     WHERE t.dealer_id = $1
+     ORDER BY t.created_at DESC`,
+    [dealerId],
+  );
+
+  const tests = rows.rows.map((row: Record<string, unknown>) => ({
+    ...row,
+    tasks: typeof row.tasks === "string" ? JSON.parse(row.tasks as string) : row.tasks,
+  }));
+
+  return NextResponse.json({ tests });
+}
+
+/* -------------------------------------------------------------------------- */
+/*  POST /api/admin/user-testing                                               */
+/* -------------------------------------------------------------------------- */
+
+export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
+
+  const body = await request.json();
+  const { title, description, tasks } = body;
+
+  if (!title || !tasks || !Array.isArray(tasks)) {
+    return NextResponse.json(
+      { error: "title and tasks[] are required" },
+      { status: 400 },
+    );
+  }
+
+  const dealerId = getDealerId(authResult);
+
+  const config: CreateTestConfig = {
+    dealer_id: dealerId,
+    title,
+    description: description ?? "",
+    tasks,
+  };
+
+  const test = createTest(config);
+
+  // --- Shadow mode ---
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ test, mode: "shadow" }, { status: 201 });
+  }
+
+  // --- Live mode ---
+  const { query } = await import("@/lib/db");
+
+  await query(
+    `INSERT INTO user_tests (id, dealer_id, title, description, tasks, active, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [
+      test.id,
+      test.dealer_id,
+      test.title,
+      test.description,
+      JSON.stringify(test.tasks),
+      test.active,
+      test.created_at,
+      test.updated_at,
+    ],
+  );
+
+  return NextResponse.json({ test }, { status: 201 });
+}
