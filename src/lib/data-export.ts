@@ -78,9 +78,9 @@ export function validateExportConfig(config: Partial<ExportConfig>): {
     errors.push(`format must be one of: ${VALID_FORMATS.join(", ")}`);
   if (!config.destination) errors.push("destination is required");
 
-  if (config.target === "snowflake" && !config.destination.includes("snowflake"))
+  if (config.destination && config.target === "snowflake" && !config.destination.includes("snowflake"))
     errors.push("Snowflake destination must contain a valid Snowflake connection reference");
-  if (config.target === "s3" && !config.destination.startsWith("s3://"))
+  if (config.destination && config.target === "s3" && !config.destination.startsWith("s3://"))
     errors.push("S3 destination must start with s3://");
 
   return { valid: errors.length === 0, errors };
