@@ -112,10 +112,14 @@ async function removeViaLocal(
 ): Promise<RemovalResult> {
   const startMs = Date.now();
 
-  // Lazy import — gracefully fails on Vercel where the package is excluded
+  // Dynamic require — use variable to prevent webpack from tracing this module.
+  // On Vercel, the package is not installed; the try/catch falls through
+  // and the provider chain moves to the next provider (fal.ai/Replicate).
   let localRemove: (blob: Blob, opts: Record<string, unknown>) => Promise<Blob>;
   try {
-    const mod = await import("@imgly/background-removal-node");
+    const pkgName = "@imgly/background-removal-node";
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require(pkgName);
     localRemove = mod.removeBackground;
   } catch {
     throw new Error(
