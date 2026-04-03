@@ -45,29 +45,37 @@ export async function GET(request: NextRequest) {
 
   // --- Live mode ---
   const dealerId = getDealerId(authResult);
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  const rows = await query(
-    `SELECT s.*,
-            COALESCE(r.cnt, 0) AS response_count
-     FROM surveys s
-     LEFT JOIN (
-       SELECT survey_id, COUNT(*) AS cnt
-       FROM survey_responses
-       GROUP BY survey_id
-     ) r ON r.survey_id = s.id
-     WHERE s.dealer_id = $1
-     ORDER BY s.created_at DESC`,
-    [dealerId],
-  );
+    const rows = await query(
+      `SELECT s.*,
+              COALESCE(r.cnt, 0) AS response_count
+       FROM surveys s
+       LEFT JOIN (
+         SELECT survey_id, COUNT(*) AS cnt
+         FROM survey_responses
+         GROUP BY survey_id
+       ) r ON r.survey_id = s.id
+       WHERE s.dealer_id = $1
+       ORDER BY s.created_at DESC`,
+      [dealerId],
+    );
 
-  const surveys = rows.rows.map((row: Record<string, unknown>) => ({
-    ...row,
-    questions: typeof row.questions === "string" ? JSON.parse(row.questions as string) : row.questions,
-    trigger: typeof row.trigger === "string" ? JSON.parse(row.trigger as string) : row.trigger,
-  }));
+    const surveys = rows.rows.map((row: Record<string, unknown>) => ({
+      ...row,
+      questions: typeof row.questions === "string" ? JSON.parse(row.questions as string) : row.questions,
+      trigger: typeof row.trigger === "string" ? JSON.parse(row.trigger as string) : row.trigger,
+    }));
 
-  return NextResponse.json({ surveys });
+    return NextResponse.json({ surveys });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ surveys: getDemoSurveys() });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -106,23 +114,31 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Live mode ---
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  await query(
-    `INSERT INTO surveys (id, dealer_id, title, description, questions, trigger, active, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    [
-      survey.id,
-      survey.dealer_id,
-      survey.title,
-      survey.description,
-      JSON.stringify(survey.questions),
-      JSON.stringify(survey.trigger),
-      survey.active,
-      survey.created_at,
-      survey.updated_at,
-    ],
-  );
+    await query(
+      `INSERT INTO surveys (id, dealer_id, title, description, questions, trigger, active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        survey.id,
+        survey.dealer_id,
+        survey.title,
+        survey.description,
+        JSON.stringify(survey.questions),
+        JSON.stringify(survey.trigger),
+        survey.active,
+        survey.created_at,
+        survey.updated_at,
+      ],
+    );
 
-  return NextResponse.json({ survey }, { status: 201 });
+    return NextResponse.json({ survey }, { status: 201 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ survey, mode: "shadow" }, { status: 201 });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }

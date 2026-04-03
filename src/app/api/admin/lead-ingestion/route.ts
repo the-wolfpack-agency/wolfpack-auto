@@ -27,37 +27,49 @@ export async function GET(request: NextRequest) {
 
   // --- Live mode ---
   const dealerId = getDealerId(authResult);
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  const feedRows = await query(
-    `SELECT * FROM lead_ingestion_feeds WHERE dealer_id = $1 ORDER BY created_at DESC`,
-    [dealerId],
-  );
+    const feedRows = await query(
+      `SELECT * FROM lead_ingestion_feeds WHERE dealer_id = $1 ORDER BY created_at DESC`,
+      [dealerId],
+    );
 
-  const recentRows = await query(
-    `SELECT * FROM ingested_leads WHERE dealer_id = $1 ORDER BY ingested_at DESC LIMIT 50`,
-    [dealerId],
-  );
+    const recentRows = await query(
+      `SELECT * FROM ingested_leads WHERE dealer_id = $1 ORDER BY ingested_at DESC LIMIT 50`,
+      [dealerId],
+    );
 
-  const statsRow = await query(
-    `SELECT
-       COUNT(*) AS total_ingested,
-       COUNT(*) FILTER (WHERE duplicate = true) AS duplicates_caught,
-       COUNT(DISTINCT feed_id) FILTER (WHERE ingested_at > NOW() - INTERVAL '24 hours') AS last_24h
-     FROM ingested_leads WHERE dealer_id = $1`,
-    [dealerId],
-  );
+    const statsRow = await query(
+      `SELECT
+         COUNT(*) AS total_ingested,
+         COUNT(*) FILTER (WHERE duplicate = true) AS duplicates_caught,
+         COUNT(DISTINCT feed_id) FILTER (WHERE ingested_at > NOW() - INTERVAL '24 hours') AS last_24h
+       FROM ingested_leads WHERE dealer_id = $1`,
+      [dealerId],
+    );
 
-  return NextResponse.json({
-    feeds: feedRows.rows,
-    recent_leads: recentRows.rows,
-    stats: {
-      total_ingested: Number(statsRow.rows[0]?.total_ingested ?? 0),
-      duplicates_caught: Number(statsRow.rows[0]?.duplicates_caught ?? 0),
-      feeds_active: feedRows.rows.filter((f: Record<string, unknown>) => f.active).length,
-      last_24h: Number(statsRow.rows[0]?.last_24h ?? 0),
-    },
-  });
+    return NextResponse.json({
+      feeds: feedRows.rows,
+      recent_leads: recentRows.rows,
+      stats: {
+        total_ingested: Number(statsRow.rows[0]?.total_ingested ?? 0),
+        duplicates_caught: Number(statsRow.rows[0]?.duplicates_caught ?? 0),
+        feeds_active: feedRows.rows.filter((f: Record<string, unknown>) => f.active).length,
+        last_24h: Number(statsRow.rows[0]?.last_24h ?? 0),
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({
+        feeds: getDemoFeeds(),
+        recent_leads: getDemoIngestionHistory(),
+        stats: { total_ingested: 0, duplicates_caught: 0, feeds_active: 0, last_24h: 0 },
+      });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -104,42 +116,51 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Live mode ---
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  // Fetch existing leads for dedup
-  const existingRows = await query(
-    `SELECT id, email, phone, first_name, last_name, vehicle_interest
-     FROM leads WHERE dealer_id = $1 AND created_at > NOW() - INTERVAL '90 days'`,
-    [dealerId],
-  );
-
-  const result = ingestLeadBatch(
-    normalized,
-    dealerId,
-    source as "autotrader" | "cars_com" | "cargurus" | "generic_adf",
-    existingRows.rows as Array<{ id: string; email: string; phone: string | null; first_name: string; last_name: string; vehicle_interest: string }>,
-  );
-
-  // Persist non-duplicate leads
-  for (const lead of result.leads.filter((l) => !l.duplicate)) {
-    await query(
-      `INSERT INTO leads (id, dealer_id, first_name, last_name, email, phone, vehicle_interest, source, status, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'third_party', 'new', NOW(), NOW())`,
-      [lead.id, dealerId, lead.first_name, lead.last_name, lead.email, lead.phone, lead.vehicle_interest],
+    // Fetch existing leads for dedup
+    const existingRows = await query(
+      `SELECT id, email, phone, first_name, last_name, vehicle_interest
+       FROM leads WHERE dealer_id = $1 AND created_at > NOW() - INTERVAL '90 days'`,
+      [dealerId],
     );
+
+    const result = ingestLeadBatch(
+      normalized,
+      dealerId,
+      source as "autotrader" | "cars_com" | "cargurus" | "generic_adf",
+      existingRows.rows as Array<{ id: string; email: string; phone: string | null; first_name: string; last_name: string; vehicle_interest: string }>,
+    );
+
+    // Persist non-duplicate leads
+    for (const lead of result.leads.filter((l) => !l.duplicate)) {
+      await query(
+        `INSERT INTO leads (id, dealer_id, first_name, last_name, email, phone, vehicle_interest, source, status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'third_party', 'new', NOW(), NOW())`,
+        [lead.id, dealerId, lead.first_name, lead.last_name, lead.email, lead.phone, lead.vehicle_interest],
+      );
+    }
+
+    // Track analytics
+    import("@/lib/analytics-hooks")
+      .then(({ trackLead }) =>
+        trackLead("lead.created", dealerId, {
+          source,
+          batch_size: leads.length,
+          created: result.created,
+          duplicates: result.duplicates,
+        }),
+      )
+      .catch(() => {});
+
+    return NextResponse.json(result, { status: 201 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      const result = ingestLeadBatch(normalized, dealerId, source as "autotrader" | "cars_com" | "cargurus" | "generic_adf");
+      return NextResponse.json({ ...result, mode: "shadow" }, { status: 201 });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
-
-  // Track analytics
-  import("@/lib/analytics-hooks")
-    .then(({ trackLead }) =>
-      trackLead("lead.created", dealerId, {
-        source,
-        batch_size: leads.length,
-        created: result.created,
-        duplicates: result.duplicates,
-      }),
-    )
-    .catch(() => {});
-
-  return NextResponse.json(result, { status: 201 });
 }

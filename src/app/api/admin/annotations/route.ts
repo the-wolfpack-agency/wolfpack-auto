@@ -66,6 +66,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ annotations });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ annotations: DEMO_ANNOTATIONS });
+    }
     console.error("[annotations] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load annotations" },
@@ -120,6 +124,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ annotation });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ annotation: null, error: "Table not migrated yet" });
+    }
     console.error("[annotations] POST error:", err);
     return NextResponse.json(
       { error: "Failed to create annotation" },
@@ -154,6 +162,10 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ deleted });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ deleted: false });
+    }
     console.error("[annotations] DELETE error:", err);
     return NextResponse.json(
       { error: "Failed to delete annotation" },

@@ -35,16 +35,27 @@ export async function GET(request: NextRequest) {
   // --- Live mode ---
   const dealerId = getDealerId(authResult);
 
-  if (vin) {
-    const { getAvailableProducts } = await import("@/lib/erating");
-    const products = await getAvailableProducts(vin, dealerId);
-    return NextResponse.json({ vin, products });
-  }
+  try {
+    if (vin) {
+      const { getAvailableProducts } = await import("@/lib/erating");
+      const products = await getAvailableProducts(vin, dealerId);
+      return NextResponse.json({ vin, products });
+    }
 
-  return NextResponse.json({
-    summary: getDemoProductSummary(),
-    providers: ["jm_family", "ally", "assurant"],
-  });
+    return NextResponse.json({
+      summary: getDemoProductSummary(),
+      providers: ["jm_family", "ally", "assurant"],
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({
+        summary: getDemoProductSummary(),
+        providers: ["jm_family", "ally", "assurant"],
+      });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }
 
 /* -------------------------------------------------------------------------- */

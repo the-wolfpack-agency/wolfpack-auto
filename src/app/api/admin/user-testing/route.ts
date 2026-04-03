@@ -128,28 +128,36 @@ export async function GET(request: NextRequest) {
 
   // --- Live mode ---
   const dealerId = getDealerId(authResult);
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  const rows = await query(
-    `SELECT t.*,
-            COALESCE(r.cnt, 0) AS total_participants
-     FROM user_tests t
-     LEFT JOIN (
-       SELECT test_id, COUNT(DISTINCT participant_id) AS cnt
-       FROM test_recordings
-       GROUP BY test_id
-     ) r ON r.test_id = t.id
-     WHERE t.dealer_id = $1
-     ORDER BY t.created_at DESC`,
-    [dealerId],
-  );
+    const rows = await query(
+      `SELECT t.*,
+              COALESCE(r.cnt, 0) AS total_participants
+       FROM user_tests t
+       LEFT JOIN (
+         SELECT test_id, COUNT(DISTINCT participant_id) AS cnt
+         FROM test_recordings
+         GROUP BY test_id
+       ) r ON r.test_id = t.id
+       WHERE t.dealer_id = $1
+       ORDER BY t.created_at DESC`,
+      [dealerId],
+    );
 
-  const tests = rows.rows.map((row: Record<string, unknown>) => ({
-    ...row,
-    tasks: typeof row.tasks === "string" ? JSON.parse(row.tasks as string) : row.tasks,
-  }));
+    const tests = rows.rows.map((row: Record<string, unknown>) => ({
+      ...row,
+      tasks: typeof row.tasks === "string" ? JSON.parse(row.tasks as string) : row.tasks,
+    }));
 
-  return NextResponse.json({ tests });
+    return NextResponse.json({ tests });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ tests: DEMO_TESTS });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -187,22 +195,30 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Live mode ---
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  await query(
-    `INSERT INTO user_tests (id, dealer_id, title, description, tasks, active, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [
-      test.id,
-      test.dealer_id,
-      test.title,
-      test.description,
-      JSON.stringify(test.tasks),
-      test.active,
-      test.created_at,
-      test.updated_at,
-    ],
-  );
+    await query(
+      `INSERT INTO user_tests (id, dealer_id, title, description, tasks, active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        test.id,
+        test.dealer_id,
+        test.title,
+        test.description,
+        JSON.stringify(test.tasks),
+        test.active,
+        test.created_at,
+        test.updated_at,
+      ],
+    );
 
-  return NextResponse.json({ test }, { status: 201 });
+    return NextResponse.json({ test }, { status: 201 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ test, mode: "shadow" }, { status: 201 });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }

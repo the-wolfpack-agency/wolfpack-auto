@@ -95,39 +95,47 @@ export async function GET(request: NextRequest) {
 
   // --- Live mode ---
   const dealerId = getDealerId(authResult);
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  if (sessionId) {
-    const sessionRows = await query(
-      `SELECT * FROM session_replays WHERE session_id = $1 AND dealer_id = $2`,
-      [sessionId, dealerId],
-    );
-    if (sessionRows.rows.length === 0) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    if (sessionId) {
+      const sessionRows = await query(
+        `SELECT * FROM session_replays WHERE session_id = $1 AND dealer_id = $2`,
+        [sessionId, dealerId],
+      );
+      if (sessionRows.rows.length === 0) {
+        return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      }
+
+      const eventRows = await query(
+        `SELECT * FROM session_replay_events WHERE session_id = $1 ORDER BY seq ASC`,
+        [sessionId],
+      );
+
+      return NextResponse.json({
+        session: sessionRows.rows[0],
+        events: eventRows.rows,
+      });
     }
 
-    const eventRows = await query(
-      `SELECT * FROM session_replay_events WHERE session_id = $1 ORDER BY seq ASC`,
-      [sessionId],
+    const rows = await query(
+      `SELECT session_id, dealer_id, started_at, ended_at, duration_ms, pages_visited,
+              event_count, conversion, user_agent, viewport
+       FROM session_replays
+       WHERE dealer_id = $1
+       ORDER BY started_at DESC
+       LIMIT 100`,
+      [dealerId],
     );
 
-    return NextResponse.json({
-      session: sessionRows.rows[0],
-      events: eventRows.rows,
-    });
+    return NextResponse.json({ sessions: rows.rows });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ sessions: DEMO_SESSIONS });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
-
-  const rows = await query(
-    `SELECT session_id, dealer_id, started_at, ended_at, duration_ms, pages_visited,
-            event_count, conversion, user_agent, viewport
-     FROM session_replays
-     WHERE dealer_id = $1
-     ORDER BY started_at DESC
-     LIMIT 100`,
-    [dealerId],
-  );
-
-  return NextResponse.json({ sessions: rows.rows });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -160,45 +168,58 @@ export async function POST(request: NextRequest) {
 
   // --- Live mode ---
   const dealerId = getDealerId(authResult);
-  const { query } = await import("@/lib/db");
+  try {
+    const { query } = await import("@/lib/db");
 
-  await query(
-    `INSERT INTO session_replays (session_id, dealer_id, started_at, ended_at, duration_ms,
-       pages_visited, event_count, conversion, user_agent, viewport)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     ON CONFLICT (session_id) DO UPDATE SET
-       ended_at = EXCLUDED.ended_at,
-       duration_ms = EXCLUDED.duration_ms,
-       pages_visited = EXCLUDED.pages_visited,
-       event_count = EXCLUDED.event_count,
-       conversion = EXCLUDED.conversion`,
-    [
-      session_id,
-      dealerId,
-      session_meta?.started_at ?? new Date().toISOString(),
-      session_meta?.ended_at ?? null,
-      session_meta?.duration_ms ?? 0,
-      JSON.stringify(session_meta?.pages_visited ?? []),
-      events.length,
-      session_meta?.conversion ?? false,
-      session_meta?.user_agent ?? "",
-      JSON.stringify(session_meta?.viewport ?? {}),
-    ],
-  );
-
-  // Batch insert events
-  for (const event of events) {
     await query(
-      `INSERT INTO session_replay_events (session_id, seq, ts, type, data)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT DO NOTHING`,
-      [session_id, event.seq, event.ts, event.type, JSON.stringify(event.data)],
+      `INSERT INTO session_replays (session_id, dealer_id, started_at, ended_at, duration_ms,
+         pages_visited, event_count, conversion, user_agent, viewport)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT (session_id) DO UPDATE SET
+         ended_at = EXCLUDED.ended_at,
+         duration_ms = EXCLUDED.duration_ms,
+         pages_visited = EXCLUDED.pages_visited,
+         event_count = EXCLUDED.event_count,
+         conversion = EXCLUDED.conversion`,
+      [
+        session_id,
+        dealerId,
+        session_meta?.started_at ?? new Date().toISOString(),
+        session_meta?.ended_at ?? null,
+        session_meta?.duration_ms ?? 0,
+        JSON.stringify(session_meta?.pages_visited ?? []),
+        events.length,
+        session_meta?.conversion ?? false,
+        session_meta?.user_agent ?? "",
+        JSON.stringify(session_meta?.viewport ?? {}),
+      ],
     );
-  }
 
-  return NextResponse.json({
-    stored: true,
-    session_id,
-    event_count: events.length,
-  });
+    // Batch insert events
+    for (const event of events) {
+      await query(
+        `INSERT INTO session_replay_events (session_id, seq, ts, type, data)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT DO NOTHING`,
+        [session_id, event.seq, event.ts, event.type, JSON.stringify(event.data)],
+      );
+    }
+
+    return NextResponse.json({
+      stored: true,
+      session_id,
+      event_count: events.length,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({
+        stored: false,
+        session_id,
+        event_count: events.length,
+        mode: "shadow",
+      });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }

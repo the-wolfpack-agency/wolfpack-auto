@@ -176,6 +176,10 @@ export async function GET(_request: NextRequest) {
       },
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json(getDemoData(dealerId));
+    }
     console.error("[api/reinsurance] GET error:", err);
     return NextResponse.json({ error: "Failed to load reinsurance data" }, { status: 500 });
   }
@@ -295,6 +299,26 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ program: rows[0], action: "create" }, { status: 201 });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      const demoProgram: ReinsuranceProgram = {
+        id: `reinsprog-${Date.now()}`,
+        dealer_id: dealerId,
+        name: program.name!,
+        type: program.type as ReinsuranceProgram["type"],
+        status: program.status ?? "pending",
+        inception_date: program.inception_date ?? new Date().toISOString().split("T")[0],
+        cession_rate: program.cession_rate ?? 0.75,
+        admin_fee_rate: program.admin_fee_rate ?? 0.03,
+        total_premiums: 0,
+        total_claims: 0,
+        total_admin_costs: 0,
+        retained_reserves: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      return NextResponse.json({ program: demoProgram, action });
+    }
     console.error("[api/reinsurance] POST error:", err);
     return NextResponse.json({ error: "Failed to save reinsurance program" }, { status: 500 });
   }

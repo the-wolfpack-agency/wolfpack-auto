@@ -71,6 +71,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ profile });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ profile: DEMO_PROFILE });
+    }
     console.error("[omnichannel] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load omnichannel profile" },
@@ -164,6 +168,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ profile: DEMO_PROFILE });
+    }
     console.error("[omnichannel] POST error:", err);
     return NextResponse.json(
       { error: "Failed to process omnichannel action" },

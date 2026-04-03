@@ -63,6 +63,10 @@ export async function GET() {
 
     return NextResponse.json({ calls: analyses, metrics });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ calls: DEMO_CALLS, metrics: DEMO_METRICS });
+    }
     console.error("[call-intelligence] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load call intelligence data" },

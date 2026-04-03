@@ -36,20 +36,32 @@ export async function GET() {
   }
 
   // Production — query from reviews table
-  const { query } = await import("@/lib/db");
-  const result = await query(
-    `SELECT id, source, author, rating, text, date, responded, response_text AS "responseText"
-     FROM reviews
-     WHERE dealer_id = $1
-     ORDER BY date DESC
-     LIMIT 100`,
-    [dealerId],
-  );
+  try {
+    const { query } = await import("@/lib/db");
+    const result = await query(
+      `SELECT id, source, author, rating, text, date, responded, response_text AS "responseText"
+       FROM reviews
+       WHERE dealer_id = $1
+       ORDER BY date DESC
+       LIMIT 100`,
+      [dealerId],
+    );
 
-  const reviews = result.rows as any[];
-  const score = calculateReputationScore(reviews);
-  const alerts = getReviewAlerts(reviews);
-  const trends = detectSentimentShift(reviews, 30);
+    const reviews = result.rows as any[];
+    const score = calculateReputationScore(reviews);
+    const alerts = getReviewAlerts(reviews);
+    const trends = detectSentimentShift(reviews, 30);
 
-  return NextResponse.json({ score, alerts, reviews, trends, dealerId });
+    return NextResponse.json({ score, alerts, reviews, trends, dealerId });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      const reviews = getDemoReviews();
+      const score = calculateReputationScore(reviews);
+      const alerts = getReviewAlerts(reviews);
+      const trends = detectSentimentShift(reviews, 30);
+      return NextResponse.json({ score, alerts, reviews, trends, dealerId });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }

@@ -18,9 +18,17 @@ export async function GET() {
     return NextResponse.json({ exports: history });
   }
 
-  const { getExportHistory } = await import("@/lib/data-export");
-  const history = await getExportHistory(dealerId);
-  return NextResponse.json({ exports: history });
+  try {
+    const { getExportHistory } = await import("@/lib/data-export");
+    const history = await getExportHistory(dealerId);
+    return NextResponse.json({ exports: history });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ exports: [] });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -54,20 +62,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let result;
-  switch (config.table) {
-    case "analytics_events":
-      result = await exportAnalyticsEvents(config);
-      break;
-    case "leads":
-      result = await exportLeads(config);
-      break;
-    case "inventory":
-      result = await exportInventory(config);
-      break;
-    default:
-      return NextResponse.json({ error: "Unknown table" }, { status: 400 });
-  }
+  try {
+    let result;
+    switch (config.table) {
+      case "analytics_events":
+        result = await exportAnalyticsEvents(config);
+        break;
+      case "leads":
+        result = await exportLeads(config);
+        break;
+      case "inventory":
+        result = await exportInventory(config);
+        break;
+      default:
+        return NextResponse.json({ error: "Unknown table" }, { status: 400 });
+    }
 
-  return NextResponse.json({ export: result });
+    return NextResponse.json({ export: result });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({
+        export: { status: "empty", rows: 0, message: "Table not yet migrated" },
+      });
+    }
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
 }

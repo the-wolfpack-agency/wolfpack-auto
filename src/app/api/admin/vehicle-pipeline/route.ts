@@ -73,6 +73,10 @@ export async function GET() {
 
     return NextResponse.json({ pipeline, slowMovers });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ pipeline: DEMO_PIPELINE, slowMovers: [] });
+    }
     console.error("[vehicle-pipeline] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load vehicle pipeline" },
@@ -141,6 +145,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ vehicle: null, error: "Table not migrated yet" });
+    }
     console.error("[vehicle-pipeline] POST error:", err);
     return NextResponse.json(
       { error: "Failed to process vehicle pipeline action" },

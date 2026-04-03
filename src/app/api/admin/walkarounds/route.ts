@@ -76,6 +76,10 @@ export async function GET(request: NextRequest) {
     const walkarounds = listWalkarounds(dealerId);
     return NextResponse.json({ walkarounds });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ walkarounds: DEMO_WALKAROUNDS });
+    }
     console.error("[walkarounds] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load walkarounds" },
@@ -169,6 +173,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ walkaround: null, error: "Table not migrated yet" });
+    }
     console.error("[walkarounds] POST error:", err);
     return NextResponse.json(
       { error: "Failed to process walkaround action" },

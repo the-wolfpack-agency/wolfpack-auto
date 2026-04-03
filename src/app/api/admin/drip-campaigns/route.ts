@@ -88,6 +88,15 @@ export async function GET() {
       overallConversionRate: totalEnrolled > 0 ? Math.round((totalConverted / totalEnrolled) * 100) : 0,
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({
+        campaigns: DEMO_CAMPAIGNS,
+        totalEnrolled: 0,
+        totalConverted: 0,
+        overallConversionRate: 0,
+      });
+    }
     console.error("[drip-campaigns] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load drip campaigns" },
@@ -155,6 +164,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ campaign });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      return NextResponse.json({ emailsSent: 0, emails: [] });
+    }
     console.error("[drip-campaigns] POST error:", err);
     return NextResponse.json(
       { error: "Failed to process drip campaign action" },

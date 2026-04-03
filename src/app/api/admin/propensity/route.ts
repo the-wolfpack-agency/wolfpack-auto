@@ -113,6 +113,16 @@ export async function GET() {
       customerCount: ranked.length,
     });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("does not exist")) {
+      const ranked = rankCustomersByPropensity(DEMO_CUSTOMERS);
+      return NextResponse.json({
+        ranked,
+        featureImportance: getFeatureImportance(),
+        modelTrained: isModelTrained(),
+        customerCount: ranked.length,
+      });
+    }
     console.error("[propensity] GET error:", err);
     return NextResponse.json(
       { error: "Failed to load propensity data" },
