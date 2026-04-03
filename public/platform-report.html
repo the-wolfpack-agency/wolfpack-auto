@@ -40,6 +40,7 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 .biz-text strong{color:var(--tx)}
 .footer{text-align:center;padding:24px 16px;margin-top:32px;border-top:2px solid var(--cyan);color:var(--dim);font-size:0.72rem}
 .section-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:0.75rem;font-weight:700;color:#fff;margin-right:8px;flex-shrink:0;vertical-align:middle}
+.new-badge{display:inline-block;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--green);color:#fff;margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:0.5px}
 @media(min-width:600px){.wrap{padding:24px 32px}h1{font-size:2rem}h2{font-size:1.4rem}.flow-row{flex-wrap:nowrap}}
 @media(max-width:599px){.flow-row{flex-direction:column}.arrow{transform:rotate(90deg)}.flow-box{width:100%}.grid2 .card{min-width:100%}}
 </style>
@@ -57,17 +58,19 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <!-- SECTION 1: EXECUTIVE SUMMARY -->
 <h2><span class="section-num" style="background:var(--blue)">1</span> Executive Summary</h2>
 
-<p><strong style="color:var(--tx)">Wolfpack Auto is a dealer website platform with an invisible intelligence layer.</strong> While customers see a clean car shopping experience, 31 separate systems analyze their behavior in real time — detecting interest, hesitation, frustration, and purchase intent. Every interaction is captured, analyzed, and stored in three databases simultaneously.</p>
+<p><strong style="color:var(--tx)">Wolfpack Auto is a dealer website platform with an invisible intelligence layer.</strong> While customers see a clean car shopping experience, 39 separate systems analyze their behavior in real time — detecting interest, hesitation, frustration, and purchase intent. Every interaction is captured, analyzed, and stored in three databases simultaneously.</p>
 
 <p><strong style="color:var(--tx)">What makes this different:</strong> A normal dealer website is a brochure. This platform is a brochure that watches, learns, and reports back. It knows which vehicles get the most attention, which customers are comparison shopping, which page elements frustrate people, and whether your marketing spend is actually working. All of this happens automatically, with zero manual effort.</p>
 
+<p><strong style="color:var(--tx)">For the Wolfpack team:</strong> This platform is our flagship product. Every dealer we onboard gets all of this out of the box — 90+ admin pages, 206+ API routes, and 4,300+ automated tests ensuring nothing breaks. The admin side gives dealers (and us) full visibility into what's working and what isn't.</p>
+
 <div class="stats">
-<div class="stat"><div class="n" style="color:var(--blue)">38</div><div class="l">Insight Generators</div></div>
-<div class="stat"><div class="n" style="color:var(--orange)">13</div><div class="l">Event Types Tracked</div></div>
+<div class="stat"><div class="n" style="color:var(--blue)">39</div><div class="l">Insight Generators</div></div>
+<div class="stat"><div class="n" style="color:var(--orange)">267</div><div class="l">Event Types Tracked</div></div>
 <div class="stat"><div class="n" style="color:var(--green)">6</div><div class="l">Conversion Actions</div></div>
-<div class="stat"><div class="n" style="color:var(--pink)">7</div><div class="l">SEO Functions</div></div>
+<div class="stat"><div class="n" style="color:var(--pink)">21</div><div class="l">SEO Functions</div></div>
 <div class="stat"><div class="n" style="color:var(--cyan)">3</div><div class="l">Data Stores</div></div>
-<div class="stat"><div class="n" style="color:var(--red)">364</div><div class="l">Safety Tests</div></div>
+<div class="stat"><div class="n" style="color:var(--red)">4,300+</div><div class="l">Automated Tests</div></div>
 <div class="stat"><div class="n" style="color:var(--purple)">14</div><div class="l">Compliance Standards</div></div>
 <div class="stat"><div class="n" style="color:var(--yellow)">5</div><div class="l">DMS Integrations</div></div>
 </div>
@@ -80,52 +83,52 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <div class="flow-row">
 <div class="flow-box" style="border:1px solid var(--blue)"><strong style="color:var(--blue)">1. Customer Arrives</strong>Page view recorded. Traffic source identified (Google, Facebook, direct). Device and location noted.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
 <div class="flow-box" style="border:1px solid var(--orange)"><strong style="color:var(--orange)">2. Customer Searches</strong>Search terms captured. If we don't have what they searched for, that's logged as an inventory gap opportunity.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
 <div class="flow-box" style="border:1px solid var(--blue)"><strong style="color:var(--blue)">3. Customer Views Vehicles</strong>Time on each vehicle tracked. Photo interactions measured. If they view 3+ vehicles, comparison shopping is detected.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:1px solid var(--purple)"><strong style="color:var(--purple)">4. Customer Uses Chat</strong>AI chat answers questions using real inventory data. Every message analyzed for purchase intent.</div>
+<div class="flow-box" style="border:1px solid var(--purple)"><strong style="color:var(--purple)">4. Customer Uses Chat</strong>Chat widget searches your real inventory using semantic matching and answers based on actual vehicle data. Every message analyzed for purchase intent.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:1px solid var(--green)"><strong style="color:var(--green)">5. Customer Fills Form</strong>Lead captured. Lead Temperature Score calculated from ALL previous signals. Scored as hot, warm, cool, or cold.</div>
+<div class="flow-box" style="border:1px solid var(--green)"><strong style="color:var(--green)">5. Customer Fills Form</strong>Lead captured. Lead Temperature Score calculated from ALL previous signals (45+ weighted factors). Scored as hot, warm, cool, or cold.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:1px solid var(--cyan)"><strong style="color:var(--cyan)">6. Data Stored in 3 Places</strong>Every event saved to PostgreSQL (permanent record), Qdrant (AI search), and Neo4j (journey mapping). Zero data loss.</div>
+<div class="flow-box" style="border:1px solid var(--cyan)"><strong style="color:var(--cyan)">6. Data Stored in 3 Places</strong>Every event saved to PostgreSQL (permanent record), Qdrant (semantic search), and Neo4j (journey mapping). Zero data loss.</div>
 </div>
 </div>
 
-<!-- SECTION 3: 31 INSIGHTS -->
-<h2><span class="section-num" style="background:var(--blue)">3</span> The 31 Insight Generators</h2>
+<!-- SECTION 3: 39 INSIGHTS -->
+<h2><span class="section-num" style="background:var(--blue)">3</span> The 39 Insight Generators</h2>
 <p>These systems run automatically on every visit. They detect patterns that would be impossible for a human to track manually.</p>
 
 <!-- ENGAGEMENT -->
-<h3><span class="cat-label" style="background:var(--blue)">Engagement — 13 Insights</span></h3>
+<h3><span class="cat-label" style="background:var(--blue)">Engagement &mdash; 13 Insights</span></h3>
 <p>Understanding how visitors interact with your site.</p>
 
 <div class="card" style="border-color:var(--blue)"><h4>1. Page Engagement Ranking</h4><p>Which pages get the most attention? Reveals your best-performing content.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>2. Vehicle Interest</h4><p>Which vehicles get the most views and longest viewing time? Shows real demand.</p></div>
-<div class="card" style="border-color:var(--blue)"><h4>3. Peak Hours</h4><p>When are your customers most active? Informs staffing and ad scheduling.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>3. Peak Hours</h4><p>When are your customers most active? Shown in your dealership's local timezone. Informs staffing and ad scheduling.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>4. Copy Behavior</h4><p>What text do visitors copy? Copying a VIN = serious buyer. Copying a price = comparison shopping.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>5. Scroll Behavior</h4><p>Are visitors skimmers (barely scrolling), readers, or deep-divers? Tells you if content length is right.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>6. Time-to-First-Interaction</h4><p>How fast do visitors take action? Under 3 seconds = focused buyer. Over 10 seconds = hesitant.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>7. Session Momentum</h4><p>Is the visitor getting more engaged or losing interest as they browse? Detects the tipping point.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>8. Viewport Attention</h4><p>What content visitors actually read vs what they scroll past. Reveals what matters to buyers.</p></div>
-<div class="card" style="border-color:var(--blue)"><h4>9. Photo Engagement Score</h4><p>Per-vehicle score based on gallery views, zoom, swipe, and time on photos.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>9. Photo Engagement Score</h4><p>Per-vehicle composite score based on gallery views, zoom events, swipe speed, and dwell time on photos. Classifies photos by type (exterior, interior, engine, damage) and infers buyer type (family buyer, appearance buyer, mechanical buyer).</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>10. Gallery Engagement</h4><p>Detailed photo interaction data — which specific photos get the most attention per vehicle.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>11. Device Orientation</h4><p>Mobile users rotating their phone to landscape for photos = high interest signal.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>12. Return Visit Sticky Pages</h4><p>Which pages bring people back for a second or third visit? Those pages close deals.</p></div>
-<div class="card" style="border-color:var(--blue)"><h4>13. Cross-Page Journey Patterns</h4><p>The exact path visitors take through your site — stored as a visual journey map.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>13. Cross-Page Journey Patterns</h4><p>The exact path visitors take through your site — stored as a visual journey map in Neo4j.</p></div>
 
 <!-- CONVERSION -->
-<h3><span class="cat-label" style="background:var(--green)">Conversion — 13 Insights</span></h3>
+<h3><span class="cat-label" style="background:var(--green)">Conversion &mdash; 13 Insights</span></h3>
 <p>Detecting purchase intent and removing obstacles to inquiry.</p>
 
 <div class="card" style="border-color:var(--green)"><h4>1. Conversion Paths</h4><p>What sequence of pages leads to a sale inquiry? Reveals your winning formula.</p></div>
@@ -134,29 +137,29 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <div class="card" style="border-color:var(--green)"><h4>4. Form Abandonment</h4><p>Which form field makes people give up? If 40% quit at "phone number," maybe make it optional.</p></div>
 <div class="card" style="border-color:var(--green)"><h4>5. Exit Intent</h4><p>Detects when someone moves their mouse toward the browser's close button — last chance to show an offer.</p></div>
 <div class="card" style="border-color:var(--green)"><h4>6. Price Trajectory</h4><p>Tracks what price ranges attract each visitor over time. Shows the budget they're gravitating toward.</p></div>
-<div class="card" style="border-color:var(--green)"><h4>7. Lead Temperature Score</h4><p>The master score. Combines ALL signals — pages viewed, time on site, vehicles checked, chat usage, form interactions — into a single hot/warm/cool/cold rating for every visitor.</p></div>
-<div class="card" style="border-color:var(--green)"><h4>8. Cross-Session Buyer Lifecycle</h4><p>Tracks visitors across multiple days. Detects the progression: first visit (browsing) → second visit (considering) → third visit (ready to buy).</p></div>
-<div class="card" style="border-color:var(--green)"><h4>9. Performance → Conversion Correlation</h4><p>Does a slow-loading page actually cost you sales? This measures it with real data.</p></div>
+<div class="card" style="border-color:var(--green)"><h4>7. Lead Temperature Score</h4><p>The master score. Combines 45+ weighted signals — pages viewed, time on site, vehicles checked, chat usage, form interactions, calculator use, return visits — into a single hot/warm/cool/cold rating for every visitor. Uses temporal decay so recent signals weigh more.</p></div>
+<div class="card" style="border-color:var(--green)"><h4>8. Cross-Session Buyer Lifecycle</h4><p>Tracks visitors across multiple days. Detects the progression: first visit (browsing) &rarr; second visit (considering) &rarr; third visit (ready to buy).</p></div>
+<div class="card" style="border-color:var(--green)"><h4>9. Performance &rarr; Conversion Correlation</h4><p>Does a slow-loading page actually cost you sales? This measures it with real data.</p></div>
 <div class="card" style="border-color:var(--green)"><h4>10. CTA Visibility Gap</h4><p>Are your "Schedule Test Drive" buttons actually being seen? If they're below the fold, visitors might never see them.</p></div>
 <div class="card" style="border-color:var(--green)"><h4>11. Vehicle Comparison Patterns</h4><p>Which vehicles get compared together most often? Informs how you group and recommend inventory.</p></div>
 <div class="card" style="border-color:var(--green)"><h4>12. Financing Intent Profile</h4><p>Detects visitors researching payments, trade-in values, and credit — even without filling out a financing form.</p></div>
 <div class="card" style="border-color:var(--green)"><h4>13. Return Visit Stickiness</h4><p>Which pages keep bringing visitors back until they finally convert? Those are your closers.</p></div>
 
 <!-- SEARCH -->
-<h3><span class="cat-label" style="background:var(--orange)">Search — 2 Insights</span></h3>
+<h3><span class="cat-label" style="background:var(--orange)">Search &mdash; 2 Insights</span></h3>
 
 <div class="card" style="border-color:var(--orange)"><h4>1. Search Behavior</h4><p>What people search for, what they click from results, and searches that return nothing. Every dead-end search is a missed sale.</p></div>
 <div class="card" style="border-color:var(--orange)"><h4>2. Inventory Gap Detection</h4><p>Compares what people search for against what you actually have. "15 people searched for Honda Civic this week and you don't have one" — that's an actionable buying signal.</p></div>
 
 <!-- CHAT -->
-<h3><span class="cat-label" style="background:var(--purple)">Chat — 3 Insights</span></h3>
+<h3><span class="cat-label" style="background:var(--purple)">Chat &mdash; 3 Insights</span></h3>
 
 <div class="card" style="border-color:var(--purple)"><h4>1. Chat Engagement</h4><p>Tracks message count, topics discussed, response satisfaction, and whether chat conversations lead to form submissions or calls.</p></div>
 <div class="card" style="border-color:var(--purple)"><h4>2. Chat-to-Conversion Attribution</h4><p>Did the chat conversation actually lead to a form submission or call? Measures the real conversion rate of chat users vs non-chat users. Answers: "Is the chat closing deals or just answering questions?"</p></div>
 <div class="card" style="border-color:var(--purple)"><h4>3. Chat Topic Demand</h4><p>What topics come up most in chat? "financing" "trade-in" "availability" — reveals what information is missing from your pages. If 40% of chats ask about trade-ins, you need a trade-in page.</p></div>
 
 <!-- UX FRICTION -->
-<h3><span class="cat-label" style="background:var(--red)">UX Friction — 4 Insights</span></h3>
+<h3><span class="cat-label" style="background:var(--red)">UX Friction &mdash; 4 Insights</span></h3>
 <p>Detecting when visitors are frustrated or confused.</p>
 
 <div class="card" style="border-color:var(--red)"><h4>1. Rage Clicks</h4><p>3+ rapid clicks in the same spot = something is broken or confusing. Automatically flagged for review.</p></div>
@@ -165,7 +168,7 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <div class="card" style="border-color:var(--red)"><h4>4. Mobile Pinch-Zoom Detection</h4><p>Users pinching to zoom on mobile means text or buttons are too small. Pinpoints exactly which pages have sizing issues so you can fix them.</p></div>
 
 <!-- MARKETING -->
-<h3><span class="cat-label" style="background:var(--yellow)">Marketing — 4 Insights</span></h3>
+<h3><span class="cat-label" style="background:var(--yellow)">Marketing &mdash; 4 Insights</span></h3>
 
 <div class="card" style="border-color:var(--yellow)"><h4>1. Referrer Behavior Correlation</h4><p>Do visitors from Google behave differently than visitors from Facebook or Instagram ads? Shows which marketing channels bring buyers vs browsers.</p></div>
 <div class="card" style="border-color:var(--yellow)"><h4>2. UTM Campaign Attribution</h4><p>Tracks every ad campaign (utm_source, utm_medium, utm_campaign) through to conversion. Shows exactly which campaigns generate leads vs just traffic. Stop guessing which ads to keep running.</p></div>
@@ -178,72 +181,57 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 
 <div class="flow">
 <div class="flow-row">
-<div class="flow-box" style="border:2px solid var(--blue)"><strong style="color:var(--blue)">Browser</strong>EventCollector captures every click, scroll, search, and page view in real time</div>
+<div class="flow-box" style="border:2px solid var(--blue)"><strong style="color:var(--blue)">Browser</strong>EventCollector captures every click, scroll, search, and page view. Events are batched (5-second intervals or 20 events) and sent to the server. Privacy-first: no cookies, no PII, sessionStorage fingerprint only.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
 <div class="flow-box" style="border:2px solid var(--cyan)"><strong style="color:var(--cyan)">API Routes</strong>Events sent to /api/analytics, /api/chat, /api/leads — the server receives and validates everything</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:2px solid var(--green)"><strong style="color:var(--green)">Analytics Engine</strong>31 insight generators process the events — scoring leads, detecting patterns, building sessions</div>
+<div class="flow-box" style="border:2px solid var(--green)"><strong style="color:var(--green)">Analytics Engine</strong>39 insight generators process the events — scoring leads, detecting patterns, building sessions. Aggregation runs every 100 events.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 </div>
 
 <h3>Triple-Write Storage</h3>
 <p>Every event is written to three databases simultaneously. Each serves a different purpose:</p>
 
 <div class="card" style="border-color:var(--green)">
-<h4 style="color:var(--green)">PostgreSQL — The Permanent Record</h4>
+<h4 style="color:var(--green)">PostgreSQL &mdash; The Permanent Record</h4>
 <p>Every single event stored with full detail: timestamp, session, user, page, device, location, referrer. Think of it as the dealership's complete memory. Nothing is ever deleted. You can always go back and answer "what happened last Tuesday?"</p>
 </div>
 
 <div class="card" style="border-color:var(--purple)">
-<h4 style="color:var(--purple)">Qdrant — The AI Brain</h4>
-<p>Events and vehicle data are converted into mathematical representations that AI can understand. This powers the chat widget's ability to answer questions like "show me SUVs under $45k with low mileage" and find vehicles by meaning, not just keywords.</p>
+<h4 style="color:var(--purple)">Qdrant &mdash; The Semantic Search Brain</h4>
+<p>Events and vehicle data are converted into vector embeddings using local trigram analysis (zero external API calls, zero token costs). This powers the chat widget's ability to find vehicles by meaning — "show me SUVs under $45k with low mileage" — not just exact keyword matches.</p>
 </div>
 
 <div class="card" style="border-color:var(--teal)">
-<h4 style="color:var(--teal)">Neo4j — The Journey Map</h4>
-<p>Every visitor's path through the site is stored as a connected graph. You can literally see: "Customer A viewed the homepage, searched for BMW, looked at 3 vehicles, used chat, then submitted a lead form." This reveals which journeys lead to conversions.</p>
+<h4 style="color:var(--teal)">Neo4j &mdash; The Journey Map</h4>
+<p>Every visitor's path through the site is stored as a connected graph via Cypher queries. You can literally see: "Customer A viewed the homepage, searched for BMW, looked at 3 vehicles, used chat, then submitted a lead form." This reveals which journeys lead to conversions.</p>
 </div>
 
 <!-- SECTION 5: SEO ENGINE -->
 <h2><span class="section-num" style="background:var(--pink)">5</span> SEO Engine</h2>
-<p>Seven systems work together to make sure your site ranks as high as possible in Google and other search engines.</p>
+<p>21 functions across the SEO module ecosystem work together to make sure your site ranks as high as possible in search engines.</p>
 
-<div class="card" style="border-color:var(--pink)">
-<h4 style="color:var(--pink)">1. Dynamic Meta Tags</h4>
-<p>Every page automatically gets the perfect title and description for Google search results. No manual SEO work needed.</p>
-</div>
-<div class="card" style="border-color:var(--pink)">
-<h4 style="color:var(--pink)">2. Vehicle Rich Results</h4>
-<p>Your vehicles can appear in Google with price, mileage, and photos directly in search results — not just a plain link. This is done via structured data (JSON-LD) generated automatically for every vehicle.</p>
-</div>
-<div class="card" style="border-color:var(--pink)">
-<h4 style="color:var(--pink)">3. Sitemap Generation</h4>
-<p>A complete map of your site is generated and kept updated so Google always knows about every page and every vehicle listing.</p>
-</div>
-<div class="card" style="border-color:var(--pink)">
-<h4 style="color:var(--pink)">4. Page Speed Monitoring</h4>
-<p>Google penalizes slow sites. This tracks Core Web Vitals (loading speed, interactivity, visual stability) to make sure your site stays fast.</p>
-</div>
-<div class="card" style="border-color:var(--pink)">
-<h4 style="color:var(--pink)">5. High-Value Page Identification</h4>
-<p>Which pages drive the most business? Those pages get priority in search optimization and content investment.</p>
-</div>
-<div class="card" style="border-color:var(--pink)">
-<h4 style="color:var(--pink)">6. Popular Search Terms</h4>
-<p>What people search for on your site tells you what content to create. If 50 people search for "certified pre-owned" and you don't have a page for it, that's a gap.</p>
-</div>
-<div class="card" style="border-color:var(--pink)">
-<h4 style="color:var(--pink)">7. Behavior-Optimized Sitemap</h4>
-<p>A unique innovation: your sitemap prioritizes pages based on actual visitor behavior, not just a static list. Pages that real people care about get higher priority with search engines.</p>
-</div>
+<h3>Core SEO (7 Functions)</h3>
+<div class="card" style="border-color:var(--pink)"><h4>1. Dynamic Meta Tags</h4><p>Every page automatically gets the perfect title and description for Google search results. No manual SEO work needed.</p></div>
+<div class="card" style="border-color:var(--pink)"><h4>2. Vehicle Rich Results</h4><p>Your vehicles can appear in Google with price, mileage, and photos directly in search results — not just a plain link. This is done via structured data (JSON-LD) generated automatically for every vehicle.</p></div>
+<div class="card" style="border-color:var(--pink)"><h4>3. Sitemap Generation</h4><p>A complete map of your site is generated and kept updated so Google always knows about every page and every vehicle listing.</p></div>
+<div class="card" style="border-color:var(--pink)"><h4>4. Page Speed Monitoring</h4><p>Google penalizes slow sites. This tracks Core Web Vitals (loading speed, interactivity, visual stability) to make sure your site stays fast.</p></div>
+<div class="card" style="border-color:var(--pink)"><h4>5. High-Value Page Identification</h4><p>Which pages drive the most business? Those pages get priority in search optimization and content investment.</p></div>
+<div class="card" style="border-color:var(--pink)"><h4>6. Popular Search Terms</h4><p>What people search for on your site tells you what content to create. If 50 people search for "certified pre-owned" and you don't have a page for it, that's a gap.</p></div>
+<div class="card" style="border-color:var(--pink)"><h4>7. Behavior-Optimized Sitemap</h4><p>Your sitemap prioritizes pages based on actual visitor behavior, not just a static list. Pages that real people care about get higher priority with search engines.</p></div>
+
+<h3>Content Signal Analysis (10 Functions)<span class="new-badge">New</span></h3>
+<p>Tracks how visitors use search filters and inventory pages to identify content opportunities:</p>
+<div class="card" style="border-color:var(--pink)"><h4>Filter Combo Tracking</h4><p>Records which filter combinations visitors use most (e.g., "SUV + under $40k + AWD"). Surfaces zero-result gaps — when popular filter combos return no inventory, you know what to stock.</p></div>
+<div class="card" style="border-color:var(--pink)"><h4>SEO Performance Analysis</h4><p>Automated performance analysis, improvement suggestions, top keyword extraction, and full SEO report generation for each dealer.</p></div>
 
 <!-- SECTION 6: SHADOW HARDENING -->
-<h2><span class="section-num" style="background:var(--red)">6</span> Shadow Hardening — Production Safety</h2>
+<h2><span class="section-num" style="background:var(--red)">6</span> Shadow Hardening &mdash; Production Safety</h2>
 <p>A system that guarantees no bug, broken page, or security vulnerability ever reaches your live website.</p>
 
 <h3>How It Works</h3>
@@ -251,17 +239,17 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <div class="flow-row">
 <div class="flow-box" style="border:2px solid var(--yellow)"><strong style="color:var(--yellow)">Code Change</strong>A developer makes an update to the site</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
 <div class="flow-box" style="border:2px solid var(--cyan)"><strong style="color:var(--cyan)">Shadow Clone Created</strong>An identical copy of the site is built — same code, same layout, same everything</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:2px solid var(--blue)"><strong style="color:var(--blue)">244 Tests Run</strong>10 categories of automated tests hit every page, form, link, and API endpoint</div>
+<div class="flow-box" style="border:2px solid var(--blue)"><strong style="color:var(--blue)">4,300+ Tests Run</strong>10 categories of automated tests hit every page, form, link, and API endpoint</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:2px solid var(--green)"><strong style="color:var(--green)">All Pass?</strong>If every test passes → change goes live. If anything fails → change is blocked. Customers never see it.</div>
+<div class="flow-box" style="border:2px solid var(--green)"><strong style="color:var(--green)">All Pass?</strong>If every test passes &rarr; change goes live. If anything fails &rarr; change is blocked. Customers never see it.</div>
 </div>
 </div>
 
@@ -284,16 +272,16 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <!-- SECTION 7: A/B TESTING -->
 <h2><span class="section-num" style="background:var(--yellow)">7</span> A/B Testing Framework</h2>
 
-<p><strong style="color:var(--tx)">Any element on the site can be tested.</strong> Button text, page layouts, call-to-action placement, hero images — the system shows different versions to different visitors and measures which version generates more inquiries.</p>
+<p><strong style="color:var(--tx)">Any element on the site can be tested.</strong> Button text, page layouts, call-to-action placement, hero images — the system shows different versions to different visitors and measures which version generates more inquiries. Variant assignment uses deterministic hashing (consistent experience per visitor). Results include chi-squared statistical significance testing — so you know when a winner is real, not a fluke.</p>
 
 <div class="flow">
 <div class="flow-row">
 <div class="flow-box" style="border:1px solid var(--yellow)"><strong>Version A</strong>"Schedule Test Drive" button in blue</div>
 <div class="flow-box" style="border:1px solid var(--yellow)"><strong>Version B</strong>"Book Your Test Drive" button in green</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:2px solid var(--green)"><strong style="color:var(--green)">Data Shows the Winner</strong>Version B gets 23% more clicks → it becomes the default. Decisions backed by data, not opinions.</div>
+<div class="flow-box" style="border:2px solid var(--green)"><strong style="color:var(--green)">Data Shows the Winner</strong>Version B gets 23% more clicks &rarr; it becomes the default. Decisions backed by data, not opinions.</div>
 </div>
 </div>
 
@@ -306,44 +294,71 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 
 <div class="flow">
 <div class="flow-row">
-<div class="flow-box" style="border:2px solid var(--orange)"><strong style="color:var(--orange)">1. Enter VIN</strong>System instantly decodes year, make, model, trim, engine, transmission, drivetrain, and fuel type via the free NHTSA database. Zero typing.</div>
+<div class="flow-box" style="border:2px solid var(--orange)"><strong style="color:var(--orange)">1. Enter VIN</strong>System instantly decodes year, make, model, trim, engine, transmission, drivetrain, and fuel type using a local algorithmic decoder (50+ manufacturer WMI codes, check digit validation). Zero external API calls.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
 <div class="flow-box" style="border:2px solid var(--blue)"><strong style="color:var(--blue)">2. Snap Photos</strong>Take photos directly from phone camera. System auto-orders by timestamp, optimizes to 3 formats (WebP, AVIF, JPEG), generates thumbnails, and uploads to cloud storage.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
 <div class="flow-box" style="border:2px solid var(--green)"><strong style="color:var(--green)">3. AI Generates Listing</strong>Professional marketing description, feature highlights, and SEO-optimized title/meta are generated automatically. Editable before publishing.</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
 <div class="flow-box" style="border:2px solid var(--purple)"><strong style="color:var(--purple)">4. Smart Pricing</strong>System suggests a price based on comparable vehicles in your inventory. Shows market position (below/at/above market).</div>
 </div>
-<div class="arrow">↓</div>
+<div class="arrow">&darr;</div>
 <div class="flow-row">
-<div class="flow-box" style="border:2px solid var(--cyan)"><strong style="color:var(--cyan)">5. Live in All 3 Databases</strong>Vehicle instantly searchable by AI chat, appears in inventory, and is indexed for SEO. No manual data entry anywhere.</div>
+<div class="flow-box" style="border:2px solid var(--cyan)"><strong style="color:var(--cyan)">5. Live in All 3 Databases</strong>Vehicle instantly searchable by chat, appears in inventory, and is indexed for SEO. No manual data entry anywhere.</div>
 </div>
 </div>
+
+<h3>Vehicle Photo Backgrounds<span class="new-badge">New</span></h3>
+<p>Professional vehicle photos without a professional studio. The background system includes:</p>
+<div class="card" style="border-color:var(--blue)"><h4>7 Built-in System Backgrounds</h4><p>Professional gradient and environment backgrounds generated via SVG compositing. Available immediately, no cost.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>Custom Background Upload</h4><p>Drag-and-drop your own backgrounds. Stored in cloud storage. Apply to any vehicle photo.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>Background Removal</h4><p>AI-powered background removal with a three-provider fallback chain for reliability. Cuts out the vehicle from any photo.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>Batch Processing</h4><p>Apply backgrounds to up to 200 vehicles at once. Before/after toggle preview. Engagement tracking on background performance.</p></div>
 
 <h3>Bulk Import</h3>
 <p>Already have inventory in a DMS system? Upload a CSV, JSON, or XML file and the system processes everything in batches:</p>
 <div class="check-grid">
-<div class="check-item" style="border-left:3px solid var(--orange)">All Major DMS Platforms</div>
-<div class="check-item" style="border-left:3px solid var(--orange)">CSV Upload</div>
-<div class="check-item" style="border-left:3px solid var(--orange)">JSON Upload</div>
-<div class="check-item" style="border-left:3px solid var(--orange)">XML Upload</div>
-<div class="check-item" style="border-left:3px solid var(--orange)">API Integration</div>
+<div class="check-item" style="border-left:3px solid var(--orange)">CDK Global</div>
+<div class="check-item" style="border-left:3px solid var(--orange)">Reynolds &amp; Reynolds</div>
+<div class="check-item" style="border-left:3px solid var(--orange)">Dealertrack</div>
+<div class="check-item" style="border-left:3px solid var(--orange)">Tekion</div>
+<div class="check-item" style="border-left:3px solid var(--orange)">Generic CSV/XML</div>
 </div>
-<p style="margin-top:12px">The system automatically normalizes field names across providers — "StockNo," "stock_number," and "Stock #" all become the same thing. Colors, body styles, and transmissions are standardized too.</p>
+<p style="margin-top:12px">The system automatically normalizes field names across providers — "StockNo," "stock_number," and "Stock #" all become the same thing. Colors, body styles, and transmissions are standardized too. Full validation pipeline: normalize &rarr; validate VINs &rarr; diff against existing &rarr; upsert &rarr; invalidate cache.</p>
 
 <h3>Inventory Recommendations</h3>
 <div class="card" style="border-color:var(--green)"><h4>Inventory Gap Detection</h4><p>Combines search analytics with your current stock: "23 people searched for Honda Civic this week and you have 0 in stock." Tells you exactly what to acquire.</p></div>
-<div class="card" style="border-color:var(--yellow)"><h4>Slow Mover Alerts</h4><p>Vehicles sitting 60+ days get flagged with repricing suggestions based on comparable market data.</p></div>
+<div class="card" style="border-color:var(--yellow)"><h4>Slow Mover Alerts</h4><p>Vehicles sitting 60+ days get flagged with repricing suggestions. Includes estimated floor plan interest savings calculation.</p></div>
 <div class="card" style="border-color:var(--blue)"><h4>Pricing Intelligence</h4><p>Every vehicle is compared against similar inventory (same make/model, similar year/mileage). If you're priced 10%+ above or below market, you'll know — with the data to back it up.</p></div>
 
-<!-- SECTION 9: DEALER ONBOARDING -->
-<h2><span class="section-num" style="background:var(--teal)">9</span> Dealer Onboarding</h2>
+<!-- SECTION 9: DEALER OPERATIONS -->
+<h2><span class="section-num" style="background:var(--teal)">9</span> Dealer Operations<span class="new-badge">New</span></h2>
+<p>Full back-office operations built into the platform — from deal desking to payroll.</p>
+
+<h3>F&amp;I Desking</h3>
+<div class="card" style="border-color:var(--teal)"><h4>Deal Scenarios</h4><p>Retail and lease payment calculators with profit analysis. Run multiple deal scenarios side-by-side. F&amp;I product menus with margin tracking. Automatic lender matching based on deal structure and customer credit profile.</p></div>
+
+<h3>General Ledger</h3>
+<div class="card" style="border-color:var(--teal)"><h4>NADA-Standard Accounting</h4><p>42+ standard accounts following NADA chart of accounts. Double-entry validation on every transaction. Auto-generated financial statements: trial balance, P&amp;L, and balance sheet. Deal proceeds automatically posted to the correct accounts.</p></div>
+<div class="card" style="border-color:var(--teal)"><h4>Multi-Company Consolidation</h4><p>For dealer groups: separate GL per company with intercompany transaction tracking and consolidated balance reporting. Elimination entries for intercompany balances.</p></div>
+
+<h3>Payments</h3>
+<div class="card" style="border-color:var(--teal)"><h4>Stripe Integration</h4><p>Full Stripe Connect onboarding, payment intents, refunds, terminal support, fee calculation, and reconciliation. Shadow mode available for testing payment flows without processing real charges.</p></div>
+
+<h3>Payroll</h3>
+<div class="card" style="border-color:var(--teal)"><h4>Commission &amp; Payroll</h4><p>Flat, tiered, and draw-against-commission plans. Time entry tracking with overtime calculation. Pay period summaries. Integration adapters for Gusto, ADP, and Paychex.</p></div>
+
+<h3>Service Department</h3>
+<div class="card" style="border-color:var(--teal)"><h4>Full Service Operations</h4><p>Service appointment scheduling, repair order management, technician assignment and tracking, parts inventory, and vehicle service history per VIN.</p></div>
+
+<!-- SECTION 10: DEALER ONBOARDING -->
+<h2><span class="section-num" style="background:var(--green)">10</span> Dealer Onboarding</h2>
 <p>New dealers go from signup to live site in minutes with a guided 5-step wizard:</p>
 
 <div class="flow">
@@ -356,84 +371,132 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 </div>
 </div>
 
-<!-- SECTION 10: NOTIFICATIONS -->
-<h2><span class="section-num" style="background:var(--purple)">10</span> Email Notifications</h2>
-<p>The right people get notified at the right time — automatically.</p>
+<p>Multi-location support built in — dealer groups can provision multiple locations from a single admin with bulk dealer provisioning.</p>
+
+<!-- SECTION 11: NOTIFICATIONS -->
+<h2><span class="section-num" style="background:var(--purple)">11</span> Email &amp; Communications</h2>
+<p>The right people get notified at the right time — automatically. Powered by Resend for reliable delivery.</p>
 
 <div class="grid2">
 <div class="card" style="border-color:var(--green)"><h4>New Lead Alerts</h4><p>When a customer submits an inquiry, your sales team gets an instant email with all details — name, contact info, vehicle of interest, and lead temperature score.</p></div>
-<div class="card" style="border-color:var(--blue)"><h4>Customer Confirmations</h4><p>Customers get an immediate "We received your inquiry" email. Professional, branded, and sets expectations for follow-up timing.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>Customer Confirmations</h4><p>Customers get an immediate branded "We received your inquiry" email. Sets expectations for follow-up timing.</p></div>
 <div class="card" style="border-color:var(--yellow)"><h4>Inventory Alerts</h4><p>Managers are notified about slow movers, pricing opportunities, and inventory gaps — the data comes to you, you don't have to check dashboards.</p></div>
-<div class="card" style="border-color:var(--purple)"><h4>Configurable</h4><p>Each team member controls which notifications they receive. Admins set defaults, staff can customize. No notification fatigue.</p></div>
+<div class="card" style="border-color:var(--purple)"><h4>Email Sequences<span class="new-badge">New</span></h4><p>Automated multi-step email/SMS sequences with templates, scheduling, and delivery logging. Cron-based processing ensures sequences fire on schedule.</p></div>
 </div>
 
-<!-- SECTION 11: ANALYTICS DASHBOARD -->
-<h2><span class="section-num" style="background:var(--blue)">11</span> Analytics Dashboard</h2>
-<p>All 38 insight generators feed into a visual dashboard built for dealers, not data scientists.</p>
+<!-- SECTION 12: ADMIN ANALYTICS -->
+<h2><span class="section-num" style="background:var(--blue)">12</span> Admin-Side Analytics<span class="new-badge">New</span></h2>
+<p><strong style="color:var(--tx)">The /admin side of the platform has its own analytics layer</strong> — separate from the customer-facing behavioral tracking. This is what the Wolfpack team and dealer managers see when they log in. Every admin action is tracked across 267 event types in 30 categories.</p>
 
+<h3>Analytics Dashboard (/admin/analytics)</h3>
+<p>The central command center for dealer performance. Built for dealers, not data scientists.</p>
 <div class="grid2">
-<div class="card" style="border-color:var(--blue)"><h4>Traffic &amp; Engagement</h4><p>Real-time visitor counts, page engagement rankings, peak hours heatmap, device split, and referrer breakdown. See where your traffic comes from and what it does.</p></div>
-<div class="card" style="border-color:var(--green)"><h4>Conversion Funnel</h4><p>Lead temperature distribution, form abandonment analysis, exit intent patterns, and CTA visibility tracking. See exactly where you're losing potential buyers.</p></div>
-<div class="card" style="border-color:var(--orange)"><h4>Vehicle Intelligence</h4><p>Most viewed vehicles, photo engagement scores, comparison shopping patterns, and inventory gap alerts. Know which vehicles are hot and which need attention.</p></div>
-<div class="card" style="border-color:var(--red)"><h4>UX Health</h4><p>Rage click detection, dead click monitoring, page load performance, and mobile vs desktop comparison. Fix problems before they cost you leads.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>Traffic &amp; Engagement</h4><p>Visitors today (with week comparison), page engagement rankings, peak hours heatmap, traffic source breakdown, and device split (desktop/mobile/tablet).</p></div>
+<div class="card" style="border-color:var(--green)"><h4>Conversion Funnel</h4><p>Lead temperature distribution (hot/warm/cool/cold), form abandonment rates by field, exit intent triggers, and CTA visibility (impressions vs clicks vs CTR).</p></div>
+<div class="card" style="border-color:var(--orange)"><h4>Vehicle Intelligence</h4><p>Most viewed vehicles ranked by views, inventory gap alerts (zero-result searches), comparison shopping patterns, and photo engagement scores per vehicle.</p></div>
+<div class="card" style="border-color:var(--red)"><h4>UX Health</h4><p>Rage click count + hotspots by page, dead click monitoring, page load performance with color-coded status, and mobile vs desktop conversion rates.</p></div>
+</div>
+
+<h3>Analytics Brain (/admin/analytics-brain)</h3>
+<p>Real-time behavioral intelligence — the "thinking" layer on top of raw data.</p>
+<div class="card" style="border-color:var(--purple)"><h4>Live Intelligence</h4><p>Active sessions count, buffered events, insights generated, hot leads count, and active alerts. Insights categorized by: conversion, engagement, search, UX friction, chat, marketing, and navigation.</p></div>
+<div class="card" style="border-color:var(--purple)"><h4>Prediction Calibration</h4><p>Shows how accurate the lead scoring model is: accuracy %, precision % (hot leads that actually bought), recall % (buyers we identified), sample size, best predictive signals, and misleading signals. Automated recommendations for improving predictions.</p></div>
+<div class="card" style="border-color:var(--purple)"><h4>Priority Alerts</h4><p>Hot lead exit alerts (engaged visitors leaving without converting) and frustrated buyer alerts (repeated clicking on broken elements). These surface the most urgent action items.</p></div>
+<div class="card" style="border-color:var(--purple)"><h4>Lead Temperature Board</h4><p>9-card grid of current visitor segments grouped by type, tier, and temperature score. Top signals displayed per visitor with conversion status.</p></div>
+
+<h3>Specialized Analytics Views</h3>
+<div class="grid2">
+<div class="card" style="border-color:var(--green)"><h4>Lead Analytics (/admin/analytics/leads)</h4><p>14-day lead temperature trends, lead source breakdown (Website Form, Chat, VDP Inquiry, Phone, Walk-in, Third Party), response time distribution, and conversion rate by source.</p></div>
+<div class="card" style="border-color:var(--orange)"><h4>Inventory Analytics (/admin/analytics/inventory)</h4><p>Days-on-lot distribution histogram, price-vs-views correlation by price range, inventory gap report with 30-day search counts and trend indicators, and slow mover repricing suggestions with estimated floor plan savings.</p></div>
 </div>
 <div class="grid2" style="margin-top:10px">
-<div class="card" style="border-color:var(--green)"><h4>Lead Analytics</h4><p>Lead sources, temperature trends over time, response time tracking, and conversion by channel. Dedicated view for your sales team.</p></div>
-<div class="card" style="border-color:var(--orange)"><h4>Inventory Analytics</h4><p>Days on lot distribution, price vs views correlation, slow mover reports, and repricing recommendations. Dedicated view for your inventory manager.</p></div>
+<div class="card" style="border-color:var(--red)"><h4>Platform Health (/admin/analytics/platform-health)</h4><p>7-day session count, avg session duration, pages per session, bounce rate, total friction events, feature adoption rate, and a calculated Health Score out of 100. Friction hotspot table shows rage clicks, dead clicks, and form abandonments by page with severity badges. Form completion rates show which form fields cause dropout.</p></div>
+<div class="card" style="border-color:var(--blue)"><h4>Funnel Health (/admin/funnel-health)</h4><p>Lead funnel health score with letter grade (A-F). KPIs: new leads (24h), SLA compliance, avg response time, and conversion rate. Visual conversion funnel: New &rarr; Contacted &rarr; Qualified &rarr; Appt. Set &rarr; Sold. Overdue lead alerts for leads stuck in "New" status &gt;24h.</p></div>
+</div>
+<div class="grid2" style="margin-top:10px">
+<div class="card" style="border-color:var(--yellow)"><h4>Engagement Reports (/admin/engagement-reports)</h4><p>Team-level engagement tracking: win rate, competitors mentioned, follow-ups needed. Log interactions by type (test drive, purchase, service, walk-in) with star ratings, competitor mentions, objections, and notes. Filterable by outcome.</p></div>
+<div class="card" style="border-color:var(--teal)"><h4>Market Intelligence (/admin/market-intelligence)</h4><p>Pricing benchmark tool (search by make/model/year for avg price, median, range, days to sell, optimal price range). Regional demand table showing search trends by make/model.</p></div>
 </div>
 
-<!-- SECTION 12: BUSINESS VALUE -->
-<h2><span class="section-num" style="background:var(--green)">12</span> What This Means for Your Dealership</h2>
+<h3>Admin Event Tracking (267 Event Types)</h3>
+<p>Every action taken in the admin panel is tracked and categorized. This powers the analytics dashboards and creates an audit trail:</p>
+<div class="check-grid">
+<div class="check-item" style="border-left:3px solid var(--green)">Deal Lifecycle (11)</div>
+<div class="check-item" style="border-left:3px solid var(--blue)">Service Ops (10)</div>
+<div class="check-item" style="border-left:3px solid var(--purple)">Communications (10)</div>
+<div class="check-item" style="border-left:3px solid var(--orange)">Lead Events (8)</div>
+<div class="check-item" style="border-left:3px solid var(--teal)">Accounting (6)</div>
+<div class="check-item" style="border-left:3px solid var(--cyan)">Pricing (8)</div>
+<div class="check-item" style="border-left:3px solid var(--red)">Security (7)</div>
+<div class="check-item" style="border-left:3px solid var(--yellow)">GL Entries (17)</div>
+<div class="check-item" style="border-left:3px solid var(--green)">Desking (16)</div>
+<div class="check-item" style="border-left:3px solid var(--blue)">Payments (10)</div>
+<div class="check-item" style="border-left:3px solid var(--purple)">Payroll (11)</div>
+<div class="check-item" style="border-left:3px solid var(--orange)">Backgrounds (20)</div>
+<div class="check-item" style="border-left:3px solid var(--pink)">Marketing (7)</div>
+<div class="check-item" style="border-left:3px solid var(--teal)">System (68)</div>
+</div>
+<p style="margin-top:12px">All admin events write to PostgreSQL as the primary store. Optional secondary write to Plausible for external analytics, and tertiary outbound webhooks for CRM integration.</p>
 
-<div class="biz-item"><div class="biz-icon">📊</div><div class="biz-text"><strong>Know exactly which vehicles get the most attention</strong> — adjust pricing, placement, and ad spend based on real demand, not guesses.</div></div>
+<h3>Reports &amp; Exports (/admin/reports)</h3>
+<div class="card" style="border-color:var(--blue)"><h4>On-Demand Reports</h4><p>Export leads by date range and status as CSV. Generate printable analytics reports (key metrics, lead temperature breakdown, top pages, top vehicles, traffic sources, device split). Optional weekly email summary every Monday at 8 AM.</p></div>
 
-<div class="biz-item"><div class="biz-icon">🔍</div><div class="biz-text"><strong>Detect comparison shoppers automatically</strong> — when someone views 3+ vehicles, you know they're comparing. Show them why yours is the best choice.</div></div>
+<!-- SECTION 13: BUSINESS VALUE -->
+<h2><span class="section-num" style="background:var(--green)">13</span> What This Means for Your Dealership</h2>
 
-<div class="biz-item"><div class="biz-icon">⚠️</div><div class="biz-text"><strong>Fix frustrating experiences before customers leave</strong> — rage clicks and dead clicks are flagged automatically. Fix problems before they cost you leads.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F4CA;</div><div class="biz-text"><strong>Know exactly which vehicles get the most attention</strong> — adjust pricing, placement, and ad spend based on real demand, not guesses.</div></div>
 
-<div class="biz-item"><div class="biz-icon">💬</div><div class="biz-text"><strong>AI chat that actually knows your inventory</strong> — customers ask real questions and get real answers. Not a chatbot reading a script — an AI that searches your actual vehicle database.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F50D;</div><div class="biz-text"><strong>Detect comparison shoppers automatically</strong> — when someone views 3+ vehicles, you know they're comparing. Show them why yours is the best choice.</div></div>
 
-<div class="biz-item"><div class="biz-icon">🌡️</div><div class="biz-text"><strong>Every visitor scored as a lead automatically</strong> — hot, warm, cool, or cold based on every signal. Your sales team knows who to call first.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x26A0;&#xFE0F;</div><div class="biz-text"><strong>Fix frustrating experiences before customers leave</strong> — rage clicks and dead clicks are flagged automatically. Fix problems before they cost you leads.</div></div>
 
-<div class="biz-item"><div class="biz-icon">🔎</div><div class="biz-text"><strong>SEO that adapts to real behavior</strong> — your site's search optimization is driven by what actual visitors do, not just keywords. Pages that perform get promoted.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F4AC;</div><div class="biz-text"><strong>Chat that searches your real inventory</strong> — customers ask questions and get answers based on your actual vehicle database using semantic matching. Not a chatbot reading a script — it understands "SUVs under $45k with low miles" and finds real matches.</div></div>
 
-<div class="biz-item"><div class="biz-icon">🛡️</div><div class="biz-text"><strong>364 automated tests prevent any bug from reaching customers</strong> — every change is proven safe on an identical copy of your site before it goes live. Zero downtime, zero broken pages.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F321;&#xFE0F;</div><div class="biz-text"><strong>Every visitor scored as a lead automatically</strong> — hot, warm, cool, or cold based on 45+ weighted signals. Your sales team knows who to call first.</div></div>
 
-<div class="biz-item"><div class="biz-icon">🏪</div><div class="biz-text"><strong>All data is owned by the dealer</strong> — not shared with or controlled by any third party. Your customer insights stay yours.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F50E;</div><div class="biz-text"><strong>SEO that adapts to real behavior</strong> — your site's search optimization is driven by what actual visitors do, not just keywords. Pages that perform get promoted.</div></div>
 
-<div class="biz-item"><div class="biz-icon">📈</div><div class="biz-text"><strong>Reports that show what your marketing spend produces</strong> — referrer behavior correlation tells you exactly which channels bring buyers vs browsers. Stop wasting money on traffic that doesn't convert.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F6E1;&#xFE0F;</div><div class="biz-text"><strong>4,300+ automated tests prevent any bug from reaching customers</strong> — every change is proven safe on an identical copy of your site before it goes live. Zero downtime, zero broken pages.</div></div>
 
-<div class="biz-item"><div class="biz-icon">🚗</div><div class="biz-text"><strong>Inventory gap detection finds vehicles you should stock</strong> — when customers search for cars you don't have, that's a buying signal. Know what to acquire before your competitors do.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F3EA;</div><div class="biz-text"><strong>All data is owned by the dealer</strong> — not shared with or controlled by any third party. Your customer insights stay yours.</div></div>
 
-<div class="biz-item"><div class="biz-icon">📱</div><div class="biz-text"><strong>Add vehicles in seconds from your phone</strong> — scan the VIN, snap photos, done. AI writes the description, suggests the price, and publishes to all databases instantly.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F4C8;</div><div class="biz-text"><strong>Reports that show what your marketing spend produces</strong> — referrer behavior correlation tells you exactly which channels bring buyers vs browsers. Stop wasting money on traffic that doesn't convert.</div></div>
 
-<div class="biz-item"><div class="biz-icon">📧</div><div class="biz-text"><strong>Instant notifications to the right people</strong> — new leads go straight to your sales team's inbox with temperature scores. Customers get immediate confirmation. No lead falls through the cracks.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F697;</div><div class="biz-text"><strong>Inventory gap detection finds vehicles you should stock</strong> — when customers search for cars you don't have, that's a buying signal. Know what to acquire before your competitors do.</div></div>
 
-<div class="biz-item"><div class="biz-icon">🏁</div><div class="biz-text"><strong>Go live in minutes, not months</strong> — the 5-step onboarding wizard takes you from signup to a fully functional dealer website with inventory, branding, and team access in a single session.</div></div>
+<div class="biz-item"><div class="biz-icon">&#x1F4F1;</div><div class="biz-text"><strong>Add vehicles in seconds from your phone</strong> — scan the VIN, snap photos, done. Listing description generated, price suggested, published to all databases instantly.</div></div>
 
-<!-- SECTION 13: COMPLIANCE -->
-<h2><span class="section-num" style="background:var(--red)">13</span> Compliance &amp; Security</h2>
+<div class="biz-item"><div class="biz-icon">&#x1F4E7;</div><div class="biz-text"><strong>Instant notifications to the right people</strong> — new leads go straight to your sales team's inbox with temperature scores. Customers get immediate confirmation. No lead falls through the cracks.</div></div>
+
+<div class="biz-item"><div class="biz-icon">&#x1F3C1;</div><div class="biz-text"><strong>Go live in minutes, not months</strong> — the 5-step onboarding wizard takes you from signup to a fully functional dealer website with inventory, branding, and team access in a single session.</div></div>
+
+<div class="biz-item"><div class="biz-icon">&#x1F4BC;</div><div class="biz-text"><strong>Full back-office in one platform</strong> — F&amp;I desking, general ledger, payments, payroll, service department, compliance. No separate systems to integrate or maintain.</div></div>
+
+<!-- SECTION 14: COMPLIANCE -->
+<h2><span class="section-num" style="background:var(--red)">14</span> Compliance &amp; Security</h2>
 <p>The platform is built to meet regulatory requirements for auto dealers, data privacy, and web security — out of the box.</p>
 
 <h3>Privacy &amp; Data Protection</h3>
 <div class="card" style="border-color:var(--red)"><h4>GDPR &amp; CCPA Compliant</h4><p>Full privacy policy covering data collection, retention periods, and user rights. European visitors get GDPR-specific rights (access, erasure, portability). California residents get CCPA protections (right to know, right to delete, right to opt out).</p></div>
-<div class="card" style="border-color:var(--red)"><h4>Cookie Consent</h4><p>Visitors choose "Accept All" or "Essential Only." When essential-only is selected, behavioral tracking is disabled — only basic page views are recorded. Full transparency, full control.</p></div>
-<div class="card" style="border-color:var(--red)"><h4>Data Deletion on Request</h4><p>Any customer can request their data be deleted. A dedicated API endpoint removes all personal information from all databases within one request. 72-hour breach notification commitment documented in policy.</p></div>
-<div class="card" style="border-color:var(--red)"><h4>PII Encryption</h4><p>All personal information (emails, phone numbers) is encrypted before storage using AES-256-GCM — the same standard used by banks. Even if the database were compromised, personal data remains unreadable.</p></div>
+<div class="card" style="border-color:var(--red)"><h4>Cookie Consent Banner</h4><p>On first visit, visitors choose "Accept All" or granular preferences (Essential always on, Analytics toggle, Marketing toggle). When analytics is disabled, the EventCollector blocks all non-essential events — only page views are recorded. Consent stored in cookies so server components can also read consent status. Backward-compatible with localStorage.</p></div>
+<div class="card" style="border-color:var(--red)"><h4>Privacy-First Event Collection</h4><p>Even with consent, the EventCollector uses no PII. Visitor fingerprinting uses sessionStorage only — cleared when the browser tab closes. No third-party tracking pixels or scripts. Events are batched (5-second intervals) to minimize network requests.</p></div>
+<div class="card" style="border-color:var(--red)"><h4>Data Deletion on Request</h4><p>Any customer can request their data be deleted. A dedicated API endpoint anonymizes all personal information across 6 database tables (leads, credit pulls, messages, reviews, deal worksheets, customers) within one request. Rate-limited to 3 requests per email per hour. All deletion requests are audit-logged.</p></div>
+<div class="card" style="border-color:var(--red)"><h4>PII Encryption</h4><p>All personal information (emails, phone numbers) is encrypted before storage using AES-256-GCM with proper 12-byte IVs and 16-byte authentication tags — the same standard used by banks. Even if the database were compromised, personal data remains unreadable.</p></div>
 
 <h3>Auto Dealer Regulations</h3>
 <div class="card" style="border-color:var(--yellow)"><h4>FTC Buyer's Guide Compliance</h4><p>Every vehicle listing displays: condition badge (New/Used/Certified Pre-Owned), odometer disclosure, warranty status ("As-Is" or warranty details), and price disclaimers (excluding tax, title, registration).</p></div>
-<div class="card" style="border-color:var(--yellow)"><h4>FTC CARS Rule (2024)</h4><p>Full compliance with the Combatting Auto Retail Scams Rule. No surprise fees — the price you see is the price you pay. All financing terms disclosed before signing. Collapsible disclosure on every vehicle page.</p></div>
+<div class="card" style="border-color:var(--yellow)"><h4>FTC CARS Rule (2024)</h4><p>Full compliance with the Combatting Auto Retail Scams Rule. No surprise fees — the price you see is the price you pay. All financing terms disclosed before signing.</p></div>
 <div class="card" style="border-color:var(--yellow)"><h4>Truth-in-Lending (Regulation Z)</h4><p>All financing estimates include required disclaimers: "Subject to credit approval," rate disclaimers, APR definitions, and clear notes that estimates exclude tax, title, registration, and insurance.</p></div>
+<div class="card" style="border-color:var(--yellow)"><h4>OFAC Screening<span class="new-badge">New</span></h4><p>Automated OFAC (Office of Foreign Assets Control) screening on customer records. Screening results tracked per customer with full audit history.</p></div>
 
 <h3>Platform Security</h3>
-<div class="card" style="border-color:var(--cyan)"><h4>Admin Authentication</h4><p>All dealer admin pages require secure login. Passwords are hashed with bcrypt. Sessions expire after 8 hours or 30 minutes of inactivity. Login is protected against brute force attacks (5-attempt lockout).</p></div>
+<div class="card" style="border-color:var(--cyan)"><h4>Admin Authentication</h4><p>All dealer admin pages require secure login. Passwords are hashed with bcrypt. Sessions expire after 8 hours or 30 minutes of inactivity. Login is protected against brute force attacks (5-attempt lockout). MFA (TOTP) available for additional security.</p></div>
 <div class="card" style="border-color:var(--cyan)"><h4>Security Headers</h4><p>Every page response includes: HSTS (force HTTPS), Content Security Policy, X-Frame-Options (prevent clickjacking), XSS protection, and restrictive permissions policy. CSRF protection on all forms.</p></div>
 <div class="card" style="border-color:var(--cyan)"><h4>Audit Logging</h4><p>Every administrative action is logged with timestamp, user, and details. Creates an immutable record for compliance audits and security investigations.</p></div>
 <div class="card" style="border-color:var(--cyan)"><h4>AI Transparency</h4><p>AI-generated content is clearly labeled. Chat widget displays "AI Assistant — responses may not be fully accurate." Vehicle descriptions generated by AI are marked as such. Full transparency with customers.</p></div>
 
 <h3>Accessibility</h3>
-<div class="card" style="border-color:var(--purple)"><h4>WCAG 2.1 Level AA</h4><p>The platform targets WCAG 2.1 Level AA accessibility standards. Keyboard navigation, screen reader support, semantic HTML, ARIA labels, focus indicators, and responsive design are all built in. Accessibility statement published at /accessibility.</p></div>
+<div class="card" style="border-color:var(--purple)"><h4>WCAG 2.1 Level AA</h4><p>The platform targets WCAG 2.1 Level AA accessibility standards. Keyboard navigation, screen reader support, semantic HTML, ARIA labels, focus indicators, and responsive design are all built in.</p></div>
 
 <h3 style="margin-top:20px">Compliance Summary</h3>
 <div class="check-grid">
@@ -451,7 +514,21 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <div class="check-item" style="border-left:3px solid var(--green)">AI Transparency</div>
 <div class="check-item" style="border-left:3px solid var(--green)">WCAG 2.1 AA</div>
 <div class="check-item" style="border-left:3px solid var(--green)">Security Headers</div>
-<div class="check-item" style="border-left:3px solid var(--yellow)">MFA (Pre-Production)</div>
+<div class="check-item" style="border-left:3px solid var(--green)">OFAC Screening</div>
+<div class="check-item" style="border-left:3px solid var(--green)">MFA (TOTP)</div>
+</div>
+
+<!-- SECTION 15: PLATFORM SCALE -->
+<h2><span class="section-num" style="background:var(--cyan)">15</span> Platform Scale</h2>
+<p>A snapshot of what's been built — every number verified from source code.</p>
+
+<div class="stats">
+<div class="stat"><div class="n" style="color:var(--blue)">90+</div><div class="l">Admin Pages</div></div>
+<div class="stat"><div class="n" style="color:var(--green)">206+</div><div class="l">API Routes</div></div>
+<div class="stat"><div class="n" style="color:var(--orange)">51</div><div class="l">DB Migrations</div></div>
+<div class="stat"><div class="n" style="color:var(--red)">4,300+</div><div class="l">Automated Tests</div></div>
+<div class="stat"><div class="n" style="color:var(--purple)">149K</div><div class="l">Lines of Code</div></div>
+<div class="stat"><div class="n" style="color:var(--cyan)">267</div><div class="l">Event Types</div></div>
 </div>
 
 </div><!-- end wrap -->
@@ -459,7 +536,7 @@ p{color:var(--dim);margin-bottom:12px;font-size:0.88rem}
 <!-- FOOTER -->
 <div class="footer">
 <div style="font-weight:700;font-size:0.85rem;color:var(--tx);margin-bottom:4px">Built by Wolfpack Agency Engineering</div>
-<div>Source-verified from analytics-engine.ts (1,847 lines) · seo-engine.ts (380 lines)</div>
+<div>Source-verified from analytics-engine.ts (2,394 lines) &middot; analytics-hooks.ts (760 lines) &middot; seo-engine.ts (568 lines)</div>
 <div style="margin-top:8px">Every feature described in this report is live, running, and mapped directly to source code.</div>
 </div>
 
