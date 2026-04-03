@@ -47,11 +47,11 @@ type HeatmapType = "click" | "scroll" | "attention";
 /* -------------------------------------------------------------------------- */
 
 function intensityColor(intensity: number): string {
-  if (intensity > 0.8) return "rgba(239, 68, 68, 0.7)";   // red
-  if (intensity > 0.6) return "rgba(249, 115, 22, 0.6)";  // orange
-  if (intensity > 0.4) return "rgba(234, 179, 8, 0.5)";   // yellow
-  if (intensity > 0.2) return "rgba(34, 197, 94, 0.4)";   // green
-  return "rgba(59, 130, 246, 0.3)";                         // blue
+  if (intensity > 0.8) return "rgba(239, 68, 68, 0.85)";   // red
+  if (intensity > 0.6) return "rgba(249, 115, 22, 0.75)";  // orange
+  if (intensity > 0.4) return "rgba(234, 179, 8, 0.7)";    // yellow
+  if (intensity > 0.2) return "rgba(34, 197, 94, 0.65)";   // green
+  return "rgba(59, 130, 246, 0.6)";                         // blue
 }
 
 function scrollBandColor(percent: number): string {
@@ -274,11 +274,12 @@ export default function HeatmapsPage() {
                       style={{
                         left: `${(point.x / 800) * 100}%`,
                         top: `${(point.y / 1400) * 100}%`,
-                        width: Math.max(20, point.intensity * 60),
-                        height: Math.max(20, point.intensity * 60),
+                        width: Math.max(30, point.intensity * 80),
+                        height: Math.max(30, point.intensity * 80),
                         backgroundColor: intensityColor(point.intensity),
                         transform: "translate(-50%, -50%)",
-                        filter: `blur(${Math.max(4, point.intensity * 12)}px)`,
+                        filter: `blur(${Math.max(2, point.intensity * 6)}px)`,
+                        boxShadow: `0 0 ${Math.max(8, point.intensity * 20)}px ${intensityColor(point.intensity)}`,
                       }}
                       title={`${point.count} clicks`}
                     />
