@@ -476,6 +476,50 @@ export type ReputationEvent =
   | "reputation.alert_triggered"
   | "reputation.response_suggested";
 
+export type OmnichannelEvent =
+  | "omnichannel.handoff_created"
+  | "omnichannel.handoff_scanned"
+  | "omnichannel.timeline_viewed"
+  | "omnichannel.channels_merged";
+
+export type CallIntelligenceEvent =
+  | "call.recorded"
+  | "call.analyzed"
+  | "call.outcome_classified"
+  | "call.quality_scored";
+
+export type WalkaroundEvent =
+  | "walkaround.started"
+  | "walkaround.segment_added"
+  | "walkaround.published"
+  | "walkaround.viewed";
+
+export type PropensityEvent =
+  | "propensity.model_trained"
+  | "propensity.prediction_made"
+  | "propensity.model_evaluated"
+  | "propensity.ranking_generated";
+
+export type I18nEvent =
+  | "i18n.locale_detected"
+  | "i18n.locale_switched";
+
+export type VehiclePipelineEvent =
+  | "vehicle_pipeline.milestone_updated"
+  | "vehicle_pipeline.slow_mover_detected";
+
+export type AnnotationEvent =
+  | "annotation.created"
+  | "annotation.deleted"
+  | "annotation.viewed";
+
+export type DripCampaignEvent =
+  | "drip.campaign_created"
+  | "drip.enrollment_started"
+  | "drip.email_sent"
+  | "drip.lead_converted"
+  | "drip.lead_unsubscribed";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -521,7 +565,15 @@ export type PlatformEvent =
   | CohortEvent
   | HeatmapCompareEvent
   | DeliveryEvent
-  | ReputationEvent;
+  | ReputationEvent
+  | OmnichannelEvent
+  | CallIntelligenceEvent
+  | WalkaroundEvent
+  | PropensityEvent
+  | I18nEvent
+  | VehiclePipelineEvent
+  | AnnotationEvent
+  | DripCampaignEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -1054,4 +1106,92 @@ export function trackReputation(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "reputation", ...meta });
+}
+
+/**
+ * Track an omnichannel continuity event (handoff, timeline, channel merge).
+ */
+export function trackOmnichannel(
+  event: OmnichannelEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "omnichannel", ...meta });
+}
+
+/**
+ * Track a conversation intelligence event (call analysis, outcome, quality).
+ */
+export function trackCallIntelligence(
+  event: CallIntelligenceEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "call_intelligence", ...meta });
+}
+
+/**
+ * Track a video walkaround event (start, segment, publish, view).
+ */
+export function trackWalkaround(
+  event: WalkaroundEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "walkarounds", ...meta });
+}
+
+/**
+ * Track a propensity scoring event (train, predict, evaluate, rank).
+ */
+export function trackPropensity(
+  event: PropensityEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "propensity", ...meta });
+}
+
+/**
+ * Track an i18n locale event (detection, switching).
+ */
+export function trackI18n(
+  event: I18nEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "i18n", ...meta });
+}
+
+/**
+ * Track a vehicle delivery pipeline event (milestone update, slow mover alert).
+ */
+export function trackVehiclePipeline(
+  event: VehiclePipelineEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "vehicle_pipeline", ...meta });
+}
+
+/**
+ * Track a dashboard annotation event (create, delete, view).
+ */
+export function trackAnnotation(
+  event: AnnotationEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "annotations", ...meta });
+}
+
+/**
+ * Track a drip campaign event (create, enroll, send, convert, unsubscribe).
+ */
+export function trackDripCampaign(
+  event: DripCampaignEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "drip_campaigns", ...meta });
 }

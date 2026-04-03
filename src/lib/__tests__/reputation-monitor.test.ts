@@ -174,7 +174,7 @@ describe("generateReviewResponse", () => {
     expect(response.reviewId).toBe("1");
     expect(response.tone).toBe("professional");
     expect(response.suggestedResponse).toContain("John");
-    expect(response.suggestedResponse).toContain("thank");
+    expect(response.suggestedResponse.toLowerCase()).toContain("thank");
   });
 
   it("generates empathetic response for negative review", () => {

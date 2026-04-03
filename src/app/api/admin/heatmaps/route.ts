@@ -63,11 +63,13 @@ export async function GET(request: NextRequest) {
   const page = searchParams.get("page") ?? "/";
   const type = (searchParams.get("type") ?? "click") as HeatmapType;
   const days = parseInt(searchParams.get("days") ?? "7", 10);
+  const isCompare = searchParams.get("compare") === "true";
+  const compareDays = parseInt(searchParams.get("compareDays") ?? "7", 10);
 
   // Shadow mode — return demo data
   if (!process.env.DATABASE_URL) {
     if (type === "click") {
-      return NextResponse.json({
+      const response: Record<string, unknown> = {
         type: "click",
         pageUrl: page,
         totalEvents: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
@@ -88,7 +90,28 @@ export async function GET(request: NextRequest) {
           { url: "/financing", pageviews: 2780, uniqueVisitors: 2100 },
           { url: "/trade-in", pageviews: 1950, uniqueVisitors: 1620 },
         ],
-      });
+      };
+
+      // Side-by-side comparison mode
+      if (isCompare) {
+        const compareData = DEMO_CLICK_DATA.map((p) => ({
+          ...p,
+          count: Math.round(p.count * (0.7 + Math.random() * 0.6)),
+          intensity: Math.min(1, p.intensity * (0.7 + Math.random() * 0.6)),
+        }));
+        response.points = compareData;
+        response.diff = {
+          increased: DEMO_CLICK_DATA.filter((_, i) => i % 2 === 0).map((p) => ({
+            x: p.x, y: p.y, count: Math.round(p.count * 0.2), intensity: 0.6,
+          })),
+          decreased: DEMO_CLICK_DATA.filter((_, i) => i % 2 === 1).map((p) => ({
+            x: p.x, y: p.y, count: Math.round(p.count * 0.15), intensity: 0.4,
+          })),
+          netChangePercent: 12,
+        };
+      }
+
+      return NextResponse.json(response);
     }
 
     if (type === "scroll") {
