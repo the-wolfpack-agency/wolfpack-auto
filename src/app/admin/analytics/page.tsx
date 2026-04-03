@@ -1,11 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AnalyticsChat from "@/components/AnalyticsChat";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
 /* -------------------------------------------------------------------------- */
+
+interface SubDashboardItem {
+  name: string;
+  path: string;
+  category: string;
+  healthy: boolean;
+  key_metrics: Record<string, number | string | boolean>;
+  error?: string;
+}
+
+interface SubDashboardAgg {
+  subdashboards: SubDashboardItem[];
+  summary: { total: number; healthy: number; degraded: number };
+}
 
 interface DashboardData {
   keyMetrics: {
@@ -46,16 +60,26 @@ interface DashboardData {
 
 export default function AnalyticsDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [subDashboards, setSubDashboards] = useState<SubDashboardAgg | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/analytics/dashboard")
-      .then((res) => {
-        if (res.status === 401 || res.status === 403) return; if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+    Promise.all([
+      fetch("/api/admin/analytics/dashboard")
+        .then((res) => {
+          if (res.status === 401 || res.status === 403) return null;
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        }),
+      fetch("/api/admin/analytics/subdashboards")
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null),
+    ])
+      .then(([dashboard, subs]) => {
+        if (dashboard) setData(dashboard);
+        if (subs) setSubDashboards(subs);
       })
-      .then((json) => setData(json))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -72,7 +96,7 @@ export default function AnalyticsDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
         <p className="mt-1 text-base text-gray-500">
-          Behavioral insights from 31 signal generators across your dealership.
+          Behavioral insights from 39 signal generators across your dealership.
         </p>
       </div>
 
@@ -84,6 +108,8 @@ export default function AnalyticsDashboardPage() {
         <TabLink href="/admin/analytics" active>Dashboard</TabLink>
         <TabLink href="/admin/analytics/leads">Leads</TabLink>
         <TabLink href="/admin/analytics/inventory">Inventory</TabLink>
+        <TabLink href="/admin/analytics/platform-health">Health</TabLink>
+        <TabLink href="/admin/analytics/verification">Verification</TabLink>
       </div>
 
       {/* ------------------------------------------------------------------ */}
@@ -444,6 +470,54 @@ export default function AnalyticsDashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Sub-Dashboard Aggregation                                          */}
+      {/* ------------------------------------------------------------------ */}
+      {subDashboards && (
+        <>
+          <SectionHeading title="Sub-Dashboard Health" />
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {subDashboards.subdashboards.map((sub) => (
+              <a
+                key={sub.path}
+                href={sub.path}
+                className={`block rounded-card border p-4 transition-colors hover:border-brand-400 ${
+                  sub.healthy
+                    ? "border-surface-border bg-white"
+                    : "border-red-200 bg-red-50"
+                }`}
+                data-testid={`sub-${sub.name.toLowerCase().replace(/\s/g, "-")}`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      sub.healthy ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  />
+                  <span className="text-sm font-semibold text-gray-900">{sub.name}</span>
+                  <span className="text-xs text-gray-400 ml-auto">{sub.category}</span>
+                </div>
+                {Object.keys(sub.key_metrics).length > 0 && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                    {Object.entries(sub.key_metrics).slice(0, 3).map(([k, v]) => (
+                      <span key={k} className="text-xs text-gray-500">
+                        {k.replace(/_/g, " ")}: <span className="font-semibold text-gray-700">{String(v)}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {sub.error && (
+                  <p className="text-xs text-red-500 mt-1">{sub.error}</p>
+                )}
+              </a>
+            ))}
+          </div>
+          <div className="text-sm text-gray-400 text-right">
+            {subDashboards.summary.healthy}/{subDashboards.summary.total} sub-dashboards healthy
+          </div>
+        </>
+      )}
     </div>
   );
 }

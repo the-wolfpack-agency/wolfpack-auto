@@ -19,6 +19,7 @@ const ANALYTICS_CHILDREN = [
   { href: "/admin/analytics/leads", label: "Leads" },
   { href: "/admin/analytics/inventory", label: "Inventory" },
   { href: "/admin/analytics/platform-health", label: "Platform Health" },
+  { href: "/admin/analytics/verification", label: "Verification" },
 ] as const;
 
 const OEM_CHILDREN = [
