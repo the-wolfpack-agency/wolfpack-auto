@@ -223,7 +223,7 @@ describe("Background Removal Service", () => {
       delete process.env.FAL_KEY;
       delete process.env.REPLICATE_API_TOKEN;
       delete process.env.REMOVE_BG_API_KEY;
-      delete process.env.NODE_ENV;
+      (process.env as Record<string, string | undefined>).NODE_ENV = undefined;
 
       const health = getProviderHealth();
       const local = health.find((h) => h.provider === "local")!;

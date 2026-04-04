@@ -109,7 +109,7 @@ describe("publishWalkaround", () => {
     expect((published as any).status).toBe("published");
     expect((published as any).publishedAt).toBeTruthy();
     // Thumbnails should be generated
-    (published as any).segments.forEach((s) => {
+    (published as any).segments.forEach((s: any) => {
       expect(s.thumbnailUrl).toBeTruthy();
     });
   });
