@@ -62,8 +62,8 @@ export async function GET() {
   }
 
   try {
-    const pipeline = getVehiclePipeline(dealerId);
-    const slowMovers = alertSlowMovers(dealerId, 7);
+    const pipeline = await getVehiclePipeline(dealerId);
+    const slowMovers = await alertSlowMovers(dealerId, 7);
 
     if (slowMovers.length > 0) {
       trackVehiclePipeline("vehicle_pipeline.slow_mover_detected", dealerId, {
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       if (!body.vin) {
         return NextResponse.json({ error: "vin is required" }, { status: 400 });
       }
-      const vehicle = acquireVehicle(body.vin, dealerId, body.vehicleInfo);
+      const vehicle = await acquireVehicle(body.vin, dealerId, body.vehicleInfo);
       trackVehiclePipeline("vehicle_pipeline.milestone_updated", dealerId, {
         vin: body.vin,
         milestone: "acquired",
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
-      const vehicle = updateMilestone(body.vin, body.milestone, undefined, body.notes);
+      const vehicle = await updateMilestone(body.vin, body.milestone, undefined, body.notes);
       if (!vehicle) {
         return NextResponse.json(
           { error: "Vehicle not found or invalid milestone progression" },

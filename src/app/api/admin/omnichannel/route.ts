@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const profile = getOmnichannelProfile(customerId, dealerId);
+    const profile = await getOmnichannelProfile(customerId, dealerId);
     trackOmnichannel("omnichannel.timeline_viewed", dealerId, {
       customer_id: customerId,
       touchpoint_count: profile.totalInteractions,
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
   // Shadow mode
   if (!process.env.DATABASE_URL) {
     if (body.action === "create_handoff") {
-      const handoff = createHandoff(
+      const handoff = await createHandoff(
         body.customerId,
         body.fromChannel ?? "online",
         body.toChannel ?? "in_store",
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.action === "record_touchpoint") {
-      const tp = recordTouchpoint(
+      const tp = await recordTouchpoint(
         body.customerId,
         body.channel ?? "online",
         body.summary ?? "Customer interaction",
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
   try {
     if (body.action === "create_handoff") {
-      const handoff = createHandoff(
+      const handoff = await createHandoff(
         body.customerId,
         body.fromChannel ?? "online",
         body.toChannel ?? "in_store",
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.action === "record_touchpoint") {
-      const tp = recordTouchpoint(
+      const tp = await recordTouchpoint(
         body.customerId,
         body.channel ?? "online",
         body.summary ?? "Customer interaction",

@@ -54,9 +54,9 @@ export async function GET(request: NextRequest) {
   try {
     let annotations;
     if (start && end) {
-      annotations = getAnnotationsForRange(dashboardId, start, end);
+      annotations = await getAnnotationsForRange(dashboardId, start, end);
     } else {
-      annotations = getAnnotationsForDashboard(dashboardId);
+      annotations = await getAnnotationsForDashboard(dashboardId);
     }
 
     trackAnnotation("annotation.viewed", dealerId, {
@@ -109,13 +109,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const annotation = createAnnotation({
+    const annotation = await createAnnotation({
       dashboardId: body.dashboardId,
       date: body.date,
       text: body.text,
       type: body.type,
       createdBy: auth.user.name,
-    });
+    }, dealerId);
 
     trackAnnotation("annotation.created", dealerId, {
       dashboard_id: body.dashboardId,
@@ -152,7 +152,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const deleted = deleteAnnotation(annotationId);
+    const deleted = await deleteAnnotation(annotationId);
 
     if (deleted) {
       trackAnnotation("annotation.deleted", dealerId, {

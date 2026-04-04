@@ -12,6 +12,10 @@ jest.mock("@/lib/analytics-hooks", () => ({
   trackDripCampaign: jest.fn(),
 }));
 
+jest.mock("@/lib/db", () => ({
+  query: jest.fn(),
+}));
+
 import {
   createCampaign,
   evaluateTriggers,
@@ -29,6 +33,7 @@ import {
 
 beforeEach(() => {
   _resetForTesting();
+  delete process.env.DATABASE_URL;
 });
 
 /* ------------------------------------------------------------------ */
@@ -36,8 +41,8 @@ beforeEach(() => {
 /* ------------------------------------------------------------------ */
 
 describe("createCampaign", () => {
-  it("creates a campaign with steps", () => {
-    const campaign = createCampaign({
+  it("creates a campaign with steps", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "Welcome Series",
       trigger: "lead_created",
@@ -63,8 +68,8 @@ describe("createCampaign", () => {
 /* ------------------------------------------------------------------ */
 
 describe("evaluateTriggers", () => {
-  it("enrolls leads matching campaign triggers", () => {
-    const campaign = createCampaign({
+  it("enrolls leads matching campaign triggers", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "New Lead",
       trigger: "lead_created",
@@ -76,14 +81,14 @@ describe("evaluateTriggers", () => {
       { leadId: "lead-2", event: "vehicle_viewed_3x", metadata: {}, timestamp: new Date().toISOString() },
     ];
 
-    const enrollments = evaluateTriggers(events);
+    const enrollments = await evaluateTriggers(events);
     expect(enrollments).toHaveLength(1);
     expect(enrollments[0].leadId).toBe("lead-1");
     expect(enrollments[0].campaignId).toBe(campaign.id);
   });
 
-  it("does not double-enroll same lead", () => {
-    createCampaign({
+  it("does not double-enroll same lead", async () => {
+    await createCampaign({
       dealerId: "dealer-1",
       name: "Test",
       trigger: "lead_created",
@@ -97,8 +102,8 @@ describe("evaluateTriggers", () => {
       timestamp: new Date().toISOString(),
     };
 
-    evaluateTriggers([event]);
-    const second = evaluateTriggers([event]);
+    await evaluateTriggers([event]);
+    const second = await evaluateTriggers([event]);
     expect(second).toHaveLength(0);
   });
 });
@@ -108,32 +113,32 @@ describe("evaluateTriggers", () => {
 /* ------------------------------------------------------------------ */
 
 describe("enrollLead", () => {
-  it("creates enrollment with scheduled next email", () => {
-    const campaign = createCampaign({
+  it("creates enrollment with scheduled next email", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "Test",
       trigger: "lead_created",
       steps: [{ stepNumber: 1, subject: "Hi", bodyTemplate: "Hi", delayHours: 24 }],
     });
 
-    const enrollment = enrollLead(campaign.id, "lead-e1", "test@example.com");
+    const enrollment = await enrollLead(campaign.id, "lead-e1", "test@example.com");
     expect(enrollment.status).toBe("active");
     expect(enrollment.currentStep).toBe(0);
     expect(enrollment.nextEmailDueAt).toBeTruthy();
   });
 
-  it("updates campaign enrolled stats", () => {
-    const campaign = createCampaign({
+  it("updates campaign enrolled stats", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "Stats",
       trigger: "lead_created",
       steps: [{ stepNumber: 1, subject: "Hi", bodyTemplate: "Hi", delayHours: 1 }],
     });
 
-    enrollLead(campaign.id, "lead-s1", "a@b.com");
-    enrollLead(campaign.id, "lead-s2", "c@d.com");
+    await enrollLead(campaign.id, "lead-s1", "a@b.com");
+    await enrollLead(campaign.id, "lead-s2", "c@d.com");
 
-    const updated = getCampaign(campaign.id);
+    const updated = await getCampaign(campaign.id);
     expect((updated as any).stats.totalEnrolled).toBe(2);
   });
 });
@@ -143,8 +148,8 @@ describe("enrollLead", () => {
 /* ------------------------------------------------------------------ */
 
 describe("advanceEnrollments", () => {
-  it("sends due emails and advances step", () => {
-    const campaign = createCampaign({
+  it("sends due emails and advances step", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "Advance Test",
       trigger: "lead_created",
@@ -154,11 +159,11 @@ describe("advanceEnrollments", () => {
       ],
     });
 
-    enrollLead(campaign.id, "lead-adv", "test@example.com");
+    await enrollLead(campaign.id, "lead-adv", "test@example.com");
 
     // Advance with "now" far in the future
     const future = new Date("2099-01-01");
-    const emails = advanceEnrollments(future);
+    const emails = await advanceEnrollments(future);
 
     expect(emails).toHaveLength(1);
     expect(emails[0].subject).toBe("Step 1");
@@ -166,8 +171,8 @@ describe("advanceEnrollments", () => {
     expect(emails[0].leadId).toBe("lead-adv");
   });
 
-  it("marks enrollment as completed after all steps", () => {
-    const campaign = createCampaign({
+  it("marks enrollment as completed after all steps", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "Complete Test",
       trigger: "lead_created",
@@ -176,10 +181,10 @@ describe("advanceEnrollments", () => {
       ],
     });
 
-    enrollLead(campaign.id, "lead-comp", "x@y.com");
-    advanceEnrollments(new Date("2099-01-01"));
+    await enrollLead(campaign.id, "lead-comp", "x@y.com");
+    await advanceEnrollments(new Date("2099-01-01"));
 
-    const status = getEnrollmentStatus("lead-comp");
+    const status = await getEnrollmentStatus("lead-comp");
     expect(status[0].status).toBe("completed");
   });
 });
@@ -189,37 +194,37 @@ describe("advanceEnrollments", () => {
 /* ------------------------------------------------------------------ */
 
 describe("markConverted", () => {
-  it("marks lead as converted", () => {
-    const campaign = createCampaign({
+  it("marks lead as converted", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "Conv Test",
       trigger: "lead_created",
       steps: [{ stepNumber: 1, subject: "Hi", bodyTemplate: "Hi", delayHours: 1 }],
     });
 
-    enrollLead(campaign.id, "lead-conv", "a@b.com");
-    const result = markConverted("lead-conv", campaign.id);
+    await enrollLead(campaign.id, "lead-conv", "a@b.com");
+    const result = await markConverted("lead-conv", campaign.id);
     expect(result).not.toBeNull();
     expect((result as any).status).toBe("converted");
     expect((result as any).convertedAt).toBeTruthy();
 
-    const updated = getCampaign(campaign.id);
+    const updated = await getCampaign(campaign.id);
     expect((updated as any).stats.totalConverted).toBe(1);
     expect((updated as any).stats.conversionRate).toBeGreaterThan(0);
   });
 });
 
 describe("unsubscribe", () => {
-  it("unsubscribes lead from campaign", () => {
-    const campaign = createCampaign({
+  it("unsubscribes lead from campaign", async () => {
+    const campaign = await createCampaign({
       dealerId: "dealer-1",
       name: "Unsub Test",
       trigger: "lead_created",
       steps: [{ stepNumber: 1, subject: "Hi", bodyTemplate: "Hi", delayHours: 1 }],
     });
 
-    enrollLead(campaign.id, "lead-unsub", "a@b.com");
-    const result = unsubscribe("lead-unsub", campaign.id);
+    await enrollLead(campaign.id, "lead-unsub", "a@b.com");
+    const result = await unsubscribe("lead-unsub", campaign.id);
     expect(result).not.toBeNull();
     expect((result as any).status).toBe("unsubscribed");
     expect((result as any).nextEmailDueAt).toBeNull();
@@ -231,19 +236,19 @@ describe("unsubscribe", () => {
 /* ------------------------------------------------------------------ */
 
 describe("listCampaigns", () => {
-  it("lists campaigns for a dealer", () => {
-    createCampaign({ dealerId: "d1", name: "A", trigger: "lead_created", steps: [] });
-    createCampaign({ dealerId: "d1", name: "B", trigger: "form_abandoned", steps: [] });
-    createCampaign({ dealerId: "d2", name: "C", trigger: "lead_created", steps: [] });
+  it("lists campaigns for a dealer", async () => {
+    await createCampaign({ dealerId: "d1", name: "A", trigger: "lead_created", steps: [] });
+    await createCampaign({ dealerId: "d1", name: "B", trigger: "form_abandoned", steps: [] });
+    await createCampaign({ dealerId: "d2", name: "C", trigger: "lead_created", steps: [] });
 
-    expect(listCampaigns("d1")).toHaveLength(2);
-    expect(listCampaigns("d2")).toHaveLength(1);
+    expect(await listCampaigns("d1")).toHaveLength(2);
+    expect(await listCampaigns("d2")).toHaveLength(1);
   });
 });
 
 describe("toggleCampaign", () => {
-  it("toggles active state", () => {
-    const campaign = createCampaign({
+  it("toggles active state", async () => {
+    const campaign = await createCampaign({
       dealerId: "d1",
       name: "Toggle",
       trigger: "lead_created",
@@ -251,10 +256,10 @@ describe("toggleCampaign", () => {
     });
     expect(campaign.active).toBe(true);
 
-    const toggled = toggleCampaign(campaign.id);
+    const toggled = await toggleCampaign(campaign.id);
     expect((toggled as any).active).toBe(false);
 
-    const toggled2 = toggleCampaign(campaign.id);
+    const toggled2 = await toggleCampaign(campaign.id);
     expect((toggled2 as any).active).toBe(true);
   });
 });

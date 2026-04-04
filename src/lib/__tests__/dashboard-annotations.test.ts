@@ -11,6 +11,10 @@ jest.mock("@/lib/analytics-hooks", () => ({
   trackAnnotation: jest.fn(),
 }));
 
+jest.mock("@/lib/db", () => ({
+  query: jest.fn(),
+}));
+
 import {
   createAnnotation,
   getAnnotationsForRange,
@@ -24,6 +28,7 @@ import {
 
 beforeEach(() => {
   _resetForTesting();
+  delete process.env.DATABASE_URL;
 });
 
 /* ------------------------------------------------------------------ */
@@ -31,8 +36,8 @@ beforeEach(() => {
 /* ------------------------------------------------------------------ */
 
 describe("createAnnotation", () => {
-  it("creates an annotation with all fields", () => {
-    const ann = createAnnotation({
+  it("creates an annotation with all fields", async () => {
+    const ann = await createAnnotation({
       dashboardId: "main",
       date: "2026-04-01",
       text: "Spring campaign started",
@@ -47,8 +52,8 @@ describe("createAnnotation", () => {
     expect(ann.createdBy).toBe("admin");
   });
 
-  it("defaults createdBy to system", () => {
-    const ann = createAnnotation({
+  it("defaults createdBy to system", async () => {
+    const ann = await createAnnotation({
       dashboardId: "leads",
       date: "2026-04-02",
       text: "Auto-generated alert",
@@ -63,32 +68,32 @@ describe("createAnnotation", () => {
 /* ------------------------------------------------------------------ */
 
 describe("getAnnotation", () => {
-  it("retrieves by ID", () => {
-    const ann = createAnnotation({
+  it("retrieves by ID", async () => {
+    const ann = await createAnnotation({
       dashboardId: "main",
       date: "2026-04-01",
       text: "Test",
       type: "note",
     });
-    const found = getAnnotation(ann.id);
+    const found = await getAnnotation(ann.id);
     expect(found).not.toBeNull();
     expect((found as any).text).toBe("Test");
   });
 
-  it("returns null for unknown ID", () => {
-    expect(getAnnotation("nonexistent")).toBeNull();
+  it("returns null for unknown ID", async () => {
+    expect(await getAnnotation("nonexistent")).toBeNull();
   });
 });
 
 describe("getAnnotationsForDashboard", () => {
-  it("returns all annotations for a dashboard", () => {
-    createAnnotation({ dashboardId: "main", date: "2026-04-01", text: "A", type: "note" });
-    createAnnotation({ dashboardId: "main", date: "2026-04-02", text: "B", type: "milestone" });
-    createAnnotation({ dashboardId: "leads", date: "2026-04-01", text: "C", type: "note" });
+  it("returns all annotations for a dashboard", async () => {
+    await createAnnotation({ dashboardId: "main", date: "2026-04-01", text: "A", type: "note" });
+    await createAnnotation({ dashboardId: "main", date: "2026-04-02", text: "B", type: "milestone" });
+    await createAnnotation({ dashboardId: "leads", date: "2026-04-01", text: "C", type: "note" });
 
-    const main = getAnnotationsForDashboard("main");
+    const main = await getAnnotationsForDashboard("main");
     expect(main).toHaveLength(2);
-    const leads = getAnnotationsForDashboard("leads");
+    const leads = await getAnnotationsForDashboard("leads");
     expect(leads).toHaveLength(1);
   });
 });
@@ -98,19 +103,19 @@ describe("getAnnotationsForDashboard", () => {
 /* ------------------------------------------------------------------ */
 
 describe("getAnnotationsForRange", () => {
-  it("filters by date range", () => {
-    createAnnotation({ dashboardId: "main", date: "2026-03-15", text: "Before", type: "note" });
-    createAnnotation({ dashboardId: "main", date: "2026-04-01", text: "In range", type: "note" });
-    createAnnotation({ dashboardId: "main", date: "2026-04-15", text: "After", type: "note" });
+  it("filters by date range", async () => {
+    await createAnnotation({ dashboardId: "main", date: "2026-03-15", text: "Before", type: "note" });
+    await createAnnotation({ dashboardId: "main", date: "2026-04-01", text: "In range", type: "note" });
+    await createAnnotation({ dashboardId: "main", date: "2026-04-15", text: "After", type: "note" });
 
-    const results = getAnnotationsForRange("main", "2026-03-20", "2026-04-10");
+    const results = await getAnnotationsForRange("main", "2026-03-20", "2026-04-10");
     expect(results).toHaveLength(1);
     expect(results[0].text).toBe("In range");
   });
 
-  it("returns empty for no matches", () => {
-    createAnnotation({ dashboardId: "main", date: "2026-01-01", text: "Old", type: "note" });
-    const results = getAnnotationsForRange("main", "2026-06-01", "2026-07-01");
+  it("returns empty for no matches", async () => {
+    await createAnnotation({ dashboardId: "main", date: "2026-01-01", text: "Old", type: "note" });
+    const results = await getAnnotationsForRange("main", "2026-06-01", "2026-07-01");
     expect(results).toHaveLength(0);
   });
 });
@@ -120,14 +125,14 @@ describe("getAnnotationsForRange", () => {
 /* ------------------------------------------------------------------ */
 
 describe("getAnnotationsByType", () => {
-  it("filters by annotation type", () => {
-    createAnnotation({ dashboardId: "main", date: "2026-04-01", text: "Note", type: "note" });
-    createAnnotation({ dashboardId: "main", date: "2026-04-02", text: "Alert", type: "alert" });
-    createAnnotation({ dashboardId: "main", date: "2026-04-03", text: "Note 2", type: "note" });
+  it("filters by annotation type", async () => {
+    await createAnnotation({ dashboardId: "main", date: "2026-04-01", text: "Note", type: "note" });
+    await createAnnotation({ dashboardId: "main", date: "2026-04-02", text: "Alert", type: "alert" });
+    await createAnnotation({ dashboardId: "main", date: "2026-04-03", text: "Note 2", type: "note" });
 
-    expect(getAnnotationsByType("main", "note")).toHaveLength(2);
-    expect(getAnnotationsByType("main", "alert")).toHaveLength(1);
-    expect(getAnnotationsByType("main", "campaign")).toHaveLength(0);
+    expect(await getAnnotationsByType("main", "note")).toHaveLength(2);
+    expect(await getAnnotationsByType("main", "alert")).toHaveLength(1);
+    expect(await getAnnotationsByType("main", "campaign")).toHaveLength(0);
   });
 });
 
@@ -136,21 +141,21 @@ describe("getAnnotationsByType", () => {
 /* ------------------------------------------------------------------ */
 
 describe("updateAnnotation", () => {
-  it("updates text and type", () => {
-    const ann = createAnnotation({
+  it("updates text and type", async () => {
+    const ann = await createAnnotation({
       dashboardId: "main",
       date: "2026-04-01",
       text: "Original",
       type: "note",
     });
-    const updated = updateAnnotation(ann.id, { text: "Updated", type: "milestone" });
+    const updated = await updateAnnotation(ann.id, { text: "Updated", type: "milestone" });
     expect(updated).not.toBeNull();
     expect((updated as any).text).toBe("Updated");
     expect((updated as any).type).toBe("milestone");
   });
 
-  it("returns null for unknown ID", () => {
-    expect(updateAnnotation("fake", { text: "x" })).toBeNull();
+  it("returns null for unknown ID", async () => {
+    expect(await updateAnnotation("fake", { text: "x" })).toBeNull();
   });
 });
 
@@ -159,19 +164,19 @@ describe("updateAnnotation", () => {
 /* ------------------------------------------------------------------ */
 
 describe("deleteAnnotation", () => {
-  it("deletes an annotation", () => {
-    const ann = createAnnotation({
+  it("deletes an annotation", async () => {
+    const ann = await createAnnotation({
       dashboardId: "main",
       date: "2026-04-01",
       text: "To delete",
       type: "note",
     });
-    expect(deleteAnnotation(ann.id)).toBe(true);
-    expect(getAnnotation(ann.id)).toBeNull();
+    expect(await deleteAnnotation(ann.id)).toBe(true);
+    expect(await getAnnotation(ann.id)).toBeNull();
   });
 
-  it("returns false for unknown ID", () => {
-    expect(deleteAnnotation("nonexistent")).toBe(false);
+  it("returns false for unknown ID", async () => {
+    expect(await deleteAnnotation("nonexistent")).toBe(false);
   });
 });
 

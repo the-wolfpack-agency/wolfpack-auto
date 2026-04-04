@@ -68,12 +68,12 @@ export async function GET(request: NextRequest) {
 
   try {
     if (vin) {
-      const walkaround = getWalkaroundForVehicle(vin);
+      const walkaround = await getWalkaroundForVehicle(vin);
       trackWalkaround("walkaround.viewed", dealerId, { vin });
       return NextResponse.json({ walkaround });
     }
 
-    const walkarounds = listWalkarounds(dealerId);
+    const walkarounds = await listWalkarounds(dealerId);
     return NextResponse.json({ walkarounds });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       if (!body.vin) {
         return NextResponse.json({ error: "vin is required" }, { status: 400 });
       }
-      const walkaround = createWalkaround(body.vin, dealerId, auth.user.id);
+      const walkaround = await createWalkaround(body.vin, dealerId, auth.user.id);
       trackWalkaround("walkaround.started", dealerId, { vin: body.vin });
       return NextResponse.json({ walkaround });
     }
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
-      const walkaround = addSegment(
+      const walkaround = await addSegment(
         body.walkaroundId,
         body.segmentType,
         body.url,
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
-      const walkaround = publishWalkaround(body.walkaroundId);
+      const walkaround = await publishWalkaround(body.walkaroundId);
       if (!walkaround) {
         return NextResponse.json(
           { error: "Walkaround not found or has no segments" },

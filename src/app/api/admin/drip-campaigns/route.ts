@@ -77,7 +77,7 @@ export async function GET() {
   }
 
   try {
-    const campaignList = listCampaigns(dealerId);
+    const campaignList = await listCampaigns(dealerId);
     const totalEnrolled = campaignList.reduce((s, c) => s + c.stats.totalEnrolled, 0);
     const totalConverted = campaignList.reduce((s, c) => s + c.stats.totalConverted, 0);
 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
   try {
     if (body.action === "advance") {
-      const emails = advanceEnrollments();
+      const emails = await advanceEnrollments();
       for (const email of emails) {
         trackDripCampaign("drip.email_sent", dealerId, {
           campaign_id: email.campaignId,
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const campaign = createCampaign({
+    const campaign = await createCampaign({
       dealerId,
       name: body.name,
       trigger: body.trigger,

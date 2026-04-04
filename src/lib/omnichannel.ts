@@ -4,7 +4,13 @@
  * Enables seamless handoff between online browsing, in-store visits,
  * phone calls, email, and SMS interactions. Customers can start online
  * and have their session picked up on a dealership tablet via QR code.
+ *
+ * Persists touchpoints to PostgreSQL (customer_touchpoints from migration 052).
+ * Sessions and handoffs stay in-memory (ephemeral real-time state).
+ * Falls back entirely to in-memory when DATABASE_URL is not set (shadow mode).
  */
+
+import { query } from "@/lib/db";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -57,7 +63,7 @@ export interface HandoffData {
 }
 
 /* ------------------------------------------------------------------ */
-/*  In-memory stores (shadow mode)                                     */
+/*  In-memory stores (shadow mode + ephemeral state)                   */
 /* ------------------------------------------------------------------ */
 
 const sessions = new Map<string, CustomerSession>();
@@ -78,6 +84,20 @@ function generateToken(): string {
   ).join("");
 }
 
+function useDb(): boolean {
+  return !!process.env.DATABASE_URL;
+}
+
+function rowToTouchpoint(row: Record<string, unknown>): Touchpoint {
+  return {
+    id: row.id as string,
+    channel: row.channel as TouchpointType,
+    timestamp: typeof row.timestamp === "string" ? row.timestamp : (row.timestamp as Date).toISOString(),
+    summary: row.summary as string,
+    metadata: typeof row.metadata === "string" ? JSON.parse(row.metadata) : (row.metadata as Record<string, string | number | boolean>) ?? {},
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Core functions                                                     */
 /* ------------------------------------------------------------------ */
@@ -85,12 +105,13 @@ function generateToken(): string {
 /**
  * Record a customer touchpoint on any channel.
  */
-export function recordTouchpoint(
+export async function recordTouchpoint(
   customerId: string,
   channel: TouchpointType,
   summary: string,
   metadata: Record<string, string | number | boolean> = {},
-): Touchpoint {
+  dealerId: string = "",
+): Promise<Touchpoint> {
   const tp: Touchpoint = {
     id: generateId(),
     channel,
@@ -98,6 +119,24 @@ export function recordTouchpoint(
     summary,
     metadata,
   };
+
+  if (useDb()) {
+    try {
+      await query(
+        `INSERT INTO customer_touchpoints (id, dealer_id, customer_id, channel, timestamp, summary, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [tp.id, dealerId, customerId, tp.channel, tp.timestamp, tp.summary, JSON.stringify(tp.metadata)],
+      );
+      // Also keep in-memory for real-time access during the session
+      const existing = touchpoints.get(customerId) ?? [];
+      existing.push(tp);
+      touchpoints.set(customerId, existing);
+      return tp;
+    } catch (err: unknown) {
+      console.warn("[omnichannel] DB write failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   const existing = touchpoints.get(customerId) ?? [];
   existing.push(tp);
   touchpoints.set(customerId, existing);
@@ -108,12 +147,12 @@ export function recordTouchpoint(
  * Create a handoff token so in-store staff can pick up where the
  * customer left off online.
  */
-export function createHandoff(
+export async function createHandoff(
   customerId: string,
   fromChannel: TouchpointType,
   toChannel: TouchpointType,
   dealerId: string,
-): HandoffData {
+): Promise<HandoffData> {
   const session: CustomerSession = sessions.get(customerId) ?? {
     sessionId: generateId(),
     customerId,
@@ -146,11 +185,39 @@ export function createHandoff(
 
   handoffs.set(handoffId, handoff);
 
-  // Record the handoff as a touchpoint
-  recordTouchpoint(customerId, fromChannel, `Handoff created: ${fromChannel} -> ${toChannel}`, {
-    handoff_id: handoffId,
-    to_channel: toChannel,
+  // Persist the handoff as a touchpoint in DB
+  if (useDb()) {
+    try {
+      await query(
+        `INSERT INTO customer_touchpoints (id, dealer_id, customer_id, channel, timestamp, summary, metadata, handoff_token, qr_code_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          handoffId,
+          dealerId,
+          customerId,
+          fromChannel,
+          now.toISOString(),
+          `Handoff created: ${fromChannel} -> ${toChannel}`,
+          JSON.stringify({ handoff_id: handoffId, to_channel: toChannel }),
+          token,
+          handoff.qrUrl,
+        ],
+      );
+    } catch (err: unknown) {
+      console.warn("[omnichannel] DB handoff write failed:", (err as Error).message);
+    }
+  }
+
+  // Record the handoff as a touchpoint (in-memory path)
+  const tpList = touchpoints.get(customerId) ?? [];
+  tpList.push({
+    id: handoffId,
+    channel: fromChannel,
+    timestamp: now.toISOString(),
+    summary: `Handoff created: ${fromChannel} -> ${toChannel}`,
+    metadata: { handoff_id: handoffId, to_channel: toChannel },
   });
+  touchpoints.set(customerId, tpList);
 
   return handoff;
 }
@@ -167,7 +234,21 @@ export function generateQRHandoff(sessionId: string, token?: string): string {
 /**
  * Get unified timeline of ALL touchpoints across channels.
  */
-export function getOmnichannelTimeline(customerId: string): Touchpoint[] {
+export async function getOmnichannelTimeline(customerId: string): Promise<Touchpoint[]> {
+  if (useDb()) {
+    try {
+      const result = await query(
+        `SELECT * FROM customer_touchpoints WHERE customer_id = $1 ORDER BY timestamp ASC`,
+        [customerId],
+      );
+      if (result.rows.length > 0) {
+        return result.rows.map(rowToTouchpoint);
+      }
+    } catch (err: unknown) {
+      console.warn("[omnichannel] DB read failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   const tps = touchpoints.get(customerId) ?? [];
   return [...tps].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
@@ -177,11 +258,11 @@ export function getOmnichannelTimeline(customerId: string): Touchpoint[] {
 /**
  * Build a full omnichannel profile for a customer.
  */
-export function getOmnichannelProfile(
+export async function getOmnichannelProfile(
   customerId: string,
   dealerId: string,
-): OmnichannelProfile {
-  const timeline = getOmnichannelTimeline(customerId);
+): Promise<OmnichannelProfile> {
+  const timeline = await getOmnichannelTimeline(customerId);
   const channels = [...new Set(timeline.map((t) => t.channel))];
 
   // Determine preferred channel by frequency
@@ -209,10 +290,10 @@ export function getOmnichannelProfile(
  * Merge online browsing data with in-store interactions into a
  * unified customer view.
  */
-export function mergeOnlineAndStoreActivity(
+export async function mergeOnlineAndStoreActivity(
   customerId: string,
-): { online: Touchpoint[]; inStore: Touchpoint[]; merged: Touchpoint[] } {
-  const timeline = getOmnichannelTimeline(customerId);
+): Promise<{ online: Touchpoint[]; inStore: Touchpoint[]; merged: Touchpoint[] }> {
+  const timeline = await getOmnichannelTimeline(customerId);
   return {
     online: timeline.filter((t) => t.channel === "online"),
     inStore: timeline.filter((t) => t.channel === "in_store"),
@@ -223,18 +304,65 @@ export function mergeOnlineAndStoreActivity(
 /**
  * Look up a handoff by ID.
  */
-export function getHandoff(handoffId: string): HandoffData | null {
-  return handoffs.get(handoffId) ?? null;
+export async function getHandoff(handoffId: string): Promise<HandoffData | null> {
+  // Handoffs are ephemeral — always check in-memory first
+  const memHandoff = handoffs.get(handoffId);
+  if (memHandoff) return memHandoff;
+
+  if (useDb()) {
+    try {
+      const result = await query(
+        `SELECT * FROM customer_touchpoints WHERE id = $1 AND handoff_token IS NOT NULL`,
+        [handoffId],
+      );
+      if (result.rows.length > 0) {
+        const row = result.rows[0];
+        const metadata = typeof row.metadata === "string" ? JSON.parse(row.metadata as string) : (row.metadata as Record<string, unknown>);
+        // Reconstruct minimal handoff data from touchpoint
+        return {
+          handoffId: row.id as string,
+          customerId: row.customer_id as string,
+          fromChannel: row.channel as TouchpointType,
+          toChannel: (metadata?.to_channel as TouchpointType) ?? "in_store",
+          sessionSnapshot: {
+            sessionId: handoffId,
+            customerId: row.customer_id as string,
+            dealerId: row.dealer_id as string,
+            channel: row.channel as TouchpointType,
+            startedAt: typeof row.timestamp === "string" ? row.timestamp : (row.timestamp as Date).toISOString(),
+            lastActivityAt: typeof row.timestamp === "string" ? row.timestamp : (row.timestamp as Date).toISOString(),
+            vehiclesViewed: [],
+            pagesVisited: [],
+            formData: {},
+          },
+          token: row.handoff_token as string,
+          qrUrl: row.qr_code_url as string,
+          createdAt: typeof row.timestamp === "string" ? row.timestamp : (row.timestamp as Date).toISOString(),
+          expiresAt: new Date(new Date(typeof row.timestamp === "string" ? row.timestamp : (row.timestamp as Date).toISOString()).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          scanned: false,
+        };
+      }
+    } catch (err: unknown) {
+      console.warn("[omnichannel] DB handoff read failed:", (err as Error).message);
+    }
+  }
+
+  return null;
 }
 
 /**
  * Mark a handoff as scanned / redeemed.
  */
-export function scanHandoff(handoffId: string, token: string): HandoffData | null {
-  const handoff = handoffs.get(handoffId);
+export async function scanHandoff(handoffId: string, token: string): Promise<HandoffData | null> {
+  const handoff = await getHandoff(handoffId);
   if (!handoff || handoff.token !== token) return null;
   if (new Date(handoff.expiresAt) < new Date()) return null;
   handoff.scanned = true;
+
+  // Update in-memory if present
+  const memHandoff = handoffs.get(handoffId);
+  if (memHandoff) memHandoff.scanned = true;
+
   return handoff;
 }
 

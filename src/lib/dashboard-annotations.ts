@@ -4,7 +4,12 @@
  * Add notes, milestones, alerts, and campaign markers to any
  * dashboard chart at specific dates. Provides context for data
  * spikes/dips so the team understands "what happened on that day."
+ *
+ * Persists to PostgreSQL (dashboard_annotations table from migration 052).
+ * Falls back to in-memory Map when DATABASE_URL is not set (shadow mode).
  */
+
+import { query } from "@/lib/db";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -33,7 +38,7 @@ export interface CreateAnnotationInput {
 }
 
 /* ------------------------------------------------------------------ */
-/*  In-memory store (shadow mode)                                      */
+/*  In-memory store (shadow mode fallback)                             */
 /* ------------------------------------------------------------------ */
 
 const annotations = new Map<string, Annotation>();
@@ -46,6 +51,23 @@ function generateId(): string {
   return `ann-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 }
 
+function rowToAnnotation(row: Record<string, unknown>): Annotation {
+  return {
+    id: row.id as string,
+    dashboardId: row.dashboard_id as string,
+    date: typeof row.date === "string" ? row.date : (row.date as Date).toISOString().split("T")[0],
+    text: row.text as string,
+    type: row.type as AnnotationType,
+    createdBy: row.created_by as string,
+    createdAt: typeof row.created_at === "string" ? row.created_at : (row.created_at as Date).toISOString(),
+    metadata: typeof row.metadata === "string" ? JSON.parse(row.metadata) : (row.metadata as Record<string, string | number | boolean>) ?? {},
+  };
+}
+
+function useDb(): boolean {
+  return !!process.env.DATABASE_URL;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Core functions                                                     */
 /* ------------------------------------------------------------------ */
@@ -53,7 +75,10 @@ function generateId(): string {
 /**
  * Create an annotation on a specific date for a dashboard.
  */
-export function createAnnotation(input: CreateAnnotationInput): Annotation {
+export async function createAnnotation(
+  input: CreateAnnotationInput,
+  dealerId: string = "",
+): Promise<Annotation> {
   const id = generateId();
   const annotation: Annotation = {
     id,
@@ -65,6 +90,31 @@ export function createAnnotation(input: CreateAnnotationInput): Annotation {
     createdAt: new Date().toISOString(),
     metadata: input.metadata ?? {},
   };
+
+  if (useDb()) {
+    try {
+      await query(
+        `INSERT INTO dashboard_annotations (id, dealer_id, dashboard_id, date, text, type, created_by, metadata, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          annotation.id,
+          dealerId,
+          annotation.dashboardId,
+          annotation.date,
+          annotation.text,
+          annotation.type,
+          annotation.createdBy,
+          JSON.stringify(annotation.metadata),
+          annotation.createdAt,
+        ],
+      );
+      return annotation;
+    } catch (err: unknown) {
+      // Table doesn't exist yet — fall through to in-memory
+      console.warn("[dashboard-annotations] DB write failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   annotations.set(id, annotation);
   return annotation;
 }
@@ -72,11 +122,25 @@ export function createAnnotation(input: CreateAnnotationInput): Annotation {
 /**
  * Get all annotations for a dashboard within a date range.
  */
-export function getAnnotationsForRange(
+export async function getAnnotationsForRange(
   dashboardId: string,
   startDate: string,
   endDate: string,
-): Annotation[] {
+): Promise<Annotation[]> {
+  if (useDb()) {
+    try {
+      const result = await query(
+        `SELECT * FROM dashboard_annotations
+         WHERE dashboard_id = $1 AND date BETWEEN $2 AND $3
+         ORDER BY date ASC`,
+        [dashboardId, startDate, endDate],
+      );
+      return result.rows.map(rowToAnnotation);
+    } catch (err: unknown) {
+      console.warn("[dashboard-annotations] DB read failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   const start = new Date(startDate).getTime();
   const end = new Date(endDate).getTime();
 
@@ -92,7 +156,19 @@ export function getAnnotationsForRange(
 /**
  * Get all annotations for a dashboard (no date filter).
  */
-export function getAnnotationsForDashboard(dashboardId: string): Annotation[] {
+export async function getAnnotationsForDashboard(dashboardId: string): Promise<Annotation[]> {
+  if (useDb()) {
+    try {
+      const result = await query(
+        `SELECT * FROM dashboard_annotations WHERE dashboard_id = $1 ORDER BY date ASC`,
+        [dashboardId],
+      );
+      return result.rows.map(rowToAnnotation);
+    } catch (err: unknown) {
+      console.warn("[dashboard-annotations] DB read failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   return [...annotations.values()]
     .filter((a) => a.dashboardId === dashboardId)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -101,10 +177,22 @@ export function getAnnotationsForDashboard(dashboardId: string): Annotation[] {
 /**
  * Get annotations by type.
  */
-export function getAnnotationsByType(
+export async function getAnnotationsByType(
   dashboardId: string,
   type: AnnotationType,
-): Annotation[] {
+): Promise<Annotation[]> {
+  if (useDb()) {
+    try {
+      const result = await query(
+        `SELECT * FROM dashboard_annotations WHERE dashboard_id = $1 AND type = $2 ORDER BY date ASC`,
+        [dashboardId, type],
+      );
+      return result.rows.map(rowToAnnotation);
+    } catch (err: unknown) {
+      console.warn("[dashboard-annotations] DB read failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   return [...annotations.values()]
     .filter((a) => a.dashboardId === dashboardId && a.type === type)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -113,17 +201,66 @@ export function getAnnotationsByType(
 /**
  * Get a single annotation by ID.
  */
-export function getAnnotation(annotationId: string): Annotation | null {
+export async function getAnnotation(annotationId: string): Promise<Annotation | null> {
+  if (useDb()) {
+    try {
+      const result = await query(
+        `SELECT * FROM dashboard_annotations WHERE id = $1`,
+        [annotationId],
+      );
+      if (result.rows.length > 0) return rowToAnnotation(result.rows[0]);
+      return null;
+    } catch (err: unknown) {
+      console.warn("[dashboard-annotations] DB read failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   return annotations.get(annotationId) ?? null;
 }
 
 /**
  * Update an annotation's text or type.
  */
-export function updateAnnotation(
+export async function updateAnnotation(
   annotationId: string,
   updates: Partial<Pick<Annotation, "text" | "type" | "metadata">>,
-): Annotation | null {
+): Promise<Annotation | null> {
+  if (useDb()) {
+    try {
+      // Build SET clause dynamically based on provided fields
+      const setClauses: string[] = [];
+      const params: unknown[] = [];
+      let paramIdx = 1;
+
+      if (updates.text !== undefined) {
+        setClauses.push(`text = $${paramIdx++}`);
+        params.push(updates.text);
+      }
+      if (updates.type !== undefined) {
+        setClauses.push(`type = $${paramIdx++}`);
+        params.push(updates.type);
+      }
+      if (updates.metadata !== undefined) {
+        setClauses.push(`metadata = $${paramIdx++}`);
+        params.push(JSON.stringify(updates.metadata));
+      }
+
+      if (setClauses.length === 0) {
+        return getAnnotation(annotationId);
+      }
+
+      params.push(annotationId);
+      const result = await query(
+        `UPDATE dashboard_annotations SET ${setClauses.join(", ")} WHERE id = $${paramIdx} RETURNING *`,
+        params,
+      );
+      if (result.rows.length > 0) return rowToAnnotation(result.rows[0]);
+      return null;
+    } catch (err: unknown) {
+      console.warn("[dashboard-annotations] DB update failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   const annotation = annotations.get(annotationId);
   if (!annotation) return null;
 
@@ -137,7 +274,19 @@ export function updateAnnotation(
 /**
  * Delete an annotation.
  */
-export function deleteAnnotation(annotationId: string): boolean {
+export async function deleteAnnotation(annotationId: string): Promise<boolean> {
+  if (useDb()) {
+    try {
+      const result = await query(
+        `DELETE FROM dashboard_annotations WHERE id = $1`,
+        [annotationId],
+      );
+      return (result.rowCount ?? 0) > 0;
+    } catch (err: unknown) {
+      console.warn("[dashboard-annotations] DB delete failed, using in-memory:", (err as Error).message);
+    }
+  }
+
   return annotations.delete(annotationId);
 }
 
