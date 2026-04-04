@@ -7,6 +7,7 @@ import {
   sendSMS,
   getTwilioConfig,
 } from "@/lib/sms";
+import { trackSMS } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/sms — Conversation list                                     */
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
       [dealerId],
     );
 
+    trackSMS("sms.conversation_started", dealerId, { conversation_count: conversations.rows.length });
     return NextResponse.json({ conversations: conversations.rows, config });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -136,6 +138,7 @@ export async function POST(request: NextRequest) {
           result.twilio_sid,
         ],
       );
+      trackSMS("sms.sent", dealerId, { lead_id: lead_id ?? "", success: result.success });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (!msg.includes("does not exist")) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { getDemoFeeds, getDemoIngestionHistory } from "@/lib/lead-ingestion";
+import { trackLeadIngestion } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/lead-ingestion — List configured feeds + stats              */
@@ -49,6 +50,11 @@ export async function GET(request: NextRequest) {
       [dealerId],
     );
 
+    trackLeadIngestion("lead_ingestion.batch_received", dealerId, {
+      feed_count: feedRows.rows.length,
+      total_ingested: Number(statsRow.rows[0]?.total_ingested ?? 0),
+      duplicates: Number(statsRow.rows[0]?.duplicates_caught ?? 0),
+    });
     return NextResponse.json({
       feeds: feedRows.rows,
       recent_leads: recentRows.rows,

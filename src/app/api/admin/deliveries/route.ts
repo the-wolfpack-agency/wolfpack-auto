@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackDelivery } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/deliveries — Delivery list                                  */
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     const deliveries = await getDeliveryHistory(dealerId);
+    trackDelivery("delivery.requested", dealerId, { delivery_count: deliveries.length });
     return NextResponse.json({ deliveries });
   } catch (err) {
     // Table may not exist yet — return empty data gracefully
@@ -68,5 +70,6 @@ export async function POST(request: NextRequest) {
     vehiclePrice ?? 0,
   );
 
+  trackDelivery("delivery.confirmed", dealerId, { vin: vehicleVin, distance: distanceMiles ?? 10 });
   return NextResponse.json({ delivery }, { status: 201 });
 }

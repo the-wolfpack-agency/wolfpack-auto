@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { createTest, type CreateTestConfig, type UserTest } from "@/lib/user-testing";
+import { trackUserTest } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  Demo data (shadow mode — no DATABASE_URL)                                  */
@@ -150,6 +151,7 @@ export async function GET(request: NextRequest) {
       tasks: typeof row.tasks === "string" ? JSON.parse(row.tasks as string) : row.tasks,
     }));
 
+    trackUserTest("usertest.report_generated", dealerId, { test_count: tests.length });
     return NextResponse.json({ tests });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -213,6 +215,7 @@ export async function POST(request: NextRequest) {
       ],
     );
 
+    trackUserTest("usertest.created", dealerId, { test_id: test.id, title: test.title, task_count: test.tasks.length });
     return NextResponse.json({ test }, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";

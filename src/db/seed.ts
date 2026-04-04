@@ -409,6 +409,108 @@ async function seed(): Promise<void> {
 
     console.log(`[seed] ${LEADS.length} leads inserted.`);
 
+    // -- Customers (needed by equity-mining + households) -----------------------
+    const DEMO_CUSTOMERS = [
+      { first_name: "Sarah", last_name: "Chen", email: "sarah.chen@example.com", phone: "(919) 555-0201", address: "100 Fayetteville St", zip: "27601" },
+      { first_name: "Marcus", last_name: "Williams", email: "m.williams@example.com", phone: "(919) 555-0202", address: "200 Hillsborough St", zip: "27603" },
+      { first_name: "Jennifer", last_name: "Park", email: "jpark@example.com", phone: "(919) 555-0203", address: "300 Glenwood Ave", zip: "27603" },
+      { first_name: "Robert", last_name: "Garcia", email: "rgarcia@example.com", phone: "(919) 555-0204", address: "400 Capital Blvd", zip: "27604" },
+      { first_name: "Emily", last_name: "Thompson", email: "emily.t@example.com", phone: "(919) 555-0205", address: "500 Six Forks Rd", zip: "27609" },
+    ];
+
+    for (const c of DEMO_CUSTOMERS) {
+      await client.query(
+        `UPDATE customers SET first_name = $2, last_name = $3, phone = COALESCE(phone, $4), address = $5, zip = $6
+         WHERE dealer_id = $1 AND email = $7`,
+        [DEMO_DEALER_ID, c.first_name, c.last_name, c.phone, c.address, c.zip, c.email],
+      );
+    }
+    console.log(`[seed] ${DEMO_CUSTOMERS.length} customers enriched.`);
+
+    // -- Customer vehicles (equity mining) -------------------------------------
+    await client.query(
+      `INSERT INTO customer_vehicles (dealer_id, customer_id, vin, year, make, model, mileage, condition, loan_balance, monthly_payment, last_service_date)
+       SELECT $1, c.id, $2, $3, $4, $5, $6, $7, $8, $9, $10::date
+       FROM customers c WHERE c.dealer_id = $1 AND c.email = $11
+       ON CONFLICT DO NOTHING`,
+      [DEMO_DEALER_ID, "1HGCV1F30PA100001", 2021, "Honda", "Civic", 42000, "good", 8500, 325, "2026-01-15", "sarah.chen@example.com"],
+    );
+    await client.query(
+      `INSERT INTO customer_vehicles (dealer_id, customer_id, vin, year, make, model, mileage, condition, loan_balance, monthly_payment, last_service_date)
+       SELECT $1, c.id, $2, $3, $4, $5, $6, $7, $8, $9, $10::date
+       FROM customers c WHERE c.dealer_id = $1 AND c.email = $11
+       ON CONFLICT DO NOTHING`,
+      [DEMO_DEALER_ID, "5YJSA1E20MF100002", 2022, "Tesla", "Model 3", 28000, "excellent", 22000, 550, "2026-02-20", "m.williams@example.com"],
+    );
+    console.log("[seed] 2 customer vehicles inserted.");
+
+    // -- Households ------------------------------------------------------------
+    const householdId = "hh-demo-001";
+    await client.query(
+      `INSERT INTO households (id, dealer_id, family_name)
+       VALUES ($1, $2, 'Garcia-Thompson')
+       ON CONFLICT DO NOTHING`,
+      [householdId, DEMO_DEALER_ID],
+    );
+    console.log("[seed] 1 household inserted.");
+
+    // -- Surveys ---------------------------------------------------------------
+    await client.query(
+      `INSERT INTO surveys (id, dealer_id, title, description, questions, trigger, active)
+       VALUES ($1, $2, 'Post-Purchase NPS', 'How likely are you to recommend us?', $3, $4, true)
+       ON CONFLICT DO NOTHING`,
+      [
+        "survey-demo-001", DEMO_DEALER_ID,
+        JSON.stringify([{ id: "q1", type: "nps", text: "How likely are you to recommend Wolfpack Motors?" }]),
+        JSON.stringify({ event: "deal.funded", delay_hours: 48 }),
+      ],
+    );
+    console.log("[seed] 1 survey inserted.");
+
+    // -- Reinsurance -----------------------------------------------------------
+    await client.query(
+      `INSERT INTO reinsurance_programs (id, dealer_id, name, type, status, inception_date, cession_rate, admin_fee_rate, total_premiums, total_claims, total_admin_costs, retained_reserves)
+       VALUES ($1, $2, 'Wolfpack CFC Program', 'CFC', 'active', '2025-01-01', 0.65, 0.05, 245000, 62000, 12250, 170750)
+       ON CONFLICT DO NOTHING`,
+      ["reins-demo-001", DEMO_DEALER_ID],
+    );
+    console.log("[seed] 1 reinsurance program inserted.");
+
+    // -- Dashboard annotations -------------------------------------------------
+    await client.query(
+      `INSERT INTO dashboard_annotations (id, dealer_id, dashboard_id, date, text, type, created_by)
+       VALUES ($1, $2, 'main', '2026-04-01', 'Spring Sale launched — 2x ad spend', 'campaign', 'admin')
+       ON CONFLICT DO NOTHING`,
+      ["anno-demo-001", DEMO_DEALER_ID],
+    );
+    console.log("[seed] 1 dashboard annotation inserted.");
+
+    // -- Lead ingestion feeds --------------------------------------------------
+    await client.query(
+      `INSERT INTO lead_ingestion_feeds (id, dealer_id, name, source, active)
+       VALUES ($1, $2, 'AutoTrader Feed', 'autotrader', true),
+              ($3, $2, 'Cars.com Feed', 'cars_com', true)
+       ON CONFLICT DO NOTHING`,
+      ["feed-demo-001", DEMO_DEALER_ID, "feed-demo-002"],
+    );
+    console.log("[seed] 2 lead ingestion feeds inserted.");
+
+    // -- Drip campaigns --------------------------------------------------------
+    await client.query(
+      `INSERT INTO drip_campaigns (id, dealer_id, name, trigger, steps, active, stats)
+       VALUES ($1, $2, 'New Lead Welcome', 'lead_created', $3, true, $4)
+       ON CONFLICT DO NOTHING`,
+      [
+        "drip-demo-001", DEMO_DEALER_ID,
+        JSON.stringify([
+          { stepNumber: 1, subject: "Welcome to Wolfpack Motors!", bodyTemplate: "Hi {{first_name}}, thanks for your interest...", delayHours: 0 },
+          { stepNumber: 2, subject: "Special offer just for you", bodyTemplate: "We have a great deal on the {{vehicle}}...", delayHours: 48 },
+        ]),
+        JSON.stringify({ totalEnrolled: 47, totalConverted: 8, emailsSent: 94, conversionRate: 17 }),
+      ],
+    );
+    console.log("[seed] 1 drip campaign inserted.");
+
     await client.query("COMMIT");
     console.log("[seed] Done.");
   } catch (err) {

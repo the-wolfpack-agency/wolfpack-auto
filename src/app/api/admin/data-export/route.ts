@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackDataExport } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/data-export — Export history                                */
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Unknown table" }, { status: 400 });
     }
 
+    trackDataExport("export.completed", dealerId, { table: config.table, format: config.format ?? "csv", destination: config.destination ?? "download" });
     return NextResponse.json({ export: result });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";

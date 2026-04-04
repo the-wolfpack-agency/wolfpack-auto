@@ -9,6 +9,7 @@ import {
   type Survey,
   type SurveyResponse,
 } from "@/lib/surveys";
+import { trackSurvey } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  Demo data (shadow mode — no DATABASE_URL)                                  */
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
       trigger: typeof row.trigger === "string" ? JSON.parse(row.trigger as string) : row.trigger,
     }));
 
+    trackSurvey("survey.created", dealerId, { survey_count: surveys.length });
     return NextResponse.json({ surveys });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -133,6 +135,7 @@ export async function POST(request: NextRequest) {
       ],
     );
 
+    trackSurvey("survey.created", dealerId, { survey_id: survey.id, title: survey.title, question_count: survey.questions.length });
     return NextResponse.json({ survey }, { status: 201 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";

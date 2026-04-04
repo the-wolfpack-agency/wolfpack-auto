@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSessionReplay } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  Demo data (shadow mode — no DATABASE_URL)                                  */
@@ -112,6 +113,7 @@ export async function GET(request: NextRequest) {
         [sessionId],
       );
 
+      trackSessionReplay("replay.viewed", dealerId, { session_id: sessionId, event_count: eventRows.rows.length });
       return NextResponse.json({
         session: sessionRows.rows[0],
         events: eventRows.rows,
@@ -205,6 +207,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    trackSessionReplay("replay.recording_started", dealerId, { session_id, event_count: events.length });
     return NextResponse.json({
       stored: true,
       session_id,

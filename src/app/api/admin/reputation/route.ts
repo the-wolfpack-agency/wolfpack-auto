@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackReputation } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/reputation — Score, alerts, and reviews                     */
@@ -52,6 +53,7 @@ export async function GET() {
     const alerts = getReviewAlerts(reviews);
     const trends = detectSentimentShift(reviews, 30);
 
+    trackReputation("reputation.score_calculated", dealerId, { score: score.overall ?? 0, review_count: reviews.length, alert_count: alerts.length });
     return NextResponse.json({ score, alerts, reviews, trends, dealerId });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";

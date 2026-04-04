@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { getDemoErrors } from "@/lib/error-monitor";
+import { trackErrorMonitor } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/error-monitor — Error list with trends                      */
@@ -59,6 +60,11 @@ export async function GET(request: NextRequest) {
       [dealerId],
     );
 
+    trackErrorMonitor("error.trend_detected", dealerId, {
+      error_count: errors.length,
+      total_24h: Number(stats.rows[0]?.total_errors_24h ?? 0),
+      total_7d: Number(stats.rows[0]?.total_errors_7d ?? 0),
+    });
     return NextResponse.json({
       errors,
       total_errors_24h: Number(stats.rows[0]?.total_errors_24h ?? 0),
@@ -110,6 +116,7 @@ export async function POST(request: NextRequest) {
         `UPDATE client_errors SET resolved_at = NOW() WHERE fingerprint = $1 AND dealer_id = $2`,
         [fingerprint, dealerId],
       );
+      trackErrorMonitor("error.resolved", dealerId, { fingerprint });
     }
 
     return NextResponse.json({ success: true, action, fingerprint });

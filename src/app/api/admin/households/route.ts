@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { DEMO_HOUSEHOLDS } from "@/lib/household";
+import { trackHousehold } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/households                                                  */
@@ -66,6 +67,7 @@ export async function GET(request: NextRequest) {
       if (result.rows.length === 0) {
         return NextResponse.json({ error: "Household not found" }, { status: 404 });
       }
+      trackHousehold("household.profile_viewed", dealerId, { household_id: householdId });
       return NextResponse.json({ household: result.rows[0] });
     }
 
@@ -83,6 +85,7 @@ export async function GET(request: NextRequest) {
       [dealerId],
     );
 
+    trackHousehold("household.detected", dealerId, { household_count: result.rows.length });
     return NextResponse.json({ households: result.rows });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -148,6 +151,7 @@ export async function POST(request: NextRequest) {
       [dealerId],
     );
 
+    trackHousehold("household.detected", dealerId, { candidate_count: customers.rows.length });
     // For now, return the count — actual matching uses detectHouseholdMatches
     return NextResponse.json({
       detected: 0,
