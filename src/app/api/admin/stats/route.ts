@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 export async function GET() {
   const authResult = await requireAuth();
@@ -16,6 +17,7 @@ export async function GET() {
   const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
+    trackSystem("system.analytics_queried", dealerId, { module: "stats", source: "shadow_mode" });
     return NextResponse.json({
       vehicles: { total: 47, available: 38, pending: 3, sold: 5, in_transit: 1 },
       leads: { total: 195, new: 47, contacted: 38, qualified: 22, appointment_set: 14, sold: 8, lost: 66 },
@@ -110,6 +112,7 @@ export async function GET() {
         ? Math.round((leads.sold / convertible) * 100)
         : 0;
 
+    trackSystem("system.analytics_queried", dealerId, { module: "stats" });
     return NextResponse.json({
       vehicles,
       leads,

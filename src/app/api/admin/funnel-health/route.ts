@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getFunnelHealthMetrics } from "@/lib/funnel-health";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * GET /api/admin/funnel-health
@@ -15,6 +16,7 @@ export async function GET() {
   const dealerId = getDealerId(authResult);
 
   if (!process.env.DATABASE_URL) {
+    trackSystem("system.analytics_queried", dealerId, { module: "funnel_health", source: "shadow_mode" });
     return NextResponse.json({
       total_leads: 195,
       new_leads: 47,
@@ -32,6 +34,7 @@ export async function GET() {
   try {
     const metrics = await getFunnelHealthMetrics(dealerId);
 
+    trackSystem("system.analytics_queried", dealerId, { module: "funnel_health" });
     return NextResponse.json(metrics, {
       headers: {
         "Cache-Control": "private, max-age=300",

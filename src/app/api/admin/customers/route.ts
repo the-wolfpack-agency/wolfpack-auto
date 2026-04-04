@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackCustomer } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -188,6 +189,7 @@ export async function GET(request: NextRequest) {
          LIMIT 100`,
         params,
       );
+      trackCustomer("customer.viewed_360", dealerId, { source: "admin_api", count: result.rows.length });
       return NextResponse.json({ customers: result.rows });
     } catch (err) {
       console.error("[api/admin/customers] DB error:", err);
@@ -208,5 +210,6 @@ export async function GET(request: NextRequest) {
     filtered = filtered.filter((c) => c.status === status);
   }
 
+  trackCustomer("customer.viewed_360", dealerId, { source: "shadow_mode", count: filtered.length });
   return NextResponse.json({ customers: filtered });
 }

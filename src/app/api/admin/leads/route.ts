@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Lead, LeadStatus, LeadTemperature } from "@/types/lead";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { decryptPII } from "@/lib/crypto";
+import { trackLead } from "@/lib/analytics-hooks";
 
 /** Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */
 const DEALER_ID =
@@ -414,6 +415,7 @@ export async function GET(request: NextRequest) {
         phone: typeof row.phone === "string" ? decryptPII(row.phone) : row.phone,
       }));
 
+      trackLead("lead.scored", DEALER_ID, { source: "admin_api", count: decryptedLeads.length });
       return NextResponse.json({
         leads: decryptedLeads,
         total: parseInt((countResult.rows as any[])[0]?.count ?? "0", 10),
@@ -471,6 +473,7 @@ export async function GET(request: NextRequest) {
   const start = (page - 1) * pageSize;
   const paged = filtered.slice(start, start + pageSize);
 
+  trackLead("lead.scored", DEALER_ID, { source: "shadow_mode", count: paged.length });
   return NextResponse.json({
     leads: paged,
     total,

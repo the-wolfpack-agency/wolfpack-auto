@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { decodeVIN, isValidVIN } from "@/lib/intake/vin-decoder";
 import type { DecodedVIN } from "@/lib/intake/vin-decoder";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* ------------------------------------------------------------------ */
 /*  In-memory cache (1 hour TTL)                                       */
@@ -55,6 +57,7 @@ export async function GET(request: NextRequest) {
   // --- Authentication ---
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   // VIN decode is pure computation (no DB), but check DATABASE_URL for
   // consistent shadow mode pattern across all admin routes.
@@ -86,6 +89,7 @@ export async function GET(request: NextRequest) {
 
   const cached = cache.get(vin);
   if (cached && cached.expires > Date.now()) {
+    trackSystem("system.vehicle_updated", dealerId, { vin, cached: true });
     return NextResponse.json({
       vin,
       decoded: cached.data,
@@ -109,6 +113,7 @@ export async function GET(request: NextRequest) {
     expires: Date.now() + CACHE_TTL_MS,
   });
 
+  trackSystem("system.vehicle_updated", dealerId, { vin, cached: false });
   return NextResponse.json({
     vin,
     decoded,

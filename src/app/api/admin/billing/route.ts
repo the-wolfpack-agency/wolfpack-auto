@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 export async function GET() {
   const authResult = await requireAuth();
@@ -36,6 +37,7 @@ export async function GET() {
       return NextResponse.json({ subscription_status: "unknown" });
     }
 
+    trackSystem("system.settings_updated", dealerId, { module: "billing" });
     return NextResponse.json(rows[0]);
   } catch {
     // Migration 005 not yet applied — return a safe trial default

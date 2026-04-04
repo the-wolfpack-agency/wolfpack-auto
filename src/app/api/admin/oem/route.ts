@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 import {
   getOemNetworkStats,
   getRecentEnrollments,
@@ -16,6 +18,7 @@ import {
 export async function GET() {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   try {
     const [stats, enrollments] = await Promise.all([
@@ -23,6 +26,7 @@ export async function GET() {
       getRecentEnrollments(undefined, 8),
     ]);
 
+    trackSystem("system.analytics_queried", dealerId, { module: "oem" });
     return NextResponse.json(
       { stats, enrollments },
       {

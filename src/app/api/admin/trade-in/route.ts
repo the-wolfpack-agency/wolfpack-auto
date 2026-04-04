@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
+import { trackRetail } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* GET /api/admin/trade-in                                                    */
@@ -11,6 +13,7 @@ export async function GET(request: NextRequest) {
   if (!isAuthenticated(authResult)) {
     return authResult; // 401
   }
+  const dealerId = getDealerId(authResult);
 
   // Parse query params
   const { searchParams } = new URL(request.url);
@@ -24,6 +27,7 @@ export async function GET(request: NextRequest) {
 
   if (!process.env.DATABASE_URL) {
     // Shadow mode — return empty dataset
+    trackRetail("calculator_used", dealerId, { source: "shadow_mode" });
     return NextResponse.json(
       { estimates: [], total: 0, page, page_size: pageSize },
       { status: 200 },
@@ -54,6 +58,7 @@ export async function GET(request: NextRequest) {
       [pageSize, offset],
     );
 
+    trackRetail("calculator_used", dealerId, { source: "admin_api", count: estimatesResult.rows.length });
     return NextResponse.json(
       {
         estimates: estimatesResult.rows,
