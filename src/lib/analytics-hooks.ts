@@ -520,6 +520,46 @@ export type DripCampaignEvent =
   | "drip.lead_converted"
   | "drip.lead_unsubscribed";
 
+/* ------------------------------------------------------------------ */
+/*  Novel micro-behavioral signal types                                */
+/* ------------------------------------------------------------------ */
+
+export type PhotoComparisonEvent =
+  | "photo_compare.dwell_start"
+  | "photo_compare.dwell_end"
+  | "photo_compare.preference_detected"
+  | "photo_compare.side_by_side_opened"
+  | "photo_compare.winner_selected";
+
+export type PriceSensitivityEvent =
+  | "price_sensitivity.price_viewed"
+  | "price_sensitivity.calculator_opened"
+  | "price_sensitivity.term_adjusted"
+  | "price_sensitivity.down_payment_adjusted"
+  | "price_sensitivity.payment_ceiling_detected"
+  | "price_sensitivity.sticker_shock_bounce"
+  | "price_sensitivity.budget_fingerprint";
+
+export type DecisionVelocityEvent =
+  | "decision_velocity.first_vdp_view"
+  | "decision_velocity.return_visit"
+  | "decision_velocity.narrowing_detected"
+  | "decision_velocity.lead_submitted"
+  | "decision_velocity.velocity_classified";
+
+export type DeviceHandoffEvent =
+  | "device_handoff.cross_device_detected"
+  | "device_handoff.mobile_to_desktop"
+  | "device_handoff.desktop_to_mobile"
+  | "device_handoff.same_vin_cross_device"
+  | "device_handoff.intent_escalation";
+
+export type NightOwlEvent =
+  | "night_owl.late_session_start"
+  | "night_owl.late_session_engagement"
+  | "night_owl.time_segment_classified"
+  | "night_owl.optimal_outreach_detected";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -573,7 +613,12 @@ export type PlatformEvent =
   | I18nEvent
   | VehiclePipelineEvent
   | AnnotationEvent
-  | DripCampaignEvent;
+  | DripCampaignEvent
+  | PhotoComparisonEvent
+  | PriceSensitivityEvent
+  | DecisionVelocityEvent
+  | DeviceHandoffEvent
+  | NightOwlEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -1194,4 +1239,63 @@ export function trackDripCampaign(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "drip_campaigns", ...meta });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Novel micro-behavioral signal trackers                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Track photo comparison dwell — A/B vehicle preference detection.
+ */
+export function trackPhotoComparison(
+  event: PhotoComparisonEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "photo_comparison", ...meta });
+}
+
+/**
+ * Track price sensitivity fingerprinting — budget ceiling detection.
+ */
+export function trackPriceSensitivity(
+  event: PriceSensitivityEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "price_sensitivity", ...meta });
+}
+
+/**
+ * Track decision velocity — impulse vs. comparison shopping classification.
+ */
+export function trackDecisionVelocity(
+  event: DecisionVelocityEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "decision_velocity", ...meta });
+}
+
+/**
+ * Track device handoff intent — mobile→desktop escalation signal.
+ */
+export function trackDeviceHandoff(
+  event: DeviceHandoffEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "device_handoff", ...meta });
+}
+
+/**
+ * Track night owl patterns — time-of-day purchase intent segmentation.
+ */
+export function trackNightOwl(
+  event: NightOwlEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "night_owl", ...meta });
 }

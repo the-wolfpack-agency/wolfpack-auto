@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
     toChannel?: TouchpointType;
     channel?: TouchpointType;
     summary?: string;
+    metadata?: Record<string, string | number | boolean>;
   };
 
   try {
