@@ -511,6 +511,120 @@ async function seed(): Promise<void> {
     );
     console.log("[seed] 1 drip campaign inserted.");
 
+    // -- SMS messages -------------------------------------------------------------
+    await client.query(
+      `INSERT INTO sms_messages (id, dealer_id, lead_id, direction, "from", "to", body, status, created_at)
+       SELECT $1, $2, l.id, 'outbound', '(919) 555-0100', '(919) 555-0201', 'Hi Sarah! Your Honda Accord is ready for a test drive.', 'delivered', NOW() - INTERVAL '2 days'
+       FROM leads l WHERE l.dealer_id = $2 AND l.email = 'sarah.chen@example.com' LIMIT 1
+       ON CONFLICT DO NOTHING`,
+      ["sms-demo-001", DEMO_DEALER_ID],
+    );
+    await client.query(
+      `INSERT INTO sms_messages (id, dealer_id, lead_id, direction, "from", "to", body, status, created_at)
+       SELECT $1, $2, l.id, 'inbound', '(919) 555-0201', '(919) 555-0100', 'Sounds great! What time Saturday?', 'delivered', NOW() - INTERVAL '2 days' + INTERVAL '30 minutes'
+       FROM leads l WHERE l.dealer_id = $2 AND l.email = 'sarah.chen@example.com' LIMIT 1
+       ON CONFLICT DO NOTHING`,
+      ["sms-demo-002", DEMO_DEALER_ID],
+    );
+    console.log("[seed] 2 SMS messages inserted.");
+
+    // -- Session replays ----------------------------------------------------------
+    await client.query(
+      `INSERT INTO session_replays (session_id, dealer_id, started_at, ended_at, duration_ms, pages_visited, event_count, conversion, user_agent, viewport)
+       VALUES ($1, $2, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2.5 hours', 1800000, $3, 342, true, 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4)', $4)
+       ON CONFLICT DO NOTHING`,
+      [
+        "replay-seed-001", DEMO_DEALER_ID,
+        JSON.stringify(["/", "/inventory", "/inventory/2025-honda-accord", "/financing"]),
+        JSON.stringify({ width: 390, height: 844 }),
+      ],
+    );
+    console.log("[seed] 1 session replay inserted.");
+
+    // -- Client errors ------------------------------------------------------------
+    await client.query(
+      `INSERT INTO client_errors (id, dealer_id, fingerprint, message, stack, page_url, session_id, captured_at)
+       VALUES ($1, $2, 'err-fp-001', 'Cannot read properties of undefined (reading ''price'')', 'TypeError at VDP.tsx:42', '/inventory/VIN123', 'sess-001', NOW() - INTERVAL '1 day')
+       ON CONFLICT DO NOTHING`,
+      ["err-demo-001", DEMO_DEALER_ID],
+    );
+    console.log("[seed] 1 client error inserted.");
+
+    // -- Deliveries ---------------------------------------------------------------
+    await client.query(
+      `INSERT INTO deliveries (id, dealer_id, vehicle_vin, customer_name, customer_phone, delivery_address, status, slot_date, slot_time, fee, distance_miles)
+       VALUES ($1, $2, '1HGCV1F34PA000001', 'Sarah Chen', '(919) 555-0201', '100 Fayetteville St, Raleigh NC 27601', 'scheduled', CURRENT_DATE + 3, '10:00 AM', 199.00, 12.5)
+       ON CONFLICT DO NOTHING`,
+      ["del-demo-001", DEMO_DEALER_ID],
+    );
+    console.log("[seed] 1 delivery inserted.");
+
+    // -- Vehicle delivery tracker -------------------------------------------------
+    await client.query(
+      `INSERT INTO vehicle_delivery_tracker (id, dealer_id, vin, current_stage, milestones, vehicle_info, acquired_at)
+       VALUES ($1, $2, '5YJSA1E26PF000002', 'photos', $3, $4, NOW() - INTERVAL '5 days')
+       ON CONFLICT DO NOTHING`,
+      [
+        "vdt-demo-001", DEMO_DEALER_ID,
+        JSON.stringify([
+          { stage: "acquired", timestamp: new Date(Date.now() - 5 * 86400000).toISOString() },
+          { stage: "in_transit", timestamp: new Date(Date.now() - 4 * 86400000).toISOString() },
+          { stage: "arrived", timestamp: new Date(Date.now() - 3 * 86400000).toISOString() },
+          { stage: "inspection", timestamp: new Date(Date.now() - 2 * 86400000).toISOString() },
+          { stage: "reconditioning", timestamp: new Date(Date.now() - 1 * 86400000).toISOString() },
+          { stage: "photos", timestamp: new Date().toISOString() },
+        ]),
+        JSON.stringify({ year: 2025, make: "Tesla", model: "Model 3", stockNumber: "WP-002" }),
+      ],
+    );
+    console.log("[seed] 1 vehicle pipeline entry inserted.");
+
+    // -- Walkarounds + segments ---------------------------------------------------
+    await client.query(
+      `INSERT INTO walkarounds (id, dealer_id, vin, status, metadata, created_by, published_at)
+       VALUES ($1, $2, '1FTEW1EP0PFA00007', 'published', $3, 'admin', NOW() - INTERVAL '1 day')
+       ON CONFLICT DO NOTHING`,
+      [
+        "wk-demo-001", DEMO_DEALER_ID,
+        JSON.stringify({ totalDuration: 120, segmentCount: 3, completeness: 37.5, lastUpdated: new Date().toISOString() }),
+      ],
+    );
+    await client.query(
+      `INSERT INTO walkaround_segments (id, walkaround_id, segment_type, url, thumbnail_url, duration_seconds)
+       VALUES ('wks-001', 'wk-demo-001', 'exterior_front', '/videos/f150-front.mp4', '/thumbs/f150-front.jpg', 45),
+              ('wks-002', 'wk-demo-001', 'interior', '/videos/f150-interior.mp4', '/thumbs/f150-interior.jpg', 40),
+              ('wks-003', 'wk-demo-001', 'engine', '/videos/f150-engine.mp4', '/thumbs/f150-engine.jpg', 35)
+       ON CONFLICT DO NOTHING`,
+    );
+    console.log("[seed] 1 walkaround + 3 segments inserted.");
+
+    // -- Customer touchpoints (omnichannel) ---------------------------------------
+    await client.query(
+      `INSERT INTO customer_touchpoints (id, dealer_id, customer_id, channel, timestamp, summary, metadata)
+       VALUES ($1, $2, 'cust-seed-001', 'online', NOW() - INTERVAL '7 days', 'Browsed inventory, viewed 3 vehicles', $3),
+              ($4, $2, 'cust-seed-001', 'phone', NOW() - INTERVAL '5 days', 'Called about F-150 pricing', $5),
+              ($6, $2, 'cust-seed-001', 'in_store', NOW() - INTERVAL '2 days', 'Visited for test drive', $7)
+       ON CONFLICT DO NOTHING`,
+      [
+        "tp-demo-001", DEMO_DEALER_ID, JSON.stringify({ vehicles_viewed: 3, time_on_site: 420 }),
+        "tp-demo-002", JSON.stringify({ duration_seconds: 180, outcome: "appointment_set" }),
+        "tp-demo-003", JSON.stringify({ vehicles_driven: ["F-150 XLT"], salesperson: "Mike" }),
+      ],
+    );
+    console.log("[seed] 3 customer touchpoints inserted.");
+
+    // -- Call recordings ----------------------------------------------------------
+    await client.query(
+      `INSERT INTO call_recordings (id, dealer_id, phone_number, direction, duration_sec, transcript, sentiment, quality_score, keywords, outcome, recorded_at)
+       VALUES ($1, $2, '(919) 555-0201', 'inbound', 245, 'Customer called about the F-150 XLT pricing. Discussed financing options and scheduled a test drive for Saturday.', 'positive', 82.5, $3, 'appointment_set', NOW() - INTERVAL '3 days')
+       ON CONFLICT DO NOTHING`,
+      [
+        "call-demo-001", DEMO_DEALER_ID,
+        JSON.stringify(["F-150", "financing", "test drive", "Saturday"]),
+      ],
+    );
+    console.log("[seed] 1 call recording inserted.");
+
     await client.query("COMMIT");
     console.log("[seed] Done.");
   } catch (err) {
