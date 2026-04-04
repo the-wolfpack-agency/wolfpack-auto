@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackService } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -143,6 +144,7 @@ export async function GET(
         [vin.toUpperCase(), dealerId],
       );
 
+      trackService("service.ro_completed", dealerId, { vin: vin.toUpperCase(), count: (result.rows as unknown[]).length });
       return NextResponse.json({ vin: vin.toUpperCase(), history: result.rows });
     } catch (err) {
       console.error("[api/admin/service/history/[vin]] DB error, falling back:", err);
@@ -151,5 +153,6 @@ export async function GET(
 
   // Shadow mode
   const history = MOCK_HISTORY[vin.toUpperCase()] ?? DEFAULT_HISTORY;
+  trackService("service.ro_completed", dealerId, { vin: vin.toUpperCase(), count: history.length, shadow: true });
   return NextResponse.json({ vin: vin.toUpperCase(), history });
 }

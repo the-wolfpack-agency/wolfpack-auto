@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDemoEnrichedResponses } from "@/lib/survey-replay-linker";
+import { trackSurvey } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/surveys/[surveyId]/responses — Responses with replay links  */
@@ -17,6 +18,7 @@ export async function GET(
 
   // --- Shadow mode ---
   if (!process.env.DATABASE_URL) {
+    trackSurvey("survey.response_received", "", { survey_id: surveyId, shadow: true });
     return NextResponse.json({
       survey_id: surveyId,
       responses: getDemoEnrichedResponses(surveyId),
@@ -63,6 +65,8 @@ export async function GET(
       linked_at: string;
     }>,
   );
+
+  trackSurvey("survey.response_received", "", { survey_id: surveyId, count: enriched.length });
 
   return NextResponse.json({ survey_id: surveyId, responses: enriched });
 }

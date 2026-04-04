@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackCredit } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* GET /api/admin/credit/history                                              */
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
       sql += ` ORDER BY pulled_at DESC LIMIT 100`;
 
       const result = await query(sql, params);
+      trackCredit("credit.pulled", authResult.user.dealer_id, { count: (result.rows as unknown[]).length });
       return NextResponse.json({ pulls: result.rows });
     } catch (err) {
       console.error("[api/admin/credit/history] DB error:", err);
@@ -89,6 +91,8 @@ export async function GET(request: NextRequest) {
   ];
 
   const filtered = leadId ? mockPulls.filter((p) => p.lead_id === leadId) : mockPulls;
+
+  trackCredit("credit.pulled", authResult.user.dealer_id, { count: filtered.length, shadow: true });
 
   return NextResponse.json({ pulls: filtered });
 }

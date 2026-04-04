@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getOemNetworkDealers } from "@/db/queries/oem";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 export async function GET() {
   const authResult = await requireAuth();
@@ -16,6 +17,8 @@ export async function GET() {
 
   try {
     const dealers = await getOemNetworkDealers(undefined, 100);
+
+    trackSystem("system.analytics_queried", authResult.user.dealer_id ?? "", { module: "oem_dealers", count: dealers.length });
 
     return NextResponse.json(
       { dealers },

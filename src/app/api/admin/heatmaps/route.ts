@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
 import type { HeatmapType } from "@/lib/heatmap";
+import { trackHeatmap } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  Demo data (shadow mode — no DATABASE_URL)                                  */
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
 
   // Shadow mode — return demo data
   if (!process.env.DATABASE_URL) {
+    trackHeatmap("heatmap.viewed", dealerId, { page, type, days, shadow: true });
     if (type === "click") {
       const response: Record<string, unknown> = {
         type: "click",
@@ -189,6 +191,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (points.length > 0) {
+      trackHeatmap("heatmap.viewed", dealerId, { page, type, days, point_count: points.length });
       return NextResponse.json({
         type: "click",
         pageUrl: page,
@@ -210,6 +213,8 @@ export async function GET(request: NextRequest) {
   ];
   const demoStats = { totalClicks: 2832, avgScrollDepth: 62, hottestElement: "Hero CTA Button" };
   const demoRange = { start: since, end: new Date().toISOString() };
+
+  trackHeatmap("heatmap.viewed", dealerId, { page, type, days, demo_fallback: true });
 
   if (type === "scroll") {
     return NextResponse.json({

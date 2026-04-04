@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackGL } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -78,6 +79,8 @@ export async function GET(request: NextRequest) {
       const row = (result.rows as Record<string, number>[])[0];
       const topPerson = (byPerson.rows as { name: string; units: number; total_gross: number }[])[0];
 
+      trackGL("gl.trial_balance_generated", dealerId, { month });
+
       return NextResponse.json({
         summary: {
           period: month,
@@ -116,6 +119,8 @@ export async function GET(request: NextRequest) {
       { type: "lease", count: 1, gross: 5300 },
     ],
   };
+
+  trackGL("gl.trial_balance_generated", dealerId, { month, shadow: true });
 
   return NextResponse.json({ summary });
 }

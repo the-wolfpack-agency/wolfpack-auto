@@ -8,16 +8,18 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { query } from "@/lib/db";
+import { trackSecurity } from "@/lib/analytics-hooks";
 
 export async function GET(): Promise<NextResponse> {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
 
+  const { user } = authResult;
+
   if (!process.env.DATABASE_URL) {
+    trackSecurity("security.mfa_verified", user.dealer_id ?? "", { mfa_enabled: false, shadow: true });
     return NextResponse.json({ mfa_enabled: false });
   }
-
-  const { user } = authResult;
 
   try {
     const result = await query<{ mfa_enabled: boolean }>(
@@ -30,6 +32,7 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
+    trackSecurity("security.mfa_verified", user.dealer_id ?? "", { mfa_enabled: row.mfa_enabled ?? false });
     return NextResponse.json({ mfa_enabled: row.mfa_enabled ?? false });
   } catch (err) {
     console.error("[mfa/status] Error:", err);

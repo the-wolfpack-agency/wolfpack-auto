@@ -13,6 +13,7 @@ import {
   getOemNetworkStats,
   getOemNetworkDealers,
 } from "@/db/queries/oem";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 export async function GET() {
   const authResult = await requireAuth();
@@ -35,6 +36,8 @@ export async function GET() {
         .sort(
           (a, b) => (a.avg_program_score ?? 0) - (b.avg_program_score ?? 0)
         )[0] ?? null;
+
+    trackSystem("system.analytics_queried", authResult.user.dealer_id ?? "", { module: "oem_analytics", dealer_count: dealers.length });
 
     return NextResponse.json(
       {

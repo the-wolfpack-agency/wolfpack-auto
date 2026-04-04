@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * GET /api/admin/analytics/health
@@ -18,6 +19,7 @@ export async function GET() {
   if (!isAuthenticated(authResult)) return authResult;
 
   if (!process.env.DATABASE_URL) {
+    trackSystem("system.health_check", authResult.user.dealer_id ?? "", { shadow: true });
     return NextResponse.json({
       status: "shadow_mode",
       db_connected: false,
@@ -67,6 +69,8 @@ export async function GET() {
 
     // Healthy = at least 1 event in the last day
     const healthy = lastDay > 0;
+
+    trackSystem("system.health_check", authResult.user.dealer_id ?? "", { healthy, events_last_day: lastDay });
 
     return NextResponse.json({
       status: healthy ? "healthy" : "degraded",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackReview } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -54,11 +55,14 @@ export async function GET() {
         `SELECT id, name, category, text FROM review_response_templates WHERE dealer_id = $1 ORDER BY name`,
         [dealerId],
       );
+      trackReview("review.responded", dealerId, { count: (result.rows as unknown[]).length });
       return NextResponse.json({ templates: result.rows });
     } catch (err) {
       console.error("[api/admin/reviews/templates] DB error:", err);
     }
   }
+
+  trackReview("review.responded", dealerId, { count: MOCK_TEMPLATES.length, shadow: true });
 
   return NextResponse.json({ templates: MOCK_TEMPLATES });
 }

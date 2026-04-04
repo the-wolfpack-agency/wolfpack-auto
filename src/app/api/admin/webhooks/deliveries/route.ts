@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { getWebhookDeliveries } from "@/lib/webhook-outbound";
+import { trackWebhook } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* GET /api/admin/webhooks/deliveries — recent deliveries with status filter  */
@@ -31,6 +32,8 @@ export async function GET(request: NextRequest) {
   }
 
   const deliveries = await getWebhookDeliveries(dealerId, { status, limit });
+
+  trackWebhook("webhook.delivered", dealerId, { count: deliveries.length });
 
   return NextResponse.json({ deliveries });
 }

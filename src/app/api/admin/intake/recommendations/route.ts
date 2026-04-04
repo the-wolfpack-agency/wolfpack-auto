@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getInventoryRecommendations } from "@/lib/intake/recommendation-engine";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * GET /api/admin/intake/recommendations
@@ -18,6 +19,7 @@ export async function GET(_request: NextRequest) {
   if (!isAuthenticated(authResult)) return authResult;
 
   if (!process.env.DATABASE_URL) {
+    trackSystem("system.recommendation_served", "", { shadow: true });
     return NextResponse.json({
       dealer_id: "shadow",
       generated_at: new Date().toISOString(),
@@ -31,6 +33,8 @@ export async function GET(_request: NextRequest) {
 
   try {
     const recommendations = await getInventoryRecommendations(dealerId);
+
+    trackSystem("system.recommendation_served", dealerId, { source: "intake" });
 
     return NextResponse.json({
       dealer_id: dealerId,

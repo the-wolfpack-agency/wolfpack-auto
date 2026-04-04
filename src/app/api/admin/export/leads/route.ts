@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Lead, LeadStatus, LeadTemperature } from "@/types/lead";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* CSV helpers                                                                */
@@ -225,6 +226,8 @@ export async function GET(request: NextRequest) {
   // Build CSV
   const rows = [CSV_HEADER, ...leads.map(leadToCsvRow)];
   const csv = rows.join("\n");
+
+  trackSystem("system.inventory_exported", dealerId, { table: "leads", count: leads.length });
 
   return new NextResponse(csv, {
     status: 200,

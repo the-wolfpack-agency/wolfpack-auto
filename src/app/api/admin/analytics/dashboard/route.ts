@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * GET /api/admin/analytics/dashboard
@@ -60,6 +61,8 @@ export async function GET() {
     } else {
       (data as Record<string, unknown>).tradeInFunnel = sampleTradeInFunnel();
     }
+
+    trackSystem("system.analytics_queried", dealer_id ?? "", { module: "dashboard" });
 
     return NextResponse.json(data);
   } catch (err) {

@@ -625,6 +625,190 @@ async function seed(): Promise<void> {
     );
     console.log("[seed] 1 call recording inserted.");
 
+    // -- Household members (link customers to hh-demo-001) ----------------------
+    await client.query(
+      `INSERT INTO household_members (id, household_id, customer_id, relationship)
+       SELECT $1, $2, c.id, $4
+       FROM customers c WHERE c.dealer_id = $3 AND c.email = $5
+       ON CONFLICT DO NOTHING`,
+      ["hm-demo-001", "hh-demo-001", DEMO_DEALER_ID, "primary", "rgarcia@example.com"],
+    );
+    await client.query(
+      `INSERT INTO household_members (id, household_id, customer_id, relationship)
+       SELECT $1, $2, c.id, $4
+       FROM customers c WHERE c.dealer_id = $3 AND c.email = $5
+       ON CONFLICT DO NOTHING`,
+      ["hm-demo-002", "hh-demo-001", DEMO_DEALER_ID, "spouse", "emily.t@example.com"],
+    );
+    console.log("[seed] 2 household members inserted.");
+
+    // -- Household vehicles (link F-150 to household) ---------------------------
+    await client.query(
+      `INSERT INTO household_vehicles (id, household_id, vin, purchase_price, purchase_date)
+       VALUES ($1, $2, $3, $4, $5::date)
+       ON CONFLICT DO NOTHING`,
+      ["hv-demo-001", "hh-demo-001", "1FTEW1EP0PFA00007", 46250, "2026-03-15"],
+    );
+    console.log("[seed] 1 household vehicle inserted.");
+
+    // -- Campaign enrollments (Sarah Chen in drip-demo-001) ---------------------
+    await client.query(
+      `INSERT INTO campaign_enrollments (id, campaign_id, dealer_id, lead_id, current_step, status, enrolled_at, last_sent_at)
+       SELECT $1, $2, $3, l.id, $5, $6, NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days'
+       FROM leads l WHERE l.dealer_id = $3 AND l.email = $4
+       ON CONFLICT DO NOTHING`,
+      ["enroll-demo-001", "drip-demo-001", DEMO_DEALER_ID, "sarah.chen@example.com", 1, "active"],
+    );
+    console.log("[seed] 1 campaign enrollment inserted.");
+
+    // -- Reinsurance policies (under reins-demo-001) ----------------------------
+    await client.query(
+      `INSERT INTO reinsurance_policies (id, program_id, dealer_id, product_category, ceded_premium)
+       VALUES ($1, $2, $3, 'VSC', $4),
+              ($5, $2, $3, 'GAP', $6)
+       ON CONFLICT DO NOTHING`,
+      ["rpol-demo-001", "reins-demo-001", DEMO_DEALER_ID, 1200, "rpol-demo-002", 450],
+    );
+    console.log("[seed] 2 reinsurance policies inserted.");
+
+    // -- Reinsurance claims (against VSC policy) --------------------------------
+    await client.query(
+      `INSERT INTO reinsurance_claims (id, policy_id, dealer_id, paid_amount, status, filed_at, resolved_at)
+       VALUES ($1, $2, $3, $4, 'paid', NOW() - INTERVAL '30 days', NOW() - INTERVAL '15 days')
+       ON CONFLICT DO NOTHING`,
+      ["rclaim-demo-001", "rpol-demo-001", DEMO_DEALER_ID, 800],
+    );
+    console.log("[seed] 1 reinsurance claim inserted.");
+
+    // -- Session replay events (for replay-seed-001) ----------------------------
+    const replayEvents = [
+      { seq: 1, ts: Date.now() - 1800000, type: "page_navigation", data: { url: "/", title: "Home" } },
+      { seq: 2, ts: Date.now() - 1750000, type: "scroll", data: { scrollTop: 320, scrollHeight: 2400, direction: "down" } },
+      { seq: 3, ts: Date.now() - 1700000, type: "click", data: { selector: "a.inventory-link", text: "View Inventory", x: 245, y: 380 } },
+      { seq: 4, ts: Date.now() - 1650000, type: "page_navigation", data: { url: "/inventory", title: "Inventory" } },
+      { seq: 5, ts: Date.now() - 1600000, type: "input_change", data: { selector: "input.search-bar", value: "Honda Accord" } },
+      { seq: 6, ts: Date.now() - 1500000, type: "page_navigation", data: { url: "/inventory/2025-honda-accord", title: "2025 Honda Accord Sport" } },
+    ];
+    for (const evt of replayEvents) {
+      await client.query(
+        `INSERT INTO session_replay_events (session_id, seq, ts, type, data)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (session_id, seq) DO NOTHING`,
+        ["replay-seed-001", evt.seq, evt.ts, evt.type, JSON.stringify(evt.data)],
+      );
+    }
+    console.log(`[seed] ${replayEvents.length} session replay events inserted.`);
+
+    // -- Survey responses (for survey-demo-001) ---------------------------------
+    await client.query(
+      `INSERT INTO survey_responses (id, survey_id, dealer_id, session_id, responses, nps_score)
+       VALUES ($1, $2, $3, 'sess-nps-001', $4, $5),
+              ($6, $2, $3, 'sess-nps-002', $7, $8)
+       ON CONFLICT DO NOTHING`,
+      [
+        "sresp-demo-001", "survey-demo-001", DEMO_DEALER_ID,
+        JSON.stringify({ q1: 9, comment: "Great experience, very helpful staff!" }), 9,
+        "sresp-demo-002",
+        JSON.stringify({ q1: 7, comment: "Good overall, wait time was a bit long." }), 7,
+      ],
+    );
+    console.log("[seed] 2 survey responses inserted.");
+
+    // -- User tests + test recordings -------------------------------------------
+    const userTestId = "utest-demo-001";
+    await client.query(
+      `INSERT INTO user_tests (id, dealer_id, title, description, tasks, active)
+       VALUES ($1, $2, $3, $4, $5, true)
+       ON CONFLICT DO NOTHING`,
+      [
+        userTestId, DEMO_DEALER_ID,
+        "Find a vehicle under $30k",
+        "Can users discover affordable inventory using search and filters?",
+        JSON.stringify([
+          { id: "task-1", title: "Use the search bar to find sedans under $30,000", successCriteria: "User lands on a filtered results page" },
+          { id: "task-2", title: "Compare two vehicles and pick one", successCriteria: "User adds a vehicle to comparison and views comparison page" },
+        ]),
+      ],
+    );
+    console.log("[seed] 1 user test inserted.");
+
+    await client.query(
+      `INSERT INTO test_recordings (id, test_id, dealer_id, participant_id, task_results, completed, duration_ms, started_at, completed_at)
+       VALUES ($1, $2, $3, $4, $5, false, $6, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '45 minutes')
+       ON CONFLICT DO NOTHING`,
+      [
+        "trec-demo-001", userTestId, DEMO_DEALER_ID, "participant-001",
+        JSON.stringify([
+          { taskId: "task-1", success: true, durationMs: 42000, notes: "Found Corolla LE quickly via price filter" },
+          { taskId: "task-2", success: false, durationMs: 58000, notes: "Could not locate comparison feature" },
+        ]),
+        100000,
+      ],
+    );
+    console.log("[seed] 1 test recording inserted.");
+
+    // -- Analytics events -------------------------------------------------------
+    const analyticsEvents = [
+      { event_type: "deal", action: "deal.created", page: "/deals/new", session_id: "sess-ana-001", fingerprint: "fp-001", metadata: { dealId: "deal-001", vehicleVin: "1HGCV1F34PA000001", amount: 30495 } },
+      { event_type: "lead", action: "lead.scored", page: "/leads", session_id: "sess-ana-001", fingerprint: "fp-001", metadata: { leadEmail: "sarah.chen@example.com", score: 82, tier: "hot" } },
+      { event_type: "service", action: "service.appointment_created", page: "/service/schedule", session_id: "sess-ana-002", fingerprint: "fp-002", metadata: { appointmentDate: "2026-04-10", serviceType: "oil_change" } },
+      { event_type: "inventory", action: "vehicle.added", page: "/inventory/add", session_id: "sess-ana-003", fingerprint: "fp-003", metadata: { vin: "1FTEW1EP0PFA00007", make: "Ford", model: "F-150" } },
+      { event_type: "analytics", action: "system.analytics_queried", page: "/analytics/dashboard", session_id: "sess-ana-004", fingerprint: "fp-004", metadata: { query: "monthly_revenue", dateRange: "2026-03" } },
+      { event_type: "inventory", action: "vehicle.viewed", page: "/inventory/2025-honda-accord", session_id: "sess-ana-005", fingerprint: "fp-005", metadata: { vin: "1HGCV1F34PA000001", source: "srp" } },
+      { event_type: "lead", action: "lead.created", page: "/leads/new", session_id: "sess-ana-006", fingerprint: "fp-006", metadata: { source: "website_form", vehicle_interest: "2025 Ford F-150" } },
+      { event_type: "fi", action: "fi.product_presented", page: "/deals/fi-menu", session_id: "sess-ana-001", fingerprint: "fp-001", metadata: { product: "VSC", accepted: true, premium: 1200 } },
+    ];
+    for (const ae of analyticsEvents) {
+      await client.query(
+        `INSERT INTO analytics_events (event_type, action, page, session_id, user_fingerprint, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [ae.event_type, ae.action, ae.page, ae.session_id, ae.fingerprint, JSON.stringify(ae.metadata)],
+      );
+    }
+    console.log(`[seed] ${analyticsEvents.length} analytics events inserted.`);
+
+    // -- Ingested leads (from AutoTrader + Cars.com feeds) ----------------------
+    await client.query(
+      `INSERT INTO ingested_leads (id, dealer_id, feed_id, lead_id, source, raw_payload, duplicate)
+       SELECT $1, $2, $3, l.id, 'autotrader', $5, false
+       FROM leads l WHERE l.dealer_id = $2 AND l.email = $4
+       ON CONFLICT DO NOTHING`,
+      [
+        "ilead-demo-001", DEMO_DEALER_ID, "feed-demo-001", "sarah.chen@example.com",
+        JSON.stringify({ adf_xml: "<prospect><customer><name>Sarah Chen</name></customer></prospect>", received_at: "2026-03-20T14:30:00Z" }),
+      ],
+    );
+    await client.query(
+      `INSERT INTO ingested_leads (id, dealer_id, feed_id, lead_id, source, raw_payload, duplicate)
+       SELECT $1, $2, $3, l.id, 'cars_com', $5, true
+       FROM leads l WHERE l.dealer_id = $2 AND l.email = $4
+       ON CONFLICT DO NOTHING`,
+      [
+        "ilead-demo-002", DEMO_DEALER_ID, "feed-demo-002", "sarah.chen@example.com",
+        JSON.stringify({ adf_xml: "<prospect><customer><name>Sarah Chen</name></customer></prospect>", received_at: "2026-03-21T09:15:00Z" }),
+      ],
+    );
+    console.log("[seed] 2 ingested leads inserted.");
+
+    // -- Data exports -----------------------------------------------------------
+    await client.query(
+      `INSERT INTO data_exports (id, dealer_id, export_type, format, destination, status, row_count, file_url, started_at, completed_at)
+       VALUES ($1, $2, 'analytics', 'csv', 'download', 'completed', 1250, '/exports/analytics-2026-03.csv', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '1 hour 55 minutes')
+       ON CONFLICT DO NOTHING`,
+      ["export-demo-001", DEMO_DEALER_ID],
+    );
+    console.log("[seed] 1 data export inserted.");
+
+    // -- E-rating cache (VSC rates for Accord VIN) ------------------------------
+    await client.query(
+      `INSERT INTO erating_cache (id, dealer_id, vin, provider, product, term_months, sale_price, rate, cost, markup)
+       VALUES ($1, $2, $3, 'demo-provider', 'VSC', 60, 30495, 1450.00, 680.00, 770.00),
+              ($4, $2, $3, 'demo-provider', 'GAP', 60, 30495, 595.00, 280.00, 315.00)
+       ON CONFLICT DO NOTHING`,
+      ["erate-demo-001", DEMO_DEALER_ID, "1HGCV1F34PA000001", "erate-demo-002"],
+    );
+    console.log("[seed] 2 e-rating cache entries inserted.");
+
     await client.query("COMMIT");
     console.log("[seed] Done.");
   } catch (err) {

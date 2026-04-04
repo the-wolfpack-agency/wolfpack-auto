@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateSystemBackground, generateOptimizedVariants } from "@/lib/system-backgrounds";
 import sharp from "sharp";
+import { trackBackground } from "@/lib/analytics-hooks";
 
 const CACHE_HEADERS = {
   "Cache-Control": "public, max-age=86400, s-maxage=604800, immutable",
@@ -23,6 +24,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!process.env.DATABASE_URL) {
+    trackBackground("background.applied", "", { background_id: "demo", shadow: true });
     return NextResponse.json({ id: "demo", name: "Demo Background", url: "", format: "webp" });
   }
 
@@ -61,6 +63,8 @@ export async function GET(
         contentType = "image/webp";
     }
   }
+
+  trackBackground("background.applied", "", { background_id: id, format });
 
   return new NextResponse(new Uint8Array(outputBuffer), {
     status: 200,

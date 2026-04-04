@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * GET /api/admin/export/analytics
@@ -13,11 +14,13 @@ export async function GET() {
   if (!isAuthenticated(authResult)) return authResult;
 
   if (!process.env.DATABASE_URL) {
+    trackSystem("system.analytics_queried", authResult.user.dealer_id ?? "", { module: "export", shadow: true });
     return NextResponse.json(buildAnalyticsSummary());
   }
 
   try {
     const data = buildAnalyticsSummary();
+    trackSystem("system.analytics_queried", authResult.user.dealer_id ?? "", { module: "export" });
     return NextResponse.json(data);
   } catch (err) {
     console.error("[export/analytics] Error:", err);

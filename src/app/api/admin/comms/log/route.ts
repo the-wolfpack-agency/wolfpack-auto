@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackComms } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -214,6 +215,7 @@ export async function GET(request: NextRequest) {
         params,
       );
 
+      trackComms("comms.message_sent", dealerId, { count: (result.rows as unknown[]).length });
       return NextResponse.json({ messages: result.rows });
     } catch (err) {
       console.error("[api/admin/comms/log] DB error, falling back:", err);
@@ -227,6 +229,8 @@ export async function GET(request: NextRequest) {
   if (leadId) filtered = filtered.filter((m) => m.lead_id === leadId);
   if (from) filtered = filtered.filter((m) => m.sent_at >= from);
   if (to) filtered = filtered.filter((m) => m.sent_at <= to);
+
+  trackComms("comms.message_sent", dealerId, { count: filtered.length, shadow: true });
 
   return NextResponse.json({ messages: filtered });
 }

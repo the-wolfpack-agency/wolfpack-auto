@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
+import { trackCohort } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/analytics/cohorts — Retention matrix                        */
@@ -21,6 +22,8 @@ export async function GET(request: NextRequest) {
     );
     const matrix = getDemoRetentionMatrix();
     const churnRisks = identifyChurnRisk(matrix);
+
+    trackCohort("cohort.analysis_generated", dealerId, { period: periodType, shadow: true });
 
     return NextResponse.json({
       matrix,
@@ -51,6 +54,8 @@ export async function GET(request: NextRequest) {
 
   const matrix = buildRetentionMatrix(events, periodType);
   const churnRisks = identifyChurnRisk(matrix);
+
+  trackCohort("cohort.analysis_generated", dealerId, { period: periodType, event_count: events.length });
 
   return NextResponse.json({ matrix, churnRisks, dealerId });
 }

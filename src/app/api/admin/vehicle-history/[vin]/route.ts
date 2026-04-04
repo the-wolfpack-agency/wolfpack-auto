@@ -3,6 +3,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* VIN validation                                                             */
@@ -163,6 +164,8 @@ export async function GET(
       const report = result.rows[0] as { expires_at: string };
       const expired = new Date(report.expires_at) < new Date();
 
+      trackSystem("system.vehicle_history_pulled", dealerId, { vin, expired });
+
       return NextResponse.json({
         report: result.rows[0],
         expired,
@@ -184,6 +187,8 @@ export async function GET(
   }
 
   const expired = new Date(report.expires_at) < new Date();
+
+  trackSystem("system.vehicle_history_pulled", dealerId, { vin, expired, shadow: true });
 
   return NextResponse.json({
     report,

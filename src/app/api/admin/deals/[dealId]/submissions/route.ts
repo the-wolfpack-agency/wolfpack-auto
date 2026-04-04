@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { trackDesking } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* GET /api/admin/deals/[dealId]/submissions                                  */
@@ -25,6 +26,7 @@ export async function GET(
           ORDER BY ds.created_at DESC`,
         [dealId, authResult.user.dealer_id],
       );
+      trackDesking("desking.lender_submitted", authResult.user.dealer_id, { deal_id: dealId, count: (result.rows as unknown[]).length });
       return NextResponse.json({ submissions: result.rows, deal_id: dealId });
     } catch (err) {
       console.error("[api/admin/deals/submissions] DB error:", err);
@@ -94,6 +96,8 @@ export async function GET(
       funded_rate: null,
     },
   ];
+
+  trackDesking("desking.lender_submitted", authResult.user.dealer_id, { deal_id: dealId, count: mockSubmissions.length, shadow: true });
 
   return NextResponse.json({ submissions: mockSubmissions, deal_id: dealId });
 }
