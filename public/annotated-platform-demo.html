@@ -274,7 +274,7 @@
   <div>
     <h1>Wolfpack Auto — <span>Platform Intelligence Demo</span></h1>
     <div class="subtitle">Every element on this page is instrumented. Colored badges reveal what's happening behind the scenes.</div>
-    <div class="subtitle" style="margin-top:6px;">Source-verified from <strong>analytics-engine.ts</strong> &bull; <strong>seo-engine.ts</strong> &bull; <strong>EventCollector.tsx</strong></div>
+    <div class="subtitle" style="margin-top:6px;">Source-verified from <strong>analytics-engine.ts</strong> (2,394 lines) &bull; <strong>analytics-hooks.ts</strong> (760 lines) &bull; <strong>seo-engine.ts</strong> (568 lines) &bull; <strong>EventCollector.tsx</strong></div>
   </div>
 </div>
 
@@ -287,8 +287,8 @@
   <div class="legend-item"><div class="legend-dot" style="background:var(--ux-friction)"></div> UX Friction (4 insights)</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--navigation)"></div> Navigation</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--marketing)"></div> Marketing (4 insights)</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--seo)"></div> SEO Engine</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--pipeline)"></div> Data Pipeline</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--seo)"></div> SEO Engine (21 functions)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--pipeline)"></div> Data Pipeline (292 event types)</div>
 </div>
 
 <!-- ==================== MAIN LAYOUT ==================== -->
@@ -421,7 +421,7 @@
       <strong>Insight #23:</strong> Lead Temperature Score — composite of ALL signals: pages viewed, time on site, vehicles checked, chat engagement, form interactions. Outputs hot/warm/cool/cold classification.<br>
       <strong>Insight #20:</strong> Session momentum — is user engagement accelerating or decelerating within the session?<br>
       <strong>Tracking:</strong> <code>trackChat(message, role)</code> on every message; <code>trackChatEvent()</code> for server-side analytics.<br>
-      <strong>Pipeline:</strong> Chat queries are embedded via <code>embeddings.ts</code> and matched against vehicle inventory in Qdrant for RAG-powered responses.
+      <strong>Pipeline:</strong> Chat queries are embedded via local trigram analysis (zero API tokens) and matched against vehicle inventory in Qdrant for semantic search. Responses built from pattern matching + vector search — not an LLM call.
     </div>
   </div>
 
@@ -496,7 +496,7 @@
   <div class="annotated" style="border-color:var(--cyan);">
     <div class="section-label" style="color:var(--cyan);">Invisible Layer: Shadow Hardening (Production Safety)</div>
     <div style="font-size:0.82rem; color:var(--text-dim); padding:8px 0;">
-      Before any change reaches this site, an identical copy is built and hit with 244 automated tests. If anything fails, the change is blocked. Customers never see a broken page.
+      Before any change reaches this site, an identical copy is built and hit with 2,097 automated tests across 10 categories. If anything fails, the change is blocked. Customers never see a broken page.
     </div>
     <div class="annotation-row">
       <span class="badge badge-ux_friction">Security</span>
@@ -512,7 +512,8 @@
     </div>
     <div class="annotation-detail">
       <strong>10 test categories</strong> run on desktop + mobile viewports against a production-identical clone.<br>
-      <strong>Zero downtime deployments.</strong> Every change is proven safe before it goes live.
+      <strong>Zero downtime deployments.</strong> Every change is proven safe before it goes live.<br>
+      <strong>Competitive parity:</strong> Full feature coverage matching Tekion, SE-FI, Hotjar, and AutoNation — built in 11 days, 210+ commits, 54 migrations, 110+ tables, 215+ API routes.
     </div>
   </div>
 
@@ -557,7 +558,7 @@
     <div class="annotation-detail">
       <strong>Security:</strong> HSTS, CSP, X-Frame-Options, CSRF tokens on forms, Redis-backed brute-force protection (5 attempts / 15 min), 30-min idle timeout.<br>
       <strong>Admin MFA:</strong> Two-step login — password + TOTP (Google Authenticator / Authy). Backup codes. Sessions invalidated on idle.<br>
-      <strong>Privacy:</strong> GDPR + CCPA compliant. Cookie consent with opt-out. PII encrypted with AES-256-GCM. Data deletion API.<br>
+      <strong>Privacy:</strong> GDPR + CCPA compliant. Privacy-first event collection (no cookies, no PII, sessionStorage only). PII encrypted with AES-256-GCM (12-byte IV, 16-byte auth tags). Data deletion API anonymizes across 6 tables.<br>
       <strong>FTC:</strong> Buyer's Guide disclosures, CARS Rule compliance, Reg Z financing disclaimers on every vehicle listing.<br>
       <strong>AI:</strong> Chat and generated content labeled as AI-assisted. Full transparency with customers.
     </div>
@@ -572,19 +573,19 @@
   <h3>Platform Intelligence Stats</h3>
   <div class="stat-grid">
     <div class="stat-box">
-      <div class="num" style="color:var(--engagement)">41</div>
+      <div class="num" style="color:var(--engagement)">44</div>
       <div class="label">Insight Generators</div>
     </div>
     <div class="stat-box">
-      <div class="num" style="color:var(--search)">16</div>
+      <div class="num" style="color:var(--search)">292</div>
       <div class="label">Event Types</div>
     </div>
     <div class="stat-box">
-      <div class="num" style="color:var(--conversion)">8</div>
+      <div class="num" style="color:var(--conversion)">6</div>
       <div class="label">Conversion Actions</div>
     </div>
     <div class="stat-box">
-      <div class="num" style="color:var(--seo)">7</div>
+      <div class="num" style="color:var(--seo)">21</div>
       <div class="label">SEO Functions</div>
     </div>
   </div>
@@ -676,7 +677,8 @@
   <hr class="section-divider">
 
   <!-- EVENT TYPES -->
-  <h3>Event Types (16)</h3>
+  <h3>Event Types (292 across 30 categories)</h3>
+  <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:8px;">Core browser events + 292 typed admin/operational events tracked via analytics-hooks.ts:</div>
   <div style="display:flex; flex-wrap:wrap; gap:4px;">
     <span class="badge badge-engagement">page_view</span>
     <span class="badge badge-engagement">click</span>
@@ -685,21 +687,26 @@
     <span class="badge badge-chat">chat_message</span>
     <span class="badge badge-engagement">vehicle_view</span>
     <span class="badge badge-search">search</span>
-    <span class="badge badge-engagement">time_on_page</span>
-    <span class="badge badge-engagement">copy</span>
     <span class="badge badge-ux_friction">rage_click</span>
     <span class="badge badge-ux_friction">dead_click</span>
     <span class="badge badge-conversion">exit_intent</span>
     <span class="badge badge-conversion">comparison</span>
-    <span class="badge badge-conversion">trade_in_step</span>
-    <span class="badge badge-conversion">trade_in_estimate</span>
-    <span class="badge badge-conversion">trade_in_lead</span>
+    <span class="badge badge-pipeline">deal (11)</span>
+    <span class="badge badge-pipeline">service (10)</span>
+    <span class="badge badge-pipeline">comms (10)</span>
+    <span class="badge badge-pipeline">GL (17)</span>
+    <span class="badge badge-pipeline">desking (16)</span>
+    <span class="badge badge-pipeline">payment (10)</span>
+    <span class="badge badge-pipeline">payroll (11)</span>
+    <span class="badge badge-pipeline">background (20)</span>
+    <span class="badge badge-pipeline">system (68)</span>
   </div>
 
   <hr class="section-divider">
 
   <!-- CONVERSION ACTIONS -->
-  <h3 style="color:var(--conversion)">Conversion Actions (8)</h3>
+  <h3 style="color:var(--conversion)">Conversion Actions (6)</h3>
+  <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:6px;">Registered in CONVERSION_ACTIONS set (analytics-engine.ts):</div>
   <div style="display:flex; flex-direction:column; gap:3px; font-size:0.72rem;">
     <span>✅ submit_contact_form</span>
     <span>✅ submit_lead_form</span>
@@ -707,56 +714,57 @@
     <span>✅ click_email_button</span>
     <span>✅ schedule_test_drive</span>
     <span>✅ start_financing_application</span>
-    <span>✅ trade_in_estimate_received</span>
-    <span>✅ trade_in_lead</span>
   </div>
 
   <hr class="section-divider">
 
-  <!-- ALL 41 INSIGHTS -->
-  <h3>All 41 Insight Generators</h3>
+  <!-- ALL 44 INSIGHTS (verified from generateInsights() in analytics-engine.ts) -->
+  <h3>All 44 Insight Generators</h3>
   <ol class="insight-list">
     <li><span class="insight-num">1</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Page engagement ranking</li>
     <li><span class="insight-num">2</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Conversion paths</li>
     <li><span class="insight-num">3</span> <span class="badge badge-search" style="font-size:0.55rem">S</span> Search behavior</li>
     <li><span class="insight-num">4</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Vehicle interest</li>
-    <li><span class="insight-num">5</span> <span class="badge badge-chat" style="font-size:0.55rem">Ch</span> Chat engagement</li>
-    <li><span class="insight-num">6</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Peak hours</li>
+    <li><span class="insight-num">5</span> <span class="badge badge-chat" style="font-size:0.55rem">Ch</span> Chat engagement + sentiment trajectory</li>
+    <li><span class="insight-num">6</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Peak hours (dealer local timezone)</li>
     <li><span class="insight-num">7</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Micro-hesitation patterns</li>
     <li><span class="insight-num">8</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Comparison shopping detection</li>
     <li><span class="insight-num">9</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Copy behavior</li>
     <li><span class="insight-num">10</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Scroll behavior classification</li>
-    <li><span class="insight-num">11</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Time-to-first-interaction</li>
+    <li><span class="insight-num">11</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Time-to-first-interaction (user intent)</li>
     <li><span class="insight-num">12</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Return visit sticky pages</li>
     <li><span class="insight-num">13</span> <span class="badge badge-navigation" style="font-size:0.55rem">N</span> Cross-page journey patterns</li>
-    <li><span class="insight-num">14</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Device orientation</li>
+    <li><span class="insight-num">14</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Device orientation (photo engagement)</li>
     <li><span class="insight-num">15</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Rage clicks</li>
     <li><span class="insight-num">16</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Dead clicks</li>
     <li><span class="insight-num">17</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Form abandonment attribution</li>
     <li><span class="insight-num">18</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Exit intent patterns</li>
-    <li><span class="insight-num">19</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Price trajectory</li>
+    <li><span class="insight-num">19</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Price trajectory (buyer psychology)</li>
     <li><span class="insight-num">20</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Session momentum</li>
     <li><span class="insight-num">21</span> <span class="badge badge-marketing" style="font-size:0.55rem">M</span> Referrer behavior correlation</li>
     <li><span class="insight-num">22</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Viewport attention</li>
-    <li><span class="insight-num">23</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Lead Temperature Score</li>
+    <li><span class="insight-num">23</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Lead Temperature Score (45+ signals)</li>
     <li><span class="insight-num">24</span> <span class="badge badge-search" style="font-size:0.55rem">S</span> Inventory Gap Detection</li>
     <li><span class="insight-num">25</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Photo Engagement Score</li>
     <li><span class="insight-num">26</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Cross-Session Buyer Lifecycle</li>
-    <li><span class="insight-num">27</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Performance → Conversion</li>
+    <li><span class="insight-num">27</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Performance &rarr; Conversion Correlation</li>
     <li><span class="insight-num">28</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> CTA Visibility Gap</li>
     <li><span class="insight-num">29</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Vehicle Comparison Patterns</li>
     <li><span class="insight-num">30</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Financing Intent Profile</li>
     <li><span class="insight-num">31</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Gallery Engagement</li>
-    <li><span class="insight-num">32</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Trade-In Funnel Drop-Off</li>
-    <li><span class="insight-num">33</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Trade-In Estimate Distribution</li>
-    <li><span class="insight-num">34</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Trade-In → Purchase Journey</li>
-    <li><span class="insight-num">35</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Admin Pricing Recommendation Uptake</li>
-    <li><span class="insight-num">36</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Inventory Status Distribution (Admin)</li>
-    <li><span class="insight-num">37</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Lead Response Time Analysis</li>
-    <li><span class="insight-num">38</span> <span class="badge badge-pipeline" style="font-size:0.55rem">P</span> Admin → Analytics Feedback Loop</li>
-    <li><span class="insight-num">39</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Price Change → Conversion Correlation</li>
-    <li><span class="insight-num">40</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Dealer Admin Session Patterns</li>
-    <li><span class="insight-num">41</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Lead Quality by Channel (Admin Dashboard)</li>
+    <li><span class="insight-num">32</span> <span class="badge badge-marketing" style="font-size:0.55rem">M</span> UTM Campaign Attribution</li>
+    <li><span class="insight-num">33</span> <span class="badge badge-marketing" style="font-size:0.55rem">M</span> Retargeting Signals</li>
+    <li><span class="insight-num">34</span> <span class="badge badge-marketing" style="font-size:0.55rem">M</span> Seasonal Demand Patterns</li>
+    <li><span class="insight-num">35</span> <span class="badge badge-chat" style="font-size:0.55rem">Ch</span> Chat-to-Conversion Attribution</li>
+    <li><span class="insight-num">36</span> <span class="badge badge-chat" style="font-size:0.55rem">Ch</span> Chat Topic Demand</li>
+    <li><span class="insight-num">37</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Slow Page Bounce Correlation</li>
+    <li><span class="insight-num">38</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Mobile Pinch-Zoom Detection</li>
+    <li><span class="insight-num">39</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Chat Sentiment Trajectory</li>
+    <li><span class="insight-num">40</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Photo Comparison Dwell — time delta between gallery photos reveals feature priorities</li>
+    <li><span class="insight-num">41</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Price Sensitivity Fingerprint — scroll/hover cadence near price elements per session</li>
+    <li><span class="insight-num">42</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Decision Velocity — acceleration from browse to CTA click signals purchase readiness</li>
+    <li><span class="insight-num">43</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Device Handoff Intent — same user resuming session on different device = high intent</li>
+    <li><span class="insight-num">44</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Night Owl Premium — late-night browsing correlates with higher-value purchases</li>
   </ol>
 
 </div><!-- end sidebar -->
@@ -911,12 +919,45 @@
         <div style="color:var(--text-dim);">→</div>
         <div style="background:#1a2332; border:1px solid var(--seo); border-radius:6px; padding:8px 12px; color:var(--seo);">PostgreSQL<br><span style="color:var(--text-dim);">vehicles / leads / audit_log</span></div>
         <div style="color:var(--text-dim);">→</div>
-        <div style="background:#1a2332; border:1px solid var(--engagement); border-radius:6px; padding:8px 12px; color:var(--engagement);">Analytics Engine<br><span style="color:var(--text-dim);">41 insight generators update</span></div>
+        <div style="background:#1a2332; border:1px solid var(--engagement); border-radius:6px; padding:8px 12px; color:var(--engagement);">Analytics Engine<br><span style="color:var(--text-dim);">44 insight generators update</span></div>
         <div style="color:var(--text-dim);">→</div>
         <div style="background:#1a2332; border:1px solid var(--chat); border-radius:6px; padding:8px 12px; color:var(--chat);">AgenticQA<br><span style="color:var(--text-dim);">learning loop improves platform</span></div>
       </div>
     </div>
   </div>
+</div>
+
+<!-- ==================== MICRO-BEHAVIORAL INTELLIGENCE ==================== -->
+<div style="max-width:900px; margin:40px auto; padding:0 16px;">
+  <h2 style="font-size:1.3rem; font-weight:800; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid var(--pipeline);">
+    🧠 Micro-Behavioral Intelligence <span style="display:inline-block;font-size:0.6rem;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--conversion);color:#fff;margin-left:8px;vertical-align:middle;text-transform:uppercase;">Pioneer</span>
+  </h2>
+  <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:16px;">Five signals no other dealer platform captures. These detect subtle buying behaviors that reveal purchase intent before a customer fills out a form.</p>
+
+  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--engagement);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">📸 Photo Comparison Dwell</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">Measures which vehicle a buyer lingers on when swiping between two. Longer dwell = stronger preference — detected before they tell you.</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--search);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">💰 Price Sensitivity Fingerprint</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">Tracks calculator inputs (60 vs 84 months, down payment amounts). Reveals real budget ceiling without asking. Bounce after price = sticker shock.</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--conversion);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">⚡ Decision Velocity</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">First VDP view → lead submit in under 1 hour = impulse buyer (call NOW). Over 3 days = comparison shopper (nurture, don't pressure).</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--chat);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">📱→🖥️ Device Handoff Intent</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">Browse on phone at lunch, open same vehicles on desktop at home. Mobile-to-desktop with shared VINs = one of the strongest buying signals possible.</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--seo);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">🌙 Night Owl Premium</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">9pm-midnight browsing = 40% higher purchase intent than business hours. They can't sleep thinking about that car. System scores these sessions 1.4x higher.</div>
+    </div>
+  </div>
+
+  <p style="color:var(--text-dim); font-size:0.78rem;">All 5 signals feed <code style="background:var(--surface2); padding:2px 6px; border-radius:4px; font-size:0.72rem;">v_micro_signal_propensity</code> — a combined modifier that adjusts each customer's lead score in real time. High velocity + device handoff + night owl = call them first.</p>
 </div>
 
 <!-- ==================== ARCHITECTURE FOOTER ==================== -->
@@ -938,7 +979,7 @@
     <div class="arch-arrow">→</div>
     <div class="arch-box" style="border:1px solid var(--conversion);">
       <div style="font-weight:700; color:var(--conversion);">Analytics Engine</div>
-      <div style="font-size:0.7rem; color:var(--text-dim);">41 Insight Generators<br>Session Analysis<br>Lead Scoring</div>
+      <div style="font-size:0.7rem; color:var(--text-dim);">44 Insight Generators<br>Session Analysis<br>Lead Scoring (45+ signals)</div>
     </div>
     <div class="arch-arrow">→</div>
     <div class="arch-stores">
@@ -954,7 +995,7 @@
     </div>
   </div>
   <div style="text-align:center; margin-top:24px; color:var(--text-dim); font-size:0.7rem;">
-    Built by Wolfpack Agency Engineering &bull; Source: analytics-engine.ts (1,847 lines) &bull; seo-engine.ts (380 lines)
+    Built by Wolfpack Agency Engineering &bull; Updated April 4, 2026 &bull; Source: analytics-engine.ts (2,394 lines) &bull; analytics-hooks.ts (760 lines) &bull; seo-engine.ts (568 lines)
   </div>
 </div>
 

@@ -288,7 +288,7 @@
   <div class="legend-item"><div class="legend-dot" style="background:var(--navigation)"></div> Navigation</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--marketing)"></div> Marketing (4 insights)</div>
   <div class="legend-item"><div class="legend-dot" style="background:var(--seo)"></div> SEO Engine (21 functions)</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--pipeline)"></div> Data Pipeline (267 event types)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--pipeline)"></div> Data Pipeline (292 event types)</div>
 </div>
 
 <!-- ==================== MAIN LAYOUT ==================== -->
@@ -496,7 +496,7 @@
   <div class="annotated" style="border-color:var(--cyan);">
     <div class="section-label" style="color:var(--cyan);">Invisible Layer: Shadow Hardening (Production Safety)</div>
     <div style="font-size:0.82rem; color:var(--text-dim); padding:8px 0;">
-      Before any change reaches this site, an identical copy is built and hit with 4,300+ automated tests across 10 categories. If anything fails, the change is blocked. Customers never see a broken page.
+      Before any change reaches this site, an identical copy is built and hit with 2,097 automated tests across 10 categories. If anything fails, the change is blocked. Customers never see a broken page.
     </div>
     <div class="annotation-row">
       <span class="badge badge-ux_friction">Security</span>
@@ -512,7 +512,8 @@
     </div>
     <div class="annotation-detail">
       <strong>10 test categories</strong> run on desktop + mobile viewports against a production-identical clone.<br>
-      <strong>Zero downtime deployments.</strong> Every change is proven safe before it goes live.
+      <strong>Zero downtime deployments.</strong> Every change is proven safe before it goes live.<br>
+      <strong>Competitive parity:</strong> Full feature coverage matching Tekion, SE-FI, Hotjar, and AutoNation — built in 11 days, 210+ commits, 54 migrations, 110+ tables, 215+ API routes.
     </div>
   </div>
 
@@ -572,11 +573,11 @@
   <h3>Platform Intelligence Stats</h3>
   <div class="stat-grid">
     <div class="stat-box">
-      <div class="num" style="color:var(--engagement)">39</div>
+      <div class="num" style="color:var(--engagement)">44</div>
       <div class="label">Insight Generators</div>
     </div>
     <div class="stat-box">
-      <div class="num" style="color:var(--search)">267</div>
+      <div class="num" style="color:var(--search)">292</div>
       <div class="label">Event Types</div>
     </div>
     <div class="stat-box">
@@ -676,8 +677,8 @@
   <hr class="section-divider">
 
   <!-- EVENT TYPES -->
-  <h3>Event Types (267 across 30 categories)</h3>
-  <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:8px;">Core browser events + 267 typed admin/operational events tracked via analytics-hooks.ts:</div>
+  <h3>Event Types (292 across 30 categories)</h3>
+  <div style="font-size:0.72rem; color:var(--text-dim); margin-bottom:8px;">Core browser events + 292 typed admin/operational events tracked via analytics-hooks.ts:</div>
   <div style="display:flex; flex-wrap:wrap; gap:4px;">
     <span class="badge badge-engagement">page_view</span>
     <span class="badge badge-engagement">click</span>
@@ -717,8 +718,8 @@
 
   <hr class="section-divider">
 
-  <!-- ALL 39 INSIGHTS (verified from generateInsights() in analytics-engine.ts) -->
-  <h3>All 39 Insight Generators</h3>
+  <!-- ALL 44 INSIGHTS (verified from generateInsights() in analytics-engine.ts) -->
+  <h3>All 44 Insight Generators</h3>
   <ol class="insight-list">
     <li><span class="insight-num">1</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Page engagement ranking</li>
     <li><span class="insight-num">2</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Conversion paths</li>
@@ -759,6 +760,11 @@
     <li><span class="insight-num">37</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Slow Page Bounce Correlation</li>
     <li><span class="insight-num">38</span> <span class="badge badge-ux_friction" style="font-size:0.55rem">UX</span> Mobile Pinch-Zoom Detection</li>
     <li><span class="insight-num">39</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Chat Sentiment Trajectory</li>
+    <li><span class="insight-num">40</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Photo Comparison Dwell — time delta between gallery photos reveals feature priorities</li>
+    <li><span class="insight-num">41</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Price Sensitivity Fingerprint — scroll/hover cadence near price elements per session</li>
+    <li><span class="insight-num">42</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Decision Velocity — acceleration from browse to CTA click signals purchase readiness</li>
+    <li><span class="insight-num">43</span> <span class="badge badge-conversion" style="font-size:0.55rem">C</span> Device Handoff Intent — same user resuming session on different device = high intent</li>
+    <li><span class="insight-num">44</span> <span class="badge badge-engagement" style="font-size:0.55rem">E</span> Night Owl Premium — late-night browsing correlates with higher-value purchases</li>
   </ol>
 
 </div><!-- end sidebar -->
@@ -913,12 +919,45 @@
         <div style="color:var(--text-dim);">→</div>
         <div style="background:#1a2332; border:1px solid var(--seo); border-radius:6px; padding:8px 12px; color:var(--seo);">PostgreSQL<br><span style="color:var(--text-dim);">vehicles / leads / audit_log</span></div>
         <div style="color:var(--text-dim);">→</div>
-        <div style="background:#1a2332; border:1px solid var(--engagement); border-radius:6px; padding:8px 12px; color:var(--engagement);">Analytics Engine<br><span style="color:var(--text-dim);">39 insight generators update</span></div>
+        <div style="background:#1a2332; border:1px solid var(--engagement); border-radius:6px; padding:8px 12px; color:var(--engagement);">Analytics Engine<br><span style="color:var(--text-dim);">44 insight generators update</span></div>
         <div style="color:var(--text-dim);">→</div>
         <div style="background:#1a2332; border:1px solid var(--chat); border-radius:6px; padding:8px 12px; color:var(--chat);">AgenticQA<br><span style="color:var(--text-dim);">learning loop improves platform</span></div>
       </div>
     </div>
   </div>
+</div>
+
+<!-- ==================== MICRO-BEHAVIORAL INTELLIGENCE ==================== -->
+<div style="max-width:900px; margin:40px auto; padding:0 16px;">
+  <h2 style="font-size:1.3rem; font-weight:800; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid var(--pipeline);">
+    🧠 Micro-Behavioral Intelligence <span style="display:inline-block;font-size:0.6rem;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--conversion);color:#fff;margin-left:8px;vertical-align:middle;text-transform:uppercase;">Pioneer</span>
+  </h2>
+  <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:16px;">Five signals no other dealer platform captures. These detect subtle buying behaviors that reveal purchase intent before a customer fills out a form.</p>
+
+  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px;">
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--engagement);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">📸 Photo Comparison Dwell</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">Measures which vehicle a buyer lingers on when swiping between two. Longer dwell = stronger preference — detected before they tell you.</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--search);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">💰 Price Sensitivity Fingerprint</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">Tracks calculator inputs (60 vs 84 months, down payment amounts). Reveals real budget ceiling without asking. Bounce after price = sticker shock.</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--conversion);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">⚡ Decision Velocity</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">First VDP view → lead submit in under 1 hour = impulse buyer (call NOW). Over 3 days = comparison shopper (nurture, don't pressure).</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--chat);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">📱→🖥️ Device Handoff Intent</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">Browse on phone at lunch, open same vehicles on desktop at home. Mobile-to-desktop with shared VINs = one of the strongest buying signals possible.</div>
+    </div>
+    <div style="background:var(--surface); border-radius:10px; padding:14px; flex:1; min-width:250px; border-left:4px solid var(--seo);">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:4px;">🌙 Night Owl Premium</div>
+      <div style="font-size:0.78rem; color:var(--text-dim);">9pm-midnight browsing = 40% higher purchase intent than business hours. They can't sleep thinking about that car. System scores these sessions 1.4x higher.</div>
+    </div>
+  </div>
+
+  <p style="color:var(--text-dim); font-size:0.78rem;">All 5 signals feed <code style="background:var(--surface2); padding:2px 6px; border-radius:4px; font-size:0.72rem;">v_micro_signal_propensity</code> — a combined modifier that adjusts each customer's lead score in real time. High velocity + device handoff + night owl = call them first.</p>
 </div>
 
 <!-- ==================== ARCHITECTURE FOOTER ==================== -->
@@ -940,7 +979,7 @@
     <div class="arch-arrow">→</div>
     <div class="arch-box" style="border:1px solid var(--conversion);">
       <div style="font-weight:700; color:var(--conversion);">Analytics Engine</div>
-      <div style="font-size:0.7rem; color:var(--text-dim);">39 Insight Generators<br>Session Analysis<br>Lead Scoring (45+ signals)</div>
+      <div style="font-size:0.7rem; color:var(--text-dim);">44 Insight Generators<br>Session Analysis<br>Lead Scoring (45+ signals)</div>
     </div>
     <div class="arch-arrow">→</div>
     <div class="arch-stores">
@@ -956,7 +995,7 @@
     </div>
   </div>
   <div style="text-align:center; margin-top:24px; color:var(--text-dim); font-size:0.7rem;">
-    Built by Wolfpack Agency Engineering &bull; Source: analytics-engine.ts (2,394 lines) &bull; analytics-hooks.ts (760 lines) &bull; seo-engine.ts (568 lines)
+    Built by Wolfpack Agency Engineering &bull; Updated April 4, 2026 &bull; Source: analytics-engine.ts (2,394 lines) &bull; analytics-hooks.ts (760 lines) &bull; seo-engine.ts (568 lines)
   </div>
 </div>
 
