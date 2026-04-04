@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
       trackWalkaround("walkaround.viewed", dealerId, { vin });
       return NextResponse.json({ walkaround: found ?? null });
     }
+    trackWalkaround("walkaround.viewed", dealerId, { mode: "shadow", count: DEMO_WALKAROUNDS.length });
     return NextResponse.json({ walkarounds: DEMO_WALKAROUNDS });
   }
 

@@ -53,6 +53,7 @@ export async function GET() {
 
   // Shadow mode
   if (!process.env.DATABASE_URL) {
+    trackVehiclePipeline("vehicle_pipeline.milestone_updated", dealerId, { mode: "shadow", total_vehicles: 5 });
     return NextResponse.json({
       pipeline: DEMO_PIPELINE,
       slowMovers: [

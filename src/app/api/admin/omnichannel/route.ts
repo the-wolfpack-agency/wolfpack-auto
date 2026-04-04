@@ -135,6 +135,11 @@ export async function POST(request: NextRequest) {
         body.channel ?? "online",
         body.summary ?? "Customer interaction",
       );
+      trackOmnichannel("omnichannel.channels_merged", dealerId, {
+        customer_id: body.customerId,
+        channel: body.channel ?? "online",
+        mode: "shadow",
+      });
       return NextResponse.json({ touchpoint: tp });
     }
 
@@ -162,7 +167,13 @@ export async function POST(request: NextRequest) {
         body.customerId,
         body.channel ?? "online",
         body.summary ?? "Customer interaction",
+        body.metadata ?? {},
+        dealerId,
       );
+      trackOmnichannel("omnichannel.channels_merged", dealerId, {
+        customer_id: body.customerId,
+        channel: body.channel ?? "online",
+      });
       return NextResponse.json({ touchpoint: tp });
     }
 

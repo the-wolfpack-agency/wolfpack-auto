@@ -68,6 +68,7 @@ export async function GET() {
 
   // Shadow mode
   if (!process.env.DATABASE_URL) {
+    trackDripCampaign("drip.campaign_created", dealerId, { campaign_count: DEMO_CAMPAIGNS.length, mode: "shadow" });
     return NextResponse.json({
       campaigns: DEMO_CAMPAIGNS,
       totalEnrolled: DEMO_CAMPAIGNS.reduce((s, c) => s + c.stats.totalEnrolled, 0),

@@ -376,6 +376,14 @@ describe("Admin Routes — Analytics Tracking", () => {
     { route: "omnichannel", tracker: "trackOmnichannel" },
     { route: "vehicle-pipeline", tracker: "trackVehiclePipeline" },
     { route: "drip-campaigns", tracker: "trackDripCampaign" },
+    { route: "billing", tracker: "trackSystem" },
+    { route: "customers", tracker: "trackCustomer" },
+    { route: "funnel-health", tracker: "trackSystem" },
+    { route: "leads", tracker: "trackLead" },
+    { route: "oem", tracker: "trackSystem" },
+    { route: "stats", tracker: "trackSystem" },
+    { route: "trade-in", tracker: "trackRetail" },
+    { route: "vin-decode", tracker: "trackSystem" },
   ];
 
   test.each(TRACKED_ROUTES)(
@@ -555,18 +563,45 @@ describe("Migration 052 — Data Types", () => {
   test("all timestamp columns use TIMESTAMPTZ (timezone-aware)", () => {
     const timestamptz = migrationSQL.match(/TIMESTAMPTZ/gi) ?? [];
     expect(timestamptz.length).toBeGreaterThanOrEqual(30);
-    // Ensure no column declaration uses bare TIMESTAMP as a data type.
-    // Column declarations look like: "column_name  TIMESTAMP" — we check for
-    // TIMESTAMP used as a type (preceded by whitespace, followed by DEFAULT/NOT/comma/newline)
-    // but NOT "TIMESTAMPTZ".
     const lines = migrationSQL.split("\n");
     const unsafeLines = lines.filter((line) => {
       const trimmed = line.trim();
       if (trimmed.startsWith("--")) return false;
-      // Only match lines that look like column definitions (contain DEFAULT or NOT NULL after TIMESTAMP)
-      // and use plain TIMESTAMP instead of TIMESTAMPTZ
       return /\s+TIMESTAMP\s+(NOT|DEFAULT)/i.test(trimmed) && !/TIMESTAMPTZ/i.test(trimmed);
     });
     expect(unsafeLines).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  17. Migration 053 — Schema Alignment                               */
+/* ------------------------------------------------------------------ */
+
+describe("Migration 053 — Schema Alignment", () => {
+  const MIGRATION_053 = path.join(ROOT, "src/db/migrations/053_schema_alignment.sql");
+
+  test("migration 053 file exists", () => {
+    expect(fs.existsSync(MIGRATION_053)).toBe(true);
+  });
+
+  test("adds email column to campaign_enrollments", () => {
+    const sql = readFile(MIGRATION_053);
+    expect(sql).toMatch(/ALTER TABLE campaign_enrollments ADD COLUMN IF NOT EXISTS email/i);
+  });
+
+  test("adds next_email_due_at column to campaign_enrollments", () => {
+    const sql = readFile(MIGRATION_053);
+    expect(sql).toMatch(/ALTER TABLE campaign_enrollments ADD COLUMN IF NOT EXISTS next_email_due_at/i);
+  });
+
+  test("expands walkaround_segments segment_type CHECK to include all values", () => {
+    const sql = readFile(MIGRATION_053);
+    // Must accept both naming conventions
+    expect(sql).toMatch(/exterior_left/i);
+    expect(sql).toMatch(/exterior_right/i);
+    expect(sql).toMatch(/exterior_driver/i);
+    expect(sql).toMatch(/exterior_passenger/i);
+    expect(sql).toMatch(/features/i);
+    expect(sql).toMatch(/undercarriage/i);
   });
 });
