@@ -73,8 +73,9 @@ describe("Google Maps Embed", () => {
     expect(nextConfig).toMatch(/frame-src.*https:\/\/www\.google\.com/);
   });
 
-  it("fires trackSystem analytics event on mount", () => {
-    expect(component).toContain("trackSystem");
+  it("fires analytics event on mount via client-side fetch", () => {
+    expect(component).toContain("fetch");
+    expect(component).toContain("/api/analytics/events");
     expect(component).toContain('"system.analytics_queried"');
     expect(component).toContain('"google_maps"');
     expect(component).toContain('"contact"');

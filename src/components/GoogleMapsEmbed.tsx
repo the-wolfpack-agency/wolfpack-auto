@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { trackSystem } from "@/lib/analytics-hooks";
 
 const MAPS_EMBED_URL =
   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3236.0!2d-78.6414!3d35.8428!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDUwJzM0LjEiTiA3OMKwMzgnMjkuMCJX!5e0!3m2!1sen!2sus!4v1";
@@ -23,9 +22,24 @@ export default function GoogleMapsEmbed({
   dealerId,
 }: GoogleMapsEmbedProps) {
   useEffect(() => {
-    trackSystem("system.analytics_queried", dealerId, {
-      module: "google_maps",
-      page: "contact",
+    // Fire analytics via the client-side event API (avoids importing pg in browser)
+    fetch("/api/analytics/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        events: [
+          {
+            event_type: "system",
+            action: "system.analytics_queried",
+            page: dealerId,
+            session_id: typeof window !== "undefined" ? window.sessionStorage?.getItem("session_id") ?? "anon" : "anon",
+            user_fingerprint: "client",
+            metadata: { module: "google_maps", page: "contact" },
+          },
+        ],
+      }),
+    }).catch(() => {
+      /* analytics must never break the UI */
     });
   }, [dealerId]);
 
