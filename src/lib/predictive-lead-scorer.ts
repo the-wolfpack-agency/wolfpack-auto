@@ -4,7 +4,7 @@
  * ML-grade behavioral scoring engine that analyzes 45+ signals from the
  * analytics_events table to predict "will this person buy within 7 days?"
  *
- * Uses logistic-regression-inspired weighted scoring with temporal decay.
+ * Weights are trained from analytics data via gradient descent.
  * Works with sparse data — gracefully degrades when few signals are available.
  *
  * Pure TypeScript — no external ML dependencies required.
@@ -259,6 +259,255 @@ const SIGNAL_DEFINITIONS: WeightedSignal[] = [
     compute: (v) => v.temporal_ready_to_close ? 1 : 0,
   },
 ];
+
+/* -------------------------------------------------------------------------- */
+/* Training types                                                              */
+/* -------------------------------------------------------------------------- */
+
+export interface TrainingMetrics {
+  epochs: number;
+  finalLoss: number;
+  accuracy: number;
+  weightsDelta: Record<string, number>;
+}
+
+export interface TrainingSample {
+  signals: SignalVector;
+  converted: boolean;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Original default weights — snapshot for reset                               */
+/* -------------------------------------------------------------------------- */
+
+const DEFAULT_WEIGHTS: Record<string, number> = {};
+for (const sig of SIGNAL_DEFINITIONS) {
+  DEFAULT_WEIGHTS[sig.name] = sig.weight;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Training — gradient descent on binary cross-entropy                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Train signal weights from labeled data using gradient descent on binary
+ * cross-entropy loss. Updates SIGNAL_DEFINITIONS weights in-place.
+ *
+ * @param data   Array of { signals, converted } training samples
+ * @param epochs Number of gradient descent iterations (default 100)
+ * @param lr     Learning rate (default 0.01)
+ * @returns Training metrics including final loss and accuracy
+ */
+export function trainWeights(
+  data: TrainingSample[],
+  epochs = 100,
+  lr = 0.01,
+): TrainingMetrics {
+  const weightsBefore: Record<string, number> = {};
+  for (const sig of SIGNAL_DEFINITIONS) {
+    weightsBefore[sig.name] = sig.weight;
+  }
+
+  let finalLoss = Infinity;
+
+  for (let epoch = 0; epoch < epochs; epoch++) {
+    let epochLoss = 0;
+
+    for (const sample of data) {
+      // Forward pass: z = sum(w_i * x_i)
+      let z = 0;
+      const features: Map<number, number> = new Map();
+      for (let i = 0; i < SIGNAL_DEFINITIONS.length; i++) {
+        const xi = SIGNAL_DEFINITIONS[i].compute(sample.signals);
+        features.set(i, xi);
+        z += SIGNAL_DEFINITIONS[i].weight * xi;
+      }
+
+      // Sigmoid
+      const p = 1 / (1 + Math.exp(-z));
+
+      // Clamp to avoid log(0)
+      const pClamped = Math.max(1e-15, Math.min(1 - 1e-15, p));
+      const y = sample.converted ? 1 : 0;
+
+      // Binary cross-entropy loss
+      epochLoss += -y * Math.log(pClamped) - (1 - y) * Math.log(1 - pClamped);
+
+      // Gradient descent: w_i -= lr * (p - y) * x_i
+      const error = p - y;
+      for (let i = 0; i < SIGNAL_DEFINITIONS.length; i++) {
+        const xi = features.get(i) ?? 0;
+        SIGNAL_DEFINITIONS[i].weight -= lr * error * xi;
+      }
+    }
+
+    finalLoss = epochLoss / data.length;
+  }
+
+  // Compute accuracy on training data
+  let correct = 0;
+  for (const sample of data) {
+    let z = 0;
+    for (const sig of SIGNAL_DEFINITIONS) {
+      z += sig.weight * sig.compute(sample.signals);
+    }
+    const p = 1 / (1 + Math.exp(-z));
+    const predicted = p >= 0.5;
+    if (predicted === sample.converted) correct++;
+  }
+  const accuracy = data.length > 0 ? correct / data.length : 0;
+
+  // Compute weight deltas
+  const weightsDelta: Record<string, number> = {};
+  for (const sig of SIGNAL_DEFINITIONS) {
+    weightsDelta[sig.name] = sig.weight - weightsBefore[sig.name];
+  }
+
+  return { epochs, finalLoss, accuracy, weightsDelta };
+}
+
+/**
+ * Train weights from the analytics_events table. Builds training data from
+ * customers who submitted leads (converted=true) vs those who bounced
+ * (converted=false) over the last 90 days.
+ *
+ * Falls back to default weights if DATABASE_URL is not set or if there are
+ * fewer than 20 samples.
+ */
+export async function trainFromAnalyticsEvents(
+  dealerId?: string,
+): Promise<TrainingMetrics | null> {
+  const effectiveDealerId =
+    dealerId ?? process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
+
+  if (!process.env.DATABASE_URL) {
+    return null;
+  }
+
+  try {
+    const { query } = await import("@/lib/db");
+
+    // Get fingerprints that converted (submitted a lead) in last 90 days
+    const convertedResult = await query<{ user_fingerprint: string }>(
+      `SELECT DISTINCT user_fingerprint
+       FROM analytics_events
+       WHERE (action LIKE '%form_submit%' OR action LIKE '%lead.created%' OR event_type = 'conversion')
+         AND timestamp > NOW() - INTERVAL '90 days'
+       LIMIT 500`,
+      [],
+    );
+    const convertedFingerprints = new Set(
+      convertedResult.rows.map((r) => r.user_fingerprint),
+    );
+
+    // Get fingerprints that bounced (visited but never converted) in last 90 days
+    const allFingerprintsResult = await query<{ user_fingerprint: string }>(
+      `SELECT DISTINCT user_fingerprint
+       FROM analytics_events
+       WHERE timestamp > NOW() - INTERVAL '90 days'
+       LIMIT 1000`,
+      [],
+    );
+    const bouncedFingerprints = allFingerprintsResult.rows
+      .map((r) => r.user_fingerprint)
+      .filter((fp) => !convertedFingerprints.has(fp));
+
+    // Need at least 20 samples total
+    const totalSamples = convertedFingerprints.size + bouncedFingerprints.length;
+    if (totalSamples < 20) {
+      return null;
+    }
+
+    // Build training data
+    const trainingData: TrainingSample[] = [];
+
+    // Process converted fingerprints
+    for (const fp of convertedFingerprints) {
+      const eventsResult = await query<RawEvent>(
+        `SELECT event_type, action, page, session_id, user_fingerprint, timestamp::text, metadata
+         FROM analytics_events
+         WHERE user_fingerprint = $1
+           AND timestamp > NOW() - INTERVAL '90 days'
+         ORDER BY timestamp ASC
+         LIMIT 200`,
+        [fp],
+      );
+      const events = eventsResult.rows.map((r) => ({
+        ...r,
+        metadata: typeof r.metadata === "string" ? JSON.parse(r.metadata) : r.metadata,
+      }));
+      if (events.length > 0) {
+        trainingData.push({ signals: aggregateSignals(events), converted: true });
+      }
+    }
+
+    // Process bounced fingerprints (sample up to match converted count)
+    const bouncedSample = bouncedFingerprints.slice(0, convertedFingerprints.size * 2);
+    for (const fp of bouncedSample) {
+      const eventsResult = await query<RawEvent>(
+        `SELECT event_type, action, page, session_id, user_fingerprint, timestamp::text, metadata
+         FROM analytics_events
+         WHERE user_fingerprint = $1
+           AND timestamp > NOW() - INTERVAL '90 days'
+         ORDER BY timestamp ASC
+         LIMIT 200`,
+        [fp],
+      );
+      const events = eventsResult.rows.map((r) => ({
+        ...r,
+        metadata: typeof r.metadata === "string" ? JSON.parse(r.metadata) : r.metadata,
+      }));
+      if (events.length > 0) {
+        trainingData.push({ signals: aggregateSignals(events), converted: false });
+      }
+    }
+
+    // Still need minimum samples after processing
+    if (trainingData.length < 20) {
+      return null;
+    }
+
+    const metrics = trainWeights(trainingData);
+
+    // Track the training event
+    try {
+      const { trackLead } = await import("@/lib/analytics-hooks");
+      trackLead("lead.scored", effectiveDealerId, {
+        trained: true,
+        samples: trainingData.length,
+        accuracy: metrics.accuracy,
+      });
+    } catch {
+      // Non-critical — don't fail training if tracking fails
+    }
+
+    return metrics;
+  } catch (err) {
+    console.error("[predictive-lead-scorer] Training from analytics failed:", err);
+    return null;
+  }
+}
+
+/**
+ * Returns the current weight values for all signals (for inspection/debugging).
+ */
+export function getTrainedWeights(): Record<string, number> {
+  const weights: Record<string, number> = {};
+  for (const sig of SIGNAL_DEFINITIONS) {
+    weights[sig.name] = sig.weight;
+  }
+  return weights;
+}
+
+/**
+ * Resets all signal weights to their original default values.
+ * Intended for use in tests only.
+ */
+export function _resetWeightsForTesting(): void {
+  for (const sig of SIGNAL_DEFINITIONS) {
+    sig.weight = DEFAULT_WEIGHTS[sig.name];
+  }
+}
 
 /* -------------------------------------------------------------------------- */
 /* Temporal decay                                                              */
