@@ -10,7 +10,7 @@
 
 Wolfpack Auto is a production-grade, multi-tenant automotive Dealer Operating System (DOS) built from scratch in 11 days. It delivers a complete public-facing dealership website, a fully-featured admin portal with 90+ pages, 215+ API routes, customer conversion tools, an AI-powered behavioral analytics brain, and a complete data/learning pipeline — all deployed on Vercel with shadow mode resilience (works without a live database).
 
-The platform achieves code-level feature parity with Tekion ($3.5B, $30-60K/month per dealer), SE-FI, Hotjar, and AutoNation across every core DMS function: F&I desking, multi-company general ledger, payment processing, payroll, service, inventory — while offering capabilities they don't have: full CRM, predictive lead scoring, 80+ behavioral analytics signals, AI pricing engine, vehicle photo background studio, session replay, heatmaps, NPS surveys, equity mining, reinsurance ROI tracking, and a dealer website included in the platform.
+The platform achieves code-level feature parity with Tekion ($3.5B, $30-60K/month per dealer), SE-FI, Hotjar, and AutoNation across every core DMS function: F&I desking, multi-company general ledger, payment processing, payroll, service, inventory — while offering capabilities they don't have: full CRM, predictive lead scoring, 57 behavioral analytics signals, AI pricing engine, vehicle photo background studio, session replay, heatmaps, NPS surveys, equity mining, reinsurance ROI tracking, and a dealer website included in the platform.
 
 **Key differentiator:** Every deal, service appointment, message, review, photo view, survey response, error, and document analysis feeds the analytics brain through 6 materialized learning views. The platform gets measurably smarter the longer a dealer uses it. 2,008 Jest tests + 242 migration contract tests + full Playwright E2E suite ensure nothing ships broken.
 
@@ -500,7 +500,7 @@ k6 orchestrator with Playwright fallback burst testing, integrated as Phase 1 pi
 **Commits:** 20+
 **Tests:** 4,000+ total (500+ new)
 
-#### 8 Novel Analytics Signal Systems (55 → 80+ signals)
+#### 8 Novel Analytics Signal Systems (55 → 57 signals)
 Takes the platform from tracking "what" users do to understanding "why" and predicting "what happens next."
 
 | System | Signals | What It Reveals |
@@ -581,7 +581,7 @@ Admin page: `/admin/marketing/templates`
 - Canary latency thresholds: relaxed for Vercel Hobby tier
 - SRE agent: bundled locally instead of cross-repo fetch
 
-**Day 8 (afternoon) deliverables:** 8 novel analytics systems (80+ signals), AI pricing engine, VDP backgrounds, Canva templates, pipeline optimization (22 min → 10 min), 500+ new tests.
+**Day 8 (afternoon) deliverables:** 8 novel analytics systems (57 signals), AI pricing engine, VDP backgrounds, Canva templates, pipeline optimization (22 min → 10 min), 500+ new tests.
 
 ---
 
@@ -1082,7 +1082,7 @@ All 29 tables seeded including parent-child relationships (household members + v
 | Competitive parity | Tekion + SE-FI + Hotjar + AutoNation |
 | DOS modules built (Day 4) | 14 modules in one session |
 | Intelligence systems (Day 7) | 7 (predictive scoring, calibration, cross-dealer, alerts, lookalike, A/B, push) |
-| Analytics signals | 80+ behavioral signals |
+| Analytics signals | 57 behavioral signals |
 | Analytics routes wired | All 192 admin routes (100% coverage — 0 blind spots) |
 | Novel micro-behavioral signals | 5 (photo comparison, price sensitivity, decision velocity, device handoff, night owl) |
 | Production services configured | 4 (Sentry, Resend, PII encryption, analytics pipeline) |

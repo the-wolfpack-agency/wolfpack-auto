@@ -75,7 +75,7 @@
 
 **Full parity:** desking, F&I, GL, multi-company consolidation, intercompany, payments, payroll, service, inventory, multi-tenant, multi-location
 
-**Wolfpack advantages (no Tekion equivalent):** CRM, predictive lead scoring, 80+ behavioral signals, AI pricing, photo backgrounds, dealer website, marketing templates, syndication, 29 compliance checks, OFAC, A/B testing
+**Wolfpack advantages (no Tekion equivalent):** CRM, predictive lead scoring, 57 behavioral signals, AI pricing, photo backgrounds, dealer website, marketing templates, syndication, 29 compliance checks, OFAC, A/B testing
 
 **Tekion-only (non-code):** SOC 2/ISO certs, OEM partnerships, 6yr track record
 
