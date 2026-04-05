@@ -10,6 +10,7 @@ import {
   getPgWriteStats,
   recordPgWrite,
 } from "@/lib/dataflow-health";
+import { writeEventsToSecondaryStores } from "@/lib/triple-write";
 
 /** Log dataflow warnings once per process lifecycle. */
 let dataflowWarningsLogged = false;
@@ -190,6 +191,11 @@ export async function POST(request: NextRequest) {
     // Persist to PostgreSQL — AWAIT, don't fire-and-forget.
     // Data loss is unacceptable. If PG write fails, we surface it.
     const pgResult = await persistEventsToPg(capped);
+
+    // Fire-and-forget writes to Qdrant + Neo4j (never block response)
+    writeEventsToSecondaryStores(capped).catch((err) => {
+      console.warn("[analytics-events] Secondary store writes failed:", err);
+    });
 
     // Collect warnings for response
     const warnings: string[] = [];
