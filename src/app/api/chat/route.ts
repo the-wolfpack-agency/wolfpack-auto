@@ -571,7 +571,7 @@ async function matchIntent(
   // 1. Check rule-based intents FIRST for non-vehicle queries
   //    (greetings, hours, financing, contact, etc.)
   //    But skip inventory-related rule intents — let the vehicle search handle them
-  const ruleResult = matchRuleIntent(clean);
+  const ruleResult = await matchRuleIntent(clean);
 
   // 2. If the message is about vehicles, use the hybrid search
   if (isComparisonIntent(clean)) {
