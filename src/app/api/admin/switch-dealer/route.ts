@@ -61,7 +61,15 @@ export async function POST(request: NextRequest) {
   }
 
   // Create a new JWT with the updated dealer_id
-  const secret = process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-do-not-use-in-production";
+  const secret = process.env.NEXTAUTH_SECRET || (() => {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[SWITCH-DEALER] NEXTAUTH_SECRET must be set in production. " +
+        "Generate one with: openssl rand -base64 32"
+      );
+    }
+    return "wolfpack-dev-secret-do-not-use-in-production";
+  })();
 
   try {
     const newToken = await encode({

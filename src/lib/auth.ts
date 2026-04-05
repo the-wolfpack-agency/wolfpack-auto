@@ -151,8 +151,11 @@ const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || (() => {
-    if (process.env.NODE_ENV === "production" && typeof window === "undefined" && !process.env.NEXT_PHASE) {
-      console.error("[AUTH] NEXTAUTH_SECRET must be set in production. Using insecure fallback.");
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "[AUTH] NEXTAUTH_SECRET must be set in production. " +
+        "Generate one with: openssl rand -base64 32"
+      );
     }
     return "wolfpack-dev-secret-do-not-use-in-production";
   })(),

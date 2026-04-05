@@ -68,6 +68,36 @@ export async function query<T extends Record<string, any>>(
  * `fromCache: true` instead of attempting a query that will fail.
  * On success/failure, records the outcome to the circuit breaker.
  */
+/**
+ * Set the current tenant context for RLS policies.
+ *
+ * Must be called within a transaction (or at least before queries that
+ * rely on RLS). Uses SET LOCAL so the setting is scoped to the current
+ * transaction and automatically cleared on commit/rollback.
+ *
+ * Usage:
+ *   const client = await pool.connect();
+ *   try {
+ *     await client.query("BEGIN");
+ *     await setTenantContext(client, dealerId);
+ *     // ... queries scoped by RLS ...
+ *     await client.query("COMMIT");
+ *   } finally {
+ *     client.release();
+ *   }
+ */
+export async function setTenantContext(
+  client: { query: (text: string, params?: unknown[]) => Promise<unknown> },
+  dealerId: string,
+): Promise<void> {
+  // Validate dealerId format to prevent SQL injection via session variable.
+  // UUID v4 format: 8-4-4-4-12 hex characters.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dealerId)) {
+    throw new Error(`Invalid dealer ID format: ${dealerId}`);
+  }
+  await client.query("SET LOCAL app.current_dealer_id = $1", [dealerId]);
+}
+
 export async function safeQuery<T>(
   text: string,
   params?: unknown[],

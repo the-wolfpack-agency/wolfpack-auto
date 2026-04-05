@@ -149,7 +149,16 @@ export async function middleware(request: NextRequest) {
   const isHealthRoute = pathname.startsWith("/api/health");
 
   if (!isDemoMode && isAdminRoute(pathname) && !isLogin && !isAuthApi && !isHealthRoute) {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET || "wolfpack-dev-secret-change-in-production" });
+    const secret = process.env.NEXTAUTH_SECRET || (() => {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          "[MIDDLEWARE] NEXTAUTH_SECRET must be set in production. " +
+          "Generate one with: openssl rand -base64 32"
+        );
+      }
+      return "wolfpack-dev-secret-do-not-use-in-production";
+    })();
+    const token = await getToken({ req: request, secret });
 
     if (!token) {
       // Redirect browser requests to login; return 401 for API calls
