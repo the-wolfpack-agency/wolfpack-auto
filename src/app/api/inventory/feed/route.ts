@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * POST /api/inventory/feed — DMS vehicle feed ingestion endpoint.
@@ -27,7 +28,7 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 
 const VehicleSchema = z.object({
-  vin: z.string().min(11).max(17),
+  vin: z.string().length(17, "VIN must be exactly 17 characters"),
   year: z.number().int().min(1900).max(2030),
   make: z.string().min(1).max(100),
   model: z.string().min(1).max(100),
@@ -56,6 +57,8 @@ const FeedPayload = z.object({
   vehicles: z.array(VehicleSchema).min(1).max(500),
 });
 
+export type Vehicle = z.infer<typeof VehicleSchema>;
+
 // ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------
@@ -68,6 +71,99 @@ function validateApiKey(request: NextRequest): boolean {
     request.headers.get("authorization")?.replace("Bearer ", "");
 
   return provided === key;
+}
+
+// ---------------------------------------------------------------------------
+// Persistence
+// ---------------------------------------------------------------------------
+
+const UPSERT_SQL = `
+  INSERT INTO vehicles (
+    dealer_id, vin, year, make, model, trim, price, msrp, mileage, condition,
+    body_style, fuel, transmission, drivetrain, engine, exterior_color,
+    interior_color, mpg, stock_number, features, photos, status, updated_at
+  ) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, NOW()
+  )
+  ON CONFLICT (dealer_id, vin) DO UPDATE SET
+    year = EXCLUDED.year,
+    make = EXCLUDED.make,
+    model = EXCLUDED.model,
+    trim = EXCLUDED.trim,
+    price = EXCLUDED.price,
+    msrp = EXCLUDED.msrp,
+    mileage = EXCLUDED.mileage,
+    condition = EXCLUDED.condition,
+    body_style = EXCLUDED.body_style,
+    fuel = EXCLUDED.fuel,
+    transmission = EXCLUDED.transmission,
+    drivetrain = EXCLUDED.drivetrain,
+    engine = EXCLUDED.engine,
+    exterior_color = EXCLUDED.exterior_color,
+    interior_color = EXCLUDED.interior_color,
+    mpg = EXCLUDED.mpg,
+    stock_number = EXCLUDED.stock_number,
+    features = EXCLUDED.features,
+    photos = EXCLUDED.photos,
+    status = EXCLUDED.status,
+    updated_at = NOW()
+  RETURNING *
+`;
+
+interface UpsertResult {
+  vehicle: Vehicle | Record<string, unknown>;
+  persisted: boolean;
+}
+
+async function upsertVehicle(
+  dealerId: string,
+  v: Vehicle,
+): Promise<UpsertResult> {
+  // Shadow mode — no DATABASE_URL, skip DB entirely
+  if (!process.env.DATABASE_URL) {
+    return { vehicle: v, persisted: false };
+  }
+
+  try {
+    const { query } = await import("@/lib/db");
+    const result = await query(UPSERT_SQL, [
+      dealerId,
+      v.vin,
+      v.year,
+      v.make,
+      v.model,
+      v.trim,
+      v.price,
+      v.msrp ?? null,
+      v.mileage,
+      v.condition,
+      v.bodyStyle,
+      v.fuel,
+      v.transmission,
+      v.drivetrain,
+      v.engine,
+      v.exteriorColor,
+      v.interiorColor,
+      v.mpg,
+      v.stockNumber,
+      JSON.stringify(v.features),
+      JSON.stringify(v.photos),
+      v.status,
+    ]);
+    return { vehicle: result.rows[0] ?? v, persisted: true };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : String(err);
+    // Table doesn't exist yet — graceful fallback
+    if (message.includes("does not exist")) {
+      console.warn(
+        `[feed] vehicles table not yet created — running in shadow mode for VIN ${v.vin}`,
+      );
+      return { vehicle: v, persisted: false };
+    }
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -99,25 +195,39 @@ export async function POST(request: NextRequest) {
 
     const { dealer_id, source, vehicles } = parsed.data;
 
-    // TODO: When database is provisioned, replace this stub with:
-    // 1. Upsert vehicles into PostgreSQL (ON CONFLICT vin DO UPDATE)
-    // 2. Update Qdrant vectors for semantic search
-    // 3. Trigger photo pipeline (download → Sharp → R2)
-    // 4. Fire webhook notification to admin dashboard
+    const results: UpsertResult[] = [];
+    for (const v of vehicles) {
+      const result = await upsertVehicle(dealer_id, v);
+      results.push(result);
 
-    // For now, log and return success
-    console.log(
-      `[feed] Received ${vehicles.length} vehicles from ${source} for dealer ${dealer_id}`,
+      // Fire analytics for every vehicle — even in shadow mode
+      trackSystem("system.vehicle_added", dealer_id, {
+        vin: v.vin,
+        source,
+        year: v.year,
+        make: v.make,
+        model: v.model,
+        price: v.price,
+        condition: v.condition,
+        persisted: result.persisted,
+      });
+    }
+
+    const persisted = results.filter((r) => r.persisted).length;
+    const shadow = results.length - persisted;
+
+    return NextResponse.json(
+      {
+        accepted: vehicles.length,
+        persisted,
+        shadow,
+        dealer_id,
+        source,
+        vehicles: results.map((r) => r.vehicle),
+        vins: vehicles.map((v) => v.vin),
+      },
+      { status: 201 },
     );
-
-    return NextResponse.json({
-      accepted: vehicles.length,
-      dealer_id,
-      source,
-      message: "Feed received. Vehicles will be processed and appear in inventory within 5 minutes.",
-      // Return VINs for tracking
-      vins: vehicles.map((v) => v.vin),
-    });
   } catch {
     return NextResponse.json(
       { error: "invalid_json" },

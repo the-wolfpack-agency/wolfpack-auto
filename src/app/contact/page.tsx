@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
 import { getDealerConfig } from "@/lib/dealer-config";
+import GoogleMapsEmbed from "@/components/GoogleMapsEmbed";
 
 export async function generateMetadata(): Promise<Metadata> {
   const dealer = await getDealerConfig();
@@ -157,28 +158,12 @@ export default async function ContactPage({
             </div>
 
             {/* Google Map */}
-            <div className="overflow-hidden rounded-2xl border border-surface-border shadow-card">
-              <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3067.2!2d-104.9903!3d39.7392!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMznCsDQ0JzIxLjEiTiAxMDTCsDU5JzI1LjEiVw!5e0!3m2!1sen!2sus!4v1"
-                  className="absolute inset-0 h-full w-full border-0"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title={`${dealer.name} location - ${dealer.city}, ${dealer.state}`}
-                />
-              </div>
-              <div className="bg-white p-4 text-center">
-                <a
-                  href="https://www.google.com/maps/dir//39.7392,-104.9903"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
-                >
-                  Get Directions &rarr;
-                </a>
-              </div>
-            </div>
+            <GoogleMapsEmbed
+              dealerName={dealer.name}
+              dealerCity={dealer.city}
+              dealerState={dealer.state}
+              dealerId={dealer.id ?? "default"}
+            />
           </div>
         </div>
       </div>
