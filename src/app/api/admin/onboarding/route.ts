@@ -195,6 +195,80 @@ function parseCsvInventory(base64Csv: string): {
 }
 
 /* -------------------------------------------------------------------------- */
+/* PATCH /api/admin/onboarding — save partial progress                        */
+/* -------------------------------------------------------------------------- */
+
+const progressSchema = z.object({
+  currentStep: z.number().int().min(0).max(10),
+  data: z.record(z.unknown()),
+  templateId: z.string().nullable().optional(),
+});
+
+export async function PATCH(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (!isAuthenticated(authResult)) return authResult;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const parsed = progressSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation failed", details: parsed.error.issues },
+      { status: 422 },
+    );
+  }
+
+  const { currentStep, data, templateId } = parsed.data;
+
+  // Track step transition analytics
+  try {
+    trackSystem("system.onboarding_step", authResult.user.email, {
+      action: "progress_saved",
+      step: currentStep,
+      template_id: templateId ?? "none",
+      timestamp: new Date().toISOString(),
+    });
+  } catch { /* analytics never blocks */ }
+
+  // Persist to DB if available
+  if (process.env.DATABASE_URL) {
+    try {
+      const { query } = await import("@/lib/db");
+      await query(
+        `INSERT INTO onboarding_progress (
+          user_email, current_step, template_id, data, updated_at
+        ) VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (user_email) DO UPDATE SET
+          current_step = EXCLUDED.current_step,
+          template_id = EXCLUDED.template_id,
+          data = EXCLUDED.data,
+          updated_at = NOW()`,
+        [
+          authResult.user.email.toLowerCase(),
+          currentStep,
+          templateId ?? null,
+          JSON.stringify(data),
+        ],
+      );
+    } catch (err) {
+      // Table may not exist yet — log but don't fail
+      console.warn("[onboarding] Failed to persist progress:", err);
+    }
+  }
+
+  return NextResponse.json({
+    saved: true,
+    currentStep,
+    templateId: templateId ?? null,
+  });
+}
+
+/* -------------------------------------------------------------------------- */
 /* POST /api/admin/onboarding                                                 */
 /* -------------------------------------------------------------------------- */
 

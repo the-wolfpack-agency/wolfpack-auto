@@ -4,6 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAnalytics } from "@/components/EventCollector";
 import type { OnboardingPayload } from "@/lib/dealer-onboarding";
+import DealerPreview from "@/components/onboarding/DealerPreview";
+import {
+  getAllTemplates,
+  getTemplate,
+  type DealerTemplate,
+  type DealerTemplateId,
+} from "@/lib/onboarding-templates";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                  */
@@ -113,6 +120,17 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<DealerTemplate | null>(null);
+  const [resultDealerId, setResultDealerId] = useState<string | null>(null);
+  const [resultSlug, setResultSlug] = useState<string | null>(null);
+
+  // CSV import feedback
+  const [csvVehicleCount, setCsvVehicleCount] = useState(0);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvImportResult, setCsvImportResult] = useState<{
+    imported: number;
+    errors: string[];
+  } | null>(null);
 
   // Track which optional sections the user expanded in Step 2
   const expandedSections = useRef<Set<string>>(new Set());
@@ -139,9 +157,33 @@ export default function OnboardingPage() {
         step_index: stepIndex,
         step_name: STEPS[stepIndex],
         duration_ms: durationMs,
+        template_selected: selectedTemplate?.id ?? "none",
       });
     },
-    [track],
+    [track, selectedTemplate],
+  );
+
+  // --- Persist progress to server (PATCH) on each step change -----------
+  const persistProgress = useCallback(
+    async (currentStep: number, payload: OnboardingPayload) => {
+      try {
+        await fetch("/api/admin/onboarding", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer placeholder",
+          },
+          body: JSON.stringify({
+            currentStep,
+            data: payload,
+            templateId: selectedTemplate?.id ?? null,
+          }),
+        });
+      } catch {
+        // Server persistence is best-effort; localStorage is primary fallback
+      }
+    },
+    [selectedTemplate],
   );
 
   // --- Persist / restore from localStorage ----------------------------------
@@ -190,11 +232,32 @@ export default function OnboardingPage() {
   const next = () => {
     if (step < STEPS.length - 1) {
       trackStepComplete(step);
-      setStep(step + 1);
+      const nextStep = step + 1;
+      setStep(nextStep);
+      void persistProgress(nextStep, data);
     }
   };
   const back = () => {
     if (step > 0) setStep(step - 1);
+  };
+
+  // --- Template selection handler ----------------------------------------
+  const handleTemplateSelect = (templateId: DealerTemplateId) => {
+    const tmpl = getTemplate(templateId);
+    if (!tmpl) return;
+    setSelectedTemplate(tmpl);
+    setData((prev) => ({
+      ...prev,
+      branding: {
+        ...prev.branding,
+        primaryColor: tmpl.branding.primaryColor,
+        tagline: tmpl.tagline,
+      },
+    }));
+    track("onboarding", "template_selected", {
+      template_id: templateId,
+      template_label: tmpl.label,
+    });
   };
 
   const skipToReview = () => {
@@ -228,20 +291,28 @@ export default function OnboardingPage() {
         throw new Error(err.error ?? `HTTP ${res.status}`);
       }
 
+      const result = await res.json();
+      setResultDealerId(result.dealer_id ?? null);
+      setResultSlug(result.slug ?? null);
+
+      if (result.vehicles_imported !== undefined) {
+        setCsvImportResult({
+          imported: result.vehicles_imported,
+          errors: result.csv_errors ?? [],
+        });
+      }
+
       trackStepComplete(2);
       track("onboarding", "wizard_completed", {
         total_steps: STEPS.length,
         skipped_customize: skippedStep2,
+        template_selected: selectedTemplate?.id ?? "none",
+        csv_vehicles: csvVehicleCount,
         expanded_sections: Array.from(expandedSections.current).join(","),
       });
 
       localStorage.removeItem(STORAGE_KEY);
       setSubmitted(true);
-
-      // Redirect to getting-started after a 2-second success animation
-      setTimeout(() => {
-        router.push("/admin/getting-started");
-      }, 2000);
     } catch (err: any) {
       setError(err.message ?? "Something went wrong");
     } finally {
@@ -260,10 +331,54 @@ export default function OnboardingPage() {
     }
   };
 
-  // --- Success screen (brief, then redirect) --------------------------------
+  // --- Success screen with confetti celebration --------------------------------
   if (submitted) {
+    const publicUrl = resultSlug ? `/${resultSlug}` : "/";
+    const inviteUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/invite?dealer=${resultDealerId ?? ""}`
+        : "";
+
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
+      <div className="relative flex min-h-[60vh] flex-col items-center justify-center text-center">
+        {/* CSS-only confetti animation */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          {Array.from({ length: 50 }).map((_, i) => (
+            <span
+              key={i}
+              className="confetti-piece"
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 2}s`,
+                backgroundColor: [
+                  "#f97316",
+                  "#2563eb",
+                  "#059669",
+                  "#dc2626",
+                  "#8b5cf6",
+                  "#ca8a04",
+                ][i % 6],
+              }}
+            />
+          ))}
+        </div>
+
+        <style>{`
+          @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+          }
+          .confetti-piece {
+            position: absolute;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            animation: confetti-fall linear forwards;
+          }
+        `}</style>
+
         <div className="mb-4 flex h-16 w-16 animate-bounce items-center justify-center rounded-full bg-green-600">
           <CheckIcon className="h-8 w-8 text-white" />
         </div>
@@ -271,8 +386,47 @@ export default function OnboardingPage() {
           Your dealership is live!
         </h1>
         <p className="mt-2 text-gray-400">
-          Taking you to your getting-started checklist...
+          {data.dealership.name} is ready for customers.
         </p>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <a
+            href={publicUrl}
+            className="rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+          >
+            View Your Website
+          </a>
+          <a
+            href="/admin"
+            className="rounded-lg border border-gray-400 bg-gray-700 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-600"
+          >
+            Go to Dashboard
+          </a>
+          <button
+            type="button"
+            onClick={() => {
+              if (navigator.clipboard) {
+                void navigator.clipboard.writeText(inviteUrl);
+              }
+            }}
+            className="rounded-lg border border-gray-400 bg-gray-700 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-600"
+          >
+            Share with Your Team
+          </button>
+        </div>
+
+        {csvImportResult && (
+          <div className="mt-6 rounded-lg border border-gray-700 bg-gray-800 p-4 text-sm">
+            <p className="font-medium text-white">
+              {csvImportResult.imported} vehicles imported
+            </p>
+            {csvImportResult.errors.length > 0 && (
+              <p className="mt-1 text-yellow-400">
+                {csvImportResult.errors.length} row(s) had issues
+              </p>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -292,15 +446,26 @@ export default function OnboardingPage() {
 
       {/* Step content */}
       <div className="mt-8 rounded-xl border border-gray-700 bg-gray-800 p-6 sm:p-8">
-        {step === 0 && <StepDealershipInfo data={data} setData={setData} />}
+        {step === 0 && (
+          <StepDealershipInfo
+            data={data}
+            setData={setData}
+            selectedTemplate={selectedTemplate}
+            onTemplateSelect={handleTemplateSelect}
+          />
+        )}
         {step === 1 && (
           <StepCustomize
             data={data}
             setData={setData}
             onSectionToggle={handleSectionToggle}
+            csvVehicleCount={csvVehicleCount}
+            setCsvVehicleCount={setCsvVehicleCount}
           />
         )}
-        {step === 2 && <StepReview data={data} />}
+        {step === 2 && (
+          <StepReview data={data} template={selectedTemplate} />
+        )}
       </div>
 
       {/* Error */}
@@ -410,9 +575,13 @@ function ProgressBar({
 function StepDealershipInfo({
   data,
   setData,
+  selectedTemplate,
+  onTemplateSelect,
 }: {
   data: OnboardingPayload;
   setData: React.Dispatch<React.SetStateAction<OnboardingPayload>>;
+  selectedTemplate: DealerTemplate | null;
+  onTemplateSelect: (id: DealerTemplateId) => void;
 }) {
   const update = (field: keyof OnboardingPayload["dealership"], value: string) => {
     setData((prev) => ({
@@ -420,6 +589,8 @@ function StepDealershipInfo({
       dealership: { ...prev.dealership, [field]: value },
     }));
   };
+
+  const templates = getAllTemplates();
 
   return (
     <div className="space-y-5">
@@ -437,6 +608,72 @@ function StepDealershipInfo({
           className="input-field"
         />
       </Field>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="City">
+          <input
+            type="text"
+            value={data.dealership.city}
+            onChange={(e) => update("city", e.target.value)}
+            placeholder="Denver"
+            className="input-field"
+          />
+        </Field>
+        <Field label="State">
+          <input
+            type="text"
+            value={data.dealership.state}
+            onChange={(e) => update("state", e.target.value)}
+            placeholder="CO"
+            className="input-field"
+          />
+        </Field>
+      </div>
+
+      {/* Instant preview -- Canva-style "show before ask" */}
+      {data.dealership.name.trim() && (
+        <div className="mt-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">
+            Live Preview
+          </p>
+          <DealerPreview
+            dealerName={data.dealership.name}
+            city={data.dealership.city}
+            primaryColor={data.branding.primaryColor}
+            accentColor={selectedTemplate?.branding.accentColor}
+            tagline={data.branding.tagline}
+            template={selectedTemplate}
+          />
+        </div>
+      )}
+
+      {/* Template picker -- Notion-style "start from best practice" */}
+      <div>
+        <p className="mb-2 text-sm font-medium text-gray-300">
+          What kind of dealership are you?
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {templates.map((tmpl) => (
+            <button
+              key={tmpl.id}
+              type="button"
+              onClick={() => onTemplateSelect(tmpl.id)}
+              className={`rounded-lg border-2 p-3 text-left transition-colors ${
+                selectedTemplate?.id === tmpl.id
+                  ? "border-brand-500 bg-brand-900/20"
+                  : "border-gray-600 bg-gray-700/30 hover:border-gray-500"
+              }`}
+            >
+              <span
+                className="mb-1 inline-block h-3 w-3 rounded-full"
+                style={{ backgroundColor: tmpl.branding.primaryColor }}
+              />
+              <p className="text-sm font-semibold text-white">{tmpl.label}</p>
+              <p className="mt-0.5 text-xs text-gray-400">{tmpl.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Email" required>
@@ -460,7 +697,7 @@ function StepDealershipInfo({
       </div>
 
       {/* Optional address section */}
-      <CollapsibleSection title="Add address (optional)">
+      <CollapsibleSection title="Add full address (optional)">
         <div className="space-y-4">
           <Field label="Street Address">
             <input
@@ -472,25 +709,7 @@ function StepDealershipInfo({
             />
           </Field>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="City">
-              <input
-                type="text"
-                value={data.dealership.city}
-                onChange={(e) => update("city", e.target.value)}
-                placeholder="Denver"
-                className="input-field"
-              />
-            </Field>
-            <Field label="State">
-              <input
-                type="text"
-                value={data.dealership.state}
-                onChange={(e) => update("state", e.target.value)}
-                placeholder="CO"
-                className="input-field"
-              />
-            </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="ZIP">
               <input
                 type="text"
@@ -500,17 +719,16 @@ function StepDealershipInfo({
                 className="input-field"
               />
             </Field>
+            <Field label="Website">
+              <input
+                type="url"
+                value={data.dealership.website}
+                onChange={(e) => update("website", e.target.value)}
+                placeholder="https://wolfpackmotors.com"
+                className="input-field"
+              />
+            </Field>
           </div>
-
-          <Field label="Website">
-            <input
-              type="url"
-              value={data.dealership.website}
-              onChange={(e) => update("website", e.target.value)}
-              placeholder="https://wolfpackmotors.com"
-              className="input-field"
-            />
-          </Field>
         </div>
       </CollapsibleSection>
     </div>
@@ -525,10 +743,14 @@ function StepCustomize({
   data,
   setData,
   onSectionToggle,
+  csvVehicleCount,
+  setCsvVehicleCount,
 }: {
   data: OnboardingPayload;
   setData: React.Dispatch<React.SetStateAction<OnboardingPayload>>;
   onSectionToggle: (section: string, open: boolean) => void;
+  csvVehicleCount: number;
+  setCsvVehicleCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
   return (
     <div className="space-y-5">
@@ -550,7 +772,12 @@ function StepCustomize({
         title="Set up inventory (optional)"
         onToggle={(open) => onSectionToggle("inventory", open)}
       >
-        <InventoryFields data={data} setData={setData} />
+        <InventoryFields
+          data={data}
+          setData={setData}
+          csvVehicleCount={csvVehicleCount}
+          setCsvVehicleCount={setCsvVehicleCount}
+        />
       </CollapsibleSection>
 
       {/* Team section */}
@@ -719,12 +946,17 @@ function BrandingFields({
 function InventoryFields({
   data,
   setData,
+  csvVehicleCount,
+  setCsvVehicleCount,
 }: {
   data: OnboardingPayload;
   setData: React.Dispatch<React.SetStateAction<OnboardingPayload>>;
+  csvVehicleCount: number;
+  setCsvVehicleCount: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const [csvDragActive, setCsvDragActive] = useState(false);
   const [csvFileName, setCsvFileName] = useState<string | null>(null);
+  const [csvParseErrors, setCsvParseErrors] = useState<string[]>([]);
   const csvInputRef = useRef<HTMLInputElement>(null);
 
   const setMethod = (method: "csv" | "dms" | "manual") => {
@@ -737,13 +969,20 @@ function InventoryFields({
   const handleCsvFile = (file: File) => {
     if (!file.name.endsWith(".csv")) return;
     setCsvFileName(file.name);
+    setCsvParseErrors([]);
     const reader = new FileReader();
     reader.onload = () => {
+      const text = reader.result as string;
+      // Count vehicles (lines minus header) for immediate feedback
+      const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      const vehicleLines = Math.max(0, lines.length - 1);
+      setCsvVehicleCount(vehicleLines);
+
       setData((prev) => ({
         ...prev,
         inventory: {
           ...prev.inventory,
-          csvData: btoa(reader.result as string),
+          csvData: btoa(text),
         },
       }));
     };
@@ -760,7 +999,7 @@ function InventoryFields({
       <div className="grid gap-3 sm:grid-cols-3">
         {(
           [
-            { key: "csv", label: "CSV Upload", desc: "Upload a spreadsheet" },
+            { key: "csv", label: "CSV Upload", desc: "Drag and drop a spreadsheet" },
             { key: "dms", label: "DMS Feed", desc: "Connect your DMS" },
             { key: "manual", label: "Manual Entry", desc: "Add one by one" },
           ] as const
@@ -781,62 +1020,91 @@ function InventoryFields({
         ))}
       </div>
 
-      {/* CSV drop zone */}
+      {/* CSV drop zone — enhanced with vehicle count + progress feedback */}
       {data.inventory.method === "csv" && (
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setCsvDragActive(true);
-          }}
-          onDragLeave={(e) => {
-            e.preventDefault();
-            setCsvDragActive(false);
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setCsvDragActive(false);
-            if (e.dataTransfer.files?.[0]) handleCsvFile(e.dataTransfer.files[0]);
-          }}
-          onClick={() => csvInputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ")
-              csvInputRef.current?.click();
-          }}
-          className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
-            csvDragActive
-              ? "border-brand-500 bg-brand-900/20"
-              : "border-gray-600 bg-gray-700/30 hover:border-brand-400"
-          }`}
-        >
-          {csvFileName ? (
-            <p className="text-sm text-green-400">
-              Uploaded: {csvFileName}
-            </p>
-          ) : (
-            <>
-              <UploadIcon className="mb-2 h-8 w-8 text-gray-400" />
-              <p className="text-sm font-medium text-gray-300">
-                Drag your CSV file here or click to browse
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                VIN, Year, Make, Model, Price columns required
-              </p>
-            </>
-          )}
-          <input
-            ref={csvInputRef}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.[0]) handleCsvFile(e.target.files[0]);
-              e.target.value = "";
+        <>
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setCsvDragActive(true);
             }}
-          />
-        </div>
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setCsvDragActive(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setCsvDragActive(false);
+              if (e.dataTransfer.files?.[0]) handleCsvFile(e.dataTransfer.files[0]);
+            }}
+            onClick={() => csvInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ")
+                csvInputRef.current?.click();
+            }}
+            className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
+              csvDragActive
+                ? "border-brand-500 bg-brand-900/20"
+                : csvFileName
+                  ? "border-green-500/50 bg-green-900/10"
+                  : "border-gray-600 bg-gray-700/30 hover:border-brand-400"
+            }`}
+          >
+            {csvFileName ? (
+              <div className="text-center">
+                <p className="text-sm font-medium text-green-400">
+                  {csvFileName}
+                </p>
+                <p className="mt-1 text-lg font-bold text-white">
+                  {csvVehicleCount} vehicle{csvVehicleCount !== 1 ? "s" : ""} detected
+                </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Click or drop to replace
+                </p>
+              </div>
+            ) : (
+              <>
+                <UploadIcon className="mb-2 h-8 w-8 text-gray-400" />
+                <p className="text-sm font-medium text-gray-300">
+                  Drag your CSV file here or click to browse
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  VIN, Year, Make, Model, Price columns required
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Works with VinSolutions, DealerTrack, or any standard CSV
+                </p>
+              </>
+            )}
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleCsvFile(e.target.files[0]);
+                e.target.value = "";
+              }}
+            />
+          </div>
+
+          {csvParseErrors.length > 0 && (
+            <div className="rounded-lg border border-yellow-700 bg-yellow-900/20 p-3 text-xs text-yellow-300">
+              <p className="font-medium">Some rows had issues:</p>
+              <ul className="mt-1 list-inside list-disc">
+                {csvParseErrors.slice(0, 5).map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+                {csvParseErrors.length > 5 && (
+                  <li>...and {csvParseErrors.length - 5} more</li>
+                )}
+              </ul>
+            </div>
+          )}
+        </>
       )}
 
       {/* DMS provider selector */}
@@ -998,7 +1266,13 @@ function TeamFields({
 /* Step 3: Review & Launch                                                    */
 /* ========================================================================== */
 
-function StepReview({ data }: { data: OnboardingPayload }) {
+function StepReview({
+  data,
+  template,
+}: {
+  data: OnboardingPayload;
+  template: DealerTemplate | null;
+}) {
   const hasAddress = !!(data.dealership.address || data.dealership.city || data.dealership.state || data.dealership.zip);
 
   return (
@@ -1023,6 +1297,14 @@ function StepReview({ data }: { data: OnboardingPayload }) {
           <ReviewRow label="Website" value={data.dealership.website} />
         )}
       </ReviewSection>
+
+      {/* Template */}
+      {template && (
+        <ReviewSection title="Template">
+          <ReviewRow label="Type" value={template.label} />
+          <ReviewRow label="Description" value={template.description} />
+        </ReviewSection>
+      )}
 
       {/* Branding */}
       <ReviewSection title="Branding">
