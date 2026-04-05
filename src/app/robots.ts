@@ -5,6 +5,6 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       { userAgent: "*", allow: "/", disallow: ["/admin/", "/api/"] },
     ],
-    sitemap: "https://wolfpack-auto.vercel.app/sitemap.xml",
+    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || "https://wolfpack-auto.vercel.app"}/sitemap.xml`,
   };
 }
