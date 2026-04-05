@@ -11,10 +11,10 @@ import { trackSystem } from "@/lib/analytics-hooks";
 const MOCK_DEALERS = [
   {
     id: "00000000-0000-4000-a000-000000000001",
-    name: "Wolfpack Motors",
-    slug: "wolfpack-motors",
-    phone: "(919) 555-0100",
-    email: "sales@wolfpackmotors.com",
+    name: "Demo Dealership",
+    slug: "demo-dealership",
+    phone: "(555) 555-0100",
+    email: "sales@demo-dealer.example.com",
     is_active: true,
     leads_count: 42,
     inventory_count: 87,

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { getDealerConfig } from "@/lib/dealer-config";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "Wolfpack Motors terms of service — rules and conditions for using our website.",
+    "Terms of service — rules and conditions for using our website.",
 };
 
-export default function TermsOfServicePage() {
+export default async function TermsOfServicePage() {
+  const dealer = await getDealerConfig();
   return (
     <div className="bg-brand-950 text-gray-200">
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -24,7 +26,7 @@ export default function TermsOfServicePage() {
               1. Acceptance of Terms
             </h2>
             <p className="mt-2">
-              By accessing or using the Wolfpack Motors website
+              By accessing or using the {dealer.name} website
               (&ldquo;Site&rdquo;), you agree to be bound by these Terms of
               Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms,
               you may not use the Site. We reserve the right to modify these
@@ -124,7 +126,7 @@ export default function TermsOfServicePage() {
             <p className="mt-2">
               All content on the Site, including text, graphics, logos, images,
               software, and the overall design and layout, is the property of
-              Wolfpack Motors or its licensors and is protected by copyright,
+              {dealer.name} or its licensors and is protected by copyright,
               trademark, and other intellectual property laws. You may not
               reproduce, distribute, modify, or create derivative works from any
               content on the Site without our prior written consent.
@@ -151,7 +153,7 @@ export default function TermsOfServicePage() {
               7. Limitation of Liability
             </h2>
             <p className="mt-2">
-              To the fullest extent permitted by law, Wolfpack Motors and its
+              To the fullest extent permitted by law, {dealer.name} and its
               officers, directors, employees, and agents shall not be liable for
               any indirect, incidental, special, consequential, or punitive
               damages arising out of or related to your use of the Site,
@@ -195,7 +197,7 @@ export default function TermsOfServicePage() {
               9. Indemnification
             </h2>
             <p className="mt-2">
-              You agree to indemnify and hold harmless Wolfpack Motors and its
+              You agree to indemnify and hold harmless {dealer.name} and its
               affiliates from any claims, damages, losses, or expenses
               (including reasonable attorney fees) arising from your use of the
               Site or your violation of these Terms.
@@ -223,7 +225,7 @@ export default function TermsOfServicePage() {
             </h2>
             <p className="mt-2">
               The Site may contain links to third-party websites or services
-              that are not owned or controlled by Wolfpack Motors. We are not
+              that are not owned or controlled by {dealer.name}. We are not
               responsible for the content, privacy policies, or practices of any
               third-party sites. You access them at your own risk.
             </p>
@@ -268,14 +270,14 @@ export default function TermsOfServicePage() {
               <li>
                 Email:{" "}
                 <a
-                  href="mailto:legal@wolfpackmotors.com"
+                  href={`mailto:legal@${dealer.email.split("@")[1] || "example.com"}`}
                   className="text-brand-400 underline hover:text-brand-300"
                 >
-                  legal@wolfpackmotors.com
+                  legal@{dealer.email.split("@")[1] || "example.com"}
                 </a>
               </li>
-              <li>Phone: (303) 555-1234</li>
-              <li>Address: 1234 Auto Drive, Denver, CO 80202</li>
+              <li>Phone: {dealer.phone}</li>
+              <li>Address: {dealer.address}, {dealer.city}, {dealer.state} {dealer.zip}</li>
             </ul>
           </section>
         </div>

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { getDealerConfig } from "@/lib/dealer-config";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "Wolfpack Motors privacy policy — how we collect, use, and protect your personal information.",
+    "Privacy policy — how we collect, use, and protect your personal information.",
 };
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const dealer = await getDealerConfig();
   return (
     <div className="bg-brand-950 text-gray-200">
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -238,10 +240,10 @@ export default function PrivacyPolicyPage() {
             </p>
             <p className="mt-2 font-medium text-gray-100">
               <a
-                href="mailto:privacy@wolfpackmotors.com"
+                href={`mailto:privacy@${dealer.email.split("@")[1] || "example.com"}`}
                 className="text-brand-400 underline hover:text-brand-300"
               >
-                privacy@wolfpackmotors.com
+                privacy@{dealer.email.split("@")[1] || "example.com"}
               </a>
             </p>
             <p className="mt-2">
@@ -286,10 +288,10 @@ export default function PrivacyPolicyPage() {
             <p className="mt-2">
               To exercise your CCPA rights, email{" "}
               <a
-                href="mailto:privacy@wolfpackmotors.com"
+                href={`mailto:privacy@${dealer.email.split("@")[1] || "example.com"}`}
                 className="text-brand-400 underline hover:text-brand-300"
               >
-                privacy@wolfpackmotors.com
+                privacy@{dealer.email.split("@")[1] || "example.com"}
               </a>{" "}
               with the subject line &ldquo;CCPA Request.&rdquo;
             </p>
@@ -373,10 +375,10 @@ export default function PrivacyPolicyPage() {
               For GDPR-related inquiries, you may contact our Data Protection
               Officer at{" "}
               <a
-                href="mailto:dpo@wolfpackmotors.com"
+                href={`mailto:dpo@${dealer.email.split("@")[1] || "example.com"}`}
                 className="text-brand-400 underline hover:text-brand-300"
               >
-                dpo@wolfpackmotors.com
+                dpo@{dealer.email.split("@")[1] || "example.com"}
               </a>
               .
             </p>
@@ -481,14 +483,14 @@ export default function PrivacyPolicyPage() {
               <li>
                 Email:{" "}
                 <a
-                  href="mailto:privacy@wolfpackmotors.com"
+                  href={`mailto:privacy@${dealer.email.split("@")[1] || "example.com"}`}
                   className="text-brand-400 underline hover:text-brand-300"
                 >
-                  privacy@wolfpackmotors.com
+                  privacy@{dealer.email.split("@")[1] || "example.com"}
                 </a>
               </li>
-              <li>Phone: (303) 555-1234</li>
-              <li>Address: 1234 Auto Drive, Denver, CO 80202</li>
+              <li>Phone: {dealer.phone}</li>
+              <li>Address: {dealer.address}, {dealer.city}, {dealer.state} {dealer.zip}</li>
             </ul>
           </section>
         </div>

@@ -189,7 +189,9 @@ export async function POST(request: NextRequest) {
 
   switch (format) {
     case "xml":
-      feedContent = toAdfXml(vehicles, "Wolfpack Auto");
+      const { getDealerConfig } = await import("@/lib/dealer-config");
+      const dealerCfg = await getDealerConfig();
+      feedContent = toAdfXml(vehicles, dealerCfg.name);
       contentType = "application/xml";
       filename = `${platform}-feed-${Date.now()}.xml`;
       break;

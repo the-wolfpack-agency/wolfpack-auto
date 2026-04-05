@@ -12,7 +12,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
   const baseUrl = `${protocol}://${host}`;
 
-  const robotsTxt = `# Wolfpack Auto — robots.txt
+  const robotsTxt = `# Dealer Platform — robots.txt
 # Generated dynamically
 
 # Allow all standard crawlers

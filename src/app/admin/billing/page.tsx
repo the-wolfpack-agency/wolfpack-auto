@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { pool } from "@/lib/db";
 
 export const metadata: Metadata = {
-  title: "Billing | Admin | Wolfpack Auto",
+  title: "Billing | Admin Portal",
 };
 
 // ---------------------------------------------------------------------------

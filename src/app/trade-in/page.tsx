@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default async function TradeInPage() {
   const config = await getDealerConfig();
-  const dealerName = config?.name ?? "Wolfpack Auto";
+  const dealerName = config?.name ?? "Our Dealership";
 
   const jsonLd = {
     "@context": "https://schema.org",

@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { getDealerConfig } from "@/lib/dealer-config";
 
 export const metadata: Metadata = {
   title: "Accessibility Statement",
   description:
-    "Wolfpack Motors accessibility commitment — our efforts to ensure an inclusive experience for all users.",
+    "Accessibility commitment — our efforts to ensure an inclusive experience for all users.",
 };
 
-export default function AccessibilityPage() {
+export default async function AccessibilityPage() {
+  const dealer = await getDealerConfig();
   return (
     <div className="bg-brand-950 text-gray-200">
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -24,7 +26,7 @@ export default function AccessibilityPage() {
               Our Commitment
             </h2>
             <p className="mt-2">
-              Wolfpack Motors is committed to ensuring that our website is
+              {dealer.name} is committed to ensuring that our website is
               accessible to all users, including people with disabilities. We
               strive to conform to the{" "}
               <strong className="text-gray-100">
@@ -146,13 +148,13 @@ export default function AccessibilityPage() {
               <li>
                 Email:{" "}
                 <a
-                  href="mailto:accessibility@wolfpackmotors.com"
+                  href={`mailto:accessibility@${dealer.email.split("@")[1] || "example.com"}`}
                   className="text-brand-400 underline hover:text-brand-300"
                 >
-                  accessibility@wolfpackmotors.com
+                  accessibility@{dealer.email.split("@")[1] || "example.com"}
                 </a>
               </li>
-              <li>Phone: (303) 555-1234</li>
+              <li>Phone: {dealer.phone}</li>
             </ul>
             <p className="mt-2">
               We aim to respond to accessibility feedback within 5 business

@@ -342,7 +342,7 @@ export default async function SettingsPage() {
                   id="seo-title"
                   name="title_template"
                   type="text"
-                  defaultValue={`%s | ${dealer?.name ?? "Wolfpack Auto"}`}
+                  defaultValue={`%s | ${dealer?.name ?? "Admin Portal"}`}
                   placeholder="%s | Dealer Name"
                   className="mt-1 block w-full rounded-lg border border-surface-border px-4 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />

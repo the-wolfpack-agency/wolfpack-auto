@@ -4,10 +4,10 @@ import AdminSidebar from "@/components/AdminSidebar";
 
 export const metadata: Metadata = {
   title: {
-    default: "Admin",
-    template: "%s | Admin | Wolfpack Auto",
+    default: "Admin Portal",
+    template: "%s | Admin Portal",
   },
-  description: "Wolfpack Auto dealer administration portal.",
+  description: "Dealer administration portal.",
   robots: { index: false, follow: false },
 };
 

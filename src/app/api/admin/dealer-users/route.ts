@@ -13,7 +13,7 @@ const SHADOW_USERS = [
   {
     id: "usr-001",
     dealer_id: "demo-dealer",
-    email: "owner@wolfpackmotors.com",
+    email: "owner@demo-dealer.example.com",
     name: "Sarah Johnson",
     role: "owner",
     is_active: true,
@@ -23,7 +23,7 @@ const SHADOW_USERS = [
   {
     id: "usr-002",
     dealer_id: "demo-dealer",
-    email: "mike@wolfpackmotors.com",
+    email: "mike@demo-dealer.example.com",
     name: "Mike Rodriguez",
     role: "admin",
     is_active: true,
@@ -33,7 +33,7 @@ const SHADOW_USERS = [
   {
     id: "usr-003",
     dealer_id: "demo-dealer",
-    email: "jen@wolfpackmotors.com",
+    email: "jen@demo-dealer.example.com",
     name: "Jennifer Chen",
     role: "staff",
     is_active: true,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       inviteeName: name,
       role: cleanRole,
       inviterName: authResult.user.name ?? "Your teammate",
-      dealerName: "Wolfpack Motors",
+      dealerName: "Demo Dealership",
       inviteToken,
     });
 

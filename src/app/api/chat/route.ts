@@ -9,9 +9,10 @@ import {
   ingestEvents,
   type AnalyticsEvent,
 } from "@/lib/analytics-engine";
+import { getDealerConfig, type DealerConfig } from "@/lib/dealer-config";
 
 /* ------------------------------------------------------------------ */
-/*  HYBRID chat responder for Wolfpack Motors                          */
+/*  HYBRID chat responder — multi-tenant dealer chat                   */
 /*  Rule-based intents + vector/keyword vehicle search                 */
 /*  + behavioral insights from analytics brain                        */
 /*  No AI calls — all pattern matching + vector similarity             */
@@ -40,29 +41,47 @@ interface VehicleCard {
   link: string;
 }
 
-/* ---------- Dealer knowledge base ---------- */
+/* ---------- Dealer knowledge base (loaded dynamically) ---------- */
 
-const DEALER = {
-  name: "Wolfpack Motors",
-  phone: "(303) 555-1234",
-  email: "hello@wolfpackmotors.com",
-  address: "1234 Auto Drive, Denver, CO 80202",
-  hours: {
-    sales: "Mon-Sat: 9AM-8PM | Sun: 10AM-6PM",
-    service: "Mon-Fri: 7AM-6PM | Sat: 8AM-4PM",
-  },
-  website: "https://wolfpackmotors.com",
+/** Cached dealer info populated on first request. */
+let _dealer: {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  hours: { sales: string; service: string };
   financing: {
-    tiers: [
-      { credit: "Excellent (750+)", apr: "2.9% - 4.9%", term: "up to 72 months" },
-      { credit: "Good (700-749)", apr: "4.9% - 6.9%", term: "up to 72 months" },
-      { credit: "Fair (650-699)", apr: "6.9% - 9.9%", term: "up to 60 months" },
-      { credit: "Rebuilding (<650)", apr: "from 9.9%", term: "up to 48 months" },
-    ],
-    note: "We work with 20+ lenders to find the best rate for your situation. Everyone is approved!",
-  },
-  bodyStyles: ["SUV", "Truck", "Sedan", "Coupe", "Convertible", "Van", "Wagon", "Electric"],
-} as const;
+    tiers: readonly { credit: string; apr: string; term: string }[];
+    note: string;
+  };
+} | null = null;
+
+async function getDealer() {
+  if (_dealer) return _dealer;
+  const cfg: DealerConfig = await getDealerConfig();
+  const hoursEntries = Object.entries(cfg.business_hours);
+  const salesHours = hoursEntries.map(([d, h]) => `${d}: ${h}`).join(" | ") || "Mon-Sat: 9AM-8PM";
+  _dealer = {
+    name: cfg.name,
+    phone: cfg.phone,
+    email: cfg.email,
+    address: `${cfg.address}, ${cfg.city}, ${cfg.state} ${cfg.zip}`,
+    hours: {
+      sales: salesHours,
+      service: "Mon-Fri: 7AM-6PM | Sat: 8AM-4PM",
+    },
+    financing: {
+      tiers: [
+        { credit: "Excellent (750+)", apr: "2.9% - 4.9%", term: "up to 72 months" },
+        { credit: "Good (700-749)", apr: "4.9% - 6.9%", term: "up to 72 months" },
+        { credit: "Fair (650-699)", apr: "6.9% - 9.9%", term: "up to 60 months" },
+        { credit: "Rebuilding (<650)", apr: "from 9.9%", term: "up to 48 months" },
+      ],
+      note: "We work with 20+ lenders to find the best rate for your situation. Everyone is approved!",
+    },
+  };
+  return _dealer;
+}
 
 /* ---------- Rate limiter (in-memory, per-process) ---------- */
 
@@ -176,23 +195,26 @@ function isComparisonIntent(message: string): boolean {
 
 type IntentMatcher = {
   patterns: RegExp[];
-  respond: (message: string) => ChatResponse;
+  respond: (message: string) => Promise<ChatResponse>;
 };
 
 const INTENTS: IntentMatcher[] = [
   // --- Greetings ---
   {
     patterns: [/^(hi|hello|hey|howdy|good\s*(morning|afternoon|evening)|what'?s?\s*up|yo)\b/i],
-    respond: () => ({
-      response:
-        "Hello! Welcome to Wolfpack Motors. I can help you browse our inventory, answer financing questions, or schedule a test drive. What are you looking for today?",
-      suggested_actions: [
-        "Browse inventory",
-        "Financing options",
-        "Schedule test drive",
-        "Business hours",
-      ],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response:
+          `Hello! Welcome to ${d.name}. I can help you browse our inventory, answer financing questions, or schedule a test drive. What are you looking for today?`,
+        suggested_actions: [
+          "Browse inventory",
+          "Financing options",
+          "Schedule test drive",
+          "Business hours",
+        ],
+      };
+    },
   },
 
   // --- Pricing (generic — vehicle-specific price queries handled by search) ---
@@ -200,7 +222,7 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(how\s*much\s*(?:is|are|does|do)\s+(?:your|the)\s+(?:financing|loans?|payments?))\b/i,
     ],
-    respond: () => ({
+    respond: async () => ({
       response:
         "Our inventory ranges from the low $20,000s to $80,000+ depending on make, model, and year. You can filter by price range on our [inventory page](/inventory). We also offer competitive financing to fit any budget!",
       suggested_actions: [
@@ -216,13 +238,14 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(financ|loan|monthly\s*payment|apr|interest\s*rate|credit|pre.?approv|payment\s*plan|lease)\b/i,
     ],
-    respond: () => {
-      const tiers = DEALER.financing.tiers
+    respond: async () => {
+      const d = await getDealer();
+      const tiers = d.financing.tiers
         .map((t) => `- ${t.credit}: ${t.apr} (${t.term})`)
         .join("\n");
 
       return {
-        response: `Great question! Here are our current financing tiers:\n\n${tiers}\n\n${DEALER.financing.note} Visit our [financing page](/financing) to get pre-approved in minutes, or give us a call at ${DEALER.phone}.`,
+        response: `Great question! Here are our current financing tiers:\n\n${tiers}\n\n${d.financing.note} Visit our [financing page](/financing) to get pre-approved in minutes, or give us a call at ${d.phone}.`,
         suggested_actions: [
           "Get pre-approved",
           "Browse inventory",
@@ -237,10 +260,13 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(hours|open|close|when\s*(are|do)\s*(you|they)|schedule|time|business\s*hours)\b/i,
     ],
-    respond: () => ({
-      response: `Our hours are:\n\n**Sales:** ${DEALER.hours.sales}\n**Service:** ${DEALER.hours.service}\n\nWe're located at ${DEALER.address}. Stop by anytime or give us a call at ${DEALER.phone}!`,
-      suggested_actions: ["Get directions", "Browse inventory", "Schedule test drive"],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response: `Our hours are:\n\n**Sales:** ${d.hours.sales}\n**Service:** ${d.hours.service}\n\nWe're located at ${d.address}. Stop by anytime or give us a call at ${d.phone}!`,
+        suggested_actions: ["Get directions", "Browse inventory", "Schedule test drive"],
+      };
+    },
   },
 
   // --- Location / Directions ---
@@ -248,10 +274,13 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(where|address|direction|location|map|find\s*you|get\s*there|located|gps)\b/i,
     ],
-    respond: () => ({
-      response: `We're located at **${DEALER.address}**. We're right off I-25, easy to find! Our sales hours are ${DEALER.hours.sales}. Come see us anytime!`,
-      suggested_actions: ["Business hours", "Browse inventory", "Contact us"],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response: `We're located at **${d.address}**. Easy to find! Our sales hours are ${d.hours.sales}. Come see us anytime!`,
+        suggested_actions: ["Business hours", "Browse inventory", "Contact us"],
+      };
+    },
   },
 
   // --- Test Drive ---
@@ -259,10 +288,13 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(test\s*drive|appointment|come\s*(in|by)|visit|see\s*(the|a)\s*(car|vehicle|truck))\b/i,
     ],
-    respond: () => ({
-      response: `We'd love to get you behind the wheel! You can schedule a test drive by:\n\n- Visiting our [contact page](/contact) and filling out the form\n- Calling us at ${DEALER.phone}\n- Just stop by during sales hours (${DEALER.hours.sales})\n\nNo appointment needed — but scheduling ahead guarantees the vehicle is ready for you!`,
-      suggested_actions: ["Browse inventory", "Business hours", "Financing options"],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response: `We'd love to get you behind the wheel! You can schedule a test drive by:\n\n- Visiting our [contact page](/contact) and filling out the form\n- Calling us at ${d.phone}\n- Just stop by during sales hours (${d.hours.sales})\n\nNo appointment needed — but scheduling ahead guarantees the vehicle is ready for you!`,
+        suggested_actions: ["Browse inventory", "Business hours", "Financing options"],
+      };
+    },
   },
 
   // --- Trade-in ---
@@ -270,13 +302,16 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(trade.?in|trade\s*my|sell\s*my|my\s*(car|vehicle|truck)|what.?s\s*my\s*(car|vehicle)\s*worth|value\s*my)\b/i,
     ],
-    respond: () => ({
-      response:
-        "We accept trade-ins and offer competitive valuations! Bring your vehicle in for a free appraisal, or start by browsing our [inventory](/inventory) to see what you'd like to upgrade to. Our team will work the numbers to get you the best deal.\n\nCall us at " +
-        DEALER.phone +
-        " or stop by to get your trade-in value.",
-      suggested_actions: ["Browse inventory", "Financing options", "Contact us"],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response:
+          "We accept trade-ins and offer competitive valuations! Bring your vehicle in for a free appraisal, or start by browsing our [inventory](/inventory) to see what you'd like to upgrade to. Our team will work the numbers to get you the best deal.\n\nCall us at " +
+          d.phone +
+          " or stop by to get your trade-in value.",
+        suggested_actions: ["Browse inventory", "Financing options", "Contact us"],
+      };
+    },
   },
 
   // --- Contact ---
@@ -284,10 +319,13 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(contact|phone|call|email|reach|talk\s*to|speak|representative|salesperson|agent)\b/i,
     ],
-    respond: () => ({
-      response: `You can reach our team at:\n\n- **Phone:** ${DEALER.phone}\n- **Email:** ${DEALER.email}\n- **In person:** ${DEALER.address}\n- **Online:** [Contact form](/contact)\n\nOur sales team is available ${DEALER.hours.sales}.`,
-      suggested_actions: ["Business hours", "Browse inventory", "Financing options"],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response: `You can reach our team at:\n\n- **Phone:** ${d.phone}\n- **Email:** ${d.email}\n- **In person:** ${d.address}\n- **Online:** [Contact form](/contact)\n\nOur sales team is available ${d.hours.sales}.`,
+        suggested_actions: ["Business hours", "Browse inventory", "Financing options"],
+      };
+    },
   },
 
   // --- Service / Maintenance ---
@@ -295,28 +333,34 @@ const INTENTS: IntentMatcher[] = [
     patterns: [
       /\b(service|maintenance|oil\s*change|repair|mechanic|tire|brake|inspect|recall|warranty)\b/i,
     ],
-    respond: () => ({
-      response: `Our service center is open **${DEALER.hours.service}**. We handle everything from oil changes to major repairs. Give us a call at ${DEALER.phone} to schedule your appointment.\n\nAll certified pre-owned vehicles come with warranty coverage!`,
-      suggested_actions: ["Business hours", "Certified pre-owned", "Contact us"],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response: `Our service center is open **${d.hours.service}**. We handle everything from oil changes to major repairs. Give us a call at ${d.phone} to schedule your appointment.\n\nAll certified pre-owned vehicles come with warranty coverage!`,
+        suggested_actions: ["Business hours", "Certified pre-owned", "Contact us"],
+      };
+    },
   },
 
   // --- Thank you ---
   {
     patterns: [/\b(thank|thanks|thx|ty|appreciate|helpful)\b/i],
-    respond: () => ({
-      response:
-        "You're welcome! If you have any other questions, I'm here to help. You can also reach our team at " +
-        DEALER.phone +
-        " anytime during business hours.",
-      suggested_actions: ["Browse inventory", "Business hours"],
-    }),
+    respond: async () => {
+      const d = await getDealer();
+      return {
+        response:
+          "You're welcome! If you have any other questions, I'm here to help. You can also reach our team at " +
+          d.phone +
+          " anytime during business hours.",
+        suggested_actions: ["Browse inventory", "Business hours"],
+      };
+    },
   },
 ];
 
 /* ---------- Rule-based intent matching ---------- */
 
-function matchRuleIntent(message: string): ChatResponse | null {
+async function matchRuleIntent(message: string): Promise<ChatResponse | null> {
   const clean = sanitize(message);
 
   for (const intent of INTENTS) {
@@ -573,8 +617,9 @@ async function matchIntent(
   }
 
   // 5. Final fallback
+  const d = await getDealer();
   const fallback: ChatResponse = {
-    response: `I'd be happy to help! For detailed questions, you can reach our team at ${DEALER.phone} or visit our [contact page](/contact). I can also help with inventory, financing, hours, or scheduling a test drive.`,
+    response: `I'd be happy to help! For detailed questions, you can reach our team at ${d.phone} or visit our [contact page](/contact). I can also help with inventory, financing, hours, or scheduling a test drive.`,
     suggested_actions: [
       "Browse inventory",
       "Financing options",
@@ -599,11 +644,12 @@ export async function POST(request: NextRequest) {
       "anonymous";
 
     if (!checkRateLimit(ip)) {
+      const d = await getDealer();
       return NextResponse.json(
         {
           response:
             "You've sent a lot of messages! Please wait a bit, or call us at " +
-            DEALER.phone +
+            d.phone +
             " for immediate help.",
         },
         { status: 429 },
@@ -621,11 +667,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.message.length > 500) {
+      const d = await getDealer();
       return NextResponse.json(
         {
           response:
             "That message is a bit long! Please keep it under 500 characters, or call us at " +
-            DEALER.phone +
+            d.phone +
             ".",
         },
         { status: 400 },
@@ -640,11 +687,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch {
+    const d = await getDealer();
     return NextResponse.json(
       {
         response:
           "Something went wrong on our end. Please try again, or call us at " +
-          DEALER.phone +
+          d.phone +
           ".",
       },
       { status: 500 },

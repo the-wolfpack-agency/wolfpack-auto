@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const page = PAGES[pageKey];
   const dealer = await getCurrentDealer();
 
-  const dealerName = dealer?.name ?? "Wolfpack Auto";
+  const dealerName = dealer?.name ?? "Our Dealership";
   const title = page ? `${page.title} | ${dealerName}` : dealerName;
 
   return {
