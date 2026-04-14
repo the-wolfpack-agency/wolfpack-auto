@@ -19,6 +19,7 @@ import {
 const STEPS = [
   "Dealership Info",
   "Customize",
+  "Invite Your Team",
   "Review & Launch",
 ] as const;
 
@@ -169,10 +170,7 @@ export default function OnboardingPage() {
       try {
         await fetch("/api/admin/onboarding", {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer placeholder",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             currentStep,
             data: payload,
@@ -195,7 +193,7 @@ export default function OnboardingPage() {
           step: number;
           data: OnboardingPayload;
         };
-        // Clamp step to new 3-step range
+        // Clamp step to valid range
         setStep(Math.min(parsed.step, STEPS.length - 1));
         setData(parsed.data);
       }
@@ -214,6 +212,17 @@ export default function OnboardingPage() {
     }
   }, [step, data, submitted]);
 
+  // Track onboarding started on first mount
+  const hasTrackedStart = useRef(false);
+  useEffect(() => {
+    if (!hasTrackedStart.current) {
+      hasTrackedStart.current = true;
+      track("system", "onboarding_started", {
+        template_selected: selectedTemplate?.id ?? "none",
+      });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Track step views
   useEffect(() => {
     trackStepView(step);
@@ -225,7 +234,7 @@ export default function OnboardingPage() {
       const d = data.dealership;
       return !!(d.name && d.phone && d.email);
     }
-    // Step 1 (Customize) and Step 2 (Review) always valid
+    // Steps 1 (Customize), 2 (Team), 3 (Review) always valid
     return true;
   }, [step, data]);
 
@@ -263,12 +272,12 @@ export default function OnboardingPage() {
   const skipToReview = () => {
     setSkippedStep2(true);
     track("onboarding", "skip_and_launch", {
-      step_index: 1,
-      step_name: STEPS[1],
+      step_index: step,
+      step_name: STEPS[step],
       expanded_sections: Array.from(expandedSections.current).join(","),
     });
-    trackStepComplete(1);
-    setStep(2);
+    trackStepComplete(step);
+    setStep(STEPS.length - 1); // Jump to Review & Launch
   };
 
   // --- Submit ---------------------------------------------------------------
@@ -279,10 +288,7 @@ export default function OnboardingPage() {
     try {
       const res = await fetch("/api/admin/onboarding", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer placeholder",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
@@ -302,14 +308,18 @@ export default function OnboardingPage() {
         });
       }
 
-      trackStepComplete(2);
-      track("onboarding", "wizard_completed", {
+      trackStepComplete(STEPS.length - 1);
+      track("system", "onboarding_completed", {
         total_steps: STEPS.length,
         skipped_customize: skippedStep2,
         template_selected: selectedTemplate?.id ?? "none",
         csv_vehicles: csvVehicleCount,
+        team_invited: data.team.length,
         expanded_sections: Array.from(expandedSections.current).join(","),
       });
+
+      // Clear the onboarding cookie so middleware stops redirecting
+      document.cookie = "onboarding_complete=true; path=/; max-age=300; SameSite=Strict";
 
       localStorage.removeItem(STORAGE_KEY);
       setSubmitted(true);
@@ -437,7 +447,7 @@ export default function OnboardingPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Set Up Your Dealership</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Just 3 quick steps to get your site live.
+          Just a few quick steps to get your site live.
         </p>
       </div>
 
@@ -464,6 +474,9 @@ export default function OnboardingPage() {
           />
         )}
         {step === 2 && (
+          <StepInviteTeam data={data} setData={setData} track={track} />
+        )}
+        {step === 3 && (
           <StepReview data={data} template={selectedTemplate} />
         )}
       </div>
@@ -487,14 +500,14 @@ export default function OnboardingPage() {
         </button>
 
         <div className="flex items-center gap-3">
-          {/* Skip & Launch on Step 2 (Customize) */}
-          {step === 1 && (
+          {/* Skip & Launch on Customize or Team steps */}
+          {(step === 1 || step === 2) && (
             <button
               type="button"
               onClick={skipToReview}
               className="rounded-lg border border-gray-500 bg-gray-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-600"
             >
-              Skip & Launch
+              {step === 2 ? "Skip & Launch" : "Skip & Launch"}
             </button>
           )}
 
@@ -1264,6 +1277,171 @@ function TeamFields({
 
 /* ========================================================================== */
 /* Step 3: Review & Launch                                                    */
+/* ========================================================================== */
+/* Step 3: Invite Your Team                                                  */
+/* ========================================================================== */
+
+function StepInviteTeam({
+  data,
+  setData,
+  track,
+}: {
+  data: OnboardingPayload;
+  setData: React.Dispatch<React.SetStateAction<OnboardingPayload>>;
+  track: (eventType: string, action: string, metadata?: Record<string, unknown>) => void;
+}) {
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState<"admin" | "manager" | "staff">("staff");
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  const addMember = () => {
+    const email = newEmail.trim().toLowerCase();
+    if (!email) return;
+
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+
+    // Check for duplicates
+    if (data.team.some((m) => m.email.toLowerCase() === email)) {
+      setEmailError("This email has already been added");
+      return;
+    }
+
+    setEmailError(null);
+    setData((prev) => ({
+      ...prev,
+      team: [...prev.team, { email, role: newRole }],
+    }));
+    setNewEmail("");
+    setNewRole("staff");
+
+    track("system", "onboarding_team_invited", {
+      count: data.team.length + 1,
+    });
+  };
+
+  const removeMember = (index: number) => {
+    setData((prev) => ({
+      ...prev,
+      team: prev.team.filter((_, i) => i !== index),
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-white">Invite Your Team</h2>
+        <p className="mt-1 text-sm text-gray-400">
+          Add team members so they can access the admin panel. You can always do this later.
+        </p>
+      </div>
+
+      {/* Add member form */}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1">
+            <label htmlFor="invite-email" className="sr-only">
+              Email address
+            </label>
+            <input
+              id="invite-email"
+              type="email"
+              placeholder="team@example.com"
+              value={newEmail}
+              onChange={(e) => {
+                setNewEmail(e.target.value);
+                setEmailError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addMember();
+                }
+              }}
+              className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2.5 text-sm text-white placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+          <div className="w-full sm:w-40">
+            <label htmlFor="invite-role" className="sr-only">
+              Role
+            </label>
+            <select
+              id="invite-role"
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value as typeof newRole)}
+              className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="admin">Admin</option>
+              <option value="manager">Manager</option>
+              <option value="staff">Staff</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={addMember}
+            className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+          >
+            Add
+          </button>
+        </div>
+        {emailError && (
+          <p className="text-sm text-red-400">{emailError}</p>
+        )}
+      </div>
+
+      {/* Added members list */}
+      {data.team.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-300">
+            {data.team.length} team member{data.team.length !== 1 ? "s" : ""} to invite
+          </p>
+          <div className="divide-y divide-gray-700 rounded-lg border border-gray-700">
+            {data.team.map((member, i) => (
+              <div
+                key={`${member.email}-${i}`}
+                className="flex items-center justify-between px-4 py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">
+                    {member.email}
+                  </p>
+                  <p className="text-xs capitalize text-gray-400">
+                    {member.role}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeMember(i)}
+                  className="ml-3 rounded p-1 text-gray-400 transition-colors hover:bg-gray-700 hover:text-red-400"
+                  aria-label={`Remove ${member.email}`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state / skip hint */}
+      {data.team.length === 0 && (
+        <div className="rounded-lg border border-dashed border-gray-600 p-6 text-center">
+          <p className="text-sm text-gray-400">
+            No team members added yet. You can skip this step and invite people later from the Team page.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========================================================================== */
+/* Step 4: Review & Launch                                                   */
 /* ========================================================================== */
 
 function StepReview({

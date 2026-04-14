@@ -4,6 +4,7 @@ import { getDashboardStats, getRecentLeads } from "@/lib/data";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { HotLeadsWidget } from "@/components/HotLeadsWidget";
+import { OnboardingBanner } from "@/components/admin/OnboardingBanner";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -20,6 +21,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <>
+      {/* Onboarding banner — shown until all setup steps are complete */}
+      <OnboardingBanner />
+
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>

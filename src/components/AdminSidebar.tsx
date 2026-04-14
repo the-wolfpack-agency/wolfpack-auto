@@ -453,7 +453,13 @@ export default function AdminSidebar() {
         {gettingStartedProgress && !gettingStartedProgress.allDone && (
           <a
             href="/admin/getting-started"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => {
+              setMobileOpen(false);
+              track("system", "onboarding_sidebar_clicked", {
+                completed_steps: gettingStartedProgress.completed,
+                total_steps: gettingStartedProgress.total,
+              });
+            }}
             className={`mb-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
               pathname === "/admin/getting-started"
                 ? "bg-brand-600/20 text-brand-400"

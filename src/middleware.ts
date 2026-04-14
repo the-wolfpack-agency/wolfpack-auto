@@ -175,6 +175,29 @@ export async function middleware(request: NextRequest) {
       return applyHeaders(NextResponse.redirect(loginUrl), hostname, request);
     }
 
+    // Redirect authenticated users with incomplete onboarding to getting-started.
+    // Skip redirect for pages that are part of the onboarding flow itself,
+    // API routes, settings, and static assets.
+    const onboardingExemptPaths = [
+      "/admin/getting-started",
+      "/admin/onboarding",
+      "/admin/login",
+      "/admin/settings",
+    ];
+    const isExemptFromOnboarding =
+      pathname.startsWith("/api/") ||
+      pathname.startsWith("/_next") ||
+      onboardingExemptPaths.some((p) => pathname.startsWith(p));
+
+    if (!isExemptFromOnboarding) {
+      // Check the onboarding_complete cookie — set by the client after status fetch
+      const onboardingComplete = request.cookies.get("onboarding_complete")?.value;
+      if (onboardingComplete === "false") {
+        const gettingStartedUrl = new URL("/admin/getting-started", request.url);
+        return applyHeaders(NextResponse.redirect(gettingStartedUrl), hostname, request);
+      }
+    }
+
     // Authenticated admin route — continue without tenant resolution
     return applyHeaders(NextResponse.next(), hostname, request);
   }
