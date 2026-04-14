@@ -8,6 +8,13 @@ import { NextRequest, NextResponse } from "next/server";
  */
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const { checkRateLimit } = await import("@/lib/rate-limit");
+  const rl = await checkRateLimit(`survey:${ip}`, 20, 60);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const body = await request.json();
   const { survey_id, answers, session_id, page_url } = body;
 

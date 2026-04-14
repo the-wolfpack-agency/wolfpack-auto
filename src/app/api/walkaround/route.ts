@@ -138,6 +138,13 @@ export async function GET(request: NextRequest) {
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const { checkRateLimit: rl } = await import("@/lib/rate-limit");
+  const check = await rl(`walkaround:${ip}`, 30, 60);
+  if (!check.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   let body: { vin?: string; card_id?: string; action?: CardAction };
 
   try {

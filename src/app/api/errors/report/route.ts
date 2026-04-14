@@ -8,6 +8,13 @@ import { captureError } from "@/lib/error-monitor";
  */
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const { checkRateLimit } = await import("@/lib/rate-limit");
+  const rl = await checkRateLimit(`error-report:${ip}`, 100, 60);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await request.json();

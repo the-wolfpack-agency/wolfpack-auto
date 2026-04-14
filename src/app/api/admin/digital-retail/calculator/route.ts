@@ -8,6 +8,13 @@ import { trackRetail } from "@/lib/analytics-hooks";
  * No auth required — this powers the customer-facing financing page.
  */
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const { checkRateLimit } = await import("@/lib/rate-limit");
+  const rl = await checkRateLimit(`calculator:${ip}`, 60, 60);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   // Calculator is pure computation — no DB needed, but check DATABASE_URL
   // for consistent shadow mode pattern across all admin routes.
   if (!process.env.DATABASE_URL) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { trackSystem } from "@/lib/analytics-hooks";
 import { generateDealerSlug } from "@/lib/dealer-onboarding";
+import { checkRateLimit } from "@/lib/rate-limit";
 import crypto from "node:crypto";
 
 /* -------------------------------------------------------------------------- */
@@ -50,6 +51,12 @@ const convertDemoSchema = z.object({
 /* -------------------------------------------------------------------------- */
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anon";
+  const rl = await checkRateLimit(`demo-convert:${ip}`, 5, 60);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();

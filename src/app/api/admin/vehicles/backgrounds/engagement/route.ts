@@ -12,8 +12,11 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { trackBackground, trackPhotoEngagement } from "@/lib/analytics-hooks";
+import { requireAuth } from "@/lib/auth-guard";
 
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
   try {
     const body = await request.json();
     const { vin, event, dwell_ms, background_type, preset_id } = body as {

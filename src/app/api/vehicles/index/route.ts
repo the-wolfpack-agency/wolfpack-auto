@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { indexAllVehicles } from "@/lib/intake/vehicle-indexer";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * POST /api/vehicles/index
@@ -12,6 +13,8 @@ import { indexAllVehicles } from "@/lib/intake/vehicle-indexer";
  * when DATABASE_URL is set, falling back to placeholder data.
  */
 export async function POST() {
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
   try {
     if (!process.env.QDRANT_URL) {
       return NextResponse.json(
