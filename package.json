@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "openapi": "tsx scripts/generate-openapi.ts",
+    "build": "npm run openapi && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
