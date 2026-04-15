@@ -63,3 +63,39 @@ export async function trackServerEvent(
     console.error(`[analytics] Server event "${name}" error:`, err);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Security event helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Track a CSP violation report event.
+ * Delegates to trackServerEvent (fire-and-forget, never throws).
+ */
+export async function trackCspViolation(props: {
+  blocked_uri: string;
+  violated_directive: string;
+  source_file: string;
+  line_number: number;
+}): Promise<void> {
+  return trackServerEvent("system.csp_violation_reported", props);
+}
+
+/**
+ * Track a security posture page view.
+ */
+export async function trackSecurityPostureViewed(props: {
+  user_agent_hash: string;
+}): Promise<void> {
+  return trackServerEvent("system.security_posture_viewed", props);
+}
+
+/**
+ * Track TLS hybrid verification result from CI.
+ */
+export async function trackTlsHybridVerified(props: {
+  domain: string;
+  result: "pass" | "fail";
+}): Promise<void> {
+  return trackServerEvent("system.tls_hybrid_verified", props);
+}
