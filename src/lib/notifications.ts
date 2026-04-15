@@ -318,6 +318,9 @@ export async function notifyInventoryAlert(
 
 /**
  * Send a team invite email to a new dealer user.
+ * Analytics events emitted:
+ *   - system.team_invite_sent on success
+ *   - system.notification_send_failed on Resend error (non-blocking)
  */
 export async function sendTeamInvite(params: {
   inviteeEmail: string;
@@ -326,11 +329,15 @@ export async function sendTeamInvite(params: {
   inviterName: string;
   dealerName: string;
   inviteToken: string;
+  dealerId?: string;
+  inviterId?: string;
 }): Promise<void> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
     const acceptUrl = `${baseUrl}/admin/accept-invite?token=${params.inviteToken}`;
 
     const html = teamInviteHTML({
@@ -341,16 +348,81 @@ export async function sendTeamInvite(params: {
       acceptUrl,
     });
 
-    void dispatchEmail(
-      params.inviteeEmail,
-      `You're invited to join ${params.dealerName} on Wolfpack Auto`,
+    const subject = `You're invited to join ${params.dealerName} on Wolfpack Auto`;
+
+    if (!_notifResendClient) {
+      console.log(
+        `[notifications] No RESEND_API_KEY — logging invite email:\n` +
+          `  To: ${params.inviteeEmail}\n` +
+          `  Subject: ${subject}\n` +
+          `  Accept URL: ${acceptUrl}`,
+      );
+      // Still emit the sent event — the DB row exists and the URL is constructable
+      void _emitInviteAnalytics("sent", params).catch(() => {});
+      return;
+    }
+
+    const { error } = await _notifResendClient.emails.send({
+      from: _notifResendFrom,
+      to: [params.inviteeEmail],
+      subject,
       html,
-    ).catch((err) => {
-      console.error("[notifications] sendTeamInvite email failed:", err);
     });
+
+    if (error) {
+      console.error("[notifications] sendTeamInvite Resend error:", error);
+      void _emitNotificationFailedAnalytics(
+        params.inviteeEmail,
+        error instanceof Error ? error.message : String(error),
+        params.dealerId,
+      ).catch(() => {});
+    } else {
+      void _emitInviteAnalytics("sent", params).catch(() => {});
+    }
   } catch (err) {
     console.error("[notifications] sendTeamInvite failed:", err);
+    void _emitNotificationFailedAnalytics(
+      params.inviteeEmail,
+      err instanceof Error ? err.message : String(err),
+      params.dealerId,
+    ).catch(() => {});
   }
+}
+
+/** Fire-and-forget analytics helper for team invite sent. */
+async function _emitInviteAnalytics(
+  _outcome: "sent",
+  params: {
+    inviteeEmail: string;
+    role: string;
+    dealerId?: string;
+    inviterId?: string;
+  },
+): Promise<void> {
+  try {
+    const { trackSystem } = await import("@/lib/analytics-hooks");
+    trackSystem("system.team_invite_sent", params.dealerId ?? "system", {
+      invited_email: params.inviteeEmail,
+      invited_role: params.role,
+      inviter_id: params.inviterId ?? "unknown",
+    });
+  } catch { /* analytics never blocks */ }
+}
+
+/** Fire-and-forget analytics helper for notification send failure. */
+async function _emitNotificationFailedAnalytics(
+  recipient: string,
+  error: string,
+  dealerId?: string,
+): Promise<void> {
+  try {
+    const { trackSystem } = await import("@/lib/analytics-hooks");
+    trackSystem("system.notification_send_failed", dealerId ?? "system", {
+      notification_type: "team_invite",
+      recipient,
+      error: error.slice(0, 200),
+    });
+  } catch { /* analytics never blocks */ }
 }
 
 /**

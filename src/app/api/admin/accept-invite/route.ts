@@ -78,6 +78,10 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role,
       });
+      trackSystem("system.team_invite_accepted", user.dealer_id, {
+        email: user.email,
+        role: user.role,
+      });
     } catch { /* analytics never blocks */ }
 
     return NextResponse.json({
