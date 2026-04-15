@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processInboundSMS, validateTwilioSignature } from "@/lib/sms";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
  * POST /api/webhooks/twilio — Public webhook for Twilio inbound SMS.
@@ -21,8 +22,22 @@ export async function POST(request: NextRequest) {
   });
 
   if (!validateTwilioSignature(signature, url, params)) {
+    try {
+      trackSystem("system.webhook_signature_failed", "system", {
+        source: "twilio",
+        event_type: "sms_inbound",
+        quantum_safe: false,
+      });
+    } catch { /* analytics must never block */ }
     return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
   }
+  try {
+    trackSystem("system.webhook_signature_verified", "system", {
+      source: "twilio",
+      event_type: "sms_inbound",
+      quantum_safe: false,
+    });
+  } catch { /* analytics must never block */ }
 
   if (!from || !body) {
     return NextResponse.json({ error: "Missing From or Body" }, { status: 400 });

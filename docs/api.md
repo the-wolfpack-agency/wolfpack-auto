@@ -3,7 +3,7 @@
 > Auto-generated 2026-04-15 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 239
+**Total routes:** 241
 
 ## Contents
 
@@ -15,6 +15,7 @@
 - [chat](#chat)
 - [contact](#contact)
 - [cron](#cron)
+- [csp-report](#csp-report)
 - [demo](#demo)
 - [dms](#dms)
 - [errors](#errors)
@@ -24,6 +25,7 @@
 - [leads](#leads)
 - [openapi](#openapi)
 - [privacy](#privacy)
+- [security-posture](#security-posture)
 - [service](#service)
 - [surveys](#surveys)
 - [trade-in](#trade-in)
@@ -392,6 +394,12 @@
 | `GET` | `/api/cron/predict-leads` | GET /api/cron/predict-leads — Vercel cron job endpoint | — | — |
 | `GET` | `/api/cron/process-sequences` | GET /api/cron/process-sequences — Vercel cron job endpoint | — | — |
 
+## csp-report
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `POST` | `/api/csp-report` | Create csp-report | — | — |
+
 ## demo
 
 | Method | Path | Summary | Auth | Rate-limited |
@@ -458,6 +466,12 @@
 |--------|------|---------|------|-------------|
 | `POST` | `/api/privacy/delete-data` | Create delete-data | Bearer | Yes |
 | `POST` | `/api/privacy/export-data` | POST /api/privacy/export-data — CCPA data export (right to portability) | Bearer | — |
+
+## security-posture
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `GET` | `/api/security-posture` | List security-posture | — | — |
 
 ## service
 

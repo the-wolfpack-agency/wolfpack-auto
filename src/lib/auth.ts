@@ -4,6 +4,7 @@ import { compare } from "bcryptjs";
 import { query } from "@/lib/db";
 import { decryptPII } from "@/lib/crypto";
 import { verifyTOTP, verifyBackupCode } from "@/lib/mfa";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Type augmentation for NextAuth session / JWT                               */
@@ -383,6 +384,18 @@ export const authOptions: NextAuthOptions = {
           token.mfa_verified = true;
         }
 
+        // Emit observability event for NextAuth-managed token issuance.
+        // NextAuth does not expose a pluggable signing primitive, so we
+        // instrument the callback hook instead.
+        try {
+          trackSystem("system.token_signed", user.dealer_id ?? "system", {
+            algorithm: "hs256",
+            quantum_safe: false,
+            source: "nextauth",
+            user_id: user.id,
+          });
+        } catch { /* analytics must never block auth */ }
+
         return token;
       }
 
@@ -416,6 +429,17 @@ export const authOptions: NextAuthOptions = {
         role: token.role,
       };
       session.mfaVerified = token.mfa_verified ?? true;
+
+      // Emit observability event for NextAuth-managed token verification.
+      try {
+        trackSystem("system.token_verified", token.dealer_id ?? "system", {
+          algorithm: "hs256",
+          quantum_safe: false,
+          source: "nextauth",
+          user_id: token.id,
+        });
+      } catch { /* analytics must never block auth */ }
+
       return session;
     },
   },

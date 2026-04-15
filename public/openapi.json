@@ -8420,6 +8420,28 @@
         }
       }
     },
+    "/api/csp-report": {
+      "post": {
+        "summary": "Create csp-report",
+        "tags": [
+          "csp-report"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/api/demo/convert": {
       "post": {
         "summary": "Create convert",
@@ -8927,6 +8949,28 @@
             "bearerAuth": []
           }
         ]
+      }
+    },
+    "/api/security-posture": {
+      "get": {
+        "summary": "List security-posture",
+        "tags": [
+          "security-posture"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
       }
     },
     "/api/service/delivery": {

@@ -136,8 +136,18 @@ export async function POST(req: NextRequest) {
     // Return 200 anyway to prevent Resend retries on auth config issues,
     // but log the failure for debugging
     console.error("[resend-webhook] Invalid signature — event dropped");
+    trackSystem("system.webhook_signature_failed", "system", {
+      source: "resend",
+      event_type: "email_webhook",
+      quantum_safe: false,
+    });
     return NextResponse.json({ received: true }, { status: 200 });
   }
+  trackSystem("system.webhook_signature_verified", "system", {
+    source: "resend",
+    event_type: "email_webhook",
+    quantum_safe: false,
+  });
 
   // Parse payload
   let payload: ResendWebhookPayload;

@@ -46,7 +46,7 @@ function buildHtml(bodyContent: string, rawMd: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Security Posture — Wolfpack Auto</title>
+  <title>Security Posture</title>
   <style>
     body { font-family: system-ui, sans-serif; max-width: 860px; margin: 0 auto; padding: 2rem 1rem; color: #1a1a1a; line-height: 1.6; }
     h1 { font-size: 2rem; border-bottom: 2px solid #e5e7eb; padding-bottom: .5rem; }

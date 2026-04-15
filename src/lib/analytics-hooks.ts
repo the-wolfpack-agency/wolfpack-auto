@@ -235,7 +235,26 @@ export type SystemEvent =
   | "system.team_invite_sent"
   | "system.team_invite_accepted"
   | "system.notification_send_failed"
-  | "system.inventory_csv_imported";
+  | "system.inventory_csv_imported"
+  /* ---- crypto-agility events ---------------------------------------- */
+  /** Emitted every time signToken() produces a new token. */
+  | "system.token_signed"
+  /** Emitted every time verifyToken() accepts a valid token. */
+  | "system.token_verified"
+  /** Emitted when verifyToken() rejects a token (bad sig, expired, etc.). */
+  | "system.token_verify_failed"
+  /* ---- webhook-integrity events ------------------------------------- */
+  /** Emitted by each webhook handler when the HMAC signature passes. */
+  | "system.webhook_signature_verified"
+  /** Emitted by each webhook handler when the HMAC signature fails. Tripwire. */
+  | "system.webhook_signature_failed"
+  /* ---- RLS / cross-tenant access events ----------------------------- */
+  /**
+   * Emitted by tenant guards when dealer-A tries to read/write dealer-B data.
+   * Metadata: { attempted_dealer_id, actual_dealer_id, route, user_id }.
+   * Tripwire-grade — goes straight into the learning system.
+   */
+  | "system.cross_tenant_access_blocked";
 
 export type SearchIntentEvent =
   | "search_intent.classified"

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { pool } from "@/lib/db";
+import { trackSystem } from "@/lib/analytics-hooks";
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY)
@@ -22,7 +23,21 @@ export async function POST(request: Request) {
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    try {
+      trackSystem("system.webhook_signature_verified", "system", {
+        source: "stripe",
+        event_type: "stripe_webhook",
+        quantum_safe: false,
+      });
+    } catch { /* analytics must never block */ }
   } catch {
+    try {
+      trackSystem("system.webhook_signature_failed", "system", {
+        source: "stripe",
+        event_type: "stripe_webhook",
+        quantum_safe: false,
+      });
+    } catch { /* analytics must never block */ }
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
