@@ -152,7 +152,8 @@ export type SecurityEvent =
   | "security.mfa_disabled"
   | "security.mfa_enabled"
   | "security.mfa_setup"
-  | "security.mfa_verified";
+  | "security.mfa_verified"
+  | "security.unauthorized_access_attempt";
 
 export type SystemEvent =
   | "system.circuit_breaker_opened"
@@ -191,6 +192,7 @@ export type SystemEvent =
   | "system.notifications_updated"
   | "system.settings_updated"
   | "system.task_created"
+  | "system.openapi_fetched"
   | "team.user_created"
   | "team.user_invited"
   | "team.user_updated"
@@ -229,7 +231,11 @@ export type SystemEvent =
   | "system.ab_test_created"
   | "system.push_subscription_added"
   | "system.push_notification_sent"
-  | "system.push_notification_broadcast";
+  | "system.push_notification_broadcast"
+  | "system.team_invite_sent"
+  | "system.team_invite_accepted"
+  | "system.notification_send_failed"
+  | "system.inventory_csv_imported";
 
 export type SearchIntentEvent =
   | "search_intent.classified"

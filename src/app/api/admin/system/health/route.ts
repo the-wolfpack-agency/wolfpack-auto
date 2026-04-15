@@ -9,6 +9,7 @@
 import { NextResponse } from "next/server";
 import { circuitBreaker } from "@/lib/circuit-breaker";
 import type { CircuitBreakerState } from "@/lib/circuit-breaker";
+import { requireAuth } from "@/lib/auth-guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -139,6 +140,9 @@ const CACHE_TTL_MS = 15_000; // 15 seconds — fast enough for monitoring, preve
 /* -------------------------------------------------------------------------- */
 
 export async function GET() {
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
+
   // Return cached response if fresh
   if (cachedResponse && Date.now() < cachedResponse.expiresAt) {
     return NextResponse.json(

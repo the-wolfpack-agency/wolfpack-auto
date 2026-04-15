@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { trackSecurity } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -26,8 +27,12 @@ export interface AuthResult {
  * Require a valid session for an API route.
  *
  * Returns the authenticated user or a 401 NextResponse.
+ * When a request object is provided, the caller's IP and the route path are
+ * included in the emitted analytics event.
  */
-export async function requireAuth(): Promise<AuthResult | NextResponse> {
+export async function requireAuth(
+  request?: NextRequest,
+): Promise<AuthResult | NextResponse> {
   // In DEMO_MODE, return a synthetic admin user so API routes work without login.
   // DEMO_MODE should NEVER be set in production with real customer data.
   if (process.env.DEMO_MODE === "true") {
@@ -45,6 +50,19 @@ export async function requireAuth(): Promise<AuthResult | NextResponse> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
+    try {
+      const ip =
+        request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+        request?.headers.get("x-real-ip") ??
+        "unknown";
+      const route = request?.nextUrl?.pathname ?? "unknown";
+      trackSecurity("security.unauthorized_access_attempt", "system", {
+        route,
+        ip,
+        timestamp: new Date().toISOString(),
+      });
+    } catch { /* analytics must never block */ }
+
     return NextResponse.json(
       { error: "Authentication required" },
       { status: 401 },

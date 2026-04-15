@@ -189,7 +189,6 @@ describe("Admin API Contract Validation", () => {
       (relPath) => {
         const content = readFile(path.join(ROOT, relPath));
         if (relPath.includes("engagement")) return;
-        if (relPath.includes("system/[id]")) return;
 
         const hasAuth = content.includes("requireAuth") || content.includes("isAuthenticated");
         if (!hasAuth) {
