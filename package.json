@@ -40,7 +40,9 @@
     "test:full": "playwright test --project=chromium --reporter=list",
     "test:all": "jest --no-coverage && playwright test --project=chromium --reporter=list",
     "launch": "node scripts/launch.mjs",
-    "launch:check": "node scripts/launch.mjs --check-only"
+    "launch:check": "node scripts/launch.mjs --check-only",
+    "verify": "bash scripts/verify.sh",
+    "test:e2e:smoke": "playwright test --config=playwright.verify.config.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",

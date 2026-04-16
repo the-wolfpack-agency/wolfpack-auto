@@ -1,0 +1,62 @@
+name: Verify
+
+# Local `npm run verify` gate, hoisted into CI.
+#
+# Required secrets:
+#   PROD_URL              — https://wolfpack-auto.vercel.app (or equivalent)
+#   SMOKE_TEST_EMAIL      — admin sign-in email
+#   SMOKE_TEST_PASSWORD   — admin sign-in password
+#
+# If any secret is missing, the e2e-smoke stage auto-skips instead of failing.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    # TODO: flip to required = true once the 4 pre-existing ts-jest / tsc
+    # regressions are resolved (see commit message for details).
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run verify
+        env:
+          CI: "true"
+          PROD_URL: ${{ secrets.PROD_URL }}
+          SMOKE_TEST_EMAIL: ${{ secrets.SMOKE_TEST_EMAIL }}
+          SMOKE_TEST_PASSWORD: ${{ secrets.SMOKE_TEST_PASSWORD }}
+        run: npm run verify
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-auto
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
