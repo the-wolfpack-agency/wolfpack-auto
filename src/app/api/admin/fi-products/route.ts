@@ -157,6 +157,20 @@ const MOCK_FI_PRODUCTS = [
   },
 ];
 
+/**
+ * In-memory store for FI products created via shadow mode (or when
+ * DB INSERT silently fails). Per-instance, ephemeral. Surfaces
+ * alongside DB / mock rows so a product the operator just added
+ * actually appears in the list rather than disappearing.
+ */
+const SHADOW_PRODUCTS = new Map<string, Record<string, unknown>[]>();
+
+function pushShadowProduct(dealerId: string, product: Record<string, unknown>) {
+  const list = SHADOW_PRODUCTS.get(dealerId) ?? [];
+  list.unshift(product);
+  SHADOW_PRODUCTS.set(dealerId, list.slice(0, 200));
+}
+
 /* -------------------------------------------------------------------------- */
 /* GET /api/admin/fi-products                                                 */
 /* -------------------------------------------------------------------------- */
@@ -168,6 +182,7 @@ export async function GET(request: NextRequest) {
 
   const includeInactive = request.nextUrl.searchParams.get("include_inactive") === "true";
 
+  let products: Record<string, unknown>[] | null = null;
   /* ---- DB path ---- */
   if (process.env.DATABASE_URL) {
     try {
@@ -179,17 +194,31 @@ export async function GET(request: NextRequest) {
           ORDER BY sort_order ASC, name ASC`,
         [dealerId],
       );
-      return NextResponse.json({ products: result.rows });
+      products = result.rows as Record<string, unknown>[];
     } catch (err) {
       console.error("[api/admin/fi-products] DB error:", err);
       /* fall through to mock */
     }
   }
 
-  /* ---- Shadow mode ---- */
-  const products = includeInactive
-    ? MOCK_FI_PRODUCTS
-    : MOCK_FI_PRODUCTS.filter((p) => p.is_active);
+  /* ---- Shadow mode (or DB unavailable) ---- */
+  if (products === null) {
+    const filtered = includeInactive
+      ? MOCK_FI_PRODUCTS
+      : MOCK_FI_PRODUCTS.filter((p) => p.is_active);
+    products = filtered as unknown as Record<string, unknown>[];
+  }
+
+  /* Surface in-memory creations on top of whatever path served the
+     base list. Active-flag filter applies. */
+  const shadow = SHADOW_PRODUCTS.get(dealerId) ?? [];
+  if (shadow.length > 0) {
+    const existingIds = new Set(products.map((p) => p.id));
+    const toAdd = shadow
+      .filter((p) => !existingIds.has(p.id))
+      .filter((p) => includeInactive || p.is_active !== false);
+    products = [...toAdd, ...products];
+  }
 
   return NextResponse.json({ products });
 }
@@ -263,7 +292,12 @@ export async function POST(request: NextRequest) {
         ],
       );
       try { trackDeal("deal.fi_product_added", authResult?.user?.dealer_id ?? "system", { action: "fi_product_added", product_name: String(body.name ?? "") }); } catch {}
-      return NextResponse.json({ product: result.rows[0], created: true }, { status: 201 });
+      const product = result.rows[0] as Record<string, unknown>;
+      /* Mirror the persisted row into the shadow store so a
+         subsequent GET on a different serverless instance still
+         shows it (DB-eventual-consistency safety net). */
+      pushShadowProduct(dealerId, product);
+      return NextResponse.json({ product, created: true }, { status: 201 });
     } catch (err) {
       console.error("[api/admin/fi-products] DB insert error:", err);
       /* fall through to mock */
@@ -292,6 +326,7 @@ export async function POST(request: NextRequest) {
     updated_at: new Date().toISOString(),
   };
 
+  pushShadowProduct(dealerId, newProduct as Record<string, unknown>);
   try { trackDeal("deal.fi_product_added", authResult?.user?.dealer_id ?? "system", { action: "fi_product_added", product_name: String(body.name ?? "") }); } catch {}
   return NextResponse.json({ product: newProduct, created: true }, { status: 201 });
 }

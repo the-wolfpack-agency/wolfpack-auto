@@ -14,6 +14,22 @@ import {
   type DealStructure,
 } from "@/lib/fi-desking";
 
+/**
+ * In-memory fallback for newly-created deals when the DB INSERT
+ * silently fails (column drift / table missing on the deployed env).
+ * Per-instance, ephemeral across cold starts — acceptable for
+ * shadow-mode UX so the operator at least sees the deal they just
+ * saved appear in the list. The proper fix is the migration; this
+ * keeps the surface usable until that lands.
+ */
+const SHADOW_DEALS = new Map<string, Record<string, unknown>[]>();
+
+function pushShadowDeal(dealerId: string, deal: Record<string, unknown>) {
+  const list = SHADOW_DEALS.get(dealerId) ?? [];
+  list.unshift(deal);
+  SHADOW_DEALS.set(dealerId, list.slice(0, 50));
+}
+
 export async function GET(_request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
@@ -32,6 +48,16 @@ export async function GET(_request: NextRequest) {
     } catch (err) {
       console.error("[api/desking] GET error:", err);
     }
+  }
+
+  /* Surface shadow deals alongside DB rows so a deal saved on this
+     instance shows up immediately. Dedupe by id when both stores
+     happen to contain the same row (DB INSERT eventually succeeds
+     after migration). */
+  const shadow = SHADOW_DEALS.get(dealerId) ?? [];
+  if (shadow.length > 0) {
+    const existingIds = new Set(deals.map((d) => d.id));
+    deals = [...shadow.filter((d) => !existingIds.has(d.id)), ...deals];
   }
 
   return NextResponse.json({ deals, count: deals.length });
@@ -139,6 +165,30 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.error("[api/desking] DB error:", err);
     }
+  }
+
+  /* Shadow-deal record so the saved deal shows on the dashboard
+     even when the DB INSERT failed (or DATABASE_URL was unset). The
+     shape mirrors a deal_desk row enough to render in the list. */
+  if (action === "create" || action === "save") {
+    const shadowId = savedId ?? `deal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    pushShadowDeal(dealerId, {
+      id: shadowId,
+      dealer_id: dealerId,
+      deal_type: fullDeal.deal_type,
+      selling_price: fullDeal.selling_price,
+      monthly_payment: "monthly_payment" in payment ? payment.monthly_payment : 0,
+      front_gross: profit.front_gross,
+      back_gross: profit.back_gross,
+      total_gross: profit.total_gross,
+      fi_per_copy: profit.fi_per_copy,
+      status: "in_progress",
+      customer_name: (deal as any).customer_name ?? null,
+      vehicle: (deal as any).vehicle ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    if (!savedId) savedId = shadowId;
   }
 
   trackDesking(

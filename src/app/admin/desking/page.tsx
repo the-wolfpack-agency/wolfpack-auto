@@ -165,6 +165,7 @@ export default function DeskingPage() {
            contract (returned 400 "deal with selling_price is required"
            when sent flat). */
         body: JSON.stringify({
+          action: "save",
           deal: {
             selling_price: sellingPrice,
             trade_value: tradeIn,
