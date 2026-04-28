@@ -92,12 +92,23 @@ export default async function OemDealersPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {dealers.map((d) => (
-                  <tr key={d.id} className="hover:bg-gray-50">
+                  <tr
+                    key={d.id}
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => {
+                      window.location.href = `/admin/oem/dealers/${encodeURIComponent(d.id)}`;
+                    }}
+                    data-testid={`dealer-row-${d.id}`}
+                  >
                     <td className="px-5 py-3">
-                      <div>
+                      <Link
+                        href={`/admin/oem/dealers/${encodeURIComponent(d.id)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="block hover:text-brand-600"
+                      >
                         <p className="font-medium text-gray-900">{d.name}</p>
                         <p className="text-xs text-gray-400">{d.subdomain}</p>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-5 py-3 text-gray-600">
                       {d.franchise_code ?? <span className="text-gray-300">—</span>}

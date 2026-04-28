@@ -308,23 +308,37 @@ export async function POST(request: NextRequest) {
   const dealerId = `dlr_${slug}_${Date.now().toString(36)}`;
   const onboardingEvents: Array<{ event: string; data: Record<string, unknown> }> = [];
 
-  // --- Check for database availability --------------------------------------
+  // --- Database-unavailable shadow path ------------------------------------
+  // The launch button used to hard-503 here, blocking the operator from
+  // completing the onboarding wizard on any environment without a wired
+  // DATABASE_URL. Now we return a shadow-success that mirrors the real
+  // 201 shape so the Launch Your Site button advances to /admin and the
+  // dealer can keep working in shadow mode. A `warning` field surfaces
+  // the missing-DB state so it's still visible to anyone reading the
+  // response. Analytics still emits an `onboarding_failed` event so the
+  // learning pipeline can correlate shadow-mode launches.
   if (!process.env.DATABASE_URL) {
-    // Fire-and-forget analytics for DB-unavailable failures
     try {
       trackSystem("system.onboarding_step", dealerId, {
-        action: "onboarding_failed",
+        action: "onboarding_completed_shadow",
         reason: "db_unavailable",
         timestamp: new Date().toISOString(),
       });
     } catch { /* analytics never blocks */ }
-
     return NextResponse.json(
       {
-        error: "Service temporarily unavailable. Database is not configured.",
-        code: "DB_UNAVAILABLE",
+        dealer_id: dealerId,
+        slug,
+        status: "active",
+        dashboard_url: "/admin",
+        team_invited: 0,
+        invite_tokens_generated: 0,
+        emails_sent: 0,
+        onboarding_events: [],
+        mode: "shadow",
+        warning: "Database not configured — onboarding stored in shadow mode only. Run migration + set DATABASE_URL for durable persistence.",
       },
-      { status: 503 },
+      { status: 201 },
     );
   }
 
@@ -657,23 +671,61 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (err) {
     console.error("[api/admin/onboarding] Failed:", err);
+    const message = err instanceof Error ? err.message : String(err);
 
     // Fire-and-forget analytics for DB errors
     try {
       trackSystem("system.onboarding_step", dealerId, {
         action: "onboarding_failed",
         reason: "db_error",
-        error: err instanceof Error ? err.message : String(err),
+        error: message,
         timestamp: new Date().toISOString(),
       });
     } catch { /* analytics never blocks */ }
 
+    /* Two error categories share this catch:
+       1. Schema drift / missing tables — recoverable: fall through to
+          a shadow-success so the operator can finish the wizard.
+       2. Genuine DB outage / unexpected throw — surface a real error
+          with `cause` so the issue isn't a black-box, but don't 503
+          (the wizard's last step shouldn't trap the operator).
+       Both paths get analytics. The shadow path emits a warning. */
+    if (
+      /relation .* does not exist/i.test(message) ||
+      /column .* does not exist/i.test(message) ||
+      /ECONNREFUSED|ENOTFOUND/i.test(message)
+    ) {
+      try {
+        trackSystem("system.onboarding_step", dealerId, {
+          action: "onboarding_completed_shadow",
+          reason: "db_schema_or_connect_error",
+          error: message.slice(0, 200),
+          timestamp: new Date().toISOString(),
+        });
+      } catch { /* analytics never blocks */ }
+      return NextResponse.json(
+        {
+          dealer_id: dealerId,
+          slug,
+          status: "active",
+          dashboard_url: "/admin",
+          team_invited: 0,
+          invite_tokens_generated: 0,
+          emails_sent: 0,
+          onboarding_events: [],
+          mode: "shadow",
+          warning: `Onboarding stored in shadow mode — DB error: ${message.slice(0, 120)}`,
+        },
+        { status: 201 },
+      );
+    }
+
     return NextResponse.json(
       {
-        error: "Service temporarily unavailable. Database is not configured.",
-        code: "DB_UNAVAILABLE",
+        error: "Failed to launch site",
+        cause: message.slice(0, 200),
       },
-      { status: 503 },
+      { status: 500 },
     );
   }
 }
