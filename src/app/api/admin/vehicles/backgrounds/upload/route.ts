@@ -183,7 +183,31 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     });
   } catch (err) {
+    /* Surface a short cause hint to the operator so a 500 from Vercel
+       isn't a black box. Keep stack traces in server logs only. The
+       three common causes are: sharp not installed (Vercel needs
+       sharp@>=0.33 + supports it natively, but version drift bites);
+       R2_ACCOUNT_ID set without R2 creds → uploadImage throws; or
+       custom_backgrounds table missing → DB INSERT throws. The error
+       message itself usually pinpoints which. */
     console.error("[api/backgrounds/upload] Error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const message = (err as Error)?.message ?? "unknown";
+    /* Map a few well-known error shapes to actionable hints. */
+    let hint: string | undefined;
+    if (/Cannot find module .*sharp/i.test(message)) {
+      hint = "sharp not installed in this deployment — add `sharp` to dependencies and redeploy";
+    } else if (/relation .*custom_backgrounds.* does not exist/i.test(message)) {
+      hint = "custom_backgrounds table missing — run migration 046 (vehicle_backgrounds.sql)";
+    } else if (/R2|s3|aws/i.test(message) && /credential|access|denied|signature/i.test(message)) {
+      hint = "R2 / S3 credentials missing or invalid — check R2_ACCOUNT_ID + R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY";
+    }
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        cause: message.slice(0, 200),
+        ...(hint ? { hint } : {}),
+      },
+      { status: 500 },
+    );
   }
 }

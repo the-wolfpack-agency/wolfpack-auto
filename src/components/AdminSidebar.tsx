@@ -232,12 +232,36 @@ const NAV_SECTIONS: NavSection[] = [
 /* Route-matching helpers                                                     */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Build a set of nav hrefs that are PROPER PREFIXES of another nav href
+ * (e.g. `/admin/inventory` is a prefix of `/admin/inventory/backgrounds`).
+ * Such items must only match when pathname is the EXACT href OR a sub-
+ * path that does NOT start with any longer-href sibling — otherwise
+ * both the parent (Inventory) and the child (Photo Backgrounds) light
+ * up at once when the operator visits the child page.
+ */
+const NAV_HREFS: string[] = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href));
+
+function hasMoreSpecificMatch(href: string, pathname: string): boolean {
+  for (const other of NAV_HREFS) {
+    if (other === href) continue;
+    if (!other.startsWith(href + "/")) continue;
+    if (pathname === other || pathname.startsWith(other + "/")) return true;
+  }
+  return false;
+}
+
 function isItemActive(href: string, pathname: string): boolean {
   if (href === "/admin") return pathname === "/admin";
   // analytics-brain should NOT match analytics
   if (href === "/admin/analytics")
     return pathname.startsWith("/admin/analytics") && !pathname.startsWith("/admin/analytics-brain");
-  return pathname.startsWith(href);
+  if (!pathname.startsWith(href)) return false;
+  // Defer to the more-specific sibling so a parent (e.g. /admin/inventory)
+  // doesn't co-highlight when a child page (/admin/inventory/backgrounds)
+  // is the active one.
+  if (hasMoreSpecificMatch(href, pathname)) return false;
+  return true;
 }
 
 function findActiveSection(pathname: string): string | null {
