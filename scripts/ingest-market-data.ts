@@ -813,7 +813,7 @@ function toCSVOutput(records: GeneratedRecord[]): string {
   const lines = [headers.join(",")];
   for (const r of records) {
     lines.push(
-      headers.map((h) => escape((r as Record<string, unknown>)[h])).join(","),
+      headers.map((h) => escape((r as unknown as Record<string, unknown>)[h])).join(","),
     );
   }
   return lines.join("\n") + "\n";
