@@ -290,11 +290,27 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    /* No-VIN POST = "scan all customers" mode (the dashboard's Run
+       Scan button posts an empty body). Re-runs the GET-side
+       opportunity aggregation so the dashboard shows fresh equity
+       positions. Single-VIN appraisal mode is preserved when a vin
+       is provided. */
     if (!body.vin) {
-      return NextResponse.json(
-        { error: "VIN is required" },
-        { status: 400 },
+      const { query } = await import("@/lib/db");
+      const scanned = await query<{ scanned: number }>(
+        `SELECT COUNT(*)::int AS scanned
+         FROM customer_vehicles
+         WHERE dealer_id = $1 AND vin IS NOT NULL`,
+        [dealerId],
       );
+      const scannedCount = scanned.rows[0]?.scanned ?? 0;
+      trackEquityMining("equity.scan_run", dealerId, { scanned: scannedCount });
+      return NextResponse.json({
+        scanned: scannedCount,
+        message: scannedCount > 0
+          ? `Re-scored ${scannedCount} customer vehicles. Reload to see updated opportunities.`
+          : "No customer vehicles to scan yet.",
+      });
     }
 
     const mileage = body.mileage ?? 50000;

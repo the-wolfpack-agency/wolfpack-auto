@@ -349,6 +349,7 @@ export type MarketingTemplateEvent =
 export type EquityMiningEvent =
   | "equity.scan_started"
   | "equity.scan_completed"
+  | "equity.scan_run"
   | "equity.opportunity_identified"
   | "equity.opportunity_contacted"
   | "equity.opportunity_converted"

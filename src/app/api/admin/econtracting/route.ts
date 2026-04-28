@@ -169,6 +169,20 @@ const MOCK_CONTRACTS: Contract[] = [
   },
 ];
 
+/**
+ * In-memory contract store — surfaces newly-created contracts in the
+ * GET list immediately, even when the DB INSERT silently fails or
+ * DATABASE_URL is unset. Per-instance + ephemeral; the durable fix
+ * is the migration that backs the contracts table.
+ */
+const SHADOW_CONTRACTS = new Map<string, Contract[]>();
+
+function pushShadowContract(dealerId: string, contract: Contract) {
+  const list = SHADOW_CONTRACTS.get(dealerId) ?? [];
+  list.unshift(contract);
+  SHADOW_CONTRACTS.set(dealerId, list.slice(0, 200));
+}
+
 /* -------------------------------------------------------------------------- */
 /* GET /api/admin/econtracting                                                */
 /* -------------------------------------------------------------------------- */
@@ -208,7 +222,16 @@ export async function GET(request: NextRequest) {
         params,
       );
 
-      return NextResponse.json({ contracts: result.rows, total: (result.rows as unknown[]).length });
+      const dbRows = (result.rows as unknown as Contract[]);
+      const shadow = SHADOW_CONTRACTS.get(dealerId) ?? [];
+      const existing = new Set(dbRows.map((c) => c.id));
+      const merged = [
+        ...shadow.filter((c) => !existing.has(c.id))
+          .filter((c) => !status || c.status === status)
+          .filter((c) => !dealId || c.deal_id === dealId),
+        ...dbRows,
+      ];
+      return NextResponse.json({ contracts: merged, total: merged.length });
     } catch (err) {
       console.error("[api/admin/econtracting] DB error, falling back to mock:", err);
       /* fall through to mock */
@@ -216,7 +239,9 @@ export async function GET(request: NextRequest) {
   }
 
   /* ---- Shadow mode ---- */
-  let filtered = MOCK_CONTRACTS.filter((c) => c.dealer_id === "demo-dealer");
+  let filtered: Contract[] = MOCK_CONTRACTS.filter((c) => c.dealer_id === "demo-dealer");
+  const shadow = SHADOW_CONTRACTS.get(dealerId) ?? [];
+  filtered = [...shadow, ...filtered];
   if (status) filtered = filtered.filter((c) => c.status === status);
   if (dealId) filtered = filtered.filter((c) => c.deal_id === dealId);
 
@@ -331,7 +356,9 @@ export async function POST(request: NextRequest) {
 
       try { trackDocument("document.uploaded", dealerId, { deal_id: String(body.deal_id), doc_count: documents.length, provider }); } catch {}
 
-      const resp = { contract: result.rows[0], created: true };
+      const created = result.rows[0] as Contract;
+      pushShadowContract(dealerId, created);
+      const resp = { contract: created, created: true };
       recordIdempotency(iKey, resp);
       return NextResponse.json(resp, { status: 201 });
     } catch (err) {
@@ -361,6 +388,7 @@ export async function POST(request: NextRequest) {
 
   try { trackDocument("document.uploaded", dealerId, { deal_id: String(body.deal_id), doc_count: documents.length, provider }); } catch {}
 
+  pushShadowContract(dealerId, newContract);
   const resp = { contract: newContract, created: true };
   recordIdempotency(iKey, resp);
   return NextResponse.json(resp, { status: 201 });
