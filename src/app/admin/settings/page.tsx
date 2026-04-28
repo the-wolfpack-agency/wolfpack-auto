@@ -342,7 +342,15 @@ export default async function SettingsPage() {
                   id="seo-title"
                   name="title_template"
                   type="text"
-                  defaultValue={`%s | ${dealer?.name ?? "Admin Portal"}`}
+                  /* Prefer the persisted value; only fall back to a
+                     templated default when the dealer hasn't saved
+                     one yet. Without this the form regenerated the
+                     default from dealer.name on every render and the
+                     operator's custom value appeared to "not persist". */
+                  defaultValue={
+                    (dealer as any)?.title_template ??
+                    `%s | ${dealer?.name ?? "Admin Portal"}`
+                  }
                   placeholder="%s | Dealer Name"
                   className="mt-1 block w-full rounded-lg border border-surface-border px-4 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
@@ -364,9 +372,10 @@ export default async function SettingsPage() {
                   rows={3}
                   maxLength={160}
                   defaultValue={
-                    dealer
+                    (dealer as any)?.meta_description ??
+                    (dealer
                       ? `Shop new and used vehicles at ${dealer.name}. Located in ${dealer.address?.city ?? ""}, ${dealer.address?.state ?? ""}.`
-                      : ""
+                      : "")
                   }
                   className="mt-1 block w-full rounded-lg border border-surface-border px-4 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />

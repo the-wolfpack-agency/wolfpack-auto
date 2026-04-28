@@ -22,6 +22,42 @@ interface ErrorAggregate {
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * The error-monitor API runs in shadow mode (resolves return
+ * `mode: "shadow"` — they don't persist server-side until the
+ * underlying error_monitor table lands). Without client-side
+ * memory, a resolve disappears from the UI but reappears on the
+ * next page load because GET re-emits the same shadow data.
+ *
+ * Persist resolved fingerprints in localStorage so clicks stick
+ * across reloads inside the same browser. Once the durable backend
+ * lands, the server-side resolve will short-circuit this and the
+ * localStorage filter becomes a no-op (the fingerprints already
+ * won't be returned from GET).
+ */
+const RESOLVED_LS_KEY = "wolfpack-auto:error-monitor:resolved";
+
+function loadResolvedSet(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(RESOLVED_LS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? new Set(arr) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveResolvedSet(s: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(RESOLVED_LS_KEY, JSON.stringify(Array.from(s)));
+  } catch {
+    /* localStorage unavailable / quota exhausted — silent no-op */
+  }
+}
+
 export default function ErrorMonitorPage() {
   const [errors, setErrors] = useState<ErrorAggregate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,13 +67,15 @@ export default function ErrorMonitorPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
+    const dismissed = loadResolvedSet();
     fetch("/api/admin/error-monitor")
       .then((r) => r.json())
       .then((data) => {
-        setErrors(data.errors ?? []);
+        const all: ErrorAggregate[] = data.errors ?? [];
+        setErrors(all.filter((e) => !dismissed.has(e.fingerprint)));
         setTotal24h(data.total_errors_24h ?? 0);
         setTotal7d(data.total_errors_7d ?? 0);
-        setResolved7d(data.resolved_7d ?? 0);
+        setResolved7d((data.resolved_7d ?? 0) + dismissed.size);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -50,6 +88,12 @@ export default function ErrorMonitorPage() {
       body: JSON.stringify({ fingerprint, action: "resolve" }),
     });
     setErrors((prev) => prev.filter((e) => e.fingerprint !== fingerprint));
+    setResolved7d((prev) => prev + 1);
+    /* Persist the dismissal so a page reload doesn't bring it back
+       in shadow mode. */
+    const next = loadResolvedSet();
+    next.add(fingerprint);
+    saveResolvedSet(next);
   }, []);
 
   if (loading) {
