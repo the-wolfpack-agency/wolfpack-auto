@@ -458,6 +458,8 @@ export type ErrorMonitorEvent =
 
 export type SurveyEvent =
   | "survey.created"
+  | "survey.updated"
+  | "survey.deleted"
   | "survey.published"
   | "survey.response_received"
   | "survey.completed"
@@ -467,6 +469,8 @@ export type SurveyEvent =
 
 export type UserTestEvent =
   | "usertest.created"
+  | "usertest.updated"
+  | "usertest.deleted"
   | "usertest.task_completed"
   | "usertest.task_failed"
   | "usertest.report_generated";

@@ -101,14 +101,59 @@ export default function SurveysPage() {
           &larr; Back to surveys
         </button>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-bold text-gray-900">{selected.title}</h1>
-          <a
-            href={`/admin/surveys/${selected.id}/responses`}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            View Responses
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                const newTitle = window.prompt("New title", selected.title);
+                if (newTitle === null) return;
+                const newDescription = window.prompt("New description", selected.description ?? "");
+                if (newDescription === null) return;
+                const res = await fetch(`/api/admin/surveys?id=${encodeURIComponent(selected.id)}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ title: newTitle, description: newDescription }),
+                });
+                if (res.ok) {
+                  setSelected({ ...selected, title: newTitle, description: newDescription });
+                  setSurveys((prev) =>
+                    prev.map((s) => (s.id === selected.id ? { ...s, title: newTitle, description: newDescription } : s)),
+                  );
+                } else {
+                  alert(`Edit failed: ${(await res.json().catch(() => ({}))).error ?? res.status}`);
+                }
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              data-testid="survey-edit"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`Delete survey "${selected.title}"? This will deactivate it for new responses.`)) return;
+                const res = await fetch(`/api/admin/surveys?id=${encodeURIComponent(selected.id)}`, { method: "DELETE" });
+                if (res.ok) {
+                  setSurveys((prev) => prev.filter((s) => s.id !== selected.id));
+                  setSelected(null);
+                } else {
+                  alert(`Delete failed: ${(await res.json().catch(() => ({}))).error ?? res.status}`);
+                }
+              }}
+              className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              data-testid="survey-delete"
+            >
+              Delete
+            </button>
+            <a
+              href={`/admin/surveys/${selected.id}/responses`}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              View Responses
+            </a>
+          </div>
         </div>
         <p className="text-sm text-gray-500">{selected.description}</p>
 

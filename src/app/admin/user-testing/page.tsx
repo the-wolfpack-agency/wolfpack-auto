@@ -110,17 +110,64 @@ export default function UserTestingPage() {
           &larr; Back to tests
         </button>
 
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{selected.title}</h1>
-          {selected.active ? (
-            <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-              Active
-            </span>
-          ) : (
-            <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-              Inactive
-            </span>
-          )}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">{selected.title}</h1>
+            {selected.active ? (
+              <span className="inline-flex rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                Active
+              </span>
+            ) : (
+              <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                Inactive
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                const newTitle = window.prompt("New title", selected.title);
+                if (newTitle === null) return;
+                const newDescription = window.prompt("New description", selected.description ?? "");
+                if (newDescription === null) return;
+                const res = await fetch(`/api/admin/user-testing?id=${encodeURIComponent(selected.id)}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ title: newTitle, description: newDescription }),
+                });
+                if (res.ok) {
+                  setSelected({ ...selected, title: newTitle, description: newDescription });
+                  setTests((prev) =>
+                    prev.map((t) => (t.id === selected.id ? { ...t, title: newTitle, description: newDescription } : t)),
+                  );
+                } else {
+                  alert(`Edit failed: ${(await res.json().catch(() => ({}))).error ?? res.status}`);
+                }
+              }}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              data-testid="usertest-edit"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`Delete test "${selected.title}"? It will stop accepting new participants.`)) return;
+                const res = await fetch(`/api/admin/user-testing?id=${encodeURIComponent(selected.id)}`, { method: "DELETE" });
+                if (res.ok) {
+                  setTests((prev) => prev.filter((t) => t.id !== selected.id));
+                  setSelected(null);
+                } else {
+                  alert(`Delete failed: ${(await res.json().catch(() => ({}))).error ?? res.status}`);
+                }
+              }}
+              className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              data-testid="usertest-delete"
+            >
+              Delete
+            </button>
+          </div>
         </div>
         <p className="text-sm text-gray-500">{selected.description}</p>
 

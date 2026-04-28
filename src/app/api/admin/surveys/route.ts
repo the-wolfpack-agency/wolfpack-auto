@@ -145,3 +145,121 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/*  PATCH /api/admin/surveys?id=<id> — edit a survey                          */
+/*                                                                             */
+/*  Accepts a partial body — only fields supplied will overwrite. Used by      */
+/*  the detail page's Edit button. Tracks `survey.updated` so the learning     */
+/*  pipeline can attribute audit entries to the right operator. Falls back     */
+/*  to a 200 success-with-warning when the surveys table is missing so an      */
+/*  un-migrated env doesn't black-box the operator.                            */
+/* -------------------------------------------------------------------------- */
+export async function PATCH(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
+
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id query param required" }, { status: 400 });
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const dealerId = getDealerId(authResult);
+  const allowed: Record<string, string> = {
+    title: "title",
+    description: "description",
+    questions: "questions",
+    trigger: "trigger",
+    active: "active",
+  };
+  const setClauses: string[] = ["updated_at = NOW()"];
+  const params: unknown[] = [];
+  let idx = 1;
+  for (const [k, col] of Object.entries(allowed)) {
+    if (body[k] === undefined) continue;
+    setClauses.push(`${col} = $${idx++}`);
+    params.push(
+      k === "questions" || k === "trigger" ? JSON.stringify(body[k]) : body[k],
+    );
+  }
+  if (setClauses.length === 1) {
+    return NextResponse.json({ error: "No editable fields supplied" }, { status: 400 });
+  }
+
+  if (!process.env.DATABASE_URL) {
+    trackSurvey("survey.updated", dealerId, { survey_id: id, mode: "shadow" });
+    return NextResponse.json({ id, updated: true, mode: "shadow" });
+  }
+
+  try {
+    const { query } = await import("@/lib/db");
+    const result = await query(
+      `UPDATE surveys SET ${setClauses.join(", ")} WHERE id = $${idx} AND dealer_id = $${idx + 1} RETURNING *`,
+      [...params, id, dealerId],
+    );
+    if ((result.rows as unknown[]).length === 0) {
+      return NextResponse.json({ error: "Survey not found" }, { status: 404 });
+    }
+    trackSurvey("survey.updated", dealerId, { survey_id: id });
+    return NextResponse.json({ survey: result.rows[0], updated: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (/does not exist/i.test(msg)) {
+      trackSurvey("survey.updated", dealerId, { survey_id: id, mode: "shadow" });
+      return NextResponse.json({ id, updated: true, mode: "shadow", warning: "surveys table missing — edit recorded in shadow mode only" });
+    }
+    return NextResponse.json({ error: "Database error", cause: msg.slice(0, 200) }, { status: 500 });
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  DELETE /api/admin/surveys?id=<id> — soft-delete a survey                  */
+/*                                                                             */
+/*  Sets active=false rather than removing the row so survey_responses keep   */
+/*  pointing at a real parent for the learning pipeline. Tracks               */
+/*  `survey.deleted` + writes audit_log on the durable path.                   */
+/* -------------------------------------------------------------------------- */
+export async function DELETE(request: NextRequest) {
+  const authResult = await requireAuth();
+  if (authResult instanceof NextResponse) return authResult;
+
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id query param required" }, { status: 400 });
+
+  const dealerId = getDealerId(authResult);
+
+  if (!process.env.DATABASE_URL) {
+    trackSurvey("survey.deleted", dealerId, { survey_id: id, mode: "shadow" });
+    return NextResponse.json({ id, deleted: true, mode: "shadow" });
+  }
+
+  try {
+    const { query } = await import("@/lib/db");
+    await query(
+      `UPDATE surveys SET active = false, updated_at = NOW()
+        WHERE id = $1 AND dealer_id = $2`,
+      [id, dealerId],
+    );
+    try {
+      await query(
+        `INSERT INTO audit_log (dealer_id, action, resource_type, resource_id)
+         VALUES ($1, 'survey.deleted', 'survey', $2)`,
+        [dealerId, id],
+      );
+    } catch {}
+    trackSurvey("survey.deleted", dealerId, { survey_id: id });
+    return NextResponse.json({ id, deleted: true });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    if (/does not exist/i.test(msg)) {
+      trackSurvey("survey.deleted", dealerId, { survey_id: id, mode: "shadow" });
+      return NextResponse.json({ id, deleted: true, mode: "shadow" });
+    }
+    return NextResponse.json({ error: "Database error", cause: msg.slice(0, 200) }, { status: 500 });
+  }
+}
