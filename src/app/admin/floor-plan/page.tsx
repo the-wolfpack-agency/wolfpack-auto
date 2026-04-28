@@ -34,8 +34,20 @@ interface FloorPlanStats {
 /* Helpers                                                                     */
 /* -------------------------------------------------------------------------- */
 
-function formatCurrency(n: number): string {
-  return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+function formatCurrency(n: number | string | null | undefined): string {
+  /* Defense-in-depth: Postgres NUMERIC columns sometimes leak through
+     as strings (the API now coerces, but keep this as a safety net).
+     Returns a clean dash when the value is missing instead of
+     throwing on `.toLocaleString`. */
+  const num = typeof n === "number" ? n : Number(n);
+  if (!Number.isFinite(num)) return "—";
+  return num.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
+}
+
+function formatRate(n: number | string | null | undefined): string {
+  const num = typeof n === "number" ? n : Number(n);
+  if (!Number.isFinite(num)) return "—";
+  return num.toFixed(6);
 }
 
 function formatDate(iso: string): string {
@@ -336,7 +348,7 @@ export default function FloorPlanPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">{line.lender}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900">{formatCurrency(line.principal)}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-gray-500">{line.daily_rate.toFixed(6)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-gray-500">{formatRate(line.daily_rate)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">{formatDate(line.funded_date)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900">{line.days_floored ?? "—"}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-amber-600">{formatCurrency(line.interest_accrued)}</td>

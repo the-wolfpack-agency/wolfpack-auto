@@ -157,10 +157,33 @@ export async function GET(request: NextRequest) {
         [authResult.user.dealer_id],
       );
 
-      const lines = result.rows as any[];
+      /* Postgres NUMERIC columns come back as strings via the `pg`
+         driver (precision-preserving by design). The frontend types
+         these as `number` and calls `.toFixed()` / arithmetic on
+         them — without coercion, /admin/floor-plan crashes with
+         `e.daily_rate.toFixed is not a function`. Coerce every
+         numeric field once here so every consumer gets real numbers. */
+      const NUMERIC_FIELDS = [
+        "principal",
+        "daily_rate",
+        "interest_accrued",
+        "interest_accrued_live",
+        "fees",
+        "days_floored",
+      ] as const;
+      const lines = (result.rows as any[]).map((row) => {
+        const out = { ...row };
+        for (const k of NUMERIC_FIELDS) {
+          if (out[k] !== null && out[k] !== undefined) {
+            const n = Number(out[k]);
+            out[k] = Number.isFinite(n) ? n : null;
+          }
+        }
+        return out;
+      });
       const active = lines.filter((l: any) => l.status === "active" || l.status === "curtailed");
-      const totalPrincipal = active.reduce((s: number, l: any) => s + Number(l.principal), 0);
-      const totalDailyInterest = active.reduce((s: number, l: any) => s + Number(l.principal) * Number(l.daily_rate), 0);
+      const totalPrincipal = active.reduce((s: number, l: any) => s + (l.principal ?? 0), 0);
+      const totalDailyInterest = active.reduce((s: number, l: any) => s + (l.principal ?? 0) * (l.daily_rate ?? 0), 0);
       const avgDaysFloored = active.length > 0
         ? Math.round(active.reduce((s: number, l: any) => s + (l.days_floored ?? 0), 0) / active.length)
         : 0;

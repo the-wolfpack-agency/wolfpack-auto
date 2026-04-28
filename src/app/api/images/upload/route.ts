@@ -147,9 +147,27 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
+    /* Surface a short cause hint so the operator can see why the
+       upload failed without server-log access. Same pattern as
+       /api/admin/vehicles/backgrounds/upload. */
     console.error("[api/images/upload] Error:", err);
+    const message = (err as Error)?.message ?? "unknown";
+    let hint: string | undefined;
+    if (/Cannot find module .*sharp/i.test(message)) {
+      hint = "sharp not installed in this deployment — add `sharp` to dependencies and redeploy";
+    } else if (/R2|s3|aws/i.test(message) && /credential|access|denied|signature/i.test(message)) {
+      hint = "R2 / S3 credentials missing or invalid — check R2_ACCOUNT_ID + R2_ACCESS_KEY_ID + R2_SECRET_ACCESS_KEY (or AWS_*)";
+    } else if (/redis|ECONNREFUSED.*6379/i.test(message)) {
+      hint = "Redis unavailable — REDIS_URL missing or unreachable; rate limiter cannot run";
+    } else if (/heic|HEIF/i.test(message)) {
+      hint = "HEIC decode failed — sharp build on Vercel may not include libheif; convert to JPEG client-side";
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      {
+        error: "Internal server error",
+        cause: message.slice(0, 200),
+        ...(hint ? { hint } : {}),
+      },
       { status: 500 },
     );
   }

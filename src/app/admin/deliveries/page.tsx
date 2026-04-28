@@ -69,6 +69,19 @@ export default function DeliveriesPage() {
     new Date().toISOString().split("T")[0],
   );
   const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    vehicleVin: "",
+    customerId: "",
+    customerName: "",
+    customerPhone: "",
+    deliveryAddress: "",
+    slotId: "",
+    distanceMiles: "",
+    vehiclePrice: "",
+    notes: "",
+  });
 
   const fetchDeliveries = useCallback(async () => {
     try {
@@ -95,6 +108,55 @@ export default function DeliveriesPage() {
       // swallow
     }
   }, [selectedDate]);
+
+  async function submitSchedule(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitError(null);
+    if (!form.vehicleVin || !form.customerId || !form.customerName || !form.deliveryAddress || !form.slotId) {
+      setSubmitError("VIN, customer ID, customer name, address, and slot are required.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/deliveries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicleVin: form.vehicleVin,
+          customerId: form.customerId,
+          customerName: form.customerName,
+          customerPhone: form.customerPhone,
+          deliveryAddress: form.deliveryAddress,
+          slotId: form.slotId,
+          distanceMiles: form.distanceMiles ? Number(form.distanceMiles) : undefined,
+          vehiclePrice: form.vehiclePrice ? Number(form.vehiclePrice) : undefined,
+          notes: form.notes || undefined,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSubmitError(body.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setShowScheduleForm(false);
+      setForm({
+        vehicleVin: "",
+        customerId: "",
+        customerName: "",
+        customerPhone: "",
+        deliveryAddress: "",
+        slotId: "",
+        distanceMiles: "",
+        vehiclePrice: "",
+        notes: "",
+      });
+      await Promise.all([fetchDeliveries(), fetchSlots()]);
+    } catch (err) {
+      setSubmitError((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     fetchDeliveries();
@@ -125,6 +187,132 @@ export default function DeliveriesPage() {
           Schedule Delivery
         </button>
       </div>
+
+      {/* Schedule form (toggled by the header button) */}
+      {showScheduleForm && (
+        <form
+          onSubmit={submitSchedule}
+          className="rounded-lg border border-gray-200 bg-white p-6 space-y-4"
+          data-testid="schedule-delivery-form"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">New Delivery</h2>
+            <button
+              type="button"
+              onClick={() => setShowScheduleForm(false)}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="text-sm">
+              <span className="block font-medium text-gray-700 mb-1">Vehicle VIN *</span>
+              <input
+                type="text"
+                value={form.vehicleVin}
+                onChange={(e) => setForm({ ...form, vehicleVin: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                required
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block font-medium text-gray-700 mb-1">Customer ID *</span>
+              <input
+                type="text"
+                value={form.customerId}
+                onChange={(e) => setForm({ ...form, customerId: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                required
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block font-medium text-gray-700 mb-1">Customer Name *</span>
+              <input
+                type="text"
+                value={form.customerName}
+                onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                required
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block font-medium text-gray-700 mb-1">Customer Phone</span>
+              <input
+                type="tel"
+                value={form.customerPhone}
+                onChange={(e) => setForm({ ...form, customerPhone: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-sm md:col-span-2">
+              <span className="block font-medium text-gray-700 mb-1">Delivery Address *</span>
+              <input
+                type="text"
+                value={form.deliveryAddress}
+                onChange={(e) => setForm({ ...form, deliveryAddress: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                required
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block font-medium text-gray-700 mb-1">Delivery Slot *</span>
+              <select
+                value={form.slotId}
+                onChange={(e) => setForm({ ...form, slotId: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                required
+              >
+                <option value="">Choose a slot…</option>
+                {slots.filter((s) => s.available).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.startTime} – {s.endTime} ({s.maxDeliveries - s.currentBookings} open)
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm">
+              <span className="block font-medium text-gray-700 mb-1">Distance (mi)</span>
+              <input
+                type="number"
+                min="0"
+                value={form.distanceMiles}
+                onChange={(e) => setForm({ ...form, distanceMiles: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="block font-medium text-gray-700 mb-1">Vehicle Price ($)</span>
+              <input
+                type="number"
+                min="0"
+                value={form.vehiclePrice}
+                onChange={(e) => setForm({ ...form, vehiclePrice: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-sm md:col-span-2">
+              <span className="block font-medium text-gray-700 mb-1">Notes</span>
+              <textarea
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                rows={2}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          {submitError && (
+            <p className="text-sm text-red-600">{submitError}</p>
+          )}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {submitting ? "Scheduling…" : "Confirm Delivery"}
+          </button>
+        </form>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
