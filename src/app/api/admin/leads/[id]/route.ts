@@ -21,8 +21,51 @@ const updateSchema = z.object({
   temperature: z.enum(["hot", "warm", "cool", "cold"]).optional(),
   assigned_to: z.string().max(200).nullable().optional(),
   note: z.string().max(2000).optional(),
+  /** Edit / delete an existing note in the lead's structured_notes
+   *  jsonb array. The original `note` field is "append a new note"
+   *  for backward compat; this is a discriminated union for the
+   *  other lifecycle states. */
+  note_edit: z.object({ id: z.string().min(1), text: z.string().min(1).max(2000) }).optional(),
+  note_delete: z.string().min(1).optional(),
   follow_up_date: z.string().nullable().optional(),
 });
+
+interface StructuredNote {
+  id: string;
+  text: string;
+  author: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+function applyNoteMutation(
+  current: StructuredNote[],
+  add: string | undefined,
+  edit: { id: string; text: string } | undefined,
+  removeId: string | undefined,
+  author: string,
+): StructuredNote[] {
+  let next = [...current];
+  if (removeId) {
+    next = next.filter((n) => n.id !== removeId);
+  }
+  if (edit) {
+    next = next.map((n) =>
+      n.id === edit.id
+        ? { ...n, text: edit.text, updated_at: new Date().toISOString() }
+        : n,
+    );
+  }
+  if (add) {
+    next.push({
+      id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text: add,
+      author,
+      created_at: new Date().toISOString(),
+    });
+  }
+  return next;
+}
 
 /* -------------------------------------------------------------------------- */
 /* In-memory store for sample data mutations                                  */
@@ -131,6 +174,29 @@ export async function PUT(
         queryParams.push(updates.follow_up_date);
       }
 
+      /* Notes are persisted in leads.structured_notes (jsonb array).
+         Add / edit / delete all read the current array, apply the
+         mutation, and write the result back so the persistence
+         pattern is one column update — no separate notes table. */
+      if (updates.note || updates.note_edit || updates.note_delete) {
+        const currentRes = await query<{ structured_notes: StructuredNote[] | null }>(
+          `SELECT COALESCE(structured_notes, '[]'::jsonb) AS structured_notes
+           FROM leads WHERE id = $1 AND dealer_id = $2`,
+          [id, DEALER_ID],
+        );
+        const current = (currentRes.rows[0]?.structured_notes ?? []) as StructuredNote[];
+        const author = authResult?.user?.email ?? authResult?.user?.dealer_id ?? "system";
+        const nextNotes = applyNoteMutation(
+          current,
+          updates.note,
+          updates.note_edit,
+          updates.note_delete,
+          author,
+        );
+        setClauses.push(`structured_notes = $${idx++}`);
+        queryParams.push(JSON.stringify(nextNotes));
+      }
+
       const result = await query(
         `UPDATE leads SET ${setClauses.join(", ")} WHERE id = $${idx} AND dealer_id = $${idx + 1} RETURNING *`,
         [...queryParams, id, DEALER_ID],
@@ -180,6 +246,22 @@ export async function PUT(
       }
 
       try { trackLead("lead.updated", authResult?.user?.dealer_id ?? "system", { action: "lead_updated", lead_id: id }); } catch {}
+      /* Note-lifecycle analytics: emitted in addition to lead.updated
+         so the learning pipeline can attribute coordinator notes to
+         engagement signals. Each event keys on the lead so the brain
+         can join with deals + service rows by lead_id. */
+      if (updates.note) {
+        try { trackLead("lead.note_added", authResult?.user?.dealer_id ?? "system", { action: "note_added", lead_id: id, note_length: updates.note.length }); } catch {}
+        void auditLog("lead.note_added", { lead_id: id, length: updates.note.length }, undefined, DEALER_ID).catch(() => {});
+      }
+      if (updates.note_edit) {
+        try { trackLead("lead.note_edited", authResult?.user?.dealer_id ?? "system", { action: "note_edited", lead_id: id, note_id: updates.note_edit.id }); } catch {}
+        void auditLog("lead.note_edited", { lead_id: id, note_id: updates.note_edit.id }, undefined, DEALER_ID).catch(() => {});
+      }
+      if (updates.note_delete) {
+        try { trackLead("lead.note_deleted", authResult?.user?.dealer_id ?? "system", { action: "note_deleted", lead_id: id, note_id: updates.note_delete }); } catch {}
+        void auditLog("lead.note_deleted", { lead_id: id, note_id: updates.note_delete }, undefined, DEALER_ID).catch(() => {});
+      }
       return NextResponse.json({ lead: result.rows[0], updated: true });
     } catch (err) {
       console.error("[api/admin/leads/[id]] DB update failed:", err);

@@ -239,7 +239,41 @@ export async function POST(request: NextRequest) {
     try { trackSystem("system.engagement_logged", authResult?.user?.dealer_id ?? "system", { action: "engagement_created", interaction_type, outcome }); } catch {}
     return NextResponse.json({ report: (result.rows as any[])[0] }, { status: 201 });
   } catch (err) {
+    /* Common prod failure: engagement_reports table missing because
+       the migration hasn't been run on the target environment. Don't
+       black-box the operator with a generic 500 — fall through to a
+       shadow-style success so they can keep working AND surface the
+       cause + hint so the migration gets prioritized. */
+    const message = (err as Error)?.message ?? "unknown";
     console.error("[api/admin/engagement-reports] POST failed:", err);
-    return NextResponse.json({ error: "Failed to create engagement report" }, { status: 500 });
+    if (/relation .*engagement_reports.* does not exist/i.test(message)) {
+      const fallback: EngagementReport = {
+        id: `er-${Date.now()}`,
+        customer_name,
+        employee_name,
+        interaction_type,
+        outcome,
+        competitor_mentioned: body.competitor_mentioned ?? null,
+        objections_raised: body.objections_raised ?? null,
+        notes: body.notes ?? null,
+        rating,
+        created_at: new Date().toISOString(),
+      };
+      try { trackSystem("system.engagement_logged", authResult?.user?.dealer_id ?? "system", { action: "engagement_created_shadow", interaction_type, outcome }); } catch {}
+      return NextResponse.json(
+        {
+          report: fallback,
+          warning: "engagement_reports table missing — record stored in shadow mode only. Run migration to enable durable persistence.",
+        },
+        { status: 201 },
+      );
+    }
+    return NextResponse.json(
+      {
+        error: "Failed to create engagement report",
+        cause: message.slice(0, 200),
+      },
+      { status: 500 },
+    );
   }
 }

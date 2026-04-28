@@ -57,6 +57,8 @@ export default function LeadDetailPanel({
   onUpdate,
 }: LeadDetailPanelProps) {
   const [noteText, setNoteText] = useState("");
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState("");
   const [followUpDate, setFollowUpDate] = useState(lead.follow_up_date ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -134,6 +136,52 @@ export default function LeadDetailPanel({
     }
   }
 
+  async function handleEditNote(noteId: string, text: string) {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/leads/${lead.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note_edit: { id: noteId, text: text.trim() } }),
+      });
+      if (res.ok) {
+        onUpdate(lead.id, {
+          structured_notes: (lead.structured_notes ?? []).map((n) =>
+            n.id === noteId ? { ...n, text: text.trim() } : n,
+          ),
+        });
+        setEditingNoteId(null);
+        setEditingNoteText("");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteNote(noteId: string) {
+    /* Plain confirm() is enough here — destructive but undoable on a
+       fresh tick (Postgres has audit_log + the structured_notes
+       jsonb is a small array, so an "undo last delete" toolbar is
+       fine to add later if requested). */
+    if (typeof window !== "undefined" && !window.confirm("Delete this note?")) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/leads/${lead.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note_delete: noteId }),
+      });
+      if (res.ok) {
+        onUpdate(lead.id, {
+          structured_notes: (lead.structured_notes ?? []).filter((n) => n.id !== noteId),
+        });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleFollowUp() {
     if (!followUpDate) return;
     setSaving(true);
@@ -205,11 +253,70 @@ export default function LeadDetailPanel({
                     <div
                       key={note.id}
                       className="rounded-lg border border-surface-border bg-white p-3"
+                      data-testid={`lead-note-${note.id}`}
                     >
-                      <p className="text-sm text-gray-700">{note.text}</p>
-                      <p className="mt-1 text-xs text-gray-400">
-                        {note.author} -- {formatDate(note.created_at)}
-                      </p>
+                      {editingNoteId === note.id ? (
+                        <>
+                          <textarea
+                            value={editingNoteText}
+                            onChange={(e) => setEditingNoteText(e.target.value)}
+                            rows={2}
+                            className="input-field w-full resize-none text-sm"
+                            data-testid={`lead-note-edit-textarea-${note.id}`}
+                          />
+                          <div className="mt-2 flex gap-2 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingNoteId(null);
+                                setEditingNoteText("");
+                              }}
+                              className="text-xs text-gray-500 hover:text-gray-700"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEditNote(note.id, editingNoteText)}
+                              disabled={saving || !editingNoteText.trim()}
+                              className="rounded bg-brand-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+                              data-testid={`lead-note-save-${note.id}`}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-700">{note.text}</p>
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <p className="text-xs text-gray-400">
+                              {note.author} -- {formatDate(note.created_at)}
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingNoteId(note.id);
+                                  setEditingNoteText(note.text);
+                                }}
+                                className="text-xs text-blue-600 hover:underline"
+                                data-testid={`lead-note-edit-${note.id}`}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteNote(note.id)}
+                                className="text-xs text-red-600 hover:underline"
+                                data-testid={`lead-note-delete-${note.id}`}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>

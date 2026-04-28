@@ -159,17 +159,24 @@ export default function DeskingPage() {
       const res = await fetch("/api/admin/desking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        /* The API expects `{ deal: { selling_price, ... }, fi_products: [...] }`.
+           Wrapping the financial fields under `deal` and lifting
+           `fi_products` to a sibling matches the route handler's
+           contract (returned 400 "deal with selling_price is required"
+           when sent flat). */
         body: JSON.stringify({
-          selling_price: sellingPrice,
-          trade_value: tradeIn,
-          down_payment: downPayment,
-          term,
-          apr,
-          monthly_payment: monthlyPayment,
-          front_gross: frontGross,
-          back_gross: backGross,
-          total_gross: totalGross,
-          fi_per_copy: fiPerCopy,
+          deal: {
+            selling_price: sellingPrice,
+            trade_value: tradeIn,
+            down_payment: downPayment,
+            term,
+            apr,
+            monthly_payment: monthlyPayment,
+            front_gross: frontGross,
+            back_gross: backGross,
+            total_gross: totalGross,
+            fi_per_copy: fiPerCopy,
+          },
           fi_products: fiProducts.filter((p) => p.selected).map((p) => ({
             id: p.id,
             name: p.name,
@@ -179,11 +186,14 @@ export default function DeskingPage() {
           })),
         }),
       });
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? body.cause ?? `Save failed (${res.status})`);
+      }
       setSuccessMsg("Deal saved successfully.");
       void loadDeals();
-    } catch {
-      setError("Failed to save deal.");
+    } catch (err) {
+      setError(`Failed to save deal: ${(err as Error).message}`);
     } finally {
       setSaving(false);
     }

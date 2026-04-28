@@ -143,7 +143,10 @@ export type LeadEvent =
   | "lead.assigned"
   | "lead.updated"
   | "lead.bulk_action"
-  | "lead.converted";
+  | "lead.converted"
+  | "lead.note_added"
+  | "lead.note_edited"
+  | "lead.note_deleted";
 
 export type SecurityEvent =
   | "security.scan_completed"

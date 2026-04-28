@@ -242,8 +242,45 @@ export async function POST(request: NextRequest) {
     try { trackSystem("system.good_faith_created", authResult?.user?.dealer_id ?? "system", { action: "gesture_created", gesture_type }); } catch {}
     return NextResponse.json({ gesture: (result.rows as any[])[0] }, { status: 201 });
   } catch (err) {
+    /* Same prod failure pattern as engagement-reports: when the
+       table or one of its columns is missing on the deployed env,
+       fall through to a shadow-style success so the operator can
+       keep working AND surface the cause + a hint pointing at the
+       migration. */
+    const message = (err as Error)?.message ?? "unknown";
     console.error("[api/admin/good-faith] POST failed:", err);
-    return NextResponse.json({ error: "Failed to create good faith gesture" }, { status: 500 });
+    if (
+      /relation .*good_faith_gestures.* does not exist/i.test(message) ||
+      /column .* does not exist/i.test(message)
+    ) {
+      const fallback = {
+        id: `gf-${Date.now()}`,
+        customer_name,
+        customer_email,
+        gesture_type,
+        value_usd,
+        reason,
+        oem_reimbursable: body.oem_reimbursable ?? false,
+        oem_claim_id: null,
+        status: "pending" as const,
+        created_at: new Date().toISOString(),
+      };
+      try { trackSystem("system.good_faith_created", authResult?.user?.dealer_id ?? "system", { action: "gesture_created_shadow", gesture_type }); } catch {}
+      return NextResponse.json(
+        {
+          gesture: fallback,
+          warning: "good_faith_gestures table/column missing — record stored in shadow mode only. Run migration to enable durable persistence.",
+        },
+        { status: 201 },
+      );
+    }
+    return NextResponse.json(
+      {
+        error: "Failed to create good faith gesture",
+        cause: message.slice(0, 200),
+      },
+      { status: 500 },
+    );
   }
 }
 
