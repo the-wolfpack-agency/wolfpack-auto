@@ -4,6 +4,7 @@ import { query } from "@/lib/db";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { placeholderVehicles } from "@/lib/placeholder-data";
 import { InventoryActions } from "@/components/admin/InventoryActions";
+import { InventorySearchInput } from "@/components/admin/InventorySearchInput";
 
 export const metadata: Metadata = {
   title: "Inventory",
@@ -181,14 +182,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
           <label htmlFor="inv-search" className="sr-only">
             Search by VIN, make, or model
           </label>
-          <input
-            id="inv-search"
-            name="search"
-            type="search"
-            defaultValue={params.search}
-            placeholder="Search VIN, make, model, stock #..."
-            className="flex-1 rounded-lg border border-surface-border px-4 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          />
+          <InventorySearchInput defaultValue={params.search} />
           <button
             type="submit"
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
