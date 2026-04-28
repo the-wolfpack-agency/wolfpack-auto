@@ -9,6 +9,40 @@ interface SettingsFormProps {
   fieldMap?: Record<string, string>;
 }
 
+const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+
+/**
+ * Group flat `hours_<day>_open|close|closed` form fields into the
+ * structured `business_hours` array the API expects. Without this the
+ * checkbox/time fields are sent as scalar keys like `hours_sunday_closed`
+ * which the route handler doesn't recognise → checkboxes never persist.
+ *
+ * Critical detail: HTML form checkboxes are ONLY submitted when CHECKED.
+ * Unchecked days are absent from the FormData entirely, so we have to
+ * derive a `closed: false` for any day where the open/close inputs ARE
+ * present but the closed checkbox is missing.
+ */
+function buildBusinessHours(formData: FormData): Array<{
+  day: string;
+  open: string;
+  close: string;
+  closed: boolean;
+}> | null {
+  const entries: Array<{ day: string; open: string; close: string; closed: boolean }> = [];
+  for (const day of DAYS) {
+    const open = formData.get(`hours_${day}_open`);
+    const close = formData.get(`hours_${day}_close`);
+    if (typeof open !== "string" && typeof close !== "string") continue;
+    entries.push({
+      day,
+      open: typeof open === "string" ? open : "09:00",
+      close: typeof close === "string" ? close : "18:00",
+      closed: formData.getAll(`hours_${day}_closed`).length > 0,
+    });
+  }
+  return entries.length > 0 ? entries : null;
+}
+
 /**
  * Client wrapper for settings forms. Intercepts submit, collects form data,
  * and PUTs to /api/admin/settings. Prevents 404s from old static form actions.
@@ -28,15 +62,28 @@ export default function SettingsForm({ children, buttonLabel, fieldMap }: Settin
     const payload: Record<string, unknown> = {};
 
     // Collect unique field names, then resolve values.
-    // Fields with multiple values (checkboxes) become arrays.
     const fieldNames = new Set<string>();
     formData.forEach((_, key) => fieldNames.add(key));
 
     for (const key of fieldNames) {
+      // Skip flat hours_* fields — handled separately below.
+      if (/^hours_/.test(key)) continue;
       const apiKey = fieldMap?.[key] ?? key;
       const values = formData.getAll(key);
-      payload[apiKey] = values.length > 1 ? values : values[0];
+      /* The settings page renders BOTH a mobile (`sm:hidden`) and a
+         desktop (`hidden sm:flex`) version of some fields with the
+         SAME `name`. FormData collects both regardless of CSS
+         visibility, so we'd end up posting `["foo","foo"]` instead
+         of `"foo"`. Dedupe identical adjacent values; preserve the
+         array shape only when values genuinely differ (e.g. multi-
+         select). */
+      const unique = Array.from(new Set(values.map(String)));
+      payload[apiKey] = unique.length > 1 ? unique : unique[0];
     }
+
+    // Pack hours_* into business_hours[]
+    const businessHours = buildBusinessHours(formData);
+    if (businessHours) payload.business_hours = businessHours;
 
     try {
       const res = await fetch("/api/admin/settings", {

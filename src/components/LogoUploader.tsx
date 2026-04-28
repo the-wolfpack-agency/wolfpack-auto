@@ -110,6 +110,11 @@ export default function LogoUploader({ currentLogoUrl }: LogoUploaderProps) {
               src={preview}
               alt="Dealer logo preview"
               className="h-12 w-auto shrink-0 rounded object-contain"
+              /* When the stored logo URL is broken (file deleted on
+                 R2, signed URL expired, dev placeholder), don't show
+                 a broken-image icon — fall through to the upload
+                 placeholder so the operator can re-upload. */
+              onError={() => setPreview(null)}
             />
           ) : (
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-surface-subtle">
