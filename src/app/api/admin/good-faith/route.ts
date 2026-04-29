@@ -101,20 +101,27 @@ export async function GET(_request: NextRequest) {
   try {
     const { query } = await import("@/lib/db");
 
+    const dealerId = authResult?.user?.dealer_id ?? "system";
     const [gesturesResult, budgetResult] = await Promise.all([
       query<GoodFaithGesture>(
         `SELECT id, customer_name, customer_email, gesture_type, value_usd,
                 reason, oem_reimbursable, oem_claim_id, status, created_at
          FROM good_faith_gestures
+         WHERE dealer_id = $1
          ORDER BY created_at DESC
          LIMIT 200`,
+        [dealerId],
       ),
       query<{ budget_used: string; budget_total: string }>(
+        /* dealer_budgets table is optional — when missing, the route's outer
+           catch falls through to mock. Keep budget_total at the project
+           default (5000) until that table lands. */
         `SELECT
            COALESCE(SUM(value_usd) FILTER (WHERE status != 'denied'), 0)::text AS budget_used,
-           COALESCE(MAX(budget_total), 5000)::text AS budget_total
+           '5000'::text AS budget_total
          FROM good_faith_gestures
-         LEFT JOIN dealer_budgets ON dealer_budgets.category = 'good_faith'`,
+         WHERE dealer_id = $1`,
+        [dealerId],
       ),
     ]);
 
@@ -209,13 +216,15 @@ export async function POST(request: NextRequest) {
   try {
     const { query } = await import("@/lib/db");
 
+    const dealerId = authResult?.user?.dealer_id ?? "system";
     const result = await query<{ id: string; created_at: string }>(
       `INSERT INTO good_faith_gestures
-         (customer_name, customer_email, gesture_type, value_usd, reason,
+         (dealer_id, customer_name, customer_email, gesture_type, value_usd, reason,
           oem_reimbursable, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', NOW())
        RETURNING id, created_at`,
       [
+        dealerId,
         customer_name,
         customer_email,
         gesture_type,
@@ -240,6 +249,10 @@ export async function POST(request: NextRequest) {
     }
 
     try { trackSystem("system.good_faith_created", authResult?.user?.dealer_id ?? "system", { action: "gesture_created", gesture_type }); } catch {}
+    /* Durable-mode counterpart — kept alongside the legacy event so the
+       learning system can compute the durable rate over time. Migration
+       056 backs this code path. */
+    try { trackSystem("system.good_faith_created_durable", authResult?.user?.dealer_id ?? "system", { action: "gesture_created", gesture_type }); } catch {}
     return NextResponse.json({ gesture: (result.rows as any[])[0] }, { status: 201 });
   } catch (err) {
     /* Same prod failure pattern as engagement-reports: when the
@@ -266,6 +279,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       };
       try { trackSystem("system.good_faith_created", authResult?.user?.dealer_id ?? "system", { action: "gesture_created_shadow", gesture_type }); } catch {}
+      try { trackSystem("system.good_faith_created_shadow", authResult?.user?.dealer_id ?? "system", { action: "gesture_created_shadow", gesture_type }); } catch {}
       return NextResponse.json(
         {
           gesture: fallback,
@@ -319,11 +333,12 @@ export async function PATCH(request: NextRequest) {
   try {
     const { query } = await import("@/lib/db");
 
+    const dealerId = authResult?.user?.dealer_id ?? "system";
     await query(
       `UPDATE good_faith_gestures
        SET status = $1, oem_claim_id = COALESCE($2, oem_claim_id), updated_at = NOW()
-       WHERE id = $3`,
-      [status, body.oem_claim_id ?? null, id],
+       WHERE id = $3 AND dealer_id = $4`,
+      [status, body.oem_claim_id ?? null, id, dealerId],
     );
 
     // Audit log — never throw

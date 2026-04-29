@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { getDemoErrors } from "@/lib/error-monitor";
-import { trackErrorMonitor } from "@/lib/analytics-hooks";
+import { trackErrorMonitor, trackSystem } from "@/lib/analytics-hooks";
 
 /* -------------------------------------------------------------------------- */
 /*  GET /api/admin/error-monitor — Error list with trends                      */
@@ -112,11 +112,49 @@ export async function POST(request: NextRequest) {
     const { query } = await import("@/lib/db");
 
     if (action === "resolve") {
-      await query(
-        `UPDATE client_errors SET resolved_at = NOW() WHERE fingerprint = $1 AND dealer_id = $2`,
-        [fingerprint, dealerId],
-      );
+      /* Two writes on a resolve:
+         1. Mark any captured client_errors rows resolved (no-op if the
+            error never landed in the durable store — common in shadow
+            demos where errors are mocked).
+         2. Persist the dismissal in error_monitor_resolutions keyed on
+            (dealer_id, error_id) so the UI no longer needs the
+            localStorage shim — a different browser / cleared cache will
+            still see the resolution.
+         Both wrapped in try/catch so a missing table on either side
+         doesn't drop the other. */
+      try {
+        await query(
+          `UPDATE client_errors SET resolved_at = NOW() WHERE fingerprint = $1 AND dealer_id = $2`,
+          [fingerprint, dealerId],
+        );
+      } catch (err) {
+        const innerMsg = err instanceof Error ? err.message : "";
+        if (!/does not exist/i.test(innerMsg)) throw err;
+      }
+
+      let durable = false;
+      try {
+        await query(
+          `INSERT INTO error_monitor_resolutions (dealer_id, error_id, resolved_at)
+           VALUES ($1, $2, NOW())
+           ON CONFLICT (dealer_id, error_id)
+           DO UPDATE SET resolved_at = NOW()`,
+          [dealerId, fingerprint],
+        );
+        durable = true;
+      } catch (err) {
+        const innerMsg = err instanceof Error ? err.message : "";
+        if (!/does not exist/i.test(innerMsg)) throw err;
+      }
+
       trackErrorMonitor("error.resolved", dealerId, { fingerprint });
+      if (durable) {
+        try { trackErrorMonitor("error.resolved_durable", dealerId, { fingerprint }); } catch {}
+        try { trackSystem("system.error_resolution_persisted", dealerId, { fingerprint }); } catch {}
+      } else {
+        try { trackErrorMonitor("error.resolved_shadow", dealerId, { fingerprint }); } catch {}
+        try { trackSystem("system.error_resolution_persisted_shadow", dealerId, { fingerprint }); } catch {}
+      }
     }
 
     return NextResponse.json({ success: true, action, fingerprint });

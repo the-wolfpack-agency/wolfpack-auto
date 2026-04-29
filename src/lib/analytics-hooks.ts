@@ -172,7 +172,13 @@ export type SystemEvent =
   | "system.competitive_updated"
   | "system.domain_updated"
   | "system.engagement_logged"
+  | "system.engagement_logged_durable"
+  | "system.engagement_logged_shadow"
   | "system.good_faith_created"
+  | "system.good_faith_created_durable"
+  | "system.good_faith_created_shadow"
+  | "system.error_resolution_persisted"
+  | "system.error_resolution_persisted_shadow"
   | "system.intake_processed"
   | "system.vehicle_updated"
   | "system.vehicle_added"
@@ -454,6 +460,8 @@ export type ErrorMonitorEvent =
   | "error.captured"
   | "error.correlated"
   | "error.resolved"
+  | "error.resolved_durable"
+  | "error.resolved_shadow"
   | "error.trend_detected";
 
 export type SurveyEvent =
