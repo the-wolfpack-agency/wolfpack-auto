@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getOemNetworkDealers } from "@/db/queries/oem";
+import DealerRow from "./DealerRow";
 
 export const metadata: Metadata = { title: "Dealer Network" };
 
@@ -92,23 +93,10 @@ export default async function OemDealersPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {dealers.map((d) => (
-                  <tr
-                    key={d.id}
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => {
-                      window.location.href = `/admin/oem/dealers/${encodeURIComponent(d.id)}`;
-                    }}
-                    data-testid={`dealer-row-${d.id}`}
-                  >
+                  <DealerRow key={d.id} dealerId={d.id} testId={`dealer-row-${d.id}`}>
                     <td className="px-5 py-3">
-                      <Link
-                        href={`/admin/oem/dealers/${encodeURIComponent(d.id)}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="block hover:text-brand-600"
-                      >
-                        <p className="font-medium text-gray-900">{d.name}</p>
-                        <p className="text-xs text-gray-400">{d.subdomain}</p>
-                      </Link>
+                      <p className="font-medium text-gray-900">{d.name}</p>
+                      <p className="text-xs text-gray-400">{d.subdomain}</p>
                     </td>
                     <td className="px-5 py-3 text-gray-600">
                       {d.franchise_code ?? <span className="text-gray-300">—</span>}
@@ -131,7 +119,7 @@ export default async function OemDealersPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-gray-500">{formatDate(d.created_at)}</td>
-                  </tr>
+                  </DealerRow>
                 ))}
               </tbody>
             </table>
