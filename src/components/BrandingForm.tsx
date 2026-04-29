@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 const FONT_OPTIONS = [
   "Inter",
@@ -24,6 +25,7 @@ export default function BrandingForm({
   secondaryColor: initialSecondary,
   fontFamily: initialFont,
 }: BrandingFormProps) {
+  const router = useRouter();
   const [primaryColor, setPrimaryColor] = useState(initialPrimary);
   const [secondaryColor, setSecondaryColor] = useState(initialSecondary);
   const [fontFamily, setFontFamily] = useState(initialFont);
@@ -56,6 +58,7 @@ export default function BrandingForm({
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+      router.refresh();
     } catch {
       setError("Network error — could not save branding.");
     } finally {
