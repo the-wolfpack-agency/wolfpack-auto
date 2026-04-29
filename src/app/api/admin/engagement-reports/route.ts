@@ -100,16 +100,16 @@ export async function GET(request: NextRequest) {
   try {
     const { query } = await import("@/lib/db");
 
-    const conditions: string[] = [];
-    const params: unknown[] = [];
-    let idx = 1;
+    const dealerId = authResult?.user?.dealer_id ?? "system";
+    const conditions: string[] = ["dealer_id = $1"];
+    const params: unknown[] = [dealerId];
 
     if (outcomeFilter) {
-      conditions.push(`outcome = $${idx++}`);
+      conditions.push(`outcome = $${params.length + 1}`);
       params.push(outcomeFilter);
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const where = `WHERE ${conditions.join(" AND ")}`;
 
     const result = await query<EngagementReport>(
       `SELECT id, customer_name, employee_name, interaction_type, outcome,
@@ -204,13 +204,15 @@ export async function POST(request: NextRequest) {
   try {
     const { query } = await import("@/lib/db");
 
+    const dealerId = authResult?.user?.dealer_id ?? "system";
     const result = await query<{ id: string; created_at: string }>(
       `INSERT INTO engagement_reports
-         (customer_name, employee_name, interaction_type, outcome,
+         (dealer_id, customer_name, employee_name, interaction_type, outcome,
           competitor_mentioned, objections_raised, notes, rating, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
        RETURNING id, created_at`,
       [
+        dealerId,
         customer_name,
         employee_name,
         interaction_type,
@@ -237,6 +239,10 @@ export async function POST(request: NextRequest) {
     }
 
     try { trackSystem("system.engagement_logged", authResult?.user?.dealer_id ?? "system", { action: "engagement_created", interaction_type, outcome }); } catch {}
+    /* Durable-mode counterpart — kept alongside the legacy "logged" event so
+       the learning system can compute the durable-vs-shadow ratio over time
+       without losing existing series. Migration 056 backs this code path. */
+    try { trackSystem("system.engagement_logged_durable", authResult?.user?.dealer_id ?? "system", { action: "engagement_created", interaction_type, outcome }); } catch {}
     return NextResponse.json({ report: (result.rows as any[])[0] }, { status: 201 });
   } catch (err) {
     /* Common prod failure: engagement_reports table missing because
@@ -260,6 +266,7 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString(),
       };
       try { trackSystem("system.engagement_logged", authResult?.user?.dealer_id ?? "system", { action: "engagement_created_shadow", interaction_type, outcome }); } catch {}
+      try { trackSystem("system.engagement_logged_shadow", authResult?.user?.dealer_id ?? "system", { action: "engagement_created_shadow", interaction_type, outcome }); } catch {}
       return NextResponse.json(
         {
           report: fallback,
