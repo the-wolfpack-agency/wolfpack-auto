@@ -266,3 +266,80 @@ export function verifyToken<T = Record<string, unknown>>(
 
   return { valid: true, payload: claims as T, algorithm: algorithmId };
 }
+
+/* -------------------------------------------------------------------------- */
+/* Generic raw-bytes sign / verify (non-JWT)                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Sign an arbitrary byte string using the named-algorithm registry.
+ *
+ * Used by code paths that need a detached signature over a hash or
+ * canonical document — not a JWT envelope. The provenance hash chain is
+ * the canonical caller: it signs the SHA-256 leaf hash so a 3rd-party
+ * verifier can prove the signature without re-canonicalising the payload.
+ *
+ * @returns { algorithm, signatureB64 } — base64url so it round-trips
+ *   safely through JSON / URL params. Throws on unknown / unimplemented
+ *   algorithms (mirrors signToken behaviour).
+ */
+export function signBytes(
+  message: string | Buffer,
+  opts?: { algorithm?: AlgorithmId },
+): { algorithm: AlgorithmId; signatureB64: string } {
+  const algorithmId = opts?.algorithm ?? CURRENT_SIGN_ALGORITHM;
+
+  if (!(algorithmId in ALGORITHMS)) {
+    throw new Error(`[crypto/sign] Unknown algorithm: ${algorithmId}`);
+  }
+
+  if (algorithmId === "ml-dsa-65-hybrid") {
+    throw new NotImplementedError(
+      "[crypto/sign] ml-dsa-65-hybrid raw signing not yet wired up. PQ slot reserved.",
+    );
+  }
+  if (algorithmId === "rs256" || algorithmId === "es256") {
+    throw new NotImplementedError(
+      `[crypto/sign] ${algorithmId} raw signing requires asymmetric keys not yet provisioned.`,
+    );
+  }
+
+  if (algorithmId !== "hs256") {
+    throw new Error(`[crypto/sign] Unhandled algorithm: ${algorithmId}`);
+  }
+
+  const secret = getHmacSecret();
+  const buf = typeof message === "string" ? Buffer.from(message, "utf8") : message;
+  const hmac = crypto.createHmac("sha256", secret);
+  hmac.update(buf);
+  const sig = hmac.digest();
+  return { algorithm: algorithmId, signatureB64: sig.toString("base64url") };
+}
+
+/**
+ * Verify a raw-bytes signature produced by `signBytes`.
+ *
+ * Timing-safe comparison for symmetric algorithms. Returns `false` for
+ * any algorithm that isn't yet wired up (rs256 / es256 / ml-dsa-*).
+ */
+export function verifyBytes(
+  message: string | Buffer,
+  signatureB64: string,
+  algorithmId: AlgorithmId,
+): boolean {
+  if (!(algorithmId in ALGORITHMS)) return false;
+  if (algorithmId !== "hs256") return false;
+
+  try {
+    const secret = getHmacSecret();
+    const buf = typeof message === "string" ? Buffer.from(message, "utf8") : message;
+    const hmac = crypto.createHmac("sha256", secret);
+    hmac.update(buf);
+    const expected = hmac.digest();
+    const provided = Buffer.from(signatureB64, "base64url");
+    if (expected.length !== provided.length) return false;
+    return crypto.timingSafeEqual(expected, provided);
+  } catch {
+    return false;
+  }
+}

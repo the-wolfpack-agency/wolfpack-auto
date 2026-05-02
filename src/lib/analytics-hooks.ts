@@ -608,6 +608,18 @@ export type NightOwlEvent =
   | "night_owl.time_segment_classified"
   | "night_owl.optimal_outreach_detected";
 
+/**
+ * Cryptographically-signed vehicle history (Carfax-killer) events.
+ * Every provenance write or chain verification fans out one of these.
+ */
+export type ProvenanceEvent =
+  | "provenance.event_recorded"
+  | "provenance.chain_verified"
+  | "provenance.chain_invalid_detected"
+  | "provenance.anchor_created"
+  | "provenance.attestation_recorded"
+  | "provenance.public_verified";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -666,7 +678,8 @@ export type PlatformEvent =
   | PriceSensitivityEvent
   | DecisionVelocityEvent
   | DeviceHandoffEvent
-  | NightOwlEvent;
+  | NightOwlEvent
+  | ProvenanceEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -869,6 +882,20 @@ export function trackSystem(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "system", ...meta });
+}
+
+/**
+ * Track a vehicle-provenance event (signed history ledger).
+ * Powers the Carfax-killer surface — every chain extension, anchor, and
+ * verification flows through here so the learning system can score
+ * dealer integrity over time.
+ */
+export function trackProvenance(
+  event: ProvenanceEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "provenance", ...meta });
 }
 
 /**
