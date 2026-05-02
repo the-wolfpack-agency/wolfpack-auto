@@ -72,15 +72,14 @@ test.describe("heatmap: real clicks populate real data", () => {
           EventCollector starts emitting. The cookie name varies; we
           set both candidates the collector reads. */
     await page.goto("/", { waitUntil: "domcontentloaded" });
+    /* The EventCollector reads `wolfpack_consent` (set by the
+       CookieConsent component) — NOT `wp_consent`. The earlier
+       version of this spec used the wrong cookie name and silently
+       failed to track. */
     await page.context().addCookies([
       {
-        name: "wp_consent",
-        value: "all",
-        url: baseURL ?? "http://localhost:3000",
-      },
-      {
-        name: "cookieyes-consent",
-        value: "consentid:test,consent:yes,action:yes,necessary:yes,functional:yes,analytics:yes,performance:yes,advertisement:yes",
+        name: "wolfpack_consent",
+        value: "accepted",
         url: baseURL ?? "http://localhost:3000",
       },
     ]);

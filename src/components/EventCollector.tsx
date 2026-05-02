@@ -193,6 +193,21 @@ const ESSENTIAL_EVENT_TYPES = new Set(["page_view"]);
 /** Check if analytics consent is granted (cookie or localStorage). */
 function hasAnalyticsConsent(): boolean {
   try {
+    /* Admin context: dealer staff operating their own platform are
+       not "visitors" in the privacy-regulation sense — they're
+       authenticated operators using internal tooling. Their click /
+       scroll / dwell on /admin/* pages is operational analytics, not
+       visitor tracking, so we treat the admin context as consented.
+       This is what unblocks the heatmap from showing the dealer's
+       own activity (per the 2026-05-02 incident: dealer was clicking
+       around their own admin pages and nothing tracked). */
+    if (
+      typeof window !== "undefined" &&
+      typeof window.location !== "undefined" &&
+      window.location.pathname.startsWith("/admin")
+    ) {
+      return true;
+    }
     // Primary: check cookie (set by CookieConsent component)
     if (typeof document !== "undefined") {
       const cookieMatch = document.cookie.match(/(?:^|; )wolfpack_consent=([^;]*)/);

@@ -249,14 +249,14 @@ export default function HeatmapsPage() {
               {noDataReason === "database_unavailable"
                 ? "The analytics database isn't connected yet — set DATABASE_URL in your environment, then visitors' clicks, scrolls, and dwell time will populate this view."
                 : noDataReason === "no_click_events_in_window"
-                  ? "Real visitors haven't clicked on this page in the selected window. Try a longer date range, or share the page URL to drive traffic."
+                  ? `Real visitors haven't clicked on ${page} in the selected window. Two reasons this can happen on a public page: (1) no traffic yet — share the URL or wait for visitors; (2) visitors haven't accepted the analytics cookie banner, which gates click tracking on public pages. Admin pages (/admin/*) auto-track since dealer staff are authenticated operators, not regulated visitors.`
                   : noDataReason === "no_scroll_events_in_window"
-                    ? "No scroll-depth events recorded for this page yet — visitors need to land on it (with full analytics consent enabled) for the bands to populate."
+                    ? `No scroll-depth events on ${page}. Same gating as clicks: public-page tracking requires visitors to accept the analytics cookie banner. /admin/* pages track automatically.`
                     : noDataReason === "no_attention_events_in_window"
-                      ? "No cursor-dwell data for this page yet. Attention zones build up as visitors hover with consent enabled."
+                      ? `No cursor-dwell data on ${page}. Attention zones build up as visitors hover with analytics consent enabled, or instantly when staff browse /admin/*.`
                       : noDataReason === "query_failed"
                         ? "We couldn't load real data — the query failed. Check the server logs."
-                        : "Waiting on real visitor interactions. Heatmaps populate as people use the site."}
+                        : "Waiting on real interactions. Heatmaps populate as people use the site."}
             </p>
           </div>
         )}
