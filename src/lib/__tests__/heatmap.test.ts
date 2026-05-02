@@ -169,18 +169,14 @@ describe("normalizeHeatmapData", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("getTopPages", () => {
-  it("returns demo data when no DATABASE_URL", async () => {
+  /* Updated 2026-05-02: synthetic top-pages were misleading the
+     dealer about real visitor traffic. The function now returns []
+     when DATABASE_URL is absent — the route surfaces that as
+     `noData: true` so the UI can render an honest empty state. */
+  it("returns [] when DATABASE_URL is absent (no synthetic top pages)", async () => {
     delete process.env.DATABASE_URL;
     const pages = await getTopPages("demo-dealer", 5);
-
-    expect(pages.length).toBeLessThanOrEqual(5);
-    expect(pages[0]).toHaveProperty("url");
-    expect(pages[0]).toHaveProperty("pageviews");
-    expect(pages[0]).toHaveProperty("uniqueVisitors");
-    // Should be sorted by pageviews descending
-    for (let i = 1; i < pages.length; i++) {
-      expect(pages[i - 1].pageviews).toBeGreaterThanOrEqual(pages[i].pageviews);
-    }
+    expect(pages).toEqual([]);
   });
 });
 

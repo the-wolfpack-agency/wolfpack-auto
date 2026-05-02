@@ -264,7 +264,9 @@ export function calculateHeatmapDiff(
 
 /**
  * Return top pages ranked by traffic for heatmap page selection.
- * In shadow mode (no DB), returns demo data.
+ * Always returns real data; when DATABASE_URL is missing or the query
+ * yields nothing, returns []. Synthetic top-pages would be misleading
+ * to the dealer — empty is the honest answer.
  */
 export async function getTopPages(
   dealerId: string,
@@ -273,15 +275,7 @@ export async function getTopPages(
   trackHeatmap("heatmap.page_analyzed", dealerId, { limit });
 
   if (!process.env.DATABASE_URL) {
-    return [
-      { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
-      { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
-      { url: "/inventory/2024-ford-f150", pageviews: 3210, uniqueVisitors: 2890 },
-      { url: "/financing", pageviews: 2780, uniqueVisitors: 2100 },
-      { url: "/trade-in", pageviews: 1950, uniqueVisitors: 1620 },
-      { url: "/contact", pageviews: 1340, uniqueVisitors: 1180 },
-      { url: "/about", pageviews: 890, uniqueVisitors: 720 },
-    ].slice(0, limit);
+    return [];
   }
 
   const { query } = await import("@/lib/db");

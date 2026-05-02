@@ -75,6 +75,8 @@ export default function HeatmapsPage() {
   const [attentionZones, setAttentionZones] = useState<AttentionZone[]>([]);
   const [topPages, setTopPages] = useState<TopPage[]>([]);
   const [stats, setStats] = useState<HeatmapStats | null>(null);
+  const [noData, setNoData] = useState(false);
+  const [noDataReason, setNoDataReason] = useState<string | null>(null);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -86,6 +88,8 @@ export default function HeatmapsPage() {
         setAttentionZones(data.attentionZones ?? []);
         setTopPages(data.topPages ?? []);
         setStats(data.stats ?? null);
+        setNoData(Boolean(data.noData));
+        setNoDataReason(data.noDataReason ?? null);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -231,6 +235,31 @@ export default function HeatmapsPage() {
             </button>
           )}
         </div>
+
+        {/* Empty-state banner — surfaces the honest "no real data yet"
+            signal from the API instead of rendering synthetic clusters
+            that would mislead the dealer about visitor behavior. */}
+        {!loading && noData && (
+          <div
+            data-testid="heatmap-no-data-banner"
+            className="border border-amber-200 bg-amber-50 rounded-lg p-4 mb-4 text-sm text-amber-900"
+          >
+            <p className="font-medium">No interactions tracked for this page yet.</p>
+            <p className="mt-1 text-amber-800">
+              {noDataReason === "database_unavailable"
+                ? "The analytics database isn't connected yet — set DATABASE_URL in your environment, then visitors' clicks, scrolls, and dwell time will populate this view."
+                : noDataReason === "no_click_events_in_window"
+                  ? "Real visitors haven't clicked on this page in the selected window. Try a longer date range, or share the page URL to drive traffic."
+                  : noDataReason === "no_scroll_events_in_window"
+                    ? "No scroll-depth events recorded for this page yet — visitors need to land on it (with full analytics consent enabled) for the bands to populate."
+                    : noDataReason === "no_attention_events_in_window"
+                      ? "No cursor-dwell data for this page yet. Attention zones build up as visitors hover with consent enabled."
+                      : noDataReason === "query_failed"
+                        ? "We couldn't load real data — the query failed. Check the server logs."
+                        : "Waiting on real visitor interactions. Heatmaps populate as people use the site."}
+            </p>
+          </div>
+        )}
 
         {/* Content */}
         {loading ? (

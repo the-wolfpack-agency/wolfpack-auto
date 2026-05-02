@@ -1,59 +1,235 @@
+/**
+ * GET /api/admin/heatmaps
+ *
+ * Returns real click / scroll / attention heatmap data aggregated from
+ * `analytics_events`. The endpoint NEVER returns synthetic fallbacks —
+ * if no events exist, it returns the empty contract `{ noData: true,
+ * points: [] | scrollBands: [] | attentionZones: [], topPages: [] }`
+ * so the UI can render an honest "No interactions tracked yet" state.
+ *
+ * Click events:   event_type='click', metadata.x / metadata.y / metadata.text.
+ * Scroll events:  event_type='scroll', action='scroll_25|50|75|90|100', metadata.depth.
+ * Attention:      event_type='cursor_heatmap', action='linger', metadata.x / .y / .duration_ms.
+ *
+ * Top pages: derived from analytics_events page-view counts via
+ * `getTopPages` in src/lib/heatmap.ts.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { getDealerId } from "@/lib/get-dealer-id";
-import type { HeatmapType } from "@/lib/heatmap";
 import { trackHeatmap } from "@/lib/analytics-hooks";
+import {
+  getTopPages,
+  type HeatmapType,
+  type HeatmapPoint,
+  type ScrollBand,
+  type AttentionZone,
+} from "@/lib/heatmap";
 
-/* -------------------------------------------------------------------------- */
-/*  Demo data (shadow mode — no DATABASE_URL)                                  */
-/* -------------------------------------------------------------------------- */
+interface Stats {
+  totalClicks: number;
+  avgScrollDepth: number;
+  hottestElement: string;
+}
 
-const DEMO_CLICK_DATA = [
-  // Navigation area cluster
-  { x: 120, y: 35, count: 342, intensity: 1.0 },
-  { x: 240, y: 35, count: 287, intensity: 0.84 },
-  { x: 360, y: 35, count: 198, intensity: 0.58 },
-  { x: 480, y: 35, count: 156, intensity: 0.46 },
-  // Hero CTA cluster
-  { x: 400, y: 320, count: 524, intensity: 1.0 },
-  { x: 420, y: 340, count: 489, intensity: 0.93 },
-  // Vehicle card clusters
-  { x: 200, y: 580, count: 312, intensity: 0.60 },
-  { x: 400, y: 580, count: 278, intensity: 0.53 },
-  { x: 600, y: 580, count: 245, intensity: 0.47 },
-  // Secondary CTA
-  { x: 400, y: 850, count: 189, intensity: 0.36 },
-  // Footer links
-  { x: 150, y: 1200, count: 67, intensity: 0.13 },
-  { x: 300, y: 1200, count: 45, intensity: 0.09 },
-];
-
-const DEMO_SCROLL_DATA = {
-  scrollBands: [
-    { label: "0-25%", minPercent: 0, maxPercent: 25, visitorCount: 8320, visitorPercent: 100 },
-    { label: "25-50%", minPercent: 25, maxPercent: 50, visitorCount: 7072, visitorPercent: 85 },
-    { label: "50-75%", minPercent: 50, maxPercent: 75, visitorCount: 5410, visitorPercent: 65 },
-    { label: "75-100%", minPercent: 75, maxPercent: 100, visitorCount: 3162, visitorPercent: 38 },
-  ],
-  totalVisitors: 8320,
-  avgScrollDepth: 62,
+const EMPTY_STATS: Stats = {
+  totalClicks: 0,
+  avgScrollDepth: 0,
+  hottestElement: "",
 };
 
-const DEMO_ATTENTION_DATA = {
-  attentionZones: [
-    { y: 0, height: 100, dwellMs: 4200, intensity: 0.58 },
-    { y: 100, height: 200, dwellMs: 7200, intensity: 1.0 },
-    { y: 300, height: 200, dwellMs: 6100, intensity: 0.85 },
-    { y: 500, height: 200, dwellMs: 5800, intensity: 0.81 },
-    { y: 700, height: 200, dwellMs: 3200, intensity: 0.44 },
-    { y: 900, height: 200, dwellMs: 2100, intensity: 0.29 },
-    { y: 1100, height: 200, dwellMs: 1400, intensity: 0.19 },
-  ],
-};
+async function loadClickPoints(
+  page: string,
+  dealerId: string,
+  since: string,
+): Promise<HeatmapPoint[]> {
+  const { query } = await import("@/lib/db");
+  const result = await query(
+    `SELECT metadata->>'x' AS x,
+            metadata->>'y' AS y,
+            COUNT(*)::int AS count
+       FROM analytics_events
+      WHERE event_type = 'click'
+        AND page = $1
+        AND metadata->>'dealer_id' = $2
+        AND timestamp >= $3
+        AND metadata ? 'x' AND metadata ? 'y'
+      GROUP BY metadata->>'x', metadata->>'y'
+      ORDER BY count DESC
+      LIMIT 500`,
+    [page, dealerId, since],
+  );
+  const points = result.rows
+    .map((r: Record<string, unknown>) => ({
+      x: Number(r.x),
+      y: Number(r.y),
+      count: Number(r.count),
+      intensity: 0,
+    }))
+    .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  if (points.length === 0) return [];
+  const maxCount = Math.max(...points.map((p) => p.count), 1);
+  for (const p of points) p.intensity = p.count / maxCount;
+  return points;
+}
 
-/* -------------------------------------------------------------------------- */
-/*  GET /api/admin/heatmaps                                                    */
-/* -------------------------------------------------------------------------- */
+async function loadScrollBands(
+  page: string,
+  dealerId: string,
+  since: string,
+): Promise<{ bands: ScrollBand[]; totalVisitors: number; avgDepth: number }> {
+  const { query } = await import("@/lib/db");
+  /* For each session, take the deepest scroll threshold reached.
+     scroll_100 wins over scroll_75 wins over scroll_50, etc. We
+     extract the integer threshold from the action suffix. */
+  const result = await query(
+    `WITH per_session AS (
+       SELECT session_id,
+              MAX((regexp_replace(action, '^scroll_', ''))::int) AS max_depth
+         FROM analytics_events
+        WHERE event_type = 'scroll'
+          AND page = $1
+          AND metadata->>'dealer_id' = $2
+          AND timestamp >= $3
+          AND action ~ '^scroll_[0-9]+$'
+        GROUP BY session_id
+     )
+     SELECT max_depth, COUNT(*)::int AS sessions
+       FROM per_session
+      GROUP BY max_depth`,
+    [page, dealerId, since],
+  );
+  const totalVisitors = result.rows.reduce(
+    (s: number, r: Record<string, unknown>) => s + Number(r.sessions),
+    0,
+  );
+  if (totalVisitors === 0) {
+    return { bands: [], totalVisitors: 0, avgDepth: 0 };
+  }
+  /* Visitors at-least-this-deep — descending: 75-100 includes only
+     sessions whose max_depth >= 75; 50-75 includes max_depth ∈ [50,75)
+     etc. The "0-25%" band is everyone (every session reached 0). */
+  const buckets = [
+    { label: "0-25%", min: 0, max: 25 },
+    { label: "25-50%", min: 25, max: 50 },
+    { label: "50-75%", min: 50, max: 75 },
+    { label: "75-100%", min: 75, max: 100 },
+  ];
+  const bands = buckets.map((b) => {
+    const count = result.rows
+      .filter(
+        (r: Record<string, unknown>) => Number(r.max_depth) >= b.min,
+      )
+      .reduce(
+        (s: number, r: Record<string, unknown>) => s + Number(r.sessions),
+        0,
+      );
+    return {
+      label: b.label,
+      minPercent: b.min,
+      maxPercent: b.max,
+      visitorCount: count,
+      visitorPercent: Math.round((count / totalVisitors) * 100),
+    };
+  });
+  const totalDepth = result.rows.reduce(
+    (s: number, r: Record<string, unknown>) =>
+      s + Number(r.max_depth) * Number(r.sessions),
+    0,
+  );
+  const avgDepth = Math.round(totalDepth / totalVisitors);
+  return { bands, totalVisitors, avgDepth };
+}
+
+async function loadAttentionZones(
+  page: string,
+  dealerId: string,
+  since: string,
+): Promise<AttentionZone[]> {
+  const { query } = await import("@/lib/db");
+  /* Bin cursor_heatmap linger events by 100px y-bands. Sum dwell
+     duration per band, then normalize by the hottest band so the UI
+     gets 0..1 intensity it can render. */
+  const result = await query(
+    `SELECT (FLOOR((metadata->>'y')::numeric / 100) * 100)::int AS y_band,
+            SUM(COALESCE((metadata->>'duration_ms')::int, 0))::int AS dwell_ms
+       FROM analytics_events
+      WHERE event_type = 'cursor_heatmap'
+        AND action IN ('linger', 'position')
+        AND page = $1
+        AND metadata->>'dealer_id' = $2
+        AND timestamp >= $3
+        AND metadata ? 'y'
+      GROUP BY y_band
+      ORDER BY y_band ASC
+      LIMIT 50`,
+    [page, dealerId, since],
+  );
+  const rows = result.rows.map((r: Record<string, unknown>) => ({
+    y: Number(r.y_band),
+    height: 100,
+    dwellMs: Number(r.dwell_ms) || 0,
+  }));
+  if (rows.length === 0) return [];
+  const maxDwell = Math.max(...rows.map((r) => r.dwellMs), 1);
+  return rows.map((r) => ({
+    ...r,
+    intensity: r.dwellMs / maxDwell,
+  }));
+}
+
+async function loadStats(
+  page: string,
+  dealerId: string,
+  since: string,
+): Promise<Stats> {
+  const { query } = await import("@/lib/db");
+  const [clicksRow, scrollRow, hottestRow] = await Promise.all([
+    query(
+      `SELECT COUNT(*)::int AS total
+         FROM analytics_events
+        WHERE event_type = 'click'
+          AND page = $1
+          AND metadata->>'dealer_id' = $2
+          AND timestamp >= $3`,
+      [page, dealerId, since],
+    ),
+    query(
+      `SELECT AVG(d)::numeric AS avg_depth
+         FROM (
+           SELECT MAX((regexp_replace(action, '^scroll_', ''))::int) AS d
+             FROM analytics_events
+            WHERE event_type = 'scroll'
+              AND page = $1
+              AND metadata->>'dealer_id' = $2
+              AND timestamp >= $3
+              AND action ~ '^scroll_[0-9]+$'
+            GROUP BY session_id
+         ) sub`,
+      [page, dealerId, since],
+    ),
+    query(
+      `SELECT COALESCE(metadata->>'text', metadata->>'tag', 'unknown') AS label,
+              COUNT(*)::int AS clicks
+         FROM analytics_events
+        WHERE event_type = 'click'
+          AND page = $1
+          AND metadata->>'dealer_id' = $2
+          AND timestamp >= $3
+        GROUP BY label
+        ORDER BY clicks DESC
+        LIMIT 1`,
+      [page, dealerId, since],
+    ),
+  ]);
+  const totalClicks = Number(clicksRow.rows[0]?.total ?? 0);
+  const avgScrollDepth = Math.round(
+    Number(scrollRow.rows[0]?.avg_depth ?? 0),
+  );
+  const hottestElement = String(hottestRow.rows[0]?.label ?? "");
+  return { totalClicks, avgScrollDepth, hottestElement };
+}
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -63,177 +239,130 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const page = searchParams.get("page") ?? "/";
   const type = (searchParams.get("type") ?? "click") as HeatmapType;
-  const days = parseInt(searchParams.get("days") ?? "7", 10);
-  const isCompare = searchParams.get("compare") === "true";
-  const compareDays = parseInt(searchParams.get("compareDays") ?? "7", 10);
+  const daysRaw = parseInt(searchParams.get("days") ?? "7", 10);
+  const days = Number.isFinite(daysRaw) && daysRaw > 0 ? daysRaw : 7;
+  const since = new Date(Date.now() - days * 86400000).toISOString();
 
-  // Shadow mode — return demo data
+  /* DATABASE_URL absent → tell the UI honestly. No synthetic data. */
   if (!process.env.DATABASE_URL) {
-    trackHeatmap("heatmap.viewed", dealerId, { page, type, days, shadow: true });
+    trackHeatmap("heatmap.viewed", dealerId, {
+      page,
+      type,
+      days,
+      no_database: true,
+    });
+    return NextResponse.json({
+      type,
+      pageUrl: page,
+      totalEvents: 0,
+      dateRange: { start: since, end: new Date().toISOString() },
+      points: [],
+      scrollBands: [],
+      attentionZones: [],
+      stats: EMPTY_STATS,
+      topPages: [],
+      noData: true,
+      noDataReason: "database_unavailable",
+    });
+  }
+
+  try {
+    const [topPages, stats] = await Promise.all([
+      getTopPages(dealerId, 7),
+      loadStats(page, dealerId, since),
+    ]);
+
     if (type === "click") {
-      const response: Record<string, unknown> = {
+      const points = await loadClickPoints(page, dealerId, since);
+      const totalEvents = points.reduce((s, p) => s + p.count, 0);
+      trackHeatmap("heatmap.viewed", dealerId, {
+        page,
+        type,
+        days,
+        point_count: points.length,
+      });
+      return NextResponse.json({
         type: "click",
         pageUrl: page,
-        totalEvents: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
-        dateRange: {
-          start: new Date(Date.now() - days * 86400000).toISOString(),
-          end: new Date().toISOString(),
-        },
-        points: DEMO_CLICK_DATA,
-        stats: {
-          totalClicks: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
-          avgScrollDepth: 62,
-          hottestElement: "Hero CTA Button",
-        },
-        topPages: [
-          { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
-          { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
-          { url: "/inventory/2024-ford-f150", pageviews: 3210, uniqueVisitors: 2890 },
-          { url: "/financing", pageviews: 2780, uniqueVisitors: 2100 },
-          { url: "/trade-in", pageviews: 1950, uniqueVisitors: 1620 },
-        ],
-      };
-
-      // Side-by-side comparison mode
-      if (isCompare) {
-        const compareData = DEMO_CLICK_DATA.map((p) => ({
-          ...p,
-          count: Math.round(p.count * (0.7 + Math.random() * 0.6)),
-          intensity: Math.min(1, p.intensity * (0.7 + Math.random() * 0.6)),
-        }));
-        response.points = compareData;
-        response.diff = {
-          increased: DEMO_CLICK_DATA.filter((_, i) => i % 2 === 0).map((p) => ({
-            x: p.x, y: p.y, count: Math.round(p.count * 0.2), intensity: 0.6,
-          })),
-          decreased: DEMO_CLICK_DATA.filter((_, i) => i % 2 === 1).map((p) => ({
-            x: p.x, y: p.y, count: Math.round(p.count * 0.15), intensity: 0.4,
-          })),
-          netChangePercent: 12,
-        };
-      }
-
-      return NextResponse.json(response);
+        totalEvents,
+        dateRange: { start: since, end: new Date().toISOString() },
+        points,
+        stats,
+        topPages,
+        noData: points.length === 0,
+        ...(points.length === 0
+          ? { noDataReason: "no_click_events_in_window" }
+          : {}),
+      });
     }
 
     if (type === "scroll") {
+      const { bands, totalVisitors, avgDepth } = await loadScrollBands(
+        page,
+        dealerId,
+        since,
+      );
+      trackHeatmap("heatmap.viewed", dealerId, {
+        page,
+        type,
+        days,
+        visitor_count: totalVisitors,
+      });
       return NextResponse.json({
         type: "scroll",
         pageUrl: page,
-        totalEvents: DEMO_SCROLL_DATA.totalVisitors,
-        dateRange: {
-          start: new Date(Date.now() - days * 86400000).toISOString(),
-          end: new Date().toISOString(),
-        },
-        scrollBands: DEMO_SCROLL_DATA.scrollBands,
-        stats: {
-          totalClicks: 2832,
-          avgScrollDepth: DEMO_SCROLL_DATA.avgScrollDepth,
-          hottestElement: "Vehicle Cards Section",
-        },
-        topPages: [
-          { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
-          { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
-        ],
+        totalEvents: totalVisitors,
+        dateRange: { start: since, end: new Date().toISOString() },
+        scrollBands: bands,
+        stats: { ...stats, avgScrollDepth: avgDepth },
+        topPages,
+        noData: totalVisitors === 0,
+        ...(totalVisitors === 0
+          ? { noDataReason: "no_scroll_events_in_window" }
+          : {}),
       });
     }
 
-    // attention
+    /* attention */
+    const zones = await loadAttentionZones(page, dealerId, since);
+    const totalEvents = zones.reduce((s, z) => s + z.dwellMs, 0);
+    trackHeatmap("heatmap.viewed", dealerId, {
+      page,
+      type,
+      days,
+      zone_count: zones.length,
+    });
     return NextResponse.json({
       type: "attention",
       pageUrl: page,
-      totalEvents: 8320,
-      dateRange: {
-        start: new Date(Date.now() - days * 86400000).toISOString(),
-        end: new Date().toISOString(),
-      },
-      attentionZones: DEMO_ATTENTION_DATA.attentionZones,
-      stats: {
-        totalClicks: 2832,
-        avgScrollDepth: 62,
-        hottestElement: "Hero Section (100-300px)",
-      },
-      topPages: [
-        { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
-        { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
-      ],
+      totalEvents,
+      dateRange: { start: since, end: new Date().toISOString() },
+      attentionZones: zones,
+      stats,
+      topPages,
+      noData: zones.length === 0,
+      ...(zones.length === 0
+        ? { noDataReason: "no_attention_events_in_window" }
+        : {}),
     });
-  }
-
-  // Production — query from analytics_events
-  const { query } = await import("@/lib/db");
-  const since = new Date(Date.now() - days * 86400000).toISOString();
-
-  if (type === "click") {
-    const result = await query(
-      `SELECT metadata->>'x' AS x, metadata->>'y' AS y, COUNT(*) AS count
-       FROM analytics_events
-       WHERE action = 'click'
-         AND page = $1
-         AND metadata->>'dealer_id' = $2
-         AND timestamp >= $3
-       GROUP BY metadata->>'x', metadata->>'y'
-       ORDER BY count DESC
-       LIMIT 500`,
-      [page, dealerId, since],
-    );
-
-    const points = result.rows.map((r: Record<string, unknown>) => ({
-      x: Number(r.x),
-      y: Number(r.y),
-      count: Number(r.count),
-      intensity: 0, // will be normalized client-side
-    }));
-
-    const maxCount = Math.max(...points.map((p: { count: number }) => p.count), 1);
-    for (const p of points) {
-      p.intensity = p.count / maxCount;
-    }
-
-    if (points.length > 0) {
-      trackHeatmap("heatmap.viewed", dealerId, { page, type, days, point_count: points.length });
-      return NextResponse.json({
-        type: "click",
+  } catch (err) {
+    /* Bubble a real error rather than masking with demo data. */
+    return NextResponse.json(
+      {
+        type,
         pageUrl: page,
-        totalEvents: points.reduce((s: number, p: { count: number }) => s + p.count, 0),
+        totalEvents: 0,
         dateRange: { start: since, end: new Date().toISOString() },
-        points,
-      });
-    }
-    // Fall through to demo data below
+        points: [],
+        scrollBands: [],
+        attentionZones: [],
+        stats: EMPTY_STATS,
+        topPages: [],
+        noData: true,
+        noDataReason: "query_failed",
+        error: (err as Error).message,
+      },
+      { status: 500 },
+    );
   }
-
-  // No real data yet — return demo data for the requested type
-  const demoTopPages = [
-    { url: "/", pageviews: 12450, uniqueVisitors: 8320 },
-    { url: "/inventory", pageviews: 9870, uniqueVisitors: 6540 },
-    { url: "/inventory/2024-ford-f150", pageviews: 3210, uniqueVisitors: 2890 },
-    { url: "/financing", pageviews: 2780, uniqueVisitors: 2100 },
-    { url: "/trade-in", pageviews: 1950, uniqueVisitors: 1620 },
-  ];
-  const demoStats = { totalClicks: 2832, avgScrollDepth: 62, hottestElement: "Hero CTA Button" };
-  const demoRange = { start: since, end: new Date().toISOString() };
-
-  trackHeatmap("heatmap.viewed", dealerId, { page, type, days, demo_fallback: true });
-
-  if (type === "scroll") {
-    return NextResponse.json({
-      type, pageUrl: page, totalEvents: DEMO_SCROLL_DATA.totalVisitors,
-      dateRange: demoRange, scrollBands: DEMO_SCROLL_DATA.scrollBands,
-      stats: demoStats, topPages: demoTopPages, demo: true,
-    });
-  }
-  if (type === "attention") {
-    return NextResponse.json({
-      type, pageUrl: page, totalEvents: 8320,
-      dateRange: demoRange, attentionZones: DEMO_ATTENTION_DATA.attentionZones,
-      stats: demoStats, topPages: demoTopPages, demo: true,
-    });
-  }
-  return NextResponse.json({
-    type, pageUrl: page,
-    totalEvents: DEMO_CLICK_DATA.reduce((s, p) => s + p.count, 0),
-    dateRange: demoRange, points: DEMO_CLICK_DATA,
-    stats: demoStats, topPages: demoTopPages, demo: true,
-  });
 }

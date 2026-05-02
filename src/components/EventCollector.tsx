@@ -641,9 +641,17 @@ export default function EventCollector({
       const clickable = target.closest("a, button, [data-track]");
       const el = clickable ?? target;
 
+      /* x/y are page-relative (pageX includes scrollX) so the
+         heatmap renders correctly even if a visitor clicks something
+         deep in the page. viewport_w lets the aggregator normalize
+         across screen sizes. */
       const metadata: Record<string, unknown> = {
         tag: el.tagName.toLowerCase(),
         text: (el.textContent ?? "").trim().slice(0, 100),
+        x: Math.round(e.pageX),
+        y: Math.round(e.pageY),
+        viewport_w: window.innerWidth,
+        viewport_h: window.innerHeight,
       };
 
       // Capture href for links
