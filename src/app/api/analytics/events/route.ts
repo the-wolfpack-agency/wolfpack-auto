@@ -181,8 +181,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /* Resolve the dealer from the request hostname and stamp it onto
+       every event before ingest. Without this, the heatmap and every
+       other dealer-scoped query (which filters
+       `WHERE metadata->>'dealer_id' = $1`) would return zero rows
+       even though events were being written — exactly the regression
+       observed on /admin/heatmaps on 2026-05-02. */
+    const hostname =
+      request.headers.get("host") ?? new URL(request.url).hostname;
+    let resolvedDealerId: string | null = null;
+    try {
+      const { resolveTenant } = await import("@/lib/tenant-resolver");
+      const tenant = await resolveTenant(hostname);
+      if (tenant?.dealer?.id) resolvedDealerId = tenant.dealer.id;
+    } catch {
+      /* Tenant resolver unavailable — fall back to per-event metadata
+         the client may have already provided. */
+    }
+
     // Cap batch size
-    const capped = events.slice(0, 50);
+    const capped = events.slice(0, 50).map((e) => {
+      const meta: Record<string, unknown> = { ...(e.metadata ?? {}) };
+      if (!meta.dealer_id && resolvedDealerId) {
+        meta.dealer_id = resolvedDealerId;
+      }
+      return { ...e, metadata: meta };
+    });
 
     // Ingest into in-memory buffer
     const result = ingestEvents(capped);

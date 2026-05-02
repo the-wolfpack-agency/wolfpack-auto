@@ -279,14 +279,21 @@ export async function getTopPages(
   }
 
   const { query } = await import("@/lib/db");
+  /* Only return rows whose `page` column looks like a real URL path —
+     events with bare UUIDs / dealer-ids in the page column (a legacy
+     ingest bug) would otherwise pollute the dropdown. */
   const result = await query(
-    `SELECT page AS url, COUNT(*) AS pageviews, COUNT(DISTINCT user_fingerprint) AS "uniqueVisitors"
-     FROM analytics_events
-     WHERE metadata->>'dealer_id' = $1
-       AND timestamp > NOW() - INTERVAL '30 days'
-     GROUP BY page
-     ORDER BY pageviews DESC
-     LIMIT $2`,
+    `SELECT page AS url,
+            COUNT(*) AS pageviews,
+            COUNT(DISTINCT user_fingerprint) AS "uniqueVisitors"
+       FROM analytics_events
+      WHERE metadata->>'dealer_id' = $1
+        AND timestamp > NOW() - INTERVAL '30 days'
+        AND page LIKE '/%'
+        AND page !~ '^/[0-9a-f]{8}-[0-9a-f]{4}-'
+      GROUP BY page
+      ORDER BY pageviews DESC
+      LIMIT $2`,
     [dealerId, limit],
   );
 
