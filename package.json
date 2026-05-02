@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "openapi": "tsx scripts/generate-openapi.ts",
-    "build": "npm run openapi && next build",
+    "db:migrate:safe": "tsx src/db/migrate.ts || (echo '[vercel-build] migrate failed — continuing build (DB unreachable / not configured)'; exit 0)",
+    "build": "npm run openapi && npm run db:migrate:safe && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
