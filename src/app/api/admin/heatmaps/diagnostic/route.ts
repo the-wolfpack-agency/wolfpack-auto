@@ -45,7 +45,16 @@ export async function GET(request: NextRequest) {
   const { query } = await import("@/lib/db");
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-  const [dealerIds, pages, totalCount, dealerCount] = await Promise.all([
+  const targetPage = new URL(request.url).searchParams.get("page") ?? "/";
+
+  const [
+    dealerIds,
+    pages,
+    totalCount,
+    dealerCount,
+    pageBreakdown,
+    pageDealers,
+  ] = await Promise.all([
     query(
       `SELECT metadata->>'dealer_id' AS dealer_id, COUNT(*)::int AS rows
          FROM analytics_events
@@ -77,10 +86,34 @@ export async function GET(request: NextRequest) {
           AND metadata->>'dealer_id' = $2`,
       [since, resolvedDealerId],
     ),
+    /* Event-type breakdown for the target page (regardless of dealer)
+       — shows WHICH event types are being recorded for /. If only
+       page_view shows up, we know consent isn't granting through to
+       click/scroll/cursor. */
+    query(
+      `SELECT event_type, COUNT(*)::int AS rows
+         FROM analytics_events
+        WHERE timestamp >= $1 AND page = $2
+        GROUP BY event_type
+        ORDER BY rows DESC`,
+      [since, targetPage],
+    ),
+    /* Distinct dealer_ids for events on this specific page. Tells us
+       whether the events on / are stamped with the dealer the
+       heatmap query expects. */
+    query(
+      `SELECT metadata->>'dealer_id' AS dealer_id, COUNT(*)::int AS rows
+         FROM analytics_events
+        WHERE timestamp >= $1 AND page = $2
+        GROUP BY metadata->>'dealer_id'
+        ORDER BY rows DESC`,
+      [since, targetPage],
+    ),
   ]);
 
   return NextResponse.json({
     hostname,
+    target_page: targetPage,
     resolved_dealer_id: resolvedDealerId,
     env_dealer_id: process.env.DEALER_ID ?? null,
     auth_user_dealer_id:
@@ -90,5 +123,7 @@ export async function GET(request: NextRequest) {
     row_count_for_resolved_dealer: Number(dealerCount.rows[0]?.rows ?? 0),
     dealer_ids_in_db: dealerIds.rows,
     pages_in_db: pages.rows,
+    target_page_event_types: pageBreakdown.rows,
+    target_page_dealer_ids: pageDealers.rows,
   });
 }
