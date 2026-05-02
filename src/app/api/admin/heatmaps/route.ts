@@ -39,6 +39,15 @@ const EMPTY_STATS: Stats = {
   hottestElement: "",
 };
 
+/* When the resolved dealer is the canonical default, also include
+   pre-fix events whose dealer_id is null. Multi-dealer deployments
+   keep strict isolation — only the canonical dealer "absorbs"
+   orphan events. */
+const CANONICAL_DEALER_ID = "00000000-0000-4000-a000-000000000001";
+function dealerFilterClause(paramIdx: number): string {
+  return `(metadata->>'dealer_id' = $${paramIdx} OR (metadata->>'dealer_id' IS NULL AND $${paramIdx} = '${CANONICAL_DEALER_ID}'))`;
+}
+
 async function loadClickPoints(
   page: string,
   dealerId: string,
@@ -52,7 +61,7 @@ async function loadClickPoints(
        FROM analytics_events
       WHERE event_type = 'click'
         AND page = $1
-        AND metadata->>'dealer_id' = $2
+        AND ${dealerFilterClause(2)}
         AND timestamp >= $3
         AND metadata ? 'x' AND metadata ? 'y'
       GROUP BY metadata->>'x', metadata->>'y'
@@ -90,7 +99,7 @@ async function loadScrollBands(
          FROM analytics_events
         WHERE event_type = 'scroll'
           AND page = $1
-          AND metadata->>'dealer_id' = $2
+          AND ${dealerFilterClause(2)}
           AND timestamp >= $3
           AND action ~ '^scroll_[0-9]+$'
         GROUP BY session_id
@@ -158,7 +167,7 @@ async function loadAttentionZones(
       WHERE event_type = 'cursor_heatmap'
         AND action IN ('linger', 'position')
         AND page = $1
-        AND metadata->>'dealer_id' = $2
+        AND ${dealerFilterClause(2)}
         AND timestamp >= $3
         AND metadata ? 'y'
       GROUP BY y_band
@@ -191,7 +200,7 @@ async function loadStats(
          FROM analytics_events
         WHERE event_type = 'click'
           AND page = $1
-          AND metadata->>'dealer_id' = $2
+          AND ${dealerFilterClause(2)}
           AND timestamp >= $3`,
       [page, dealerId, since],
     ),
@@ -202,7 +211,7 @@ async function loadStats(
              FROM analytics_events
             WHERE event_type = 'scroll'
               AND page = $1
-              AND metadata->>'dealer_id' = $2
+              AND ${dealerFilterClause(2)}
               AND timestamp >= $3
               AND action ~ '^scroll_[0-9]+$'
             GROUP BY session_id
@@ -215,7 +224,7 @@ async function loadStats(
          FROM analytics_events
         WHERE event_type = 'click'
           AND page = $1
-          AND metadata->>'dealer_id' = $2
+          AND ${dealerFilterClause(2)}
           AND timestamp >= $3
         GROUP BY label
         ORDER BY clicks DESC
