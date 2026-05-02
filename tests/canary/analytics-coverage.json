@@ -1,7 +1,40 @@
 {
-  "scanned_at": "2026-05-02T20:04:22.252494+00:00",
-  "page_count": 112,
+  "scanned_at": "2026-05-02T20:06:26.798972+00:00",
+  "page_count": 128,
   "pages": [
+    {
+      "route": "/",
+      "file": "src/app/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 9,
+      "buttons": 1,
+      "links": 6,
+      "forms": 1,
+      "inputs": 2,
+      "data_tracks": []
+    },
+    {
+      "route": "/about",
+      "file": "src/app/about/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 2,
+      "buttons": 0,
+      "links": 2,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/accessibility",
+      "file": "src/app/accessibility/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 3,
+      "buttons": 0,
+      "links": 3,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
     {
       "route": "/admin",
       "file": "src/app/admin/page.tsx",
@@ -1235,6 +1268,153 @@
       "links": 0,
       "forms": 0,
       "inputs": 4,
+      "data_tracks": []
+    },
+    {
+      "route": "/contact",
+      "file": "src/app/contact/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 2,
+      "buttons": 0,
+      "links": 2,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/dealers/mile-high-motors",
+      "file": "src/app/dealers/mile-high-motors/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 5,
+      "buttons": 0,
+      "links": 5,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": [
+        "featured-vehicle"
+      ]
+    },
+    {
+      "route": "/dealers/summit-auto",
+      "file": "src/app/dealers/summit-auto/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 5,
+      "buttons": 0,
+      "links": 5,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": [
+        "featured-vehicle"
+      ]
+    },
+    {
+      "route": "/financing",
+      "file": "src/app/financing/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 9,
+      "buttons": 2,
+      "links": 3,
+      "forms": 0,
+      "inputs": 4,
+      "data_tracks": []
+    },
+    {
+      "route": "/help",
+      "file": "src/app/help/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 6,
+      "buttons": 1,
+      "links": 4,
+      "forms": 1,
+      "inputs": 1,
+      "data_tracks": []
+    },
+    {
+      "route": "/inventory",
+      "file": "src/app/inventory/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 5,
+      "buttons": 3,
+      "links": 2,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/inventory/compare",
+      "file": "src/app/inventory/compare/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 5,
+      "buttons": 0,
+      "links": 5,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/privacy",
+      "file": "src/app/privacy/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 4,
+      "buttons": 0,
+      "links": 4,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/security-posture",
+      "file": "src/app/security-posture/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 1,
+      "buttons": 0,
+      "links": 1,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/service-booking",
+      "file": "src/app/service-booking/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 19,
+      "buttons": 11,
+      "links": 0,
+      "forms": 0,
+      "inputs": 8,
+      "data_tracks": []
+    },
+    {
+      "route": "/terms",
+      "file": "src/app/terms/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 1,
+      "buttons": 0,
+      "links": 1,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/trade-in",
+      "file": "src/app/trade-in/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 0,
+      "buttons": 0,
+      "links": 0,
+      "forms": 0,
+      "inputs": 0,
+      "data_tracks": []
+    },
+    {
+      "route": "/walkaround",
+      "file": "src/app/walkaround/page.tsx",
+      "is_dynamic": false,
+      "interactive_count": 2,
+      "buttons": 1,
+      "links": 0,
+      "forms": 1,
+      "inputs": 1,
       "data_tracks": []
     }
   ]

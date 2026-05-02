@@ -50,14 +50,47 @@ const MANIFEST = JSON.parse(
 const LIMIT = parseInt(process.env.COVERAGE_LIMIT ?? "12", 10);
 const FILTER = process.env.COVERAGE_FILTER ?? "";
 
+const SCOPE = (process.env.COVERAGE_SCOPE ?? "all") as
+  | "all"
+  | "admin"
+  | "public";
+
+function inScope(route: string): boolean {
+  if (SCOPE === "admin") return route.startsWith("/admin");
+  if (SCOPE === "public") return !route.startsWith("/admin");
+  return true;
+}
+
 const ELIGIBLE = MANIFEST.pages
   .filter((p) => !p.is_dynamic)
   .filter((p) => p.interactive_count >= 1)
+  .filter((p) => inScope(p.route))
   .filter((p) => (FILTER ? new RegExp(FILTER).test(p.route) : true))
   /* Sort by interactive count descending — exercise busier pages
      first so we hit the highest-value coverage in a small budget. */
   .sort((a, b) => b.interactive_count - a.interactive_count)
   .slice(0, LIMIT);
+
+/* Public pages need the cookie banner accepted before tracking
+   fires. Admin pages auto-consent (per the EventCollector rule).
+   Sets BEFORE the first navigation so the EventCollector reads
+   the right consent on mount. */
+async function ensureConsent(
+  context: Awaited<ReturnType<typeof pwRequest.newContext>> | unknown,
+  baseURL: string,
+  route: string,
+) {
+  if (route.startsWith("/admin")) return; // auto-consent
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const ctx: any = context;
+  await ctx.addCookies([
+    {
+      name: "wolfpack_consent",
+      value: "accepted",
+      url: baseURL,
+    },
+  ]);
+}
 
 test.describe.configure({ mode: "serial" });
 
@@ -80,6 +113,13 @@ for (const entry of ELIGIBLE) {
       )
     ).json();
     const beforeCount: number = before.totalEvents ?? 0;
+
+    /* Public pages: pre-stamp the consent cookie. Admin pages skip. */
+    await ensureConsent(
+      page.context(),
+      baseURL ?? "https://wolfpack-auto.vercel.app",
+      entry.route,
+    );
 
     const navResp = await page.goto(entry.route, {
       waitUntil: "domcontentloaded",
