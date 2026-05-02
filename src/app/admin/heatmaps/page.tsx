@@ -69,6 +69,7 @@ export default function HeatmapsPage() {
   const [type, setType] = useState<HeatmapType>("click");
   const [days, setDays] = useState(7);
   const [page, setPage] = useState("/");
+  const [pageAutoSelected, setPageAutoSelected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [points, setPoints] = useState<HeatmapPoint[]>([]);
   const [scrollBands, setScrollBands] = useState<ScrollBand[]>([]);
@@ -90,10 +91,24 @@ export default function HeatmapsPage() {
         setStats(data.stats ?? null);
         setNoData(Boolean(data.noData));
         setNoDataReason(data.noDataReason ?? null);
+
+        /* Auto-pick the highest-traffic page on first load if the
+           default ("/") has no data but other pages do. Without
+           this, every dealer landed on a "0 clicks" view because
+           "/" is rarely the busiest URL on a real site. We do this
+           ONCE per session — if the user manually picks a page,
+           we never override their choice. */
+        if (!pageAutoSelected && data.noData && Array.isArray(data.topPages) && data.topPages.length > 0) {
+          const best = data.topPages[0]?.url;
+          if (best && best !== page) {
+            setPage(best);
+            setPageAutoSelected(true);
+          }
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [page, type, days]);
+  }, [page, type, days, pageAutoSelected]);
 
   useEffect(() => {
     fetchData();
