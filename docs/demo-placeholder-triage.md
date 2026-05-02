@@ -1,4 +1,4 @@
-# scan_demo_placeholders — 540 files scanned, 391 findings
+# scan_demo_placeholders — 541 files scanned, 391 findings
 
 ## Severity: high=391 medium=0 low=0
 
@@ -724,7 +724,7 @@
            if (!process.env.DATABASE_URL) {
 
 ### src/app/api/vehicle-provenance/[vin]/verify/route.ts  (1 finding)
-  [  high] L54    shadow_mode_branch_no_db
+  [  high] L55    shadow_mode_branch_no_db
            if (!process.env.DATABASE_URL) {
 
 ### src/app/api/surveys/respond/route.ts  (1 finding)
@@ -972,7 +972,7 @@
            if (!process.env.DATABASE_URL) {
 
 ### src/app/api/admin/vehicle-provenance/[vin]/route.ts  (1 finding)
-  [  high] L27    shadow_mode_branch_no_db
+  [  high] L28    shadow_mode_branch_no_db
            if (!process.env.DATABASE_URL) {
 
 ### src/app/api/admin/vehicle-provenance/anchor/route.ts  (1 finding)

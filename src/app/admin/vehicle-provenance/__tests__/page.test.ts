@@ -25,8 +25,12 @@ describe("admin/vehicle-provenance — exported helpers", () => {
   // helpers are colocated and pure.
   // We do this via a dynamic require so the module's top-level "use client"
   // directive is harmless in node.
+  /* Helpers moved out of page.tsx into a sibling helpers.ts module —
+     Next 15 only allows `default` and reserved metadata exports on
+     page modules, so the named exports were breaking
+     `next build`. The behavior under test is unchanged. */
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require("../page");
+  const mod = require("../helpers");
   const shortHash = mod.shortHash as (h: string | null) => string;
   const formatDate = mod.formatDate as (iso: string) => string;
 

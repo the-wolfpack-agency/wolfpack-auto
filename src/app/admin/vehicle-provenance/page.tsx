@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { shortHash, formatDate } from "./helpers";
 
 /* -------------------------------------------------------------------------- */
 /* Types — kept thin; mirrors the API shape in src/lib/vehicle-provenance.ts  */
@@ -70,23 +71,6 @@ const EVENT_TYPE_BADGE: Record<ProvenanceEventType, string> = {
   recall: "bg-amber-50 text-amber-700 ring-amber-600/20",
   inspection: "bg-purple-50 text-purple-700 ring-purple-600/20",
 };
-
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
-
-export function shortHash(hex: string | null | undefined): string {
-  if (!hex) return "—";
-  return `${hex.slice(0, 8)}…${hex.slice(-6)}`;
-}
-
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 
 /* -------------------------------------------------------------------------- */
 /* Page                                                                       */

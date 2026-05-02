@@ -20,6 +20,14 @@ Patterns (each codified — no AI grep):
     7. JSX with hardcoded numeric stats not derived from a fetch result
        (`<div>2,832</div>` etc) — narrow heuristic, low-signal so kept
        last.
+    8. Illegal named exports on Next.js page modules. Pages may only
+       export `default`, `metadata`, `generateMetadata`, `viewport`,
+       `generateViewport`, `generateStaticParams`, `dynamic`,
+       `dynamicParams`, `revalidate`, `fetchCache`, `runtime`,
+       `preferredRegion`, `maxDuration`, `experimental_ppr`. Any
+       other `export <name>` on a `page.tsx` / `page.ts` breaks the
+       prod build with "X is not a valid Page export field." Caught
+       once in prod (vehicle-provenance/page.tsx, 2026-05-02).
 
 Usage:
     python3 scripts/scan_demo_placeholders.py
@@ -118,6 +126,30 @@ RE_HARDCODED_SHADOW_RETURN = re.compile(
     re.IGNORECASE,
 )
 
+# Page-module export rule — Next 15 / App Router rejects any export
+# from a page module other than these reserved names.
+RESERVED_PAGE_EXPORTS = frozenset({
+    "default",
+    "metadata",
+    "generateMetadata",
+    "viewport",
+    "generateViewport",
+    "generateStaticParams",
+    "dynamic",
+    "dynamicParams",
+    "revalidate",
+    "fetchCache",
+    "runtime",
+    "preferredRegion",
+    "maxDuration",
+    "experimental_ppr",
+})
+
+RE_NAMED_EXPORT = re.compile(
+    r"^\s*export\s+(?:async\s+)?(?:function|const|let|var|class|type|interface|enum)\s+([A-Za-z_][A-Za-z0-9_]*)"
+)
+RE_DEFAULT_EXPORT = re.compile(r"^\s*export\s+default\b")
+
 
 def classify_file_role(path: Path) -> str:
     p = str(path)
@@ -130,6 +162,11 @@ def classify_file_role(path: Path) -> str:
     return "other"
 
 
+def is_page_module(path: Path) -> bool:
+    name = path.name
+    return name in {"page.tsx", "page.ts", "page.jsx", "page.js"}
+
+
 def scan_file(path: Path) -> list[Finding]:
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
@@ -138,6 +175,7 @@ def scan_file(path: Path) -> list[Finding]:
     role = classify_file_role(path)
     rel = str(path.relative_to(ROOT))
     findings: list[Finding] = []
+    page_module = is_page_module(path)
     in_shadow_branch = False
     shadow_branch_depth = 0
     brace_depth_at_branch = 0
@@ -203,6 +241,14 @@ def scan_file(path: Path) -> list[Finding]:
                 Finding(rel, i, "low", "comment_admits_demo",
                         line.strip()[:160])
             )
+
+        if page_module:
+            ne = RE_NAMED_EXPORT.match(line)
+            if ne and ne.group(1) not in RESERVED_PAGE_EXPORTS:
+                findings.append(
+                    Finding(rel, i, "high", "illegal_page_named_export",
+                            line.strip()[:160])
+                )
 
     return findings
 
