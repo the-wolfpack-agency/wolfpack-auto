@@ -297,8 +297,21 @@ export default function EventCollector({
   /** Cookie consent level: "all" = full tracking, "essential" = page views only, "" = not yet set (treat as essential) */
   const consentLevel = useRef<string>("");
 
-  /** Returns true if the user has consented to full (non-essential) tracking. */
+  /** Returns true if the user has consented to full (non-essential) tracking.
+   *
+   *  Admin context exception (regression 2026-05-02): paths under
+   *  /admin/* are dealer staff using internal tooling, not regulated
+   *  visitors. They auto-consent so the dealer's own clicks track on
+   *  the heatmap without needing the cookie banner. Public pages
+   *  still gate on the explicit "all" consent. */
   function hasFullConsent(): boolean {
+    if (
+      typeof window !== "undefined" &&
+      typeof window.location !== "undefined" &&
+      window.location.pathname.startsWith("/admin")
+    ) {
+      return true;
+    }
     return consentLevel.current === "all";
   }
 
