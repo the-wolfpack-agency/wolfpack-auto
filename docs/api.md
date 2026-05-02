@@ -1,9 +1,9 @@
 # Wolfpack Auto — API Reference
 
-> Auto-generated 2026-04-15 from `src/app/api/**/route.ts`.  
+> Auto-generated 2026-05-02 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 241
+**Total routes:** 267
 
 ## Contents
 
@@ -29,6 +29,7 @@
 - [service](#service)
 - [surveys](#surveys)
 - [trade-in](#trade-in)
+- [vehicle-provenance](#vehicle-provenance)
 - [vehicles](#vehicles)
 - [walkaround](#walkaround)
 - [webhooks](#webhooks)
@@ -79,6 +80,9 @@
 | `GET` | `/api/admin/annotations` | List annotations | Bearer | — |
 | `POST` | `/api/admin/annotations` | Create annotation | Bearer | — |
 | `DELETE` | `/api/admin/annotations` | Delete annotation | Bearer | — |
+| `GET` | `/api/admin/auction/benchmarks` | List benchmarks | Bearer | — |
+| `GET` | `/api/admin/auction/opportunities` | List opportunities | Bearer | — |
+| `POST` | `/api/admin/auction/opportunities/{id}/{action}` | Create opportunity | Bearer | — |
 | `GET` | `/api/admin/billing` | List billing | Bearer | — |
 | `POST` | `/api/admin/bulk-provision` | Verify agency-level access: either an authenticated owner/admin user, | Bearer | — |
 | `GET` | `/api/admin/call-intelligence` | List call-intelligence | Bearer | — |
@@ -101,12 +105,19 @@
 | `GET` | `/api/admin/compliance/checks` | List checks | Bearer | Yes |
 | `POST` | `/api/admin/compliance/checks` | Create check | Bearer | Yes |
 | `PATCH` | `/api/admin/compliance/checks/{id}` | Update check | Bearer | — |
+| `GET` | `/api/admin/connected-vehicles` | List connected-vehicles | Bearer | — |
+| `POST` | `/api/admin/connected-vehicles/connect` | Create connect | Bearer | — |
 | `GET` | `/api/admin/credit/history` | List history | Bearer | — |
 | `POST` | `/api/admin/credit/pull` | Create pull | Bearer | Yes |
 | `GET` | `/api/admin/customers` | List customers | Bearer | — |
 | `GET` | `/api/admin/customers/{id}` | Get customer | Bearer | — |
-| `GET` | `/api/admin/data-export` | List data-export | Bearer | — |
-| `POST` | `/api/admin/data-export` | Create data-export | Bearer | — |
+| `GET` | `/api/admin/data-export` | Per-dealer in-memory export history. POST writes to it on every | Bearer | — |
+| `POST` | `/api/admin/data-export` | Per-dealer in-memory export history. POST writes to it on every | Bearer | — |
+| `POST` | `/api/admin/deal-copilot/sessions` | Create session | Bearer | — |
+| `POST` | `/api/admin/deal-copilot/sessions/{id}/close` | Create close | Bearer | — |
+| `POST` | `/api/admin/deal-copilot/sessions/{id}/suggest` | Create suggest | Bearer | — |
+| `POST` | `/api/admin/deal-copilot/suggestions/{id}/accept` | Create accept | Bearer | — |
+| `POST` | `/api/admin/deal-copilot/suggestions/{id}/reject` | Create reject | Bearer | — |
 | `GET` | `/api/admin/dealer-users` | List dealer-users | Bearer | — |
 | `POST` | `/api/admin/dealer-users` | Create dealer-user | Bearer | — |
 | `PATCH` | `/api/admin/dealer-users/{id}` | PATCH  /api/admin/dealer-users/[id] — update user (name, role, active toggle) | Bearer | — |
@@ -177,6 +188,15 @@
 | `POST` | `/api/admin/intake` | POST /api/admin/intake | Bearer | — |
 | `GET` | `/api/admin/intake/recommendations` | GET /api/admin/intake/recommendations | Bearer | — |
 | `POST` | `/api/admin/inventory` | Create inventory | Bearer | — |
+| `POST` | `/api/admin/inventory-pool/join` | Create join | Bearer | — |
+| `POST` | `/api/admin/inventory-pool/leave` | Create leave | Bearer | — |
+| `POST` | `/api/admin/inventory-pool/reservations/{id}/{action}` | Create reservation | Bearer | — |
+| `GET` | `/api/admin/inventory-pool/reserve` | List reserve | Bearer | — |
+| `POST` | `/api/admin/inventory-pool/reserve` | Create reserve | Bearer | — |
+| `GET` | `/api/admin/inventory-pool/swaps` | List swaps | Bearer | — |
+| `POST` | `/api/admin/inventory-pool/swaps` | Create swap | Bearer | — |
+| `POST` | `/api/admin/inventory-pool/swaps/{id}/{action}` | Create swap | Bearer | — |
+| `GET` | `/api/admin/inventory-pool/visible` | List visible | Bearer | — |
 | `PUT` | `/api/admin/inventory/{vin}` | PUT  /api/admin/inventory/[vin]  — update a vehicle | Bearer | — |
 | `DELETE` | `/api/admin/inventory/{vin}` | PUT  /api/admin/inventory/[vin]  — update a vehicle | Bearer | — |
 | `GET` | `/api/admin/inventory/export` | GET /api/admin/inventory/export — Export dealer inventory as CSV | Bearer | — |
@@ -210,6 +230,9 @@
 | `GET` | `/api/admin/locations/{locationId}` | Get location | Bearer | — |
 | `PUT` | `/api/admin/locations/{locationId}` | Update location | Bearer | — |
 | `DELETE` | `/api/admin/locations/{locationId}` | Delete location | Bearer | — |
+| `GET` | `/api/admin/maintenance-leads` | List maintenance-leads | Bearer | — |
+| `POST` | `/api/admin/maintenance-leads/{id}/complete` | Create complete | Bearer | — |
+| `POST` | `/api/admin/maintenance-leads/{id}/dismiss` | Create dismis | Bearer | — |
 | `GET` | `/api/admin/marketing` | List marketing | Bearer | — |
 | `POST` | `/api/admin/marketing` | Create marketing | Bearer | — |
 | `GET` | `/api/admin/marketing/templates` | List templates | Bearer | — |
@@ -297,6 +320,8 @@
 | `GET` | `/api/admin/stats` | List stats | Bearer | — |
 | `GET` | `/api/admin/surveys` | List surveys | Bearer | — |
 | `POST` | `/api/admin/surveys` | Create survey | Bearer | — |
+| `PATCH` | `/api/admin/surveys` | Update survey | Bearer | — |
+| `DELETE` | `/api/admin/surveys` | Delete survey | Bearer | — |
 | `GET` | `/api/admin/surveys/{surveyId}/responses` | List responses | Bearer | — |
 | `POST` | `/api/admin/switch-dealer` | POST /api/admin/switch-dealer — switch session to a different dealer context | Bearer | — |
 | `GET` | `/api/admin/syndication` | GET  /api/admin/syndication — List syndication feed configs | Bearer | Yes |
@@ -311,11 +336,16 @@
 | `POST` | `/api/admin/training` | Create training | Bearer | — |
 | `GET` | `/api/admin/user-testing` | List user-testing | Bearer | — |
 | `POST` | `/api/admin/user-testing` | Create user-testing | Bearer | — |
+| `PATCH` | `/api/admin/user-testing` | Update user-testing | Bearer | — |
+| `DELETE` | `/api/admin/user-testing` | Delete user-testing | Bearer | — |
 | `GET` | `/api/admin/vehicle-history` | GET  /api/admin/vehicle-history — List vehicle history reports (filterable by vin, provider) | Bearer | Yes |
 | `POST` | `/api/admin/vehicle-history` | GET  /api/admin/vehicle-history — List vehicle history reports (filterable by vin, provider) | Bearer | Yes |
 | `GET` | `/api/admin/vehicle-history/{vin}` | GET /api/admin/vehicle-history/[vin] — Get the most recent report for a specific VIN | Bearer | — |
 | `GET` | `/api/admin/vehicle-pipeline` | List vehicle-pipeline | Bearer | — |
 | `POST` | `/api/admin/vehicle-pipeline` | Create vehicle-pipeline | Bearer | — |
+| `GET` | `/api/admin/vehicle-provenance/{vin}` | Get vehicle-provenance | Bearer | — |
+| `POST` | `/api/admin/vehicle-provenance/anchor` | Create anchor | Bearer | — |
+| `POST` | `/api/admin/vehicle-provenance/record` | Create record | Bearer | — |
 | `POST` | `/api/admin/vehicles` | Create vehicle | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}` | Get vehicle | Bearer | — |
 | `PUT` | `/api/admin/vehicles/{vin}` | Update vehicle | Bearer | — |
@@ -390,6 +420,7 @@
 
 | Method | Path | Summary | Auth | Rate-limited |
 |--------|------|---------|------|-------------|
+| `GET` | `/api/cron/auction-sync` | List auction-sync | — | — |
 | `GET` | `/api/cron/calibrate-predictions` | List calibrate-predictions | — | — |
 | `GET` | `/api/cron/predict-leads` | GET /api/cron/predict-leads — Vercel cron job endpoint | — | — |
 | `GET` | `/api/cron/process-sequences` | GET /api/cron/process-sequences — Vercel cron job endpoint | — | — |
@@ -496,6 +527,12 @@
 | `POST` | `/api/trade-in/estimate` | Create estimate | — | Yes |
 | `POST` | `/api/trade-in/submit` | Create submit | — | Yes |
 
+## vehicle-provenance
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `GET` | `/api/vehicle-provenance/{vin}/verify` | List verify | — | Yes |
+
 ## vehicles
 
 | Method | Path | Summary | Auth | Rate-limited |
@@ -515,4 +552,5 @@
 |--------|------|---------|------|-------------|
 | `POST` | `/api/webhooks/resend` | Create resend | — | — |
 | `POST` | `/api/webhooks/stripe` | Create stripe | — | — |
+| `POST` | `/api/webhooks/telemetry/{provider}` | Create telemetry | — | — |
 | `POST` | `/api/webhooks/twilio` | POST /api/webhooks/twilio — Public webhook for Twilio inbound SMS. | — | — |
