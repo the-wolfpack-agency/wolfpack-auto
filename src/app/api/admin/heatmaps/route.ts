@@ -235,7 +235,23 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const dealerId = getDealerId(auth);
+  /* Resolve dealer_id the SAME way the ingest endpoint does — by
+     calling resolveTenant on the request hostname. The session-based
+     getDealerId(auth) falls back to a hardcoded "00000000-..." UUID,
+     which doesn't match the dealer_id that ingest stamps onto events
+     for the same host. Without this symmetry the query filtered out
+     every event the ingest had just persisted (regression observed
+     2026-05-02 — 93 events in DB, 0 visible to the heatmap). */
+  let dealerId = getDealerId(auth);
+  try {
+    const hostname =
+      request.headers.get("host") ?? new URL(request.url).hostname;
+    const { resolveTenant } = await import("@/lib/tenant-resolver");
+    const tenant = await resolveTenant(hostname);
+    if (tenant?.dealer?.id) dealerId = tenant.dealer.id;
+  } catch {
+    /* keep the session-derived fallback */
+  }
   const { searchParams } = new URL(request.url);
   const page = searchParams.get("page") ?? "/";
   const type = (searchParams.get("type") ?? "click") as HeatmapType;

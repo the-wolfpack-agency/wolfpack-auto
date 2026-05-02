@@ -33,6 +33,13 @@ jest.mock("@/lib/heatmap", () => {
   const actual = jest.requireActual("@/lib/heatmap");
   return { ...actual, getTopPages: (...a: any[]) => mockGetTopPages(...a) };
 });
+/* Default tenant-resolver mock returns null — keeps the
+   session-derived dealer fallback active. Individual tests that
+   want host-resolution behavior re-mock per case. */
+const mockResolveTenant = jest.fn().mockResolvedValue(null);
+jest.mock("@/lib/tenant-resolver", () => ({
+  resolveTenant: (...a: any[]) => mockResolveTenant(...a),
+}));
 
 import { NextRequest } from "next/server";
 import { GET } from "../route";
@@ -173,6 +180,40 @@ describe("GET /api/admin/heatmaps — real-data path", () => {
     const band75 = body.scrollBands.find((b: any) => b.label === "75-100%");
     expect(band0.visitorPercent).toBe(100);
     expect(band75.visitorPercent).toBe(70);
+  });
+});
+
+describe("GET /api/admin/heatmaps — dealer-id symmetry with ingest", () => {
+  /* Regression 2026-05-02: ingest resolves dealer_id from hostname
+     via resolveTenant; the query previously used getDealerId(auth)
+     which falls back to a hardcoded UUID. Mismatched dealer_ids
+     filtered out every ingested event. The route must now derive
+     dealer_id from the request hostname when resolveTenant succeeds. */
+  beforeEach(() => {
+    process.env.DATABASE_URL = "postgres://test";
+  });
+
+  test("uses resolveTenant().dealer.id over the session UUID when host resolves", async () => {
+    mockResolveTenant.mockResolvedValueOnce({
+      dealer: { id: "host-resolved-dealer" },
+      resolvedVia: "subdomain",
+    });
+    mockGetTopPages.mockResolvedValueOnce([]);
+    mockQuery.mockResolvedValue({ rows: [] });
+
+    const r = new NextRequest(
+      "https://wolfpack-auto.vercel.app/api/admin/heatmaps?type=click&days=7&page=/",
+      { headers: { host: "wolfpack-auto.vercel.app" } },
+    );
+    const res = await GET(r);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    const dealerArg = mockQuery.mock.calls
+      .map((c: any[]) => c[1])
+      .filter((arr: any) => Array.isArray(arr))
+      .find((arr: any[]) => arr.includes("host-resolved-dealer"));
+    expect(dealerArg).toBeTruthy();
+    expect(body.noData).toBe(true);
   });
 });
 
