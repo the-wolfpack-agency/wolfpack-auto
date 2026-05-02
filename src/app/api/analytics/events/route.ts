@@ -189,14 +189,16 @@ export async function POST(request: NextRequest) {
        observed on /admin/heatmaps on 2026-05-02. */
     const hostname =
       request.headers.get("host") ?? new URL(request.url).hostname;
-    /* Symmetric fallback (regression 2026-05-02): when resolveTenant
-       returns null — e.g. wolfpack-auto.vercel.app is the Vercel
-       deploy URL, not a configured dealer domain — we fall back to
-       the SAME default UUID that getDealerId(auth) uses on the
-       query side. Without this, ingest stamped nothing while the
-       heatmap query filtered by the default UUID, and every event
-       was invisible. */
-    const DEFAULT_DEALER_ID = "00000000-0000-4000-a000-000000000001";
+    /* Symmetric fallback chain (regression 2026-05-02):
+         1. resolveTenant(host) — works for configured dealer domains.
+         2. process.env.DEALER_ID — same env var requireAuth uses in
+            DEMO_MODE. If Vercel has DEALER_ID="<real-uuid>", the
+            query side reads that — the ingest MUST stamp the same
+            value or the query returns zero rows.
+         3. Hardcoded "00000000-..." UUID — last-resort matching the
+            getDealerId fallback constant. */
+    const DEFAULT_DEALER_ID =
+      process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
     let resolvedDealerId: string = DEFAULT_DEALER_ID;
     try {
       const { resolveTenant } = await import("@/lib/tenant-resolver");
