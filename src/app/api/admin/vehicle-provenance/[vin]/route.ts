@@ -14,12 +14,13 @@ const VIN_REGEX = /^[A-HJ-NPR-Z0-9]{11,17}$/i;
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { vin: string } },
+  context: { params: Promise<{ vin: string }> },
 ) {
   const authResult = await requireAuth(request);
   if (!isAuthenticated(authResult)) return authResult;
 
-  const vin = (params.vin ?? "").toUpperCase();
+  const { vin: rawVin } = await context.params;
+  const vin = (rawVin ?? "").toUpperCase();
   if (!VIN_REGEX.test(vin)) {
     return NextResponse.json({ error: "Invalid VIN" }, { status: 400 });
   }

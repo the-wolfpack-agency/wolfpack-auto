@@ -205,7 +205,7 @@ describe("GET /api/admin/vehicle-provenance/[vin]", () => {
     );
     const res = await adminGET(
       makeReq(`http://localhost/api/admin/vehicle-provenance/${VALID_VIN}`),
-      { params: { vin: VALID_VIN } },
+      { params: Promise.resolve({ vin: VALID_VIN }) },
     );
     expect(res.status).toBe(401);
   });
@@ -214,7 +214,7 @@ describe("GET /api/admin/vehicle-provenance/[vin]", () => {
     mockRequireAuth.mockResolvedValueOnce(ADMIN_USER);
     const res = await adminGET(
       makeReq("http://localhost/api/admin/vehicle-provenance/BAD"),
-      { params: { vin: "BAD" } },
+      { params: Promise.resolve({ vin: "BAD" }) },
     );
     expect(res.status).toBe(400);
   });
@@ -228,7 +228,7 @@ describe("GET /api/admin/vehicle-provenance/[vin]", () => {
       .mockResolvedValueOnce({ rows: [] }); // verifyChain
     const res = await adminGET(
       makeReq(`http://localhost/api/admin/vehicle-provenance/${VALID_VIN}`),
-      { params: { vin: VALID_VIN } },
+      { params: Promise.resolve({ vin: VALID_VIN }) },
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -338,7 +338,7 @@ describe("GET /api/vehicle-provenance/[vin]/verify (public)", () => {
   it("400 on invalid VIN", async () => {
     const res = await publicVerifyGET(
       makeReq("http://localhost/api/vehicle-provenance/BAD/verify"),
-      { params: { vin: "BAD" } },
+      { params: Promise.resolve({ vin: "BAD" }) },
     );
     expect(res.status).toBe(400);
   });
@@ -349,7 +349,7 @@ describe("GET /api/vehicle-provenance/[vin]/verify (public)", () => {
       .mockResolvedValueOnce({ rows: [] }); // verifyChain
     const res = await publicVerifyGET(
       makeReq(`http://localhost/api/vehicle-provenance/${VALID_VIN}/verify`),
-      { params: { vin: VALID_VIN } },
+      { params: Promise.resolve({ vin: VALID_VIN }) },
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -380,7 +380,7 @@ describe("GET /api/vehicle-provenance/[vin]/verify (public)", () => {
       .mockResolvedValueOnce({ rows: [tamperedRow] });
     const res = await publicVerifyGET(
       makeReq(`http://localhost/api/vehicle-provenance/${VALID_VIN}/verify`),
-      { params: { vin: VALID_VIN } },
+      { params: Promise.resolve({ vin: VALID_VIN }) },
     );
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -396,7 +396,7 @@ describe("GET /api/vehicle-provenance/[vin]/verify (public)", () => {
     });
     const res = await publicVerifyGET(
       makeReq(`http://localhost/api/vehicle-provenance/${VALID_VIN}/verify`),
-      { params: { vin: VALID_VIN } },
+      { params: Promise.resolve({ vin: VALID_VIN }) },
     );
     expect(res.status).toBe(429);
   });

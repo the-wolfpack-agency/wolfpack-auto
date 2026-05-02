@@ -368,17 +368,22 @@ export function merkleRoot(leaves: string[]): string {
     const buf = Buffer.from(leaves[0], "hex");
     return crypto.createHash("sha256").update(Buffer.concat([buf, buf])).digest("hex");
   }
-  let layer = leaves.map((h) => Buffer.from(h, "hex"));
+  /* Cast through Uint8Array — Buffer's stricter ArrayBuffer-typed
+     overload (Node 22+) collides with Buffer.concat / digest() output;
+     Uint8Array satisfies both without runtime change. */
+  let layer: Uint8Array[] = leaves.map((h) => Buffer.from(h, "hex"));
   while (layer.length > 1) {
-    const next: Buffer[] = [];
+    const next: Uint8Array[] = [];
     for (let i = 0; i < layer.length; i += 2) {
       const a = layer[i];
       const b = i + 1 < layer.length ? layer[i + 1] : layer[i]; // dup last on odd
-      next.push(crypto.createHash("sha256").update(Buffer.concat([a, b])).digest());
+      next.push(
+        crypto.createHash("sha256").update(Buffer.concat([a, b])).digest(),
+      );
     }
     layer = next;
   }
-  return layer[0].toString("hex");
+  return Buffer.from(layer[0]).toString("hex");
 }
 
 export async function anchorRange(args: {
