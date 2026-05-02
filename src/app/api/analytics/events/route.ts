@@ -189,20 +189,27 @@ export async function POST(request: NextRequest) {
        observed on /admin/heatmaps on 2026-05-02. */
     const hostname =
       request.headers.get("host") ?? new URL(request.url).hostname;
-    let resolvedDealerId: string | null = null;
+    /* Symmetric fallback (regression 2026-05-02): when resolveTenant
+       returns null — e.g. wolfpack-auto.vercel.app is the Vercel
+       deploy URL, not a configured dealer domain — we fall back to
+       the SAME default UUID that getDealerId(auth) uses on the
+       query side. Without this, ingest stamped nothing while the
+       heatmap query filtered by the default UUID, and every event
+       was invisible. */
+    const DEFAULT_DEALER_ID = "00000000-0000-4000-a000-000000000001";
+    let resolvedDealerId: string = DEFAULT_DEALER_ID;
     try {
       const { resolveTenant } = await import("@/lib/tenant-resolver");
       const tenant = await resolveTenant(hostname);
       if (tenant?.dealer?.id) resolvedDealerId = tenant.dealer.id;
     } catch {
-      /* Tenant resolver unavailable — fall back to per-event metadata
-         the client may have already provided. */
+      /* keep DEFAULT_DEALER_ID */
     }
 
     // Cap batch size
     const capped = events.slice(0, 50).map((e) => {
       const meta: Record<string, unknown> = { ...(e.metadata ?? {}) };
-      if (!meta.dealer_id && resolvedDealerId) {
+      if (!meta.dealer_id) {
         meta.dealer_id = resolvedDealerId;
       }
       return { ...e, metadata: meta };

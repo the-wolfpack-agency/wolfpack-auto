@@ -127,7 +127,7 @@ describe("POST /api/analytics/events — dealer_id stamping", () => {
     expect(ingested[0].metadata.dealer_id).toBe("dealer-explicit");
   });
 
-  test("when resolveTenant returns null (platform domain), dealer_id stays unset rather than crashing", async () => {
+  test("when resolveTenant returns null (Vercel deploy host etc), dealer_id falls back to the default UUID — symmetric with getDealerId on the query side", async () => {
     mockResolveTenant.mockResolvedValueOnce(null);
     const events = [
       {
@@ -142,7 +142,11 @@ describe("POST /api/analytics/events — dealer_id stamping", () => {
     const res = await POST(makePost({ events }));
     expect(res.status).toBe(200);
     const ingested = mockIngestEvents.mock.calls[0][0];
-    expect(ingested[0].metadata.dealer_id).toBeUndefined();
+    /* Must match the heatmap query's default fallback (the demo dealer
+       UUID returned by getDealerId when no session dealer_id exists). */
+    expect(ingested[0].metadata.dealer_id).toBe(
+      "00000000-0000-4000-a000-000000000001",
+    );
   });
 
   test("when resolveTenant throws, ingest still proceeds (graceful degradation)", async () => {
