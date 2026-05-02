@@ -299,11 +299,15 @@ export default function EventCollector({
 
   /** Returns true if the user has consented to full (non-essential) tracking.
    *
+   *  Reads BOTH consent systems so either grant satisfies the gate:
+   *    1. localStorage.cookie_consent === "all" (legacy)
+   *    2. wolfpack_consent cookie (current CookieConsent component)
+   *
    *  Admin context exception (regression 2026-05-02): paths under
    *  /admin/* are dealer staff using internal tooling, not regulated
    *  visitors. They auto-consent so the dealer's own clicks track on
    *  the heatmap without needing the cookie banner. Public pages
-   *  still gate on the explicit "all" consent. */
+   *  still gate on the explicit consent grant. */
   function hasFullConsent(): boolean {
     if (
       typeof window !== "undefined" &&
@@ -312,7 +316,33 @@ export default function EventCollector({
     ) {
       return true;
     }
-    return consentLevel.current === "all";
+    if (consentLevel.current === "all") return true;
+    /* Cookie-based consent (current CookieConsent component) — without
+       this, public-page clicks went untracked even after the user
+       accepted the banner because consentLevel is only updated via
+       the cookie_consent_change CustomEvent, and we miss the initial
+       cookie grant from a prior session. Regression 2026-05-02. */
+    if (typeof document !== "undefined") {
+      const m = document.cookie.match(/(?:^|; )wolfpack_consent=([^;]*)/);
+      if (m) {
+        const v = decodeURIComponent(m[1]);
+        if (v === "accepted") return true;
+        if (v === "custom") {
+          const p = document.cookie.match(
+            /(?:^|; )wolfpack_consent_prefs=([^;]*)/,
+          );
+          if (p) {
+            try {
+              const prefs = JSON.parse(decodeURIComponent(p[1]));
+              if (prefs.analytics) return true;
+            } catch {
+              /* fall through */
+            }
+          }
+        }
+      }
+    }
+    return false;
   }
 
   // Initialize session + read consent

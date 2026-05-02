@@ -22,7 +22,10 @@ export default function GoogleMapsEmbed({
   dealerId,
 }: GoogleMapsEmbedProps) {
   useEffect(() => {
-    // Fire analytics via the client-side event API (avoids importing pg in browser)
+    /* Bug fix 2026-05-02: was passing `page: dealerId` which polluted
+       the analytics_events.page column with raw UUIDs (444 rows of
+       garbage in the prod DB before this fix). The page column MUST
+       be a URL path; dealer_id belongs in metadata. */
     fetch("/api/analytics/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,10 +34,16 @@ export default function GoogleMapsEmbed({
           {
             event_type: "system",
             action: "system.analytics_queried",
-            page: dealerId,
-            session_id: typeof window !== "undefined" ? window.sessionStorage?.getItem("session_id") ?? "anon" : "anon",
+            page:
+              typeof window !== "undefined"
+                ? window.location.pathname
+                : "/",
+            session_id:
+              typeof window !== "undefined"
+                ? window.sessionStorage?.getItem("session_id") ?? "anon"
+                : "anon",
             user_fingerprint: "client",
-            metadata: { module: "google_maps", page: "contact" },
+            metadata: { module: "google_maps", dealer_id: dealerId },
           },
         ],
       }),

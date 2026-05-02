@@ -150,6 +150,13 @@ RE_NAMED_EXPORT = re.compile(
 )
 RE_DEFAULT_EXPORT = re.compile(r"^\s*export\s+default\b")
 
+# Analytics-event field hygiene — `page` must be a URL path, not a
+# dealer_id / tenant_id / session_id. 444 rows of UUID-in-page were
+# found in prod (2026-05-02) from GoogleMapsEmbed misuse.
+RE_PAGE_FIELD_MISUSE = re.compile(
+    r"\bpage\s*:\s*(dealerId|dealer_id|tenantId|tenant_id|sessionId|session_id|userId|user_id|fingerprint|fingerprint_id)\b"
+)
+
 
 def classify_file_role(path: Path) -> str:
     p = str(path)
@@ -249,6 +256,12 @@ def scan_file(path: Path) -> list[Finding]:
                     Finding(rel, i, "high", "illegal_page_named_export",
                             line.strip()[:160])
                 )
+
+        if RE_PAGE_FIELD_MISUSE.search(line):
+            findings.append(
+                Finding(rel, i, "high", "page_field_misuse_uuid_in_url_column",
+                        line.strip()[:160])
+            )
 
     return findings
 
