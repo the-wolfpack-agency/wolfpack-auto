@@ -281,7 +281,13 @@ export async function getTopPages(
   const { query } = await import("@/lib/db");
   /* Only return rows whose `page` column looks like a real URL path —
      events with bare UUIDs / dealer-ids in the page column (a legacy
-     ingest bug) would otherwise pollute the dropdown. */
+     ingest bug) would otherwise pollute the dropdown.
+     Ordering rationale: the dealer cares about visitor-facing
+     heatmaps first (public storefront → revenue), with the home
+     page on top because it's the most valuable single surface.
+     Admin pages are internal tooling; they show up after public
+     pages even if their pageview count is higher (dev traffic
+     skews admin-page views). Within each tier, sort by pageviews. */
   const result = await query(
     `SELECT page AS url,
             COUNT(*) AS pageviews,
@@ -292,7 +298,13 @@ export async function getTopPages(
         AND page LIKE '/%'
         AND page !~ '^/[0-9a-f]{8}-[0-9a-f]{4}-'
       GROUP BY page
-      ORDER BY pageviews DESC
+      ORDER BY
+        CASE
+          WHEN page = '/' THEN 0
+          WHEN page LIKE '/admin/%' OR page = '/admin' THEN 2
+          ELSE 1
+        END,
+        pageviews DESC
       LIMIT $2`,
     [dealerId, limit],
   );
