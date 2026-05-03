@@ -73,6 +73,45 @@ jobs:
             exit 1
           fi
 
+      # GitHub-native security gates — closes the "scans pass green
+      # but real alerts pile up" loop. Each step queries the GitHub
+      # API for OPEN findings produced by Dependabot or CodeQL and
+      # fails CI if any high/critical alert is unaddressed.
+      - name: Dependabot alert gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Tally open Dependabot alerts at high/critical severity.
+          HIGH_CRIT=$(gh api "/repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open&per_page=100" \
+            --jq '[.[] | select(.security_advisory.severity == "high" or .security_advisory.severity == "critical")] | length')
+          echo "::notice::dependabot_high_or_critical=$HIGH_CRIT"
+          if [ "$HIGH_CRIT" -gt "0" ]; then
+            echo "::error::$HIGH_CRIT open Dependabot alerts at high/critical severity — see https://github.com/${GITHUB_REPOSITORY}/security/dependabot"
+            exit 1
+          fi
+          # Medium alerts: warn, don't fail (yet). Lower threshold once below 5.
+          MED=$(gh api "/repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open&per_page=100" \
+            --jq '[.[] | select(.security_advisory.severity == "medium")] | length')
+          echo "::notice::dependabot_medium=$MED"
+          MED_CEILING=10
+          if [ "$MED" -gt "$MED_CEILING" ]; then
+            echo "::error::$MED open Dependabot medium alerts (ceiling=$MED_CEILING)"
+            exit 1
+          fi
+
+      - name: Code-scanning (CodeQL) alert gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Open code-scanning alerts at error severity (= high/critical).
+          ERR=$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" \
+            --jq '[.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")] | length')
+          echo "::notice::codeql_high_or_critical=$ERR"
+          if [ "$ERR" -gt "0" ]; then
+            echo "::error::$ERR open CodeQL high/critical findings — see https://github.com/${GITHUB_REPOSITORY}/security/code-scanning"
+            exit 1
+          fi
+
       - name: Upload audit artifacts
         if: always()
         uses: actions/upload-artifact@v4
