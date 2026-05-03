@@ -157,6 +157,23 @@ RE_PAGE_FIELD_MISUSE = re.compile(
     r"\bpage\s*:\s*(dealerId|dealer_id|tenantId|tenant_id|sessionId|session_id|userId|user_id|fingerprint|fingerprint_id)\b"
 )
 
+# Zod v4 changed z.record(value) → z.record(keySchema, valueSchema).
+# The single-arg form silently compiled under v3 but `next build`
+# against v4 throws "Expected 2-3 arguments, but got 1." and Vercel
+# deploys fail. Catch in the scanner before push — the deploy log
+# is too far downstream.
+RE_ZOD_RECORD_SINGLE_ARG = re.compile(
+    r"\bz\.record\(\s*z\.[a-zA-Z]+\([^,)]*\)\s*\)(?!\s*,)",
+)
+
+# @elastic/elasticsearch v9 dropped the `body:` wrapping in
+# search()/index()/etc; old form compiled in v8 but `next build`
+# v9 throws "No overload matches this call." Catch BEFORE Vercel.
+RE_ES_BODY_WRAPPING = re.compile(
+    r"esClient\.(search|index|update|delete|bulk|count|msearch)\([^)]*\bbody\s*:",
+    re.DOTALL,
+)
+
 
 def classify_file_role(path: Path) -> str:
     p = str(path)
@@ -256,6 +273,18 @@ def scan_file(path: Path) -> list[Finding]:
                     Finding(rel, i, "high", "illegal_page_named_export",
                             line.strip()[:160])
                 )
+
+        if RE_ZOD_RECORD_SINGLE_ARG.search(line):
+            findings.append(
+                Finding(rel, i, "high", "zod_v4_record_single_arg",
+                        line.strip()[:160])
+            )
+
+        if RE_ES_BODY_WRAPPING.search(line):
+            findings.append(
+                Finding(rel, i, "high", "elasticsearch_v9_body_wrapping",
+                        line.strip()[:160])
+            )
 
         if RE_PAGE_FIELD_MISUSE.search(line):
             findings.append(

@@ -112,32 +112,33 @@ export async function GET(
         lte: Math.ceil(vehicle.price * 1.2),
       };
 
+      // ES client v9 deprecated `body:` wrapping; search params live
+      // at the top level now. Old form still ran in dev but
+      // `next build` (strict types) rejects it.
       const relatedResponse = await esClient.search({
         index: VEHICLES_INDEX,
-        body: {
-          size: 6,
-          _source: ["vin", "year", "make", "model", "trim", "price", "mileage", "photo_url"],
-          query: {
-            bool: {
-              filter: [
-                { term: { dealer_id } },
-                { term: { status: "available" } },
-              ],
-              must_not: [{ term: { vin } }],
-              should: [
-                {
-                  bool: {
-                    must: [
-                      { term: { make: vehicle.make } },
-                      { term: { model: vehicle.model } },
-                    ],
-                    boost: 2.0,
-                  },
+        size: 6,
+        _source: ["vin", "year", "make", "model", "trim", "price", "mileage", "photo_url"],
+        query: {
+          bool: {
+            filter: [
+              { term: { dealer_id } },
+              { term: { status: "available" } },
+            ],
+            must_not: [{ term: { vin } }],
+            should: [
+              {
+                bool: {
+                  must: [
+                    { term: { make: vehicle.make } },
+                    { term: { model: vehicle.model } },
+                  ],
+                  boost: 2.0,
                 },
-                { range: { price: priceRange } },
-              ],
-              minimum_should_match: 1,
-            },
+              },
+              { range: { price: priceRange } },
+            ],
+            minimum_should_match: 1,
           },
         },
       });

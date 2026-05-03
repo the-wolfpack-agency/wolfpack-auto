@@ -152,9 +152,10 @@ export async function searchVehicles(
     },
   };
 
+  // ES v9 deprecated `body:` wrapping — flatten the body fields.
   const response = await esClient.search({
     index: VEHICLES_INDEX,
-    body,
+    ...body,
   });
 
   const hits = response.hits.hits;
@@ -174,34 +175,32 @@ export async function searchVehicles(
 export async function getFacets(dealerId: string): Promise<FacetResults> {
   const response = await esClient.search({
     index: VEHICLES_INDEX,
-    body: {
-      size: 0,
-      query: {
-        bool: {
-          filter: [
-            { term: { dealer_id: dealerId } },
-            { term: { status: "available" } },
-          ],
-        },
+    size: 0,
+    query: {
+      bool: {
+        filter: [
+          { term: { dealer_id: dealerId } },
+          { term: { status: "available" } },
+        ],
       },
-      aggs: {
-        make: { terms: { field: "make", size: 50 } },
-        model: { terms: { field: "model", size: 100 } },
-        body_style: { terms: { field: "body_style", size: 20 } },
-        year: { terms: { field: "year", size: 20, order: { _key: "desc" } } },
-        condition: { terms: { field: "condition", size: 5 } },
-        price_ranges: {
-          range: {
-            field: "price",
-            ranges: [
-              { key: "Under $10,000", to: 10_000 },
-              { key: "$10,000 - $20,000", from: 10_000, to: 20_000 },
-              { key: "$20,000 - $30,000", from: 20_000, to: 30_000 },
-              { key: "$30,000 - $50,000", from: 30_000, to: 50_000 },
-              { key: "$50,000 - $75,000", from: 50_000, to: 75_000 },
-              { key: "Over $75,000", from: 75_000 },
-            ],
-          },
+    },
+    aggs: {
+      make: { terms: { field: "make", size: 50 } },
+      model: { terms: { field: "model", size: 100 } },
+      body_style: { terms: { field: "body_style", size: 20 } },
+      year: { terms: { field: "year", size: 20, order: { _key: "desc" } } },
+      condition: { terms: { field: "condition", size: 5 } },
+      price_ranges: {
+        range: {
+          field: "price",
+          ranges: [
+            { key: "Under $10,000", to: 10_000 },
+            { key: "$10,000 - $20,000", from: 10_000, to: 20_000 },
+            { key: "$20,000 - $30,000", from: 20_000, to: 30_000 },
+            { key: "$30,000 - $50,000", from: 30_000, to: 50_000 },
+            { key: "$50,000 - $75,000", from: 50_000, to: 75_000 },
+            { key: "Over $75,000", from: 75_000 },
+          ],
         },
       },
     },
@@ -359,7 +358,8 @@ export async function reindexDealer(
     ];
   });
 
-  const bulkResponse = await esClient.bulk({ body: operations, refresh: true });
+  // ES v9: bulk takes `operations:` not `body:`.
+  const bulkResponse = await esClient.bulk({ operations, refresh: true });
 
   if (bulkResponse.errors) {
     const errorItems = bulkResponse.items
