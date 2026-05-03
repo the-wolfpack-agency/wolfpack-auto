@@ -275,15 +275,27 @@ function scanSSRF(
 
     // Look for fetch() with template literals or variable URLs
     if (/fetch\s*\(\s*`/.test(line) || /fetch\s*\(\s*\w+(?!\s*,)/.test(line)) {
-      // Skip known safe external APIs
-      if (
-        /api\.resend\.com/.test(line) ||
-        /api\.twilio\.com/.test(line) ||
-        /plausible\.io/.test(line) ||
-        /api\.nhtsa\.dot\.gov/.test(line) ||
-        /ai-gateway\.vercel\.sh/.test(line)
-      ) {
-        continue;
+      // Skip known safe external APIs.
+      //
+      // We extract the URL host from the line and compare it against the
+      // allowlist with proper hostname semantics — anchored equality plus
+      // ".host" suffix — so a line like fetch(`https://attacker.com/api.resend.com/...`)
+      // does NOT match. CodeQL js/regex/missing-regexp-anchor would (correctly)
+      // flag the previous /host/.test(line) substring approach.
+      const SAFE_HOSTS = [
+        "api.resend.com",
+        "api.twilio.com",
+        "plausible.io",
+        "api.nhtsa.dot.gov",
+        "ai-gateway.vercel.sh",
+      ];
+      const hostMatch = line.match(/https?:\/\/([A-Za-z0-9.\-]+)/);
+      if (hostMatch) {
+        const host = hostMatch[1].toLowerCase();
+        const allowed = SAFE_HOSTS.some(
+          (h) => host === h || host.endsWith("." + h),
+        );
+        if (allowed) continue;
       }
 
       // Check if the URL contains user-controlled input

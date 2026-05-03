@@ -9,7 +9,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { execSync, type ExecSyncOptionsWithStringEncoding } from "child_process";
+import { execFileSync, type ExecFileSyncOptionsWithStringEncoding } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 
@@ -21,19 +21,26 @@ const PROJECT_DIR = resolve(__dirname, "../..");
 const CHECKLIST_SCRIPT = resolve(PROJECT_DIR, "scripts/predeploy-checklist.mjs");
 const GATE_SCRIPT = resolve(PROJECT_DIR, "scripts/predeploy-gate.sh");
 
-const execOpts: ExecSyncOptionsWithStringEncoding = {
+const execOpts: ExecFileSyncOptionsWithStringEncoding = {
   encoding: "utf-8",
   cwd: PROJECT_DIR,
   timeout: 30_000,
 };
 
-/** Run a script and return { stdout, exitCode } without throwing. */
+/**
+ * Run a script and return { stdout, exitCode } without throwing.
+ *
+ * `file` and `args` are passed through `execFileSync` so we never spawn a
+ * shell — env-derived values cannot break out of the argv into the command
+ * line. CodeQL js/shell-command-injection-from-environment.
+ */
 function runScript(
-  command: string,
+  file: string,
+  args: string[] = [],
   env?: Record<string, string>,
 ): { stdout: string; stderr: string; exitCode: number } {
   try {
-    const stdout = execSync(command, {
+    const stdout = execFileSync(file, args, {
       ...execOpts,
       env: { ...process.env, ...env },
       stdio: ["pipe", "pipe", "pipe"],
@@ -79,7 +86,8 @@ test.describe("Launch scripts exist and are readable", () => {
 test.describe("Predeploy checklist: Missing env vars", () => {
   test("exits with code 1 when DATABASE_URL is missing", () => {
     const result = runScript(
-      `node ${CHECKLIST_SCRIPT}`,
+      "node",
+      [CHECKLIST_SCRIPT],
       { DATABASE_URL: "", NEXTAUTH_SECRET: "", PII_ENCRYPTION_KEY: "" },
     );
     // Exit code 1 = blockers, 2 = warnings only
@@ -88,7 +96,8 @@ test.describe("Predeploy checklist: Missing env vars", () => {
 
   test("output mentions DATABASE_URL when it is missing", () => {
     const result = runScript(
-      `node ${CHECKLIST_SCRIPT}`,
+      "node",
+      [CHECKLIST_SCRIPT],
       { DATABASE_URL: "" },
     );
     const combined = result.stdout + result.stderr;
@@ -97,7 +106,8 @@ test.describe("Predeploy checklist: Missing env vars", () => {
 
   test("output mentions NEXTAUTH_SECRET when it is missing", () => {
     const result = runScript(
-      `node ${CHECKLIST_SCRIPT}`,
+      "node",
+      [CHECKLIST_SCRIPT],
       { DATABASE_URL: "", NEXTAUTH_SECRET: "" },
     );
     const combined = result.stdout + result.stderr;
@@ -106,7 +116,8 @@ test.describe("Predeploy checklist: Missing env vars", () => {
 
   test("output mentions PII_ENCRYPTION_KEY when it is missing", () => {
     const result = runScript(
-      `node ${CHECKLIST_SCRIPT}`,
+      "node",
+      [CHECKLIST_SCRIPT],
       { DATABASE_URL: "", PII_ENCRYPTION_KEY: "" },
     );
     const combined = result.stdout + result.stderr;
@@ -138,19 +149,19 @@ test.describe("Predeploy checklist: DEMO_MODE detection", () => {
 
 test.describe("Predeploy checklist: Summary output", () => {
   test("prints PASS/FAIL/WARN summary", () => {
-    const result = runScript(`node ${CHECKLIST_SCRIPT}`);
+    const result = runScript("node", [CHECKLIST_SCRIPT]);
     const combined = result.stdout + result.stderr;
     expect(combined).toContain("PASS:");
   });
 
   test("prints category headers", () => {
-    const result = runScript(`node ${CHECKLIST_SCRIPT}`);
+    const result = runScript("node", [CHECKLIST_SCRIPT]);
     const combined = result.stdout + result.stderr;
     expect(combined).toContain("Environment");
   });
 
   test("exits 0 when all green, 1 for blockers, 2 for warnings only", () => {
-    const result = runScript(`node ${CHECKLIST_SCRIPT}`);
+    const result = runScript("node", [CHECKLIST_SCRIPT]);
     // Without proper env vars it should exit 1 (blockers) or 2 (warnings)
     expect([0, 1, 2]).toContain(result.exitCode);
   });

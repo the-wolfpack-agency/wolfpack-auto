@@ -12,7 +12,7 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 
@@ -40,8 +40,21 @@ function runK6Script(
   }
 
   try {
-    const stdout = execSync(
-      `k6 run --env BASE_URL=${baseUrl} --duration 15s --vus 2 "${scriptPath}"`,
+    // Pass each token as its own argv element so an attacker-controlled
+    // BASE_URL cannot break out of the argument and execute arbitrary shell
+    // commands. CodeQL js/indirect-command-line-injection.
+    const stdout = execFileSync(
+      "k6",
+      [
+        "run",
+        "--env",
+        `BASE_URL=${baseUrl}`,
+        "--duration",
+        "15s",
+        "--vus",
+        "2",
+        scriptPath,
+      ],
       { timeout: timeoutMs, stdio: "pipe" },
     ).toString();
     return { stdout, success: true };

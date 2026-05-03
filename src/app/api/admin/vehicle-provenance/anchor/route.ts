@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { anchorRange } from "@/lib/vehicle-provenance";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 
 const VIN_REGEX = /^[A-HJ-NPR-Z0-9]{11,17}$/i;
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
         { status: 503 },
       );
     }
-    console.error("[api/admin/vehicle-provenance/anchor] error:", msg);
+    console.error("[api/admin/vehicle-provenance/anchor] error:", sanitizeForLog(msg));
     return NextResponse.json(
       { error: "Failed to anchor provenance range" },
       { status: 500 },

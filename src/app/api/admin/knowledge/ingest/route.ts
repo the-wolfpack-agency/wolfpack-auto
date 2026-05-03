@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 
 /**
  * Knowledge Store Ingestion Endpoint
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
 
   // Shadow mode: no vector DB, log and return success
   if (!process.env.QDRANT_URL) {
-    console.log(`[knowledge] Shadow ingest: ${document_id} (${doc_type}, ${content_text.length} chars)`);
+    console.log(`[knowledge] Shadow ingest: ${sanitizeForLog(document_id)} (${sanitizeForLog(doc_type)}, ${content_text.length} chars)`);
     return NextResponse.json({
       status: "ingested",
       document_id,

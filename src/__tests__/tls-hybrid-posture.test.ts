@@ -7,7 +7,7 @@
  * In CI, asserts that hybrid X25519MLKEM768 is negotiated.
  */
 
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { join } from "path";
 
 const isCI = process.env.CI === "true";
@@ -23,7 +23,10 @@ describe("TLS Hybrid Posture", () => {
       let result: "pass" | "fail" = "fail";
       let output = "";
       try {
-        output = execSync(`sh "${scriptPath}" "${prodDomain}"`, {
+        // Pass scriptPath + prodDomain as discrete argv to avoid shell
+        // interpolation of the env-derived domain string. CodeQL
+        // js/indirect-command-line-injection.
+        output = execFileSync("sh", [scriptPath, prodDomain], {
           timeout: 15000,
           encoding: "utf-8",
         });

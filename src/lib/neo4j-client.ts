@@ -32,8 +32,24 @@ function getBaseUrl(): string | null {
 
 /** Returns true if the Neo4j URL points to Aura (uses Query API v2). */
 function isAura(): boolean {
-  const url = process.env.NEO4J_URL ?? "";
-  return url.includes(".databases.neo4j.io");
+  const raw = process.env.NEO4J_URL ?? "";
+  if (!raw) return false;
+  // Parse the hostname properly so that an attacker-controlled URL like
+  // `https://attacker.com/.databases.neo4j.io/...` cannot pass a naive
+  // `.includes()` check. CodeQL js/incomplete-url-substring-sanitization.
+  // We normalize the Neo4j-specific schemes (neo4j+s://, bolt+s://, etc.)
+  // to https:// so URL parsing works.
+  const normalized = raw
+    .replace(/^neo4j\+s:\/\//, "https://")
+    .replace(/^neo4j:\/\//, "http://")
+    .replace(/^bolt\+s:\/\//, "https://")
+    .replace(/^bolt:\/\//, "http://");
+  try {
+    const host = new URL(normalized).hostname.toLowerCase();
+    return host === "databases.neo4j.io" || host.endsWith(".databases.neo4j.io");
+  } catch {
+    return false;
+  }
 }
 
 function getAuthHeader(): string {

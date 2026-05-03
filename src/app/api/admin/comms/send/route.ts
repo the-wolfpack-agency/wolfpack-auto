@@ -4,6 +4,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { trackComms, trackSecurity } from "@/lib/analytics-hooks";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/admin/comms/send                                                  */
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
   try { trackComms("comms.message_sent", dealerId, { channel: body.channel, template_id: body.template_id ?? "custom" }); } catch {}
 
   // Shadow mode — log and return success
-  console.info(`[comms/send][shadow] ${body.channel} to ${body.recipient} from ${user.email} at ${now}`);
+  console.info(`[comms/send][shadow] ${sanitizeForLog(body.channel)} to ${sanitizeForLog(body.recipient)} from ${sanitizeForLog(user.email)} at ${now}`);
   const resp = {
     success: true,
     id: messageId,

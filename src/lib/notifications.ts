@@ -10,6 +10,7 @@ import {
   dealStatusUpdateHTML,
   serviceReminderHTML,
 } from "@/lib/email-templates";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,8 +108,8 @@ async function dispatchEmail(
   if (!_notifResendClient) {
     console.log(
       `[notifications] No RESEND_API_KEY — logging email:\n` +
-        `  To: ${to}\n` +
-        `  Subject: ${subject}\n` +
+        `  To: ${sanitizeForLog(to)}\n` +
+        `  Subject: ${sanitizeForLog(subject)}\n` +
         `  Body length: ${html.length} chars`,
     );
     return;
@@ -138,7 +139,7 @@ function broadcastEmail(
 ): void {
   for (const to of recipients) {
     void dispatchEmail(to, subject, html, replyTo).catch((err) => {
-      console.error(`[notifications] Failed to email ${to}:`, err);
+      console.error(`[notifications] Failed to email ${sanitizeForLog(to)}:`, err);
     });
   }
 }
@@ -353,8 +354,8 @@ export async function sendTeamInvite(params: {
     if (!_notifResendClient) {
       console.log(
         `[notifications] No RESEND_API_KEY — logging invite email:\n` +
-          `  To: ${params.inviteeEmail}\n` +
-          `  Subject: ${subject}\n` +
+          `  To: ${sanitizeForLog(params.inviteeEmail)}\n` +
+          `  Subject: ${sanitizeForLog(subject)}\n` +
           `  Accept URL: ${acceptUrl}`,
       );
       // Still emit the sent event — the DB row exists and the URL is constructable

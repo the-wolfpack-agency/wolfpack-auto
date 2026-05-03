@@ -12,6 +12,8 @@
  * Reusable across projects — only the DB table name is domain-specific.
  */
 
+import { sanitizeForLog } from "@/lib/log-sanitize";
+
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
@@ -258,7 +260,7 @@ export async function deliverPush(
   const vapidSubject = process.env.VAPID_SUBJECT || "mailto:admin@wolfpackauto.com";
 
   if (!vapidPrivateKey || !vapidPublicKey) {
-    console.log("[push-notifications] Shadow mode — would deliver:", payload.title);
+    console.log("[push-notifications] Shadow mode — would deliver:", sanitizeForLog(payload.title));
     return { success: true };
   }
 
@@ -287,7 +289,7 @@ export async function deliverPush(
     return { success: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[push-notifications] deliverPush failed:", message);
+    console.error("[push-notifications] deliverPush failed:", sanitizeForLog(message));
     return { success: false, error: message };
   }
 }

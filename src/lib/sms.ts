@@ -5,6 +5,8 @@
  * and maintain conversation threads per lead.
  */
 
+import { sanitizeForLog } from "@/lib/log-sanitize";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -75,7 +77,7 @@ export async function sendSMS(
   const messageId = `sms-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   if (!config.configured) {
-    console.log(`[sms] Twilio not configured — skipping SMS to ${to.slice(0, 6)}***`);
+    console.log(`[sms] Twilio not configured — skipping SMS to ${sanitizeForLog(to.slice(0, 6))}***`);
     // Track the skip
     import("@/lib/analytics-hooks")
       .then(({ trackSystem }) =>
@@ -112,7 +114,7 @@ export async function sendSMS(
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error("[sms] Twilio send failed:", errBody);
+      console.error("[sms] Twilio send failed:", sanitizeForLog(errBody));
       return { success: false, message_id: messageId, twilio_sid: null, error: "Twilio API error" };
     }
 

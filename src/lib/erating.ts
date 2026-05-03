@@ -5,6 +5,8 @@
  * calculate dealer markup, and return available products for a VIN.
  */
 
+import { sanitizeForLog } from "@/lib/log-sanitize";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -76,7 +78,7 @@ export async function getRates(
 
   // Real provider integration would go here.
   // For now, return demo rates with a note.
-  console.log(`[erating] Would fetch rates from ${provider} for VIN ${request.vin}`);
+  console.log(`[erating] Would fetch rates from ${sanitizeForLog(provider)} for VIN ${sanitizeForLog(request.vin)}`);
   return getDemoRates(request, provider);
 }
 

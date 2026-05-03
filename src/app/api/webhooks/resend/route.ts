@@ -19,6 +19,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { trackSystem } from "@/lib/analytics-hooks";
 import type { SystemEvent } from "@/lib/analytics-hooks";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 
 /* ------------------------------------------------------------------ */
 /*  Svix signature verification                                        */
@@ -161,7 +162,7 @@ export async function POST(req: NextRequest) {
   const eventType = RESEND_EVENT_MAP[payload.type];
   if (!eventType) {
     // Unknown event type — log and acknowledge
-    console.warn(`[resend-webhook] Unknown event type: ${payload.type}`);
+    console.warn(`[resend-webhook] Unknown event type: ${sanitizeForLog(payload.type)}`);
     return NextResponse.json({ received: true }, { status: 200 });
   }
 

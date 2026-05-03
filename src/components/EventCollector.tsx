@@ -1720,18 +1720,25 @@ export default function EventCollector({
     const referrer = document.referrer;
     if (!referrer) return;
 
-    // Classify referrer source
+    // Classify referrer source.
+    //
+    // Use registrable-domain matching, not substring `.includes()`, so an
+    // attacker-controlled referrer like `evil-google.com` cannot spoof
+    // "google_organic". CodeQL js/incomplete-url-substring-sanitization.
+    const matchesDomain = (host: string, domains: string[]): boolean =>
+      domains.some((d) => host === d || host.endsWith("." + d));
+
     let source = "direct";
     try {
       const url = new URL(referrer);
       const host = url.hostname.toLowerCase();
-      if (host.includes("google")) source = "google_organic";
-      else if (host.includes("facebook") || host.includes("fb.")) source = "facebook";
-      else if (host.includes("instagram")) source = "instagram";
-      else if (host.includes("tiktok")) source = "tiktok";
-      else if (host.includes("youtube")) source = "youtube";
-      else if (host.includes("bing")) source = "bing";
-      else if (host.includes("twitter") || host.includes("x.com")) source = "twitter";
+      if (matchesDomain(host, ["google.com", "google.co.uk", "google.ca"])) source = "google_organic";
+      else if (matchesDomain(host, ["facebook.com", "fb.com", "fb.me"])) source = "facebook";
+      else if (matchesDomain(host, ["instagram.com"])) source = "instagram";
+      else if (matchesDomain(host, ["tiktok.com"])) source = "tiktok";
+      else if (matchesDomain(host, ["youtube.com", "youtu.be"])) source = "youtube";
+      else if (matchesDomain(host, ["bing.com"])) source = "bing";
+      else if (matchesDomain(host, ["twitter.com", "x.com"])) source = "twitter";
       else source = host;
     } catch { /* invalid URL */ }
 
