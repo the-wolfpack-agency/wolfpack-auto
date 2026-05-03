@@ -1,0 +1,83 @@
+name: Security Audit
+
+on:
+  # Nightly at 03:17 UTC — off-peak, after most timezones' end-of-day pushes.
+  schedule:
+    - cron: "17 3 * * *"
+  # Manual trigger.
+  workflow_dispatch:
+  # On every push to main so a regression flagged by any audit fails CI.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+
+concurrency:
+  group: security-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history so audit_history_exposure can walk the
+          # entire git log — shallow clone misses old commits.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: CI/CD posture audit
+        run: |
+          python3 scripts/audit_cicd_security.py --json > cicd-audit.json
+          python3 scripts/audit_cicd_security.py --severity high
+          # High count must stay zero on main.
+          HIGH=$(python3 -c "import json; print(sum(1 for f in json.load(open('cicd-audit.json'))['findings'] if f['severity']=='high'))")
+          echo "::notice::cicd_audit_high=$HIGH"
+          if [ "$HIGH" -gt "0" ]; then
+            echo "::error::CI/CD audit reports $HIGH high-severity findings"
+            exit 1
+          fi
+
+      - name: App-security audit
+        run: |
+          python3 scripts/audit_app_security.py --json > app-audit.json
+          python3 scripts/audit_app_security.py --severity high
+          HIGH=$(python3 -c "import json; print(sum(1 for f in json.load(open('app-audit.json'))['findings'] if f['severity']=='high'))")
+          echo "::notice::app_audit_high=$HIGH"
+          # App audit allows a non-zero ceiling temporarily — every
+          # finding above that ceiling fails the run. Lower the
+          # ceiling as agents triage A4 queries.
+          CEILING=20
+          if [ "$HIGH" -gt "$CEILING" ]; then
+            echo "::error::App-security audit reports $HIGH high-severity findings (ceiling=$CEILING). Triage at https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            exit 1
+          fi
+
+      - name: History-exposure audit
+        run: |
+          python3 scripts/audit_history_exposure.py --json > history-audit.json
+          python3 scripts/audit_history_exposure.py
+          HIGH=$(python3 -c "import json; print(sum(1 for f in json.load(open('history-audit.json'))['findings'] if f['severity']=='high'))")
+          echo "::notice::history_audit_high=$HIGH"
+          if [ "$HIGH" -gt "0" ]; then
+            echo "::error::History exposes $HIGH sensitive names — review audit_history_exposure output above"
+            exit 1
+          fi
+
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audits-${{ github.run_id }}
+          path: |
+            cicd-audit.json
+            app-audit.json
+            history-audit.json
+          retention-days: 30
