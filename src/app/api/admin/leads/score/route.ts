@@ -71,9 +71,10 @@ export async function POST(request: NextRequest) {
     try {
       const { query } = await import("@/lib/db");
 
+      const dealerId = authResult.user.dealer_id;
       const leadResult = await query<Record<string, unknown>>(
-        `SELECT * FROM leads WHERE id = $1`,
-        [lead_id],
+        `SELECT * FROM leads WHERE id = $1 AND dealer_id = $2`,
+        [lead_id, dealerId],
       );
 
       if (!leadResult.rows || leadResult.rows.length === 0) {
@@ -125,13 +126,14 @@ export async function POST(request: NextRequest) {
                 scored_at               = NOW(),
                 temperature             = $4,
                 updated_at              = NOW()
-          WHERE id = $5`,
+          WHERE id = $5 AND dealer_id = $6`,
         [
           leadScore.score,
           JSON.stringify(leadScore.factors),
           leadScore.recommendedFollowupAt.toISOString(),
           leadScore.tier,
           lead_id,
+          dealerId,
         ],
       );
 

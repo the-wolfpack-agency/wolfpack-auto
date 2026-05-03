@@ -84,7 +84,7 @@ export async function GET(
       }
 
       // Fetch audit log
-      const auditResult = await query(
+      const auditResult = await /* audit-safe: A4 reason="parent ofac_screening already verified to belong to this dealer immediately above" */ query(
         `SELECT *
            FROM ofac_audit_log
           WHERE screening_id = $1
@@ -226,7 +226,7 @@ export async function PATCH(
       );
 
       // Write to audit log
-      await query(
+      await /* audit-safe: A4 reason="parent ofac_screening tenant-verified earlier in this handler; child rows scoped via screening_id FK" */ query(
         `INSERT INTO ofac_audit_log (screening_id, action, user_name, details, timestamp)
          VALUES ($1, $2, $3, $4, NOW())`,
         [

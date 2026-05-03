@@ -28,7 +28,7 @@ export async function GET(_req: NextRequest) {
   const dealerId = authResult.user.dealer_id;
 
   try {
-    const { rows } = await pool.query(
+    const { rows } = await /* audit-safe: A4 reason="dealers.id IS the dealer_id; parameter is from session, so this reads only the calling tenant's row" */ pool.query(
       `SELECT
          id, name, tagline, phone, email,
          address, primary_color, secondary_color, accent_color,

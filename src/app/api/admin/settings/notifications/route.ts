@@ -71,8 +71,8 @@ export async function PUT(request: NextRequest) {
   try {
     const { query } = await import("@/lib/db");
     await query(
-      `UPDATE dealer_users SET notification_prefs = $1 WHERE id = $2`,
-      [JSON.stringify(prefs), authResult.user.id],
+      `UPDATE dealer_users SET notification_prefs = $1 WHERE id = $2 AND dealer_id = $3`,
+      [JSON.stringify(prefs), authResult.user.id, authResult.user.dealer_id],
     );
     try { trackSystem("system.notifications_updated", authResult?.user?.dealer_id ?? "system", { action: "notifications_updated" }); } catch {}
     return NextResponse.json({ prefs, saved: true }, { status: 200 });

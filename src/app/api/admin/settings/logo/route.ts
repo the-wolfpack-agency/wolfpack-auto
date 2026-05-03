@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const dataUrl = `data:${file.type};base64,${base64}`;
 
     const { query } = await import("@/lib/db");
-    await query(
+    await /* audit-safe: A4 reason="dealers.id IS the dealer_id; parameter is from session, so this updates only the calling tenant's row" */ query(
       `UPDATE dealers SET logo_url = $1, updated_at = NOW() WHERE id = $2`,
       [dataUrl, dealerId],
     );
@@ -87,7 +87,7 @@ export async function DELETE() {
 
   try {
     const { query } = await import("@/lib/db");
-    await query(
+    await /* audit-safe: A4 reason="dealers.id IS the dealer_id; parameter is from session, so this updates only the calling tenant's row" */ query(
       `UPDATE dealers SET logo_url = NULL, updated_at = NOW() WHERE id = $1`,
       [dealerId],
     );

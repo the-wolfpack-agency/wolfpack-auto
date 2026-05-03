@@ -282,7 +282,7 @@ export async function GET(request: NextRequest) {
         params.push(provider);
       }
 
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="vhr.dealer_id = $1 is the first entry in conditions[] above; cannot be omitted" */ query(
         `SELECT vhr.*
            FROM vehicle_history_reports vhr
           WHERE ${conditions.join(" AND ")}

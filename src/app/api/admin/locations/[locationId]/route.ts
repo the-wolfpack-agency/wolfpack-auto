@@ -292,8 +292,8 @@ export async function DELETE(
 
     // Soft-delete the location
     await query(
-      `UPDATE dealer_locations SET is_active = false, updated_at = NOW() WHERE id = $1`,
-      [locationId],
+      `UPDATE dealer_locations SET is_active = false, updated_at = NOW() WHERE id = $1 AND dealer_id = $2`,
+      [locationId, dealerId],
     );
 
     try {

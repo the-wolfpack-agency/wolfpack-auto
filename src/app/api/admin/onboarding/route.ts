@@ -239,7 +239,7 @@ export async function PATCH(request: NextRequest) {
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      await query(
+      await /* audit-safe: A4 reason="onboarding_progress is keyed on user_email pre-tenant; the dealer record may not exist yet during wizard flow" */ query(
         `INSERT INTO onboarding_progress (
           user_email, current_step, template_id, data, updated_at
         ) VALUES ($1, $2, $3, $4, NOW())
@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
       logoFile: data.branding.logoFile,
     });
 
-    await query(
+    await /* audit-safe: A4 reason="creates the dealer tenant row itself during onboarding; no parent tenant exists" */ query(
       `INSERT INTO dealers (
         id, slug, name, phone, email, website,
         address_street, address_city, address_state, address_zip,

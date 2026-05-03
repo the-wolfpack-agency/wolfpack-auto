@@ -278,7 +278,7 @@ export async function GET(request: NextRequest) {
         params.push(dateFilter);
       }
 
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="dealer_id = $1 is the first entry in conditions[] above; cannot be omitted" */ query(
         `SELECT * FROM repair_orders
          WHERE ${conditions.join(" AND ")}
          ORDER BY created_at DESC

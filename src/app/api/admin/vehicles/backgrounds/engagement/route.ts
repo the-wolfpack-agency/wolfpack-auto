@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true }); // Silent fail for engagement
     }
 
-    const dealerId = "unknown"; // Engagement can come from public pages
+    const dealerId = authResult.user.dealer_id;
 
     // Track in analytics system
     if (event === "view") {
@@ -67,15 +67,15 @@ export async function POST(request: NextRequest) {
           await query(
             `UPDATE vehicle_background_assignments
              SET views = views + 1
-             WHERE vin = $1 AND is_active = true`,
-            [vin],
+             WHERE vin = $1 AND dealer_id = $2 AND is_active = true`,
+            [vin, dealerId],
           );
         } else if (event === "click") {
           await query(
             `UPDATE vehicle_background_assignments
              SET clicks = clicks + 1
-             WHERE vin = $1 AND is_active = true`,
-            [vin],
+             WHERE vin = $1 AND dealer_id = $2 AND is_active = true`,
+            [vin, dealerId],
           );
         } else if (event === "dwell" && dwell_ms) {
           // Running average: new_avg = ((old_avg * views) + new_dwell) / (views + 1)
@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
                WHEN views > 0 THEN ((avg_dwell_ms * views) + $2) / (views + 1)
                ELSE $2
              END
-             WHERE vin = $1 AND is_active = true`,
-            [vin, dwell_ms],
+             WHERE vin = $1 AND dealer_id = $3 AND is_active = true`,
+            [vin, dwell_ms, dealerId],
           );
         }
       } catch {

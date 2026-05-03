@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="dealer-switch-target-validation" */ query(
         `SELECT id, name, slug FROM dealers WHERE id = $1 AND is_active = true`,
         [dealer_id],
       );

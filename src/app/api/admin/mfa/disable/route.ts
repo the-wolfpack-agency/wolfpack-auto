@@ -58,8 +58,8 @@ export async function DELETE(request: Request): Promise<NextResponse> {
           SET mfa_enabled = false,
               mfa_secret = NULL,
               mfa_backup_codes = NULL
-        WHERE id = $1`,
-      [targetUserId],
+        WHERE id = $1 AND dealer_id = $2`,
+      [targetUserId, user.dealer_id],
     );
 
     try { trackSecurity("security.mfa_disabled", authResult?.user?.dealer_id ?? "system", { action: "mfa_disabled", target_user: targetUserId }); } catch {}

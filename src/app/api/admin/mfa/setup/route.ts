@@ -45,8 +45,8 @@ export async function POST(): Promise<NextResponse> {
           SET mfa_secret = $1,
               mfa_enabled = false,
               mfa_backup_codes = NULL
-        WHERE id = $2`,
-      [encryptedSecret, user.id],
+        WHERE id = $2 AND dealer_id = $3`,
+      [encryptedSecret, user.id, user.dealer_id],
     );
 
     try { trackSecurity("security.mfa_setup", authResult?.user?.dealer_id ?? "system", { action: "mfa_setup_initiated" }); } catch {}

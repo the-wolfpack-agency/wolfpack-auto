@@ -204,7 +204,7 @@ export async function GET(request: NextRequest) {
         params.push(techFilter);
       }
 
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="dealer_id = $1 is the first entry in conditions[] above; cannot be omitted" */ query(
         `SELECT * FROM service_appointments
          WHERE ${conditions.join(" AND ")}
          ORDER BY scheduled_date ASC, scheduled_time ASC

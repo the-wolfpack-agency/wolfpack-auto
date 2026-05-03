@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         params.push(typeFilter);
       }
 
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="lenders is a global lender catalog (no per-dealer rows in schema), shared across all tenants" */ query(
         `SELECT * FROM lenders
           WHERE ${conditions.join(" AND ")}
           ORDER BY type, name`,

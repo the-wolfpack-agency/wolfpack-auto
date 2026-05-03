@@ -29,15 +29,16 @@ export async function GET(
   const { query } = await import("@/lib/db");
   const { enrichSurveyResponses } = await import("@/lib/survey-replay-linker");
 
+  const dealerId = authResult.user.dealer_id;
   const responseRows = await query(
     `SELECT sr.id, sr.survey_id, sr.session_id, sr.answers, sr.submitted_at, sr.page_url
      FROM survey_responses sr
-     WHERE sr.survey_id = $1
+     WHERE sr.survey_id = $1 AND sr.dealer_id = $2
      ORDER BY sr.submitted_at DESC`,
-    [surveyId],
+    [surveyId, dealerId],
   );
 
-  const linkRows = await query(
+  const linkRows = await /* audit-safe: A4 reason="survey_response_id ANY() list comes from the tenant-scoped query immediately above; cannot leak across dealers" */ query(
     `SELECT id, survey_response_id, session_id, linked_at
      FROM survey_replay_links
      WHERE survey_response_id = ANY($1)`,

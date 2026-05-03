@@ -59,8 +59,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       mfa_secret: string | null;
       mfa_enabled: boolean;
     }>(
-      `SELECT mfa_secret, mfa_enabled FROM dealer_users WHERE id = $1 LIMIT 1`,
-      [user.id],
+      `SELECT mfa_secret, mfa_enabled FROM dealer_users WHERE id = $1 AND dealer_id = $2 LIMIT 1`,
+      [user.id, user.dealer_id],
     );
 
     const row = result.rows[0];
@@ -87,8 +87,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       `UPDATE dealer_users
           SET mfa_enabled = true,
               mfa_backup_codes = $1
-        WHERE id = $2`,
-      [hashedCodes, user.id],
+        WHERE id = $2 AND dealer_id = $3`,
+      [hashedCodes, user.id, user.dealer_id],
     );
 
     try { trackSecurity("security.mfa_enabled", authResult?.user?.dealer_id ?? "system", { action: "mfa_enabled" }); } catch {}

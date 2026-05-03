@@ -75,7 +75,7 @@ export async function PATCH(
         whereClause += ` AND updated_at = $${++idx}`;
       }
 
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="whereClause built above always includes id = $X AND dealer_id = $Y" */ query(
         `UPDATE service_appointments
          SET ${sets.join(", ")}
          ${whereClause}

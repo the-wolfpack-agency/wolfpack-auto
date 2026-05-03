@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Session not found" }, { status: 404 });
       }
 
-      const eventRows = await query(
+      const eventRows = await /* audit-safe: A4 reason="parent session_replays row tenant-verified in the SELECT directly above" */ query(
         `SELECT * FROM session_replay_events WHERE session_id = $1 ORDER BY seq ASC`,
         [sessionId],
       );
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
 
     // Batch insert events
     for (const event of events) {
-      await query(
+      await /* audit-safe: A4 reason="parent session_replays row was upserted with this dealer_id immediately above; events keyed by session_id FK" */ query(
         `INSERT INTO session_replay_events (session_id, seq, ts, type, data)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT DO NOTHING`,

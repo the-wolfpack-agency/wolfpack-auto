@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
         params.push(dealId);
       }
 
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="s.dealer_id is the first condition pushed into conditions array on line above" */ query(
         `SELECT s.*
            FROM ofac_screenings s
           WHERE ${conditions.join(" AND ")}

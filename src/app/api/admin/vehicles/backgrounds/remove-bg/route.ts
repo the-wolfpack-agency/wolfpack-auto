@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     if (process.env.DATABASE_URL && jobId) {
       try {
         const { query } = await import("@/lib/db");
-        await query(
+        await /* audit-safe: A4 reason="jobId came from a tenant-scoped INSERT in this same request, so updating by jobId cannot leak across dealers" */ query(
           `UPDATE background_jobs
            SET status = 'completed', cutout_key = $1, cutout_url = $2,
                ai_prediction_id = $3, processing_ms = $4, cost_cents = $5,
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     if (process.env.DATABASE_URL && jobId) {
       try {
         const { query } = await import("@/lib/db");
-        await query(
+        await /* audit-safe: A4 reason="jobId came from a tenant-scoped INSERT in this same request, so updating by jobId cannot leak across dealers" */ query(
           `UPDATE background_jobs
            SET status = 'failed', error_message = $1, retry_count = retry_count + 1
            WHERE id = $2::uuid`,

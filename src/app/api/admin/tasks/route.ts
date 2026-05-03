@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
         conditions.push("recognition_note IS NOT NULL");
       }
 
-      const result = await query(
+      const result = await /* audit-safe: A4 reason="dealer_id = $1 is the first entry in conditions[] above; cannot be omitted" */ query(
         `SELECT id, title, description, assigned_to, assigned_by, due_date,
                 status, priority, created_at, recognition_note
          FROM employee_tasks
