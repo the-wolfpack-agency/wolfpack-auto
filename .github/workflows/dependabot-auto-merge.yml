@@ -6,6 +6,8 @@ name: Dependabot auto-merge
 # Why pull_request_target: lets us merge from forks Dependabot pushes from
 # the bot account, with secrets available. We never check out PR code here
 # (only inspect metadata + call gh CLI), so this is safe.
+#
+# audit-safe: G1 reason="dependabot-auto-merge does not actions/checkout the PR head; only metadata + gh-cli merge"
 
 on:
   pull_request_target:

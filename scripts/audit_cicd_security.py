@@ -82,9 +82,20 @@ def scan_workflow(path: Path) -> list[Finding]:
     rel = str(path.relative_to(ROOT))
     findings: list[Finding] = []
 
-    # G1
+    # G1 — pull_request_target trigger.
+    # Inline-pragma escape: a line containing
+    #   `# audit-safe: G1 reason="..."`
+    # within the 5 lines before or after the trigger suppresses the
+    # finding. Required for the canonical Dependabot auto-merge
+    # pattern, which uses pull_request_target but never checks out
+    # the PR head (so the RCE vector doesn't apply).
     for m in RE_PR_TARGET.finditer(text):
         line = text[: m.start()].count("\n") + 1
+        # Look at a small window around the trigger for the pragma.
+        before = text[max(0, m.start() - 400):m.start()]
+        after = text[m.end():m.end() + 400]
+        if "audit-safe: G1" in before or "audit-safe: G1" in after:
+            continue
         findings.append(
             Finding(
                 "G1", rel, line, "high",
@@ -269,9 +280,18 @@ def scan_repo() -> list[Finding]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
+    ap.add_argument(
+        "--severity",
+        choices=["high", "medium", "low"],
+        help="filter findings to severity >= this threshold",
+    )
     args = ap.parse_args()
 
     findings = scan_repo()
+    if args.severity:
+        rank = {"high": 0, "medium": 1, "low": 2}
+        threshold = rank[args.severity]
+        findings = [f for f in findings if rank[f.severity] <= threshold]
     findings.sort(key=lambda f: ({"high": 0, "medium": 1, "low": 2}[f.severity], f.file, f.line))
 
     if args.json:
