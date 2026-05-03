@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { requireAuth, requireRole, isAuthenticated } from "@/lib/auth-guard";
 import { trackSystem } from "@/lib/analytics-hooks";
 
 /**
@@ -60,7 +60,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth();
+  const authResult = await requireRole(["owner"]);
   if (!isAuthenticated(authResult)) return authResult;
 
   let body: Record<string, unknown>;
@@ -114,13 +114,13 @@ export async function POST(request: NextRequest) {
     const { query } = await import("@/lib/db");
 
     // Check slug uniqueness
-    const existing = await query(`SELECT id FROM dealers WHERE slug = $1`, [cleanSlug]);
+    const existing = await query( /* audit-safe: A4 reason="globally-unique dealer slug pre-create dedupe (owner role)" */`SELECT id FROM dealers WHERE slug = $1`, [cleanSlug]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ error: `Slug "${cleanSlug}" is already taken` }, { status: 409 });
     }
 
     // Create the dealer
-    const result = await query(
+    const result = await query( /* audit-safe: A4 reason="creating-the-tenant-itself (owner role)" */
       `INSERT INTO dealers (name, slug, subdomain, phone, email, address, branding, sales_hours, is_active, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW())
        RETURNING id, name, slug`,
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const authResult = await requireAuth();
+  const authResult = await requireRole(["owner"]);
   if (!isAuthenticated(authResult)) return authResult;
 
   let body: Record<string, unknown>;
@@ -235,7 +235,7 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const { query } = await import("@/lib/db");
-    const result = await query(
+    const result = await query( /* audit-safe: A4 reason="agency-level dealer-active toggle (owner role required above)" */
       `UPDATE dealers SET is_active = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, is_active`,
       [is_active, id],
     );

@@ -239,8 +239,7 @@ export async function GET(request: NextRequest) {
         conditions.push(`d.created_at <= $${idx++}`);
         params.push(dateTo);
       }
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="d.dealer_id always pushed as first condition above" */
         `SELECT d.*
            FROM deals d
           WHERE ${conditions.join(" AND ")}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Lead, LeadStatus, LeadTemperature } from "@/types/lead";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
 import { decryptPII } from "@/lib/crypto";
 import { trackLead } from "@/lib/analytics-hooks";
 
@@ -346,6 +347,7 @@ function statusRank(s: LeadStatus): number {
 export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const sessionDealerId = getDealerId(authResult);
 
   const { searchParams } = new URL(request.url);
 
@@ -364,7 +366,7 @@ export async function GET(request: NextRequest) {
       const { query } = await import("@/lib/db");
 
       const conditions: string[] = ["dealer_id = $1", "deleted_at IS NULL"];
-      const params: unknown[] = [DEALER_ID];
+      const params: unknown[] = [sessionDealerId];
       let idx = 2;
 
       if (statusFilter && VALID_STATUSES.includes(statusFilter)) {
@@ -398,11 +400,11 @@ export async function GET(request: NextRequest) {
       const col = orderCol[sort] ?? "created_at";
 
       const [dataResult, countResult] = await Promise.all([
-        query(
+        query( /* audit-safe: A4 reason="dealer_id always pushed as first condition above" */
           `SELECT * FROM leads WHERE ${where} ORDER BY ${col} ${sortDir} LIMIT $${idx} OFFSET $${idx + 1}`,
           [...params, pageSize, (page - 1) * pageSize],
         ),
-        query<{ count: string }>(
+        query<{ count: string }>( /* audit-safe: A4 reason="dealer_id always pushed as first condition above" */
           `SELECT COUNT(*)::text AS count FROM leads WHERE ${where}`,
           params,
         ),

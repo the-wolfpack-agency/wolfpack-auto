@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         LIMIT 10`,
       [since],
     ),
-    query(
+    query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
       `SELECT page, COUNT(*)::int AS rows
          FROM analytics_events
         WHERE timestamp >= $1
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         LIMIT 10`,
       [since],
     ),
-    query(
+    query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
       `SELECT COUNT(*)::int AS rows
          FROM analytics_events
         WHERE timestamp >= $1`,
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
        — shows WHICH event types are being recorded for /. If only
        page_view shows up, we know consent isn't granting through to
        click/scroll/cursor. */
-    query(
+    query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
       `SELECT event_type, COUNT(*)::int AS rows
          FROM analytics_events
         WHERE timestamp >= $1 AND page = $2

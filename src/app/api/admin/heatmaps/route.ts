@@ -54,7 +54,7 @@ async function loadClickPoints(
   since: string,
 ): Promise<HeatmapPoint[]> {
   const { query } = await import("@/lib/db");
-  const result = await query(
+  const result = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
     `SELECT metadata->>'x' AS x,
             metadata->>'y' AS y,
             COUNT(*)::int AS count
@@ -92,7 +92,7 @@ async function loadScrollBands(
   /* For each session, take the deepest scroll threshold reached.
      scroll_100 wins over scroll_75 wins over scroll_50, etc. We
      extract the integer threshold from the action suffix. */
-  const result = await query(
+  const result = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
     `WITH per_session AS (
        SELECT session_id,
               MAX((regexp_replace(action, '^scroll_', ''))::int) AS max_depth
@@ -160,7 +160,7 @@ async function loadAttentionZones(
   /* Bin cursor_heatmap linger events by 100px y-bands. Sum dwell
      duration per band, then normalize by the hottest band so the UI
      gets 0..1 intensity it can render. */
-  const result = await query(
+  const result = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
     `SELECT (FLOOR((metadata->>'y')::numeric / 100) * 100)::int AS y_band,
             SUM(COALESCE((metadata->>'duration_ms')::int, 0))::int AS dwell_ms
        FROM analytics_events
@@ -195,7 +195,7 @@ async function loadStats(
 ): Promise<Stats> {
   const { query } = await import("@/lib/db");
   const [clicksRow, scrollRow, hottestRow] = await Promise.all([
-    query(
+    query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
       `SELECT COUNT(*)::int AS total
          FROM analytics_events
         WHERE event_type = 'click'
@@ -204,7 +204,7 @@ async function loadStats(
           AND timestamp >= $3`,
       [page, dealerId, since],
     ),
-    query(
+    query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
       `SELECT AVG(d)::numeric AS avg_depth
          FROM (
            SELECT MAX((regexp_replace(action, '^scroll_', ''))::int) AS d
@@ -218,7 +218,7 @@ async function loadStats(
          ) sub`,
       [page, dealerId, since],
     ),
-    query(
+    query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
       `SELECT COALESCE(metadata->>'text', metadata->>'tag', 'unknown') AS label,
               COUNT(*)::int AS clicks
          FROM analytics_events

@@ -198,8 +198,7 @@ export async function PATCH(
         whereClause += ` AND updated_at = $${idx + 2}`;
         finalParams.push(expectedUpdatedAt);
       }
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="whereClause built above always pins dealer_id" */
         `UPDATE deals SET ${setClauses.join(", ")}
           ${whereClause}
           RETURNING *`,

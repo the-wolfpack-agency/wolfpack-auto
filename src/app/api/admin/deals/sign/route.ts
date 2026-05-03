@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auditLog } from "@/lib/audit-log";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
+import { getDealerId } from "@/lib/get-dealer-id";
 import { trackDeal } from "@/lib/analytics-hooks";
 
 /**
@@ -11,6 +12,7 @@ import { trackDeal } from "@/lib/analytics-hooks";
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
   if (!isAuthenticated(authResult)) return authResult;
+  const dealerId = getDealerId(authResult);
 
   let body: { lead_id?: string; vehicle_vin?: string; signature_data?: string; agreed_price?: number };
 
@@ -73,9 +75,9 @@ export async function POST(request: NextRequest) {
       const { query } = await import("@/lib/db");
 
       await query(
-        `INSERT INTO deals (id, lead_id, vehicle_vin, agreed_price, signature_data, status, signed_at, created_at)
-         VALUES ($1, $2, $3, $4, $5, 'signed', $6, NOW())`,
-        [dealId, lead_id, vehicle_vin, agreed_price, signature_data, signedAt],
+        `INSERT INTO deals (id, dealer_id, lead_id, vehicle_vin, agreed_price, signature_data, status, signed_at, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'signed', $7, NOW())`,
+        [dealId, dealerId, lead_id, vehicle_vin, agreed_price, signature_data, signedAt],
       );
 
       // Audit log: record deal signing (fire-and-forget)

@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     const { query } = await import("@/lib/db");
 
     // Check for duplicate email
-    const existing = await query(`SELECT id FROM dealer_users WHERE email = $1`, [email.toLowerCase()]);
+    const existing = await query( /* audit-safe: A4 reason="globally-unique email pre-create dedupe across platform" */`SELECT id FROM dealer_users WHERE email = $1`, [email.toLowerCase()]);
     if (existing.rows.length > 0) {
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
       // Look up dealer name for the email
       let dealerName = "Your Dealership";
       try {
-        const dealerResult = await query(`SELECT name FROM dealers WHERE id = $1 LIMIT 1`, [dealerId]);
+        const dealerResult = await query( /* audit-safe: A4 reason="dealer PK lookup, dealerId pulled from session" */`SELECT name FROM dealers WHERE id = $1 LIMIT 1`, [dealerId]);
         dealerName = dealerResult.rows[0]?.name ?? dealerName;
       } catch { /* non-critical */ }
 

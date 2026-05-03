@@ -224,8 +224,7 @@ export async function GET(request: NextRequest) {
         conditions.push(`date <= $${idx++}`);
         params.push(to);
       }
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="dealer_id always pushed as first condition above" */
         `SELECT * FROM sales_log WHERE ${conditions.join(" AND ")} ORDER BY date DESC LIMIT 200`,
         params,
       );

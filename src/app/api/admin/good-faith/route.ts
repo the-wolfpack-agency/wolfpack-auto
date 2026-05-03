@@ -237,9 +237,10 @@ export async function POST(request: NextRequest) {
     // Audit log — never throw
     try {
       await query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, metadata, created_at)
-         VALUES ('good_faith_gesture.created', 'good_faith_gesture', $1, $2, NOW())`,
+        `INSERT INTO audit_log (dealer_id, action, entity_type, entity_id, metadata, created_at)
+         VALUES ($1, 'good_faith_gesture.created', 'good_faith_gesture', $2, $3, NOW())`,
         [
+          dealerId,
           (result.rows as any[])[0]?.id,
           JSON.stringify({ gesture_type, value_usd, oem_reimbursable: body.oem_reimbursable ?? false }),
         ],
@@ -344,9 +345,9 @@ export async function PATCH(request: NextRequest) {
     // Audit log — never throw
     try {
       await query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, metadata, created_at)
-         VALUES ('good_faith_gesture.status_updated', 'good_faith_gesture', $1, $2, NOW())`,
-        [id, JSON.stringify({ status, oem_claim_id: body.oem_claim_id ?? null })],
+        `INSERT INTO audit_log (dealer_id, action, entity_type, entity_id, metadata, created_at)
+         VALUES ($1, 'good_faith_gesture.status_updated', 'good_faith_gesture', $2, $3, NOW())`,
+        [dealerId, id, JSON.stringify({ status, oem_claim_id: body.oem_claim_id ?? null })],
       );
     } catch (auditErr) {
       console.error("[api/admin/good-faith] Audit log write failed:", auditErr);

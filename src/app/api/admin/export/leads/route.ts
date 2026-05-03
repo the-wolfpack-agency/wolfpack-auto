@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
       }
 
       const where = conditions.join(" AND ");
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="dealer_id always pushed as first condition above" */
         `SELECT * FROM leads WHERE ${where} ORDER BY created_at DESC`,
         params,
       );

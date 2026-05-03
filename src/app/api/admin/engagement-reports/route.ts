@@ -227,9 +227,10 @@ export async function POST(request: NextRequest) {
     // Write to audit_log — never throw
     try {
       await query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, metadata, created_at)
-         VALUES ('engagement_report.created', 'engagement_report', $1, $2, NOW())`,
+        `INSERT INTO audit_log (dealer_id, action, entity_type, entity_id, metadata, created_at)
+         VALUES ($1, 'engagement_report.created', 'engagement_report', $2, $3, NOW())`,
         [
+          dealerId,
           (result.rows as any[])[0]?.id,
           JSON.stringify({ interaction_type, outcome, rating }),
         ],

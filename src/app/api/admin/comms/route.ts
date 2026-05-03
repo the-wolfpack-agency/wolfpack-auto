@@ -106,8 +106,7 @@ export async function GET(request: NextRequest) {
         conditions.push(`(audience = $2 OR audience = 'all')`);
         params.push(audience);
       }
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="dealer_id always pushed as first condition above" */
         `SELECT id, title, body, author, audience, pinned, created_at, read_count
          FROM announcements
          WHERE ${conditions.join(" AND ")}

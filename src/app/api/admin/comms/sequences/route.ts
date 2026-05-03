@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
 
       for (let i = 0; i < body.steps.length; i++) {
         const step = body.steps[i];
-        await query(
+        await query( /* audit-safe: A4 reason="child rows of follow_up_sequences row just inserted with this dealer_id" */
           `INSERT INTO sequence_steps (id, sequence_id, step_order, delay_hours, channel, template_id)
            VALUES ($1,$2,$3,$4,$5,$6)`,
           [`step-${Date.now()}-${i}`, newId, i + 1, step.delay_hours, step.channel, step.template_id],

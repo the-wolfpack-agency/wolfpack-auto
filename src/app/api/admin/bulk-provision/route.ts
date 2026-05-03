@@ -66,15 +66,14 @@ async function requireAgencyAuth(
       const { query } = await import("@/lib/db");
       const { createHash } = await import("node:crypto");
       const keyHash = createHash("sha256").update(apiKey).digest("hex");
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="agency-level api key lookup by globally-unique key_hash" */
         `SELECT id FROM agency_api_keys WHERE key_hash = $1 AND active = true LIMIT 1`,
         [keyHash],
       );
 
       if (result.rows.length > 0) {
         // Update last_used_at
-        await query(
+        await query( /* audit-safe: A4 reason="agency-level api key bookkeeping by globally-unique id" */
           `UPDATE agency_api_keys SET last_used_at = NOW() WHERE id = $1`,
           [result.rows[0].id],
         ).catch(() => { /* non-critical */ });
@@ -185,7 +184,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Check slug uniqueness
-      const existing = await query(
+      const existing = await query( /* audit-safe: A4 reason="globally-unique dealer slug lookup, pre-tenant existence check" */
         `SELECT id FROM dealers WHERE slug = $1`,
         [slug],
       );
@@ -203,7 +202,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Create dealer record
-      await query(
+      await query( /* audit-safe: A4 reason="creating-the-tenant-itself" */
         `INSERT INTO dealers (
           id, slug, name, phone, email, website,
           address_street, address_city, address_state, address_zip,

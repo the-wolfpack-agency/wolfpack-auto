@@ -112,7 +112,7 @@ async function runVerification(): Promise<VerificationResult> {
       if (process.env.DATABASE_URL) {
         try {
           const { query } = await import("@/lib/db");
-          const result = await query(
+          const result = await query( /* audit-safe: A4 reason="verification-canary self-isolated by unique per-run timestamp tag" */
             `SELECT COUNT(*) as cnt FROM analytics_events
              WHERE action = $1 AND metadata::text LIKE $2
              ORDER BY timestamp DESC LIMIT 1`,

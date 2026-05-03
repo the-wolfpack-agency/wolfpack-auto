@@ -109,8 +109,7 @@ export async function GET(request: NextRequest) {
         conditions.push(`category = $${idx++}`);
         params.push(category);
       }
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="dealer_id always pushed as first condition above" */
         `SELECT id, name, channel, category, subject, body, variables, created_at, updated_at
          FROM message_templates
          WHERE ${conditions.join(" AND ")}

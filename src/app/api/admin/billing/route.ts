@@ -21,7 +21,7 @@ export async function GET() {
   const dealerId = authResult.user.dealer_id;
 
   try {
-    const { rows } = await pool.query(
+    const { rows } = await pool.query( /* audit-safe: A4 reason="lookup-by-dealer-pk-from-session-bound dealer_id" */
       `SELECT
          subscription_status,
          subscription_plan,

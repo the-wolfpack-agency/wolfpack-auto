@@ -86,13 +86,14 @@ export async function POST() {
                       scored_at               = NOW(),
                       temperature             = $4,
                       updated_at              = NOW()
-                WHERE id = $5`,
+                WHERE id = $5 AND dealer_id = $6`,
               [
                 leadScore.score,
                 JSON.stringify(leadScore.factors),
                 leadScore.recommendedFollowupAt.toISOString(),
                 leadScore.tier,
                 row.id as string,
+                dealerId,
               ],
             );
 

@@ -131,8 +131,8 @@ export async function POST(request: NextRequest) {
                     predictive_action = $4,
                     predicted_at = NOW(),
                     updated_at = NOW()
-              WHERE id = $5`,
-            [score.score, score.buy_window, score.confidence, score.recommended_action, lead_id],
+              WHERE id = $5 AND dealer_id = $6`,
+            [score.score, score.buy_window, score.confidence, score.recommended_action, lead_id, dealerId],
           );
         } catch (err) {
           console.error("[api/admin/leads/predict] Failed to persist score:", err);

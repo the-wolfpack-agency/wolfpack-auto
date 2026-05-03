@@ -212,8 +212,7 @@ export async function GET(request: NextRequest) {
         conditions.push(`c.deal_id = $${idx++}`);
         params.push(dealId);
       }
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="c.dealer_id always pushed as first condition above" */
         `SELECT c.*
            FROM contracts c
           WHERE ${conditions.join(" AND ")}

@@ -201,8 +201,7 @@ export async function GET(request: NextRequest) {
         conditions.push(`m.sent_at <= $${idx++}`);
         params.push(to);
       }
-
-      const result = await query(
+      const result = await query( /* audit-safe: A4 reason="m.dealer_id always pushed as first condition above" */
         `SELECT m.id, m.channel, m.recipient, COALESCE(l.name, m.recipient) AS recipient_name,
                 m.subject, LEFT(m.body, 100) AS body_preview, m.template_id, m.lead_id,
                 m.status, u.name AS sent_by, m.sent_at

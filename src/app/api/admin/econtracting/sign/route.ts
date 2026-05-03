@@ -156,14 +156,14 @@ export async function POST(request: NextRequest) {
       if (allSigned) {
         newStatus = "completed";
         await query(
-          `UPDATE contracts SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = $1`,
-          [contractId],
+          `UPDATE contracts SET status = 'completed', completed_at = NOW(), updated_at = NOW() WHERE id = $1 AND dealer_id = $2`,
+          [contractId, dealerId],
         );
       } else if (anySigned) {
         newStatus = "partially_signed";
         await query(
-          `UPDATE contracts SET status = 'partially_signed', updated_at = NOW() WHERE id = $1`,
-          [contractId],
+          `UPDATE contracts SET status = 'partially_signed', updated_at = NOW() WHERE id = $1 AND dealer_id = $2`,
+          [contractId, dealerId],
         );
       }
 
