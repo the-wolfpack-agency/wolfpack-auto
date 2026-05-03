@@ -21,6 +21,10 @@ permissions:
   security-events: write
   actions: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   # ──────────────────────────────────────────────────
   # Phase 0: Pipeline Health & Early Prevention
@@ -218,7 +222,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run AgenticQA Security Scan
-        uses: nhomyk/AgenticQA@main
+        uses: nhomyk/AgenticQA@98f9f330cc499c7de5a9c11560a132e33eebecef  # main as of 2026-05-03
         with:
           path: '.'
           fail-on-critical: 'false'

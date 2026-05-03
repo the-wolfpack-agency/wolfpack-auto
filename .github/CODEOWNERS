@@ -1,0 +1,56 @@
+# CODEOWNERS — required reviewers for sensitive paths.
+#
+# Format: <pattern>  <github-user-or-team>
+# Last match wins, so put broader rules first and specific overrides last.
+# Order matters when GitHub picks who to request review from.
+#
+# Why each path is sensitive:
+#   - .github/workflows: any change can grant the workflow a token that
+#     reads secrets and writes to main; treat like crypto code.
+#   - src/db/migrations: schema changes mutate prod state on every deploy.
+#   - src/lib/crypto, src/lib/auth: signing / token / session logic. A bug
+#     here is a security incident, not a feature regression.
+#   - src/lib/triple-write.ts, src/lib/triple-write*: the single durable
+#     writer for learning entities; corruption here loses customer data.
+#   - src/middleware.ts: CSP + auth cookies + tenant routing — CSP drift
+#     has historically been the #1 prod regression class.
+#   - src/lib/tenant-resolver.ts, src/lib/tenant-context.ts: multi-tenant
+#     isolation; a wrong dealer_id leaks data across tenants.
+
+# Default owner — applies if no later rule matches.
+*                                @nhomyk
+
+# CI / CD — only the repo admin can change build + deploy paths.
+/.github/                        @nhomyk
+/.github/workflows/              @nhomyk
+/scripts/audit_cicd_security.py  @nhomyk
+
+# DB schema (every change runs against prod on next deploy).
+/src/db/migrations/              @nhomyk
+/src/db/migrate.ts               @nhomyk
+
+# Crypto + auth — security-critical.
+/src/lib/crypto/                 @nhomyk
+/src/lib/crypto.ts               @nhomyk
+/src/lib/auth.ts                 @nhomyk
+/src/lib/auth-guard.ts           @nhomyk
+/src/lib/csrf.ts                 @nhomyk
+/src/lib/mfa.ts                  @nhomyk
+
+# Multi-tenant isolation — wrong dealer_id = cross-tenant leak.
+/src/lib/tenant-resolver.ts      @nhomyk
+/src/lib/tenant-context.ts       @nhomyk
+/src/lib/get-dealer-id.ts        @nhomyk
+
+# Triple-write durable persistence.
+/src/lib/triple-write.ts         @nhomyk
+/src/lib/qdrant-client.ts        @nhomyk
+/src/lib/neo4j-client.ts         @nhomyk
+
+# Middleware (CSP / auth cookies / tenant routing).
+/src/middleware.ts               @nhomyk
+
+# Analytics ingest — dealer_id stamping + privacy gates.
+/src/app/api/analytics/          @nhomyk
+/src/components/EventCollector.tsx @nhomyk
+/src/components/CookieConsent.tsx  @nhomyk

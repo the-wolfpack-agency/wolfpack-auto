@@ -9,6 +9,9 @@ on:
 env:
   SHADOW_PORT: 3099
 
+permissions:
+  contents: read
+
 jobs:
   shadow-hardening:
     runs-on: ubuntu-latest

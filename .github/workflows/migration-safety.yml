@@ -12,6 +12,9 @@ on:
 env:
   DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/wolfpack_test
 
+permissions:
+  contents: read
+
 jobs:
   migration-safety:
     runs-on: ubuntu-latest
