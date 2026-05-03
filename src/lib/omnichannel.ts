@@ -11,6 +11,7 @@
  */
 
 import { query } from "@/lib/db";
+import { randomBytes, randomUUID } from "node:crypto";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -75,13 +76,13 @@ const handoffs = new Map<string, HandoffData>();
 /* ------------------------------------------------------------------ */
 
 function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  // Crypto-strong randomness — handoff IDs are referenced by URL/QR.
+  return `${Date.now()}-${randomUUID()}`;
 }
 
 function generateToken(): string {
-  return Array.from({ length: 32 }, () =>
-    Math.random().toString(36).charAt(2),
-  ).join("");
+  // 32 hex chars = 128 bits, generated via CSPRNG (closes js/insecure-randomness).
+  return randomBytes(16).toString("hex");
 }
 
 function useDb(): boolean {

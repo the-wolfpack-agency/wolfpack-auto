@@ -98,7 +98,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Basic email validation
+  // Cap input length BEFORE running the regex — closes js/polynomial-redos.
+  // RFC 5321 caps a local-part at 64 and a domain at 255, so 254 is a safe
+  // upper bound for the full address. Without this cap, the
+  // `[^\s@]+@[^\s@]+\.[^\s@]+` pattern can take quadratic time on
+  // adversarial input that contains many spaces or '@' near the end.
+  if (typeof body.email !== "string" || body.email.length > 254) {
+    return NextResponse.json({ error: "Invalid email format" }, { status: 422 });
+  }
+  // Basic email validation (linear after the length cap above)
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
     return NextResponse.json({ error: "Invalid email format" }, { status: 422 });
   }

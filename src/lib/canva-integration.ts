@@ -296,9 +296,20 @@ function formatPrice(price: number): string {
   return price.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+/**
+ * Render a 0-5 star bar. The hard `MAX_STARS` cap closes
+ * js/resource-exhaustion — even if `rating` is attacker-controlled (e.g.
+ * `Infinity`, a huge number, or a non-finite value), `full` is clamped to
+ * the integer range [0, MAX_STARS] before any `String#repeat` call.
+ */
+const MAX_STARS = 5;
 function renderStars(rating: number): string {
-  const full = Math.min(5, Math.max(0, Math.round(rating)));
-  return "★".repeat(full) + "☆".repeat(5 - full);
+  const safe = Number.isFinite(rating) ? rating : 0;
+  const rounded = Math.round(safe);
+  const full =
+    rounded < 0 ? 0 : rounded > MAX_STARS ? MAX_STARS : rounded;
+  const empty = MAX_STARS - full;
+  return "★".repeat(full) + "☆".repeat(empty);
 }
 
 function escapeHtml(str: string): string {

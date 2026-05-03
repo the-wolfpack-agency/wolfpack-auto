@@ -191,6 +191,12 @@ export async function renewCertificate(
  * Connect to `domain:443` and inspect the peer certificate.
  *
  * Returns structured info including days until expiry and validity.
+ *
+ * Validation: certificate validation IS enforced (rejectUnauthorized=true).
+ * For an expired or self-signed peer cert, the TLS handshake will surface a
+ * structured error via the socket "error" handler, which we map to a
+ * `CertificateInfo` with `isValid=false` so callers can still report the
+ * status without a hard throw.
  */
 export async function checkCertificateStatus(
   domain: string,
@@ -199,7 +205,7 @@ export async function checkCertificateStatus(
     const socket = tls.connect(
       443,
       domain,
-      { servername: domain, rejectUnauthorized: false },
+      { servername: domain, rejectUnauthorized: true },
       () => {
         const cert = socket.getPeerCertificate();
 
@@ -232,6 +238,41 @@ export async function checkCertificateStatus(
     );
 
     socket.on("error", (err) => {
+      // For expiry-style failures we still want to surface the cert metadata
+      // so renewCertificate() can drive a renewal. Re-fetch the peer cert
+      // (Node populates it before the error is emitted) and resolve with
+      // isValid=false. Any other TLS error rejects.
+      const expiryCodes = new Set([
+        "CERT_HAS_EXPIRED",
+        "CERT_NOT_YET_VALID",
+        "DEPTH_ZERO_SELF_SIGNED_CERT",
+        "SELF_SIGNED_CERT_IN_CHAIN",
+        "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+      ]);
+      const errCode = (err as NodeJS.ErrnoException).code ?? "";
+      if (expiryCodes.has(errCode)) {
+        const cert = socket.getPeerCertificate();
+        if (cert && cert.valid_to) {
+          const validFrom = new Date(cert.valid_from);
+          const validTo = new Date(cert.valid_to);
+          const now = new Date();
+          const daysUntilExpiry = Math.floor(
+            (validTo.getTime() - now.getTime()) / (1_000 * 60 * 60 * 24),
+          );
+          socket.destroy();
+          return resolve({
+            domain,
+            issuer:
+              (Array.isArray(cert.issuer?.O) ? cert.issuer.O[0] : cert.issuer?.O) ??
+              "Unknown",
+            validFrom,
+            validTo,
+            daysUntilExpiry,
+            serialNumber: cert.serialNumber,
+            isValid: false,
+          });
+        }
+      }
       reject(new Error(`[ssl] Failed to connect to ${domain}: ${err.message}`));
     });
 

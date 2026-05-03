@@ -64,8 +64,18 @@ async function requireAgencyAuth(
 
     try {
       const { query } = await import("@/lib/db");
-      const { createHash } = await import("node:crypto");
-      const keyHash = createHash("sha256").update(apiKey).digest("hex");
+      const { createHmac } = await import("node:crypto");
+      // Use HMAC-SHA256 with a server-side pepper instead of plain SHA-256 so
+      // a leaked DB row alone is not enough to recover the key. Closes
+      // js/insufficient-password-hash. An offline attacker without the pepper
+      // cannot brute-force the key_hash. Keys must be re-issued after rotating
+      // AGENCY_API_KEY_PEPPER.
+      const pepper =
+        process.env.AGENCY_API_KEY_PEPPER ??
+        process.env.NEXTAUTH_SECRET ??
+        "wolfpack-auto-agency-key-pepper-dev-only";
+      const keyHash = createHmac("sha256", pepper).update(apiKey).digest("hex");
+
       const result = await query( /* audit-safe: A4 reason="agency-level api key lookup by globally-unique key_hash" */
         `SELECT id FROM agency_api_keys WHERE key_hash = $1 AND active = true LIMIT 1`,
         [keyHash],

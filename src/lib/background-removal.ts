@@ -69,6 +69,67 @@ export interface ProviderHealth {
 /*  Configuration                                                      */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Allow-list of host suffixes we will fetch source images from.
+ * Closes js/request-forgery — the source URL is user-supplied via
+ * the public composite/remove-bg routes; without this, an attacker
+ * could pivot the server-side fetcher into internal services.
+ */
+const SOURCE_URL_HOST_ALLOWLIST: readonly string[] = [
+  // S3 / R2 / R2 public dev buckets
+  "s3.amazonaws.com",
+  ".s3.amazonaws.com",
+  ".s3.us-east-1.amazonaws.com",
+  ".s3.us-east-2.amazonaws.com",
+  ".s3.us-west-1.amazonaws.com",
+  ".s3.us-west-2.amazonaws.com",
+  ".r2.cloudflarestorage.com",
+  ".r2.dev",
+  // Provider response hosts (cutout fetches from fal/replicate/remove.bg)
+  "fal.run",
+  "fal.media",
+  ".fal.media",
+  ".fal.run",
+  "replicate.delivery",
+  ".replicate.delivery",
+  "api.remove.bg",
+  // Stock/test sources occasionally referenced in dev/demos
+  "images.unsplash.com",
+];
+
+/**
+ * Validate a URL against the allow-list.
+ * Throws on rejection so callers (including provider-chain fallbacks)
+ * fail closed rather than leak the request.
+ */
+export function assertAllowedSourceUrl(rawUrl: string): URL {
+  // Allow inline data URLs (already in-process buffer, no fetch happens)
+  if (rawUrl.startsWith("data:")) {
+    return new URL(rawUrl);
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new Error("[background-removal] source_url is not a valid URL");
+  }
+  if (parsed.protocol !== "https:") {
+    throw new Error(
+      `[background-removal] source_url must use https:// (got ${parsed.protocol})`,
+    );
+  }
+  const host = parsed.hostname.toLowerCase();
+  const ok = SOURCE_URL_HOST_ALLOWLIST.some((entry) =>
+    entry.startsWith(".") ? host.endsWith(entry) : host === entry,
+  );
+  if (!ok) {
+    throw new Error(
+      `[background-removal] source_url host not allowed: ${host}`,
+    );
+  }
+  return parsed;
+}
+
 const FAL_REMBG_MODEL = "fal-ai/birefnet/v2";
 
 const REPLICATE_DEFAULT_MODEL =
@@ -134,8 +195,10 @@ async function removeViaLocal(
   if (sourceBuffer) {
     inputBlob = new Blob([new Uint8Array(sourceBuffer)], { type: "image/png" });
   } else {
+    // SSRF guard — only fetch from allow-listed source hosts.
+    const safeUrl = assertAllowedSourceUrl(sourceUrl);
     // Fetch the image and convert to blob
-    const res = await fetch(sourceUrl, {
+    const res = await fetch(safeUrl, {
       signal: AbortSignal.timeout(PROCESSING_TIMEOUT_MS),
     });
     if (!res.ok) {
@@ -471,6 +534,11 @@ export async function removeBackground(
   if (!sourceUrl) {
     throw new Error("[background-removal] Either source_url or source_buffer is required");
   }
+
+  // SSRF guard — validate user-controlled source_url against the allow-list
+  // before handing it to ANY provider (we fetch directly in `local`, and
+  // external providers fetch on our behalf via their image_url field).
+  assertAllowedSourceUrl(sourceUrl);
 
   if (request.source_buffer && request.source_buffer.length > MAX_SOURCE_SIZE) {
     throw new Error(

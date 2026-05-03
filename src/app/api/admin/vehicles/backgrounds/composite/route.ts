@@ -21,6 +21,7 @@ import {
   isValidPresetId,
   type CompositeOptions,
 } from "@/lib/background-generator";
+import { assertAllowedSourceUrl } from "@/lib/background-removal";
 
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
@@ -61,12 +62,23 @@ export async function POST(request: NextRequest) {
     custom_bg_id: custom_bg_id ?? "",
   });
 
+  // SSRF guard — cutout_url is user-supplied; validate before any fetch.
+  let safeCutoutUrl: URL;
+  try {
+    safeCutoutUrl = assertAllowedSourceUrl(cutout_url);
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Invalid cutout_url" },
+      { status: 400 },
+    );
+  }
+
   try {
     // Fetch the vehicle cutout
-    const cutoutRes = await fetch(cutout_url);
+    const cutoutRes = await fetch(safeCutoutUrl);
     if (!cutoutRes.ok) {
       return NextResponse.json(
-        { error: `Failed to fetch cutout from ${cutout_url}: ${cutoutRes.status}` },
+        { error: `Failed to fetch cutout: ${cutoutRes.status}` },
         { status: 400 },
       );
     }
@@ -92,7 +104,19 @@ export async function POST(request: NextRequest) {
           );
         }
         const bgUrl = rows[0].optimized_url || rows[0].original_url;
-        const bgRes = await fetch(bgUrl);
+        // bgUrl is dealer-scoped DB-stored, not user-supplied this request,
+        // but still funnel through the same allow-list to prevent stale DB
+        // values from triggering an internal-network fetch.
+        let safeBgUrl: URL;
+        try {
+          safeBgUrl = assertAllowedSourceUrl(bgUrl);
+        } catch {
+          return NextResponse.json(
+            { error: "Stored background URL is not allow-listed" },
+            { status: 400 },
+          );
+        }
+        const bgRes = await fetch(safeBgUrl);
         if (bgRes.ok) {
           backgroundBuffer = Buffer.from(await bgRes.arrayBuffer());
         }

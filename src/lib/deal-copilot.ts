@@ -21,6 +21,7 @@
  * Both are fire-and-forget — failures are logged, never block the PG write.
  */
 
+import { randomUUID } from "node:crypto";
 import {
   matchLenderPrograms,
   type DealStructure,
@@ -1041,7 +1042,8 @@ function rowToSuggestion(r: CopilotSuggestionRow): CopilotSuggestion {
 
 function synthesizeSession(args: OpenSessionArgs, now: string): CopilotSession {
   return {
-    id: `shadow-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    // Crypto-strong UUID — these IDs surface in API responses and audit logs.
+    id: `shadow-${Date.now()}-${randomUUID()}`,
     dealer_id: args.dealer_id,
     deal_id: args.deal_id,
     opened_by_user_id: args.opened_by_user_id,
@@ -1059,7 +1061,7 @@ function synthesizeSuggestion(
   draft: SuggestionDraft,
 ): CopilotSuggestion {
   return {
-    id: `shadow-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `shadow-${Date.now()}-${randomUUID()}`,
     session_id: sessionId,
     dealer_id: dealerId,
     suggestion_type: draft.suggestion_type,
