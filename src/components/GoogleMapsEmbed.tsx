@@ -22,10 +22,10 @@ export default function GoogleMapsEmbed({
   dealerId,
 }: GoogleMapsEmbedProps) {
   useEffect(() => {
-    /* Bug fix 2026-05-02: was passing `page: dealerId` which polluted
-       the analytics_events.page column with raw UUIDs (444 rows of
-       garbage in the prod DB before this fix). The page column MUST
-       be a URL path; dealer_id belongs in metadata. */
+    // Bug fix 2026-05-02: was passing `page: dealerId` which polluted
+    // analytics_events.page with raw UUIDs (444 garbage rows in prod
+    // before this fix). The page column is the URL path; dealer_id
+    // belongs in metadata.
     fetch("/api/analytics/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

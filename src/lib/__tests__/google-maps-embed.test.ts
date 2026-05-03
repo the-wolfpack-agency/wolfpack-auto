@@ -69,8 +69,10 @@ describe("Google Maps Embed", () => {
   });
 
   it("CSP allows google.com in frame-src", () => {
-    // Extract the CSP header value from next.config.mjs
-    expect(nextConfig).toMatch(/frame-src.*https:\/\/www\.google\.com/);
+    // Anchor the URL to a "scheme + host" boundary so a malicious value
+    // like `frame-src https://attacker.com/https://www.google.com/...` cannot
+    // satisfy this assertion. CodeQL js/regex/missing-regexp-anchor.
+    expect(nextConfig).toMatch(/frame-src[^;,"]*\bhttps:\/\/www\.google\.com\b(?!\.[A-Za-z])/);
   });
 
   it("fires analytics event on mount via client-side fetch", () => {
@@ -78,11 +80,15 @@ describe("Google Maps Embed", () => {
     expect(component).toContain("/api/analytics/events");
     expect(component).toContain('"system.analytics_queried"');
     expect(component).toContain('"google_maps"');
-    expect(component).toContain('"contact"');
+    // Bug fix 2026-05-02: dealer_id moved into metadata (was previously the
+    // `page` column, which polluted analytics_events with raw UUIDs).
+    expect(component).toContain('metadata: { module: "google_maps", dealer_id');
   });
 
   it("includes a Get Directions link", () => {
     expect(component).toContain("Get Directions");
-    expect(component).toMatch(/google\.com\/maps\/dir/);
+    // Anchor the URL to a "scheme + host" boundary so a string containing
+    // `https://attacker.com/google.com/maps/dir/` cannot satisfy the check.
+    expect(component).toMatch(/\bhttps:\/\/(?:www\.)?google\.com\/maps\/dir/);
   });
 });

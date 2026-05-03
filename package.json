@@ -7,7 +7,7 @@
     "openapi": "tsx scripts/generate-openapi.ts",
     "build": "npm run openapi && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "test": "playwright test",
     "test:unit": "jest --no-coverage",

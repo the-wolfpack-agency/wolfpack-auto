@@ -1,9 +1,9 @@
 # Wolfpack Auto — API Reference
 
-> Auto-generated 2026-05-02 from `src/app/api/**/route.ts`.  
+> Auto-generated 2026-05-03 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 267
+**Total routes:** 268
 
 ## Contents
 
@@ -183,6 +183,7 @@
 | `POST` | `/api/admin/good-faith` | Create good-faith | Bearer | — |
 | `PATCH` | `/api/admin/good-faith` | Update good-faith | Bearer | — |
 | `GET` | `/api/admin/heatmaps` | List heatmaps | Bearer | — |
+| `GET` | `/api/admin/heatmaps/diagnostic` | List diagnostic | Bearer | — |
 | `GET` | `/api/admin/households` | List households | Bearer | — |
 | `POST` | `/api/admin/households` | Create household | Bearer | — |
 | `POST` | `/api/admin/intake` | POST /api/admin/intake | Bearer | — |

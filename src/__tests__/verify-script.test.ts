@@ -15,15 +15,22 @@ function shim(dir: string, name: string, body: string) {
   chmodSync(path, 0o755);
 }
 
-function runVerify(stubDir: string, extraEnv: NodeJS.ProcessEnv = {}) {
+function runVerify(
+  stubDir: string,
+  extraEnv: Partial<NodeJS.ProcessEnv> = {},
+) {
+  // NodeJS.ProcessEnv requires NODE_ENV; spread parent env first so the
+  // env literal satisfies the type, then override the keys we care about.
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    NODE_ENV: process.env.NODE_ENV ?? "test",
+    PATH: `${stubDir}:${process.env.PATH ?? ""}`,
+    CI: "true",
+    VERIFY_SKIP_E2E: "1",
+    ...extraEnv,
+  };
   return spawnSync("bash", [SCRIPT], {
-    env: {
-      ...process.env,
-      PATH: `${stubDir}:${process.env.PATH ?? ""}`,
-      CI: "true",
-      VERIFY_SKIP_E2E: "1",
-      ...extraEnv,
-    },
+    env,
     encoding: "utf-8",
   });
 }

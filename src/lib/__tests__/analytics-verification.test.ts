@@ -109,6 +109,7 @@ describe("Analytics Verification — Track functions are fire-and-forget", () =>
   for (const { fn } of EXPECTED_MODULES) {
     test(`${fn}() returns void (fire-and-forget)`, () => {
       const hooks = analyticsHooks as Record<string, unknown>;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- track functions have heterogeneous signatures; this test only asserts call-site does not throw + returns void.
       const trackFn = hooks[fn] as Function;
       const result = trackFn("test.event", "test-dealer", { test: true });
       expect(result).toBeUndefined();
@@ -243,6 +244,7 @@ describe("Analytics Verification — Shadow mode", () => {
     delete process.env.DATABASE_URL;
     const hooks = analyticsHooks as Record<string, unknown>;
     for (const { fn } of EXPECTED_MODULES) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- see note above; heterogeneous track-function signatures.
       const trackFn = hooks[fn] as Function;
       expect(() => trackFn("test.event", "dealer", { test: true })).not.toThrow();
     }

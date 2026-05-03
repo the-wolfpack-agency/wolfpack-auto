@@ -43,6 +43,10 @@ jest.spyOn(console, "warn").mockImplementation(() => {});
 jest.spyOn(console, "error").mockImplementation(() => {});
 
 import { NextRequest, NextResponse } from "next/server";
+// Next's NextRequest constructor declares `signal: AbortSignal | undefined`
+// while lib.dom's RequestInit allows `null` too. Import Next's type so the
+// cast in makeReq() lands on the constructor's expected shape.
+import type { RequestInit as NextRequestInit } from "next/dist/server/web/spec-extension/request";
 import { POST as recordPOST } from "@/app/api/admin/vehicle-provenance/record/route";
 import { GET as adminGET } from "@/app/api/admin/vehicle-provenance/[vin]/route";
 import { POST as anchorPOST } from "@/app/api/admin/vehicle-provenance/anchor/route";
@@ -76,7 +80,11 @@ beforeEach(() => {
 });
 
 function makeReq(url: string, init?: RequestInit): NextRequest {
-  return new NextRequest(url, init);
+  // Cast through `unknown` because Next's NextRequest constructor expects
+  // `signal: AbortSignal | undefined` but the standard-lib `RequestInit`
+  // declares `AbortSignal | null | undefined`. Tests never pass a signal,
+  // so the runtime shape is always compatible.
+  return new NextRequest(url, init as unknown as NextRequestInit);
 }
 
 /* -------------------------------------------------------------------------- */

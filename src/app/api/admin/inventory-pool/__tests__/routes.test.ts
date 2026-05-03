@@ -68,7 +68,10 @@ beforeEach(() => {
     mockRequest, mockActReservation, mockListIncoming, mockListOutgoing,
     mockListSwaps, mockProposeSwaps, mockActSwap,
   ].forEach((m) => m.mockReset());
-  delete process.env.DATABASE_URL;
+  // Sibling admin routes return 503 when DATABASE_URL is unset (AVAIL-001
+  // shadow-mode guard). Set a dummy value so the contract tests below see
+  // the real success / 4xx paths instead of the shadow-mode short-circuit.
+  process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 });
 
 function jsonReq(url: string, body: unknown): NextRequest {
@@ -140,6 +143,7 @@ describe("GET /api/admin/inventory-pool/visible", () => {
   });
   it("200 returns demo inventory in shadow mode", async () => {
     mockRequireAuth.mockResolvedValueOnce(authedUser());
+    delete process.env.DATABASE_URL; // exercise shadow-mode demo branch
     const r = await visibleGet(new NextRequest("http://x/api/admin/inventory-pool/visible"));
     expect(r.status).toBe(200);
     const data = await r.json();
@@ -226,6 +230,7 @@ describe("/api/admin/inventory-pool/swaps", () => {
   });
   it("GET 200 demo data in shadow mode", async () => {
     mockRequireAuth.mockResolvedValueOnce(authedUser());
+    delete process.env.DATABASE_URL; // exercise shadow-mode demo branch
     const r = await swapsGet(new NextRequest("http://x/api/admin/inventory-pool/swaps?dealer_group_id=g"));
     expect(r.status).toBe(200);
     const data = await r.json();

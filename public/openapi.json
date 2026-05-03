@@ -3675,6 +3675,33 @@
         ]
       }
     },
+    "/api/admin/heatmaps/diagnostic": {
+      "get": {
+        "summary": "List diagnostic",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/admin/heatmaps": {
       "get": {
         "summary": "List heatmaps",
