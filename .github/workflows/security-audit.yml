@@ -51,10 +51,12 @@ jobs:
           python3 scripts/audit_app_security.py --severity high
           HIGH=$(python3 -c "import json; print(sum(1 for f in json.load(open('app-audit.json'))['findings'] if f['severity']=='high'))")
           echo "::notice::app_audit_high=$HIGH"
-          # App audit allows a non-zero ceiling temporarily — every
-          # finding above that ceiling fails the run. Lower the
-          # ceiling as agents triage A4 queries.
-          CEILING=20
+          # App audit ceiling. Started at 86 high (mostly A4
+          # cross-tenant findings); dropped to 13 after batch A+B
+          # triage. Set to 13 so any NEW high finding fails CI;
+          # lower further as the remaining 13 get fixed or
+          # allow-listed.
+          CEILING=13
           if [ "$HIGH" -gt "$CEILING" ]; then
             echo "::error::App-security audit reports $HIGH high-severity findings (ceiling=$CEILING). Triage at https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             exit 1
