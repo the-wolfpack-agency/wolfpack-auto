@@ -76,6 +76,7 @@ export async function saveWebhookConfig(
   config: WebhookConfig,
 ): Promise<void> {
   if (!process.env.DATABASE_URL) {
+    // audit-safe: A8 reason="literal env var NAME in message string — value is not interpolated"
     console.warn("[webhooks] No DATABASE_URL — config not persisted");
     return;
   }

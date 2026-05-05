@@ -239,7 +239,7 @@ export async function PATCH(request: NextRequest) {
   if (process.env.DATABASE_URL) {
     try {
       const { query } = await import("@/lib/db");
-      await query(
+      await query( /* audit-safe: A4 reason="user_email is the pre-tenant key for onboarding state; dealer does not yet exist" */
         `INSERT INTO onboarding_progress (
           user_email, current_step, template_id, data, updated_at
         ) VALUES ($1, $2, $3, $4, NOW())
@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
       logoFile: data.branding.logoFile,
     });
 
-    await query(
+    await query( /* audit-safe: A4 reason="creating-the-tenant-itself; dealer_id is the row being inserted" */
       `INSERT INTO dealers (
         id, slug, name, phone, email, website,
         address_street, address_city, address_state, address_zip,

@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    // audit-safe: A8 reason="literal '[reset-password]' prefix string in message — err object does not contain the token"
     console.error("[reset-password] POST error:", err);
     return NextResponse.json(
       { error: "Failed to process request" },
@@ -197,6 +198,7 @@ export async function PUT(request: NextRequest) {
         { status: 400 },
       );
     }
+    // audit-safe: A8 reason="literal '[reset-password]' prefix string in message — err object does not contain the token"
     console.error("[reset-password] PUT error:", err);
     return NextResponse.json(
       { error: "Failed to reset password" },

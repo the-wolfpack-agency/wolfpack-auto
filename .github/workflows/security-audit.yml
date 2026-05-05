@@ -45,6 +45,13 @@ jobs:
             exit 1
           fi
 
+      - name: App-security audit self-tests
+        run: |
+          # Pragma-suppression behavior is load-bearing — run the in-memory
+          # self-tests before the real audit so a regressed pragma can't
+          # silently mask findings.
+          python3 scripts/test_audit_app_security.py
+
       - name: App-security audit
         run: |
           python3 scripts/audit_app_security.py --json > app-audit.json
@@ -53,10 +60,10 @@ jobs:
           echo "::notice::app_audit_high=$HIGH"
           # App audit ceiling. Started at 86 high (mostly A4
           # cross-tenant findings); dropped to 13 after batch A+B
-          # triage. Set to 13 so any NEW high finding fails CI;
-          # lower further as the remaining 13 get fixed or
-          # allow-listed.
-          CEILING=13
+          # triage; dropped to 0 on 2026-05-05 after pragma-escape
+          # support added for A5/A6/A8 + twilio sig regex broadened.
+          # Floor is now 0 — any new high-severity finding fails CI.
+          CEILING=0
           if [ "$HIGH" -gt "$CEILING" ]; then
             echo "::error::App-security audit reports $HIGH high-severity findings (ceiling=$CEILING). Triage at https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
             exit 1

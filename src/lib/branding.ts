@@ -4,7 +4,7 @@
  * fonts, and logo.
  *
  * Usage in layout.tsx:
- *   <style dangerouslySetInnerHTML={{ __html: getBrandingCSS(dealer) }} />
+ *   <style dangerouslySetInnerHTML={{ __html: getBrandingCSS(dealer) }} />  // audit-safe: A5 reason="JSDoc usage example, not real code"
  */
 
 import type { Dealer, DealerBranding } from "@/types/dealer";

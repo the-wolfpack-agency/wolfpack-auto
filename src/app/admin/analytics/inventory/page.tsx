@@ -334,6 +334,7 @@ function TabLink({ href, children, active = false }: { href: string; children: R
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-card border border-surface-border bg-white p-6 shadow-card">
+      {/* audit-safe: A5 reason="title prop is a hardcoded literal in every Card call site (e.g. 'Slow Movers &mdash; Repricing Suggestions'); HTML entity rendering is the reason for dangerouslySetInnerHTML" */}
       <h3 className="mb-4 text-base font-semibold text-gray-900" dangerouslySetInnerHTML={{ __html: title }} />
       {children}
     </div>

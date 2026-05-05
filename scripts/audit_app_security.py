@@ -144,7 +144,10 @@ RE_QUERY_INTERPOLATION = re.compile(
     re.MULTILINE,
 )
 RE_DANGEROUS_HTML = re.compile(r"\bdangerouslySetInnerHTML\s*=")
-RE_WEBHOOK_SIG = re.compile(r"verifyWebhook|webhookVerify|webhook-verify|constructEvent|timingSafeEqual")
+RE_WEBHOOK_SIG = re.compile(
+    r"verifyWebhook|webhookVerify|webhook-verify|constructEvent|timingSafeEqual"
+    r"|validate(?:Twilio|Stripe|Webhook)?Signature|verifySignature"
+)
 RE_RAW_FETCH_EXTERNAL = re.compile(
     r"""\bfetch\s*\(\s*['"]https?://(?!(?:localhost|127\.|0\.0\.0\.0))[^'"]+['"]"""
 )
@@ -186,9 +189,18 @@ def scan_file(path: Path) -> list[Finding]:
     text = path.read_text(encoding="utf-8", errors="replace")
     rel = str(path.relative_to(ROOT))
     role = file_role(path)
+    return _scan_text(rel, path.name, text, role)
+
+
+def _scan_text(rel: str, basename: str, text: str, role: str) -> list[Finding]:
+    """Pure text-based scanner — same logic as scan_file, no file I/O.
+
+    Exposed so self-tests can exercise pragma suppression with in-memory
+    fixtures (see scripts/test_audit_app_security.py).
+    """
     findings: list[Finding] = []
     is_route = role.endswith("_route")
-    is_route_ts = is_route and path.name == "route.ts"
+    is_route_ts = is_route and basename == "route.ts"
 
     # A1 — admin route missing requireAuth (and not on the pre-login allow-list)
     if role == "admin_route" and is_route_ts:
@@ -291,6 +303,12 @@ def scan_file(path: Path) -> list[Finding]:
 
     # A5 — dangerouslySetInnerHTML
     for m in RE_DANGEROUS_HTML.finditer(text):
+        line_start = text.rfind("\n", 0, m.start()) + 1
+        # Inline pragma escape — same convention as A3/A4.
+        # Wider window (400 before, 200 after) so a JSX comment with a
+        # multi-sentence reason on the preceding line is still found.
+        if "audit-safe: A5" in text[max(0, m.start() - 400):m.end() + 200]:
+            continue
         line = text[: m.start()].count("\n") + 1
         ctx = text[max(0, m.start() - 200):m.start()].lower()
         sev = "low" if any(s in ctx for s in ("dompurify", "sanitize", "marked", "remark", "rehype")) else "high"
@@ -304,7 +322,7 @@ def scan_file(path: Path) -> list[Finding]:
 
     # A6 — webhook route without signature verification
     if role == "webhook_route" and is_route_ts:
-        if not RE_WEBHOOK_SIG.search(text):
+        if not RE_WEBHOOK_SIG.search(text) and "audit-safe: A6" not in text:
             findings.append(
                 Finding(
                     "A6", rel, 1, "high",
@@ -327,6 +345,9 @@ def scan_file(path: Path) -> list[Finding]:
 
     # A8 — secret in console.*
     for m in RE_SECRET_LOG.finditer(text):
+        # Inline pragma escape — same convention as A3/A4.
+        if "audit-safe: A8" in text[max(0, m.start() - 400):m.end() + 200]:
+            continue
         line = text[: m.start()].count("\n") + 1
         findings.append(
             Finding(

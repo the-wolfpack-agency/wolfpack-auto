@@ -89,6 +89,7 @@ export default async function InventoryPage({
 
   return (
     <div className="bg-surface-muted min-h-screen">
+      {/* audit-safe: A5 reason="JSON-LD ItemList of server-derived inventory rows, JSON-encoded; standard SEO pattern" */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

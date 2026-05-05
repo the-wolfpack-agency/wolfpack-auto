@@ -51,6 +51,7 @@ export default async function TradeInPage() {
 
   return (
     <>
+      {/* audit-safe: A5 reason="JSON-LD service block of static strings, JSON-encoded" */}
       <Script
         id="trade-in-jsonld"
         type="application/ld+json"

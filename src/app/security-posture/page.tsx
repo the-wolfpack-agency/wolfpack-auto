@@ -42,6 +42,7 @@ export default function SecurityPosturePage() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-10 text-gray-900">
+      {/* audit-safe: A5 reason="html is renderMarkdown output of a tracked repo file (docs/security-posture.md); renderMarkdown HTML-escapes &<> before regex transforms; source is not user-controlled" */}
       <article
         className="prose prose-neutral max-w-none [&_table]:border-collapse [&_table]:w-full [&_table]:my-4"
         dangerouslySetInnerHTML={{ __html: html }}

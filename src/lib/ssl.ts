@@ -126,6 +126,7 @@ export async function requestCertificate(
     // In a real deployment, the challenge response is served via the HTTP
     // server or a DNS TXT record. The caller is responsible for setting up
     // the appropriate responder before calling this function.
+    // audit-safe: A8 reason="ACME http-01/dns-01 challenge token + key authorization are PUBLIC by spec — served at /.well-known/acme-challenge/ to prove domain control. Not secrets."
     console.log(
       `[ssl] Challenge ${config.challengeType} for ${domain}: token=${challenge.token} key=${keyAuthorization}`,
     );

@@ -85,10 +85,12 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
   return (
     <div className="bg-surface-muted min-h-screen">
       {/* JSON-LD structured data */}
+      {/* audit-safe: A5 reason="JSON-LD object literal of server-derived vehicle fields; JSON.stringify-encoded into a script tag (standard SEO pattern)" */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(vehicleJsonLd) }}
       />
+      {/* audit-safe: A5 reason="JSON-LD breadcrumb of static + server-derived strings, JSON-encoded" */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
