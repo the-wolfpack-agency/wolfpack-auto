@@ -281,6 +281,7 @@ export default async function RootLayout({
                   <a href="/privacy" className="transition-colors hover:text-white">Privacy Policy</a>
                   <a href="/terms" className="transition-colors hover:text-white">Terms of Service</a>
                   <a href="/accessibility" className="transition-colors hover:text-white">Accessibility</a>
+                  <a href="/status" className="transition-colors hover:text-white">System Status</a>
                 </div>
               </div>
             </div>

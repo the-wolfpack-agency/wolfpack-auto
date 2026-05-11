@@ -3,7 +3,13 @@ import type { Config } from "jest";
 const config: Config = {
   testEnvironment: "node",
   preset: "ts-jest",
-  testMatch: ["<rootDir>/src/**/__tests__/**/*.test.ts"],
+  // .test.ts for unit / API-route tests; .test.tsx for React component
+  // tests that need to render JSX via react-dom/server.
+  testMatch: [
+    "<rootDir>/src/**/__tests__/**/*.test.ts",
+    "<rootDir>/src/**/__tests__/**/*.test.tsx",
+    "<rootDir>/scripts/__tests__/**/*.test.ts",
+  ],
   // uuid@14 is ESM-only and pulls in via next-auth → auth-guard → every
   // admin route. Jest's CJS runtime can't load it. Redirect to a CJS stub
   // that delegates to `crypto.randomUUID` so the runtime behavior is real.
@@ -20,7 +26,9 @@ const config: Config = {
           // Override Next.js-specific settings that break jest
           module: "commonjs",
           moduleResolution: "node",
-          jsx: "react",
+          // react-jsx (the React 17+ automatic runtime) means tests don't
+          // need an explicit `import React` to render JSX.
+          jsx: "react-jsx",
         },
       },
     ],
@@ -31,6 +39,11 @@ const config: Config = {
   transformIgnorePatterns: [
     "/node_modules/(?!(otpauth|qrcode|uuid)/)",
   ],
+  // jsdom-based tests (e.g. component interactivity) need TextEncoder /
+  // TextDecoder polyfilled BEFORE react-dom is imported. setupFiles runs
+  // before the test framework + test modules load, so this is the right
+  // place. Node tests are unaffected (they already have these globals).
+  setupFiles: ["<rootDir>/jest.setup.jsdom.ts"],
 };
 
 export default config;

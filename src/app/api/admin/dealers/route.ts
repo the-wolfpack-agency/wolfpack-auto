@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireRole, isAuthenticated } from "@/lib/auth-guard";
 import { trackSystem } from "@/lib/analytics-hooks";
+import { createDealer } from "@/lib/dealers/create-dealer";
 
 /**
  * GET   /api/admin/dealers — list all dealers
@@ -80,133 +81,31 @@ export async function POST(request: NextRequest) {
     sales_hours?: unknown[];
   };
 
-  if (!name || !slug) {
-    return NextResponse.json({ error: "name and slug are required" }, { status: 400 });
+  // Shared dealer-create logic lives in src/lib/dealers/create-dealer.ts
+  // so the operator console can call the same path without duplicating
+  // the auto-onboarding side effects.
+  const created = await createDealer({
+    name: name ?? "",
+    slug: slug ?? "",
+    phone,
+    email,
+    address,
+    branding,
+    sales_hours,
+  });
+
+  if (!created.ok) {
+    return NextResponse.json({ error: created.error }, { status: created.status });
   }
 
-  // Sanitize slug
-  const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
-
-  // Generate a temp password for the auto-created admin
-  const tempPassword = `Wp${Date.now().toString(36).slice(-6)}!`;
-
-  if (!process.env.DATABASE_URL) {
-    const id = `00000000-0000-4000-b000-${Date.now().toString(16).padStart(12, "0")}`;
-
-    try {
-      trackSystem("agency.dealer_created", id, { name, slug: cleanSlug });
-    } catch { /* analytics never blocks */ }
-
-    return NextResponse.json({
-      id,
-      name,
-      slug: cleanSlug,
-      public_url: `/dealers/${cleanSlug}`,
-      admin_url: `/admin?dealer=${cleanSlug}`,
-      admin_credentials: {
-        email: email ?? `admin@${cleanSlug}.com`,
-        temp_password: tempPassword,
-      },
-    }, { status: 201 });
-  }
-
-  try {
-    const { query } = await import("@/lib/db");
-
-    // Check slug uniqueness
-    const existing = await query( /* audit-safe: A4 reason="globally-unique dealer slug pre-create dedupe (owner role)" */`SELECT id FROM dealers WHERE slug = $1`, [cleanSlug]);
-    if (existing.rows.length > 0) {
-      return NextResponse.json({ error: `Slug "${cleanSlug}" is already taken` }, { status: 409 });
-    }
-
-    // Create the dealer
-    const result = await query( /* audit-safe: A4 reason="creating-the-tenant-itself (owner role)" */
-      `INSERT INTO dealers (name, slug, subdomain, phone, email, address, branding, sales_hours, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW())
-       RETURNING id, name, slug`,
-      [
-        name,
-        cleanSlug,
-        cleanSlug,
-        phone ?? "",
-        email ?? "",
-        JSON.stringify(address ?? {}),
-        JSON.stringify(branding ?? {}),
-        JSON.stringify(sales_hours ?? []),
-      ],
-    );
-
-    const dealer = result.rows[0] as { id: string; name: string; slug: string };
-
-    // ---- AUTO-ONBOARDING ----
-
-    // 1. Create default admin user
-    const adminEmail = (email ?? `admin@${cleanSlug}.com`).toLowerCase();
-    let adminCredentials: { email: string; temp_password: string } | undefined;
-
-    try {
-      const { hash } = await import("bcryptjs");
-      const passwordHash = await hash(tempPassword, 12);
-
-      await query(
-        `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, 'owner', true, NOW(), NOW())
-         ON CONFLICT (email) DO NOTHING`,
-        [dealer.id, adminEmail, `${name} Admin`, passwordHash],
-      );
-
-      adminCredentials = { email: adminEmail, temp_password: tempPassword };
-    } catch (err) {
-      console.error("[dealers] Failed to create default admin:", err);
-    }
-
-    // 2. Create default message templates
-    try {
-      const templates = [
-        { name: "Welcome", subject: `Welcome to ${name}!`, body: `Thank you for your interest in ${name}. We're excited to help you find the perfect vehicle.` },
-        { name: "Follow-Up", subject: `Following up from ${name}`, body: `We wanted to follow up on your recent inquiry. Please let us know if you have any questions.` },
-        { name: "Appointment Reminder", subject: "Appointment Reminder", body: `This is a reminder of your upcoming appointment at ${name}.` },
-      ];
-
-      for (const t of templates) {
-        await query(
-          `INSERT INTO message_templates (dealer_id, name, subject, body, channel, created_at)
-           VALUES ($1, $2, $3, $4, 'email', NOW())
-           ON CONFLICT DO NOTHING`,
-          [dealer.id, t.name, t.subject, t.body],
-        ).catch(() => { /* table may not exist yet */ });
-      }
-    } catch {
-      // Message templates table might not exist — that's OK
-    }
-
-    // 3. Create default webhook config placeholder
-    try {
-      await query(
-        `INSERT INTO webhook_configs (dealer_id, url, secret, events, active, description, created_at, updated_at)
-         VALUES ($1, '', $2, '{*}', false, 'Default webhook — configure URL to activate', NOW(), NOW())`,
-        [dealer.id, `whsec_${Date.now().toString(36)}`],
-      ).catch(() => { /* table may not exist yet */ });
-    } catch {
-      // Webhook configs table might not exist — that's OK
-    }
-
-    try {
-      trackSystem("agency.dealer_created", dealer.id, { name, slug: cleanSlug });
-    } catch { /* analytics never blocks */ }
-
-    return NextResponse.json({
-      id: dealer.id,
-      name: dealer.name,
-      slug: dealer.slug,
-      public_url: `/dealers/${dealer.slug}`,
-      admin_url: `/admin?dealer=${dealer.slug}`,
-      admin_credentials: adminCredentials,
-    }, { status: 201 });
-  } catch (err) {
-    console.error("[dealers] Create error:", err);
-    return NextResponse.json({ error: "Failed to create dealer" }, { status: 500 });
-  }
+  return NextResponse.json({
+    id: created.dealer.id,
+    name: created.dealer.name,
+    slug: created.dealer.slug,
+    public_url: created.public_url,
+    admin_url: created.admin_url,
+    admin_credentials: created.admin_credentials,
+  }, { status: 201 });
 }
 
 export async function PATCH(request: NextRequest) {

@@ -1,9 +1,9 @@
 # Wolfpack Auto — API Reference
 
-> Auto-generated 2026-05-03 from `src/app/api/**/route.ts`.  
+> Auto-generated 2026-05-11 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 268
+**Total routes:** 278
 
 ## Contents
 
@@ -24,9 +24,11 @@
 - [inventory](#inventory)
 - [leads](#leads)
 - [openapi](#openapi)
+- [operator](#operator)
 - [privacy](#privacy)
 - [security-posture](#security-posture)
 - [service](#service)
+- [status](#status)
 - [surveys](#surveys)
 - [trade-in](#trade-in)
 - [vehicle-provenance](#vehicle-provenance)
@@ -492,6 +494,25 @@
 |--------|------|---------|------|-------------|
 | `GET` | `/api/openapi` | GET /api/openapi | — | — |
 
+## operator
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `GET` | `/api/operator/audit` | List audit | — | — |
+| `POST` | `/api/operator/auth/login` | Create login | — | — |
+| `POST` | `/api/operator/auth/logout` | Create logout | — | — |
+| `GET` | `/api/operator/dealers` | List dealers | — | — |
+| `POST` | `/api/operator/dealers` | Create dealer | — | — |
+| `GET` | `/api/operator/dealers/{id}` | Get dealer | — | — |
+| `PATCH` | `/api/operator/dealers/{id}` | Update dealer | — | — |
+| `DELETE` | `/api/operator/dealers/{id}` | Delete dealer | — | — |
+| `GET` | `/api/operator/invites` | List invites | — | — |
+| `POST` | `/api/operator/invites` | Create invite | — | — |
+| `GET` | `/api/operator/invites/accept` | List accept | — | — |
+| `POST` | `/api/operator/invites/accept` | Create accept | — | — |
+| `GET` | `/api/operator/stats` | List stats | — | — |
+| `GET` | `/api/operator/team` | List team | — | — |
+
 ## privacy
 
 | Method | Path | Summary | Auth | Rate-limited |
@@ -513,6 +534,12 @@
 | `GET` | `/api/service/schedule` | List schedule | — | — |
 | `POST` | `/api/service/schedule` | Create schedule | — | — |
 | `GET` | `/api/service/schedule/slots` | List slots | — | — |
+
+## status
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `GET` | `/api/status` | List status | — | — |
 
 ## surveys
 

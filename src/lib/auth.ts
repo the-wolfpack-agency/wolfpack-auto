@@ -10,6 +10,14 @@ import { trackSystem } from "@/lib/analytics-hooks";
 /* Type augmentation for NextAuth session / JWT                               */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Two CredentialsProviders are mounted:
+ *   - "credentials"     → dealer users (dealer_users table)
+ *   - "wolfpack-staff"  → agency operators (wolfpack_staff table, migration 064)
+ *
+ * The provider id is carried into the JWT as `kind` so downstream guards
+ * can distinguish a dealer session from an operator session.
+ */
 declare module "next-auth" {
   interface Session {
     user: {
@@ -17,10 +25,16 @@ declare module "next-auth" {
       email: string;
       name: string;
       dealer_id: string;
-      role: "owner" | "admin" | "manager" | "staff";
+      role: "owner" | "admin" | "manager" | "staff" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
     };
     /** True when the session JWT was created after MFA was verified. */
     mfaVerified?: boolean;
+    /** Distinguishes dealer sessions from Wolfpack operator sessions. */
+    kind?: "dealer" | "wolfpack_staff";
+    /** Staff identifier mirrored to the session when kind === "wolfpack_staff". */
+    staff_id?: string;
+    /** Staff role mirrored to the session when kind === "wolfpack_staff". */
+    staff_role?: "admin" | "operator" | "viewer";
   }
 
   interface User {
@@ -28,9 +42,15 @@ declare module "next-auth" {
     email: string;
     name: string;
     dealer_id: string;
-    role: "owner" | "admin" | "manager" | "staff";
+    role: "owner" | "admin" | "manager" | "staff" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
     /** Set when MFA is required before issuing a full session. */
     mfa_required?: boolean;
+    /** Set by the wolfpack-staff provider so the JWT callback can tag the session. */
+    kind?: "dealer" | "wolfpack_staff";
+    /** Wolfpack staff identifier (when kind === "wolfpack_staff"). */
+    staff_id?: string;
+    /** Wolfpack staff role (when kind === "wolfpack_staff"). */
+    staff_role?: "admin" | "operator" | "viewer";
   }
 }
 
@@ -40,7 +60,7 @@ declare module "next-auth/jwt" {
     email: string;
     name: string;
     dealer_id: string;
-    role: "owner" | "admin" | "manager" | "staff";
+    role: "owner" | "admin" | "manager" | "staff" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
     lastActivity: number;
     /**
      * When true the user authenticated with password but has NOT yet
@@ -51,6 +71,12 @@ declare module "next-auth/jwt" {
     mfa_pending?: boolean;
     /** True once MFA has been verified for this session. */
     mfa_verified?: boolean;
+    /** Distinguishes dealer sessions from Wolfpack operator sessions. */
+    kind?: "dealer" | "wolfpack_staff";
+    /** Wolfpack staff identifier (when kind === "wolfpack_staff"). */
+    staff_id?: string;
+    /** Wolfpack staff role (when kind === "wolfpack_staff"). */
+    staff_role?: "admin" | "operator" | "viewer";
   }
 }
 
@@ -355,6 +381,103 @@ export const authOptions: NextAuthOptions = {
           dealer_id: user.dealer_id,
           role: user.role as "admin" | "manager" | "staff",
           mfa_required: user.mfa_enabled,
+          kind: "dealer",
+        };
+      },
+    }),
+
+    /* ----------------------------------------------------------------------
+     * wolfpack-staff provider — agency operator console (migration 064)
+     *
+     * Reads from wolfpack_staff (NOT dealer_users). Stays untouched if the
+     * dealer flow is used. Issues a JWT tagged with kind="wolfpack_staff"
+     * so the operator-auth guard can distinguish operator sessions.
+     * -------------------------------------------------------------------- */
+    CredentialsProvider({
+      id: "wolfpack-staff",
+      name: "Wolfpack Staff",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const email = credentials.email.toLowerCase().trim();
+
+        // Shared rate limiter — same window as dealer login.
+        if (!(await checkLoginRateLimit(`staff:${email}`))) {
+          throw new Error(
+            "Too many login attempts. Please try again in 15 minutes.",
+          );
+        }
+
+        // Without a database we cannot authenticate Wolfpack staff. We
+        // intentionally do NOT mount a demo credential here — staff login
+        // is for production agency use only.
+        if (!process.env.DATABASE_URL) {
+          await recordFailedLogin(`staff:${email}`);
+          return null;
+        }
+
+        const result = await query<{
+          id: string;
+          email: string;
+          full_name: string;
+          password_hash: string | null;
+          role: "admin" | "operator" | "viewer";
+          disabled_at: string | null;
+        }>(
+          `SELECT id, email, full_name, password_hash, role, disabled_at
+             FROM wolfpack_staff
+            WHERE email = $1
+            LIMIT 1`,
+          [email],
+        );
+
+        const staff = result.rows[0];
+        if (!staff || staff.disabled_at || !staff.password_hash) {
+          await recordFailedLogin(`staff:${email}`);
+          return null;
+        }
+
+        const passwordValid = await compare(credentials.password, staff.password_hash);
+        if (!passwordValid) {
+          await recordFailedLogin(`staff:${email}`);
+          return null;
+        }
+
+        await resetLoginRateLimit(`staff:${email}`);
+
+        // Update last_login_at — fire and forget, never block login.
+        query(
+          `UPDATE wolfpack_staff SET last_login_at = NOW() WHERE id = $1`,
+          [staff.id],
+        ).catch(() => { /* never block login */ });
+
+        // Map staff role into the unified role union so downstream
+        // selectors (which read user.role) keep typing.
+        const mappedRole =
+          staff.role === "admin"
+            ? ("wolfpack_admin" as const)
+            : staff.role === "operator"
+              ? ("wolfpack_operator" as const)
+              : ("wolfpack_viewer" as const);
+
+        return {
+          id: staff.id,
+          email: staff.email,
+          name: staff.full_name || staff.email,
+          // Staff are global — no single dealer_id. Use the sentinel.
+          dealer_id: "wolfpack-staff",
+          role: mappedRole,
+          mfa_required: false,
+          kind: "wolfpack_staff",
+          staff_id: staff.id,
+          staff_role: staff.role,
         };
       },
     }),
@@ -372,6 +495,11 @@ export const authOptions: NextAuthOptions = {
         token.dealer_id = user.dealer_id;
         token.role = user.role;
         token.lastActivity = now;
+        token.kind = user.kind ?? "dealer";
+        if (user.kind === "wolfpack_staff") {
+          token.staff_id = user.staff_id;
+          token.staff_role = user.staff_role;
+        }
 
         // Mark whether MFA still needs to be verified for this session.
         // mfa_required=true  → password passed, TOTP not yet checked
@@ -429,6 +557,11 @@ export const authOptions: NextAuthOptions = {
         role: token.role,
       };
       session.mfaVerified = token.mfa_verified ?? true;
+      session.kind = token.kind ?? "dealer";
+      if (token.kind === "wolfpack_staff") {
+        session.staff_id = token.staff_id;
+        session.staff_role = token.staff_role;
+      }
 
       // Emit observability event for NextAuth-managed token verification.
       try {
