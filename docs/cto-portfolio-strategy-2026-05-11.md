@@ -39,8 +39,8 @@ Each product graded on five axes:
 | Wolfpack Auto | High ($5-25M) | Medium-High (with Wedge D/E) | Closing | High | Very high | **DOUBLE DOWN** with pivot |
 | Wolfpack Instinct | High ($2-15M) | Medium-High (efficiency patents) | Open category, early-mover advantage | Very high | High + internal value floor | **SHIP NOW with cost-efficiency positioning** |
 | Wolfpack LMS | Medium ($1-5M) | Low | Slow but stable | Medium | Very high | **BUNDLE** with consulting, don't standalone |
-| Wolfpack Weekend | Low (under $500K) | Low | Unproven | Low | Medium | **PARK** unless dealer demand validates |
-| Templatized client sites | Low (under $300K) | Very low | Commodity | Low | Medium | **PRODUCTIZE or kill** |
+| Wolfpack Weekend | Medium (client engagement near approval) | Low-Medium (services + tooling) | Validated by inbound demand | Medium | High (services-heavy auto work) | **ACTIVATE** as client engagement |
+| Templatized client sites | Active service line (clients live) | Low (in templates), Medium (in CI/CD spine) | In production | Medium | Very high | **KEEP** as service line, productize the CI/CD spine separately |
 | AgenticQA (internal) | Indirect | High (proprietary) | Hot | Very high | Medium | **INTERNAL WEAPON**, spin out year 2 |
 
 ### 1.1 Per-product detail
@@ -55,9 +55,9 @@ Even more important: **Wolfpack uses Instinct internally for its own consulting 
 
 **Wolfpack LMS.** Useful inside our consulting upskilling business. Standalone? Crowded category (Cornerstone, Docebo, 360Learning) with low pricing power. Recommendation: tie tightly to the upskilling consulting offering. Bundle as part of every change-management engagement. Do not market or sell standalone.
 
-**Wolfpack Weekend.** Niche dealer product. Solid v0.1 launch but unproven demand. Cost to maintain: low. Cost to commercialize: high. Park unless one of our auto consulting clients explicitly requests a deployment.
+**Wolfpack Weekend.** Status changed from speculative to near-revenue (2026-05-11): a client engagement is in late-stage approval, which converts Weekend from a parked side-project into an active client deliverable. The previous "park" guidance is rescinded. Treat Weekend as a productized services engagement: deliver the client project well, capture learnings, then decide whether the second client extends to two or stays a one-off. The right shape for Weekend is probably "white-label experience platform we deploy under client brands" rather than a self-serve SaaS, which suits our small team better than a horizontal product play.
 
-**Templatized client sites.** Pure services work dressed as a product. Race-to-the-bottom commodity unless we either (a) productize the CI/CD pipeline as a standalone offering ("Wolfpack Sites" — Webflow + Vercel + agentic content updates for boutique consultancies) or (b) kill it and stop marketing the capability. Recommendation: productize if the engineering cost is under one engineer-month; otherwise kill.
+**Templatized client sites.** Status updated 2026-05-11: this is an active service line with clients in production. Previous "productize or kill" framing is rescinded. Keep delivering client sites as core service work. The real strategic asset here is not the templates themselves (commodity) but the CI/CD spine underneath them: the agentic-update pipeline, the Vercel deploy templates, the per-client content workflows. Productize that spine separately as an internal capability (reusable across every Wolfpack product), and treat the templated-sites delivery as a stable revenue line that funds product investment without distracting from it.
 
 **AgenticQA.** Our internal CI/CD agent platform. The unfair advantage in everything else we ship. Productizing it now competes with our customer focus on Auto and Instinct. Keep as internal weapon for 2026. Spin out in 2027 as the "Wolfpack Method" developer-tools product if the AI-native CI/CD category emerges (Cursor, Sourcegraph Cody, GitHub Copilot are early signals).
 
@@ -93,8 +93,8 @@ See `docs/gtm-strategy-2026-05-11.md` and `docs/overlay-strategy-one-pager.md` f
 
 ### Park or kill
 
-- **Wolfpack Weekend** — park. Cost to maintain near zero. No active development.
-- **Templatized client sites** — productize as "Wolfpack Sites" if it costs under one engineer-month, else kill. Decide by day 14.
+- **Wolfpack Weekend** — activate as client engagement (status updated 2026-05-11). Treat as productized services, not standalone SaaS. Single dedicated track inside the consulting org. Do not yet build a second-client sales motion until the first client ships and we know the real economics.
+- **Templatized client sites** — keep as active service line (status updated 2026-05-11). Productize the underlying CI/CD spine as an internal capability that compounds across all Wolfpack products. No separate sales motion needed.
 - **AgenticQA** — keep as internal infrastructure. Spin out in 2027.
 
 ---
@@ -120,7 +120,7 @@ If we lean into all six, we can credibly ship two production-grade products in 1
 
 **Output: founder-aligned portfolio decision and execution mandate.**
 
-- Founders' meeting on the kill / keep list. CEO must explicitly approve parking Weekend, deferring templates decision, and deprioritizing AgenticQA productization.
+- Founders' meeting on the kill / keep list. CEO must explicitly approve activating Weekend as a client engagement, keeping templated client sites as a service line, and deprioritizing AgenticQA productization (both Weekend and templated sites status updated 2026-05-11 based on inbound client demand).
 - Founders' meeting on the Wolfpack Auto wedge decision (E primary, D long bet). This is the politically loaded one because the CEO's CDK relationships either become a leverage asset (D) or a relationship to protect (A/C). Force the choice.
 - Patent attorney consult on three IP areas: overlay architecture, agentic compliance scanner, Instinct method.
 - Legal counsel for CDK overlay terms-of-service analysis. $25-50K spend.
@@ -285,7 +285,7 @@ The single decision blocking everything else is founder alignment on the portfol
 
 If this strategy is approved:
 
-1. **Sign off on the portfolio decision** (Wolfpack Auto + Wolfpack Instinct + Wolfpack LMS bundled; Weekend parked; templates decided in 14 days; AgenticQA internal-only).
+1. **Sign off on the portfolio decision** (Wolfpack Auto + Wolfpack Instinct + Wolfpack LMS bundled; Weekend activated as client engagement; templated client sites kept as active service line; AgenticQA internal-only).
 2. **Sign off on the Wolfpack Auto wedge decision** (Wedge E primary, Wedge D long bet, Wedge A held as destination).
 3. **Open doors via your network:**
    - 10 warm introductions to dealer principals or GMs for Wedge E pilot conversations within 30 days.
