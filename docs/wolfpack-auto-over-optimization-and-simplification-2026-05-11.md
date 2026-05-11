@@ -199,11 +199,48 @@ This is where Wolfpack genuinely defines a new category. No incumbent DMS has an
 - Real-time inventory location. "Where is the 2024 Civic in white" answers instantly instead of via radio call to the lot porter.
 - Reduces wasted minutes per deal looking for the car at delivery.
 
+### Low-energy IoT layer: NFC and passive RFID
+
+The BLE/UWB picture above is the "continuous active tracking" layer. There is a second layer that is dramatically cheaper, requires no power, and works without network coverage. This layer is built on NFC tags and passive UHF RFID. It is complementary to BLE/UWB, not a replacement.
+
+**Why this is its own category.** NFC tags are passive (no battery, no maintenance, no failure mode), cost between $0.10 and $1.00 per tag in bulk, and are read by a tap from any modern smartphone or a $50 reader. Passive UHF RFID is similar in cost and works at slightly longer range (3-10 feet with the right reader). Both work entirely under-network: the read happens locally and syncs to the cloud when the reader returns to coverage. Both are deployable for a few hundred dollars across an entire dealership.
+
+**What NFC and RFID do well that BLE does not:**
+- Tap-to-log-action events. Service writer taps the NFC tag on bay 3 to start a ticket. F&I manager taps the desk to begin a deal session.
+- Object identification on demand. Tech taps a part to log "I pulled this." Sales rep taps a car to start a customer walkaround log.
+- Confirmation and handoff. Customer taps their phone on a vehicle to receive the digital brochure for that car.
+- Cheap inventory location. Each parking spot gets a $0.50 NFC tag. Porter taps when moving a car. The location updates instantly without any battery, beacon, or network infrastructure.
+- Hotspot identification. NFC tags on key floor positions (front door, service write-up desk, F&I office doors, customer lounge) let staff and customers log presence with a tap, surfacing real-world dwell time per area.
+
+**What NFC and RFID do not do well:**
+- Continuous passive tracking. No movement, no signal. They only know you were there when you tapped.
+- Long-range detection. NFC is roughly 4cm; passive UHF RFID is a few feet max.
+- Heatmaps from organic foot traffic.
+
+The right read is to use both. BLE/UWB handles continuous location and ambient heatmaps. NFC handles explicit action logging and under-network coverage. Together they cover the dealership for a fraction of what a BLE-only deployment would cost.
+
+**Service people connected to floor areas via low-energy IoT:**
+- Every technician carries an NFC-enabled badge. Tap into bay 3, the badge logs entry; tap out, the badge logs exit. Bay-by-bay productivity becomes visible without any active radio infrastructure.
+- Every work order has an NFC tag printed on the paper or attached to the vehicle key. Tech taps to update status (in progress, parts ordered, customer authorized, completed). Status events flow into our event stream automatically.
+- Every parts location has a UHF RFID tag. Walk-through reader inventory becomes a batch read instead of a manual count.
+- Every sales rep carries an NFC card. Tap on a car to start a customer-tour log. Tap on the F&I desk to begin a deal session.
+
+**Hotspot surfacing.**
+- NFC tags placed at key floor positions emit no signal but accumulate read events. Aggregated over time, the system surfaces high-traffic areas, dead zones, and unexpected dwell patterns.
+- Pair NFC reads with BLE/UWB ambient data to cross-validate insights. If BLE says nobody is in the customer lounge but NFC at the coffee station shows ten reads per hour, we have a calibration gap. Both signal types reinforce each other.
+
 ### Engineering cost: real but bounded
 
-Hardware partnership with a BLE/UWB vendor (Estimote, Quuppa, Aruba) is $30-80K per dealership in hardware plus a few thousand in installation. Cloud receiver software plus our spatial intelligence layer is bounded engineering, maybe 6 months for a credible MVP.
+The split cost picture is now clearer because the two layers have very different economics:
 
-We do not build the hardware. We build the layer on top of commodity IoT infrastructure plus our own AI that turns the raw signal into actionable dealership insight. The moat is the AI layer, not the tags.
+- **NFC + passive UHF RFID layer.** Total hardware cost per dealership: $500-2,000 across hundreds of tags plus a few reader devices. No batteries, no network, no maintenance. Deployable in a single afternoon by anyone with a printer and a label gun.
+- **BLE/UWB active layer.** Hardware partnership with a vendor (Estimote, Quuppa, Aruba) is $30-80K per dealership plus a few thousand in installation. Requires power, network, and ongoing battery replacement on a multi-year cycle.
+
+The two layers together come in well below the $80K BLE-only ceiling because we can do meaningful spatial intelligence with NFC-only at the low end (under $5K per dealership) and only deploy BLE/UWB where the use case demands it.
+
+Cloud receiver software plus our spatial intelligence layer is bounded engineering, maybe 6 months for a credible MVP. Both NFC and BLE signals normalize into the same `spatial_events` schema at the edge, so our intelligence layer is sensor-agnostic.
+
+We do not build the hardware. We build the layer on top of commodity IoT infrastructure plus our own AI that turns the raw signal into actionable dealership insight. The moat is the AI layer, not the tags. The NFC + RFID layer also lets us start a dealership for under $5K of hardware, which is critical for cost-conscious independent dealers that would never sign for a $50K IoT install.
 
 ### Why incumbents cannot follow
 
