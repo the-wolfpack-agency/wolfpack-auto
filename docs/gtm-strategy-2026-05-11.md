@@ -356,6 +356,160 @@ Recommended immediate actions:
 
 ---
 
+## 10. Alternative disruption angles (Wedges D-H)
+
+Wedges A-C frame Wolfpack Auto as a better DMS. That framing concedes the fight to incumbents who have 30 years of dealer relationships and OEM certifications we cannot buy on accelerated timeline. The five wedges below reframe the opportunity around our actual technical advantage (multi-agent orchestration, RAG, browser-based automation, AI-native UX) and target structural weaknesses in the incumbent stack.
+
+These are not mutually exclusive with A-C. They are reframings worth evaluating before committing 18 months to the conventional path.
+
+### Wedge D: AI overlay on top of legacy DMS (no migration required) — RECOMMENDED EVALUATION
+
+**Target:** Dealers stuck on CDK / Reynolds / Dealertrack who hate their DMS but cannot afford the 6-12 month migration. Estimated 18,000 of the 32,000 franchised dealers.
+
+**Why:** The #1 reason dealers do not switch DMS is migration friction, not product preference. We avoid the fight entirely by sitting on top of the existing DMS, not replacing it. Sales reps interact with our AI-driven UX; our agents read and write to CDK via the user's authenticated session (Vibium-style browser automation) and over published APIs where available. The DMS becomes invisible plumbing.
+
+**Required scope:** Browser-automation harness with credential vault, CDK/Reynolds screen-scraping adapters, agent orchestration layer translating user intent into multi-step DMS workflows, audit trail of every action, fallback to native DMS UI when an action is not yet automated. NOT building a DMS — building the experience layer.
+
+**Pricing:** $299-799 / month / user (per sales rep / F&I manager), not per rooftop. Pricing aligned with productivity gain, not feature parity.
+
+**CAC:** $2-5K. Low because dealers do not have to migrate or retrain. Free 30-day pilot is feasible.
+
+**Time to first paying customer:** 60-90 days. Hardest milestone is reliable CDK screen-scraping; we have the Vibium-derived stack to do this.
+
+**Tech advantage:** Multi-agent orchestration + browser automation + RAG over the dealer's own DMS data. Incumbents (CDK, Tekion) literally cannot build this — it cannibalizes their core product.
+
+**Risks:**
+- CDK terms-of-service prohibit screen-scraping for some customer-facing products. Legal analysis required.
+- CDK could rate-limit or detect our automation. Mitigation: degrade gracefully to manual mode and surface latency to user.
+- Some workflows (large bulk updates, accounting batch posts) may exceed practical scraping throughput. Mitigation: hybrid native-API + scraping; transparent to user which is which.
+
+**Why this is the leading alternative:** Inverts the migration problem that has frozen DMS competition for 20 years. Closest historical analog: Stripe sitting on top of legacy banks. See separate one-pager: `docs/overlay-strategy-one-pager.md`.
+
+### Wedge E: Compliance and audit engine (two-sided wedge)
+
+**Target:** All 50,000 US dealers but especially the 18,000 franchised who face active FTC / state DOJ enforcement scrutiny under the new FTC Combating Auto Retail Scams rule (2026 enforcement ramp).
+
+**Why:** Regulatory FOMO drives adoption with less procurement friction than DMS replacement. Every deal in CDK gets audited by our agents for TILA, FCRA, Reg B, Reg V, FTC dealer rule, ECOA, GLBA violations before it funds. One avoided $40K fine pays for two years of subscription. Same playbook we already run for code vulnerabilities in AgenticQA's 20-scanner pipeline — just retargeted at F&I deals.
+
+**Required scope:** Read-only DMS integration (or scraping via Wedge D), rule engine for each major federal + state statute, deal-by-deal audit reports, dealer-principal dashboard, automated regulator-ready evidence packages, customer-facing transparency documents on demand.
+
+**Pricing:** $399-1,499 / month / rooftop. Add-on: $99 per audited deal for outsourced fix-it workflow.
+
+**CAC:** $1-3K. Lowest of any wedge because the buyer is the dealer principal or compliance officer, not the GM. Less GM political resistance.
+
+**Time to first paying customer:** 45-60 days. Build on existing AgenticQA scanner architecture.
+
+**Tech advantage:** Our self-hack scanner muscle, transplanted from code to F&I. Multi-agent reasoning over deal documents (jacket review, signature validation, disclosure verification) is exactly what our pipeline already does for codebases.
+
+**Risks:**
+- Some incumbent DMSes have rudimentary compliance modules. Differentiate on depth (post-funding audits, not just blocking pre-funding gates) and breadth (state laws, not just federal).
+- Legal liability if we "miss" a violation. Mitigation: positioned as advisory tool, not insurance. Customer remains the responsible party. Errors and omissions insurance.
+
+**Why this is also leading:** Lowest sales friction, fastest revenue, builds compliance reputation that becomes a moat for full DMS expansion later.
+
+### Wedge F: Buyer-side AI agent (two-sided marketplace)
+
+**Target:** 17 million US consumers buying a car each year, especially first-time buyers and those who hate the dealership experience.
+
+**Why:** Two-sided network effect. Consumer adoption of an AI shopping agent forces dealers to install a counter-agent to respond at machine speed and protect F&I gross. We sell the dealer-side as defense once buyer-side reaches a threshold (estimated 100K monthly active buyers).
+
+**Required scope:** Consumer-facing app / web tool that searches inventory across the country, evaluates pricing fairness, drafts negotiation scripts, structures financing options, screens out lemons via VIN history and recall data. Backend orchestrates outbound communications to dealer F&I and sales staff on the buyer's behalf.
+
+**Pricing:** Consumer side: freemium ($0 base, $19 / month premium for negotiation assistance, lender pre-approval). Dealer side: $199-499 / month / rooftop to interoperate with buyer agents at scale.
+
+**CAC:** Consumer: $5-20 (digital marketing, organic, referral). Dealer: $500-2K once buyer flywheel exists.
+
+**Time to first paying customer:** Consumer: 90 days. Dealer-side defense product: 12-18 months once buyer-side hits scale.
+
+**Tech advantage:** Same multi-agent stack inverted to act for the consumer instead of the dealer. The consumer agent uses our DMS overlay (Wedge D) tech to interact with dealer websites and CRMs directly.
+
+**Risks:**
+- CarMax, Carvana, TrueCar, AutoTrader own current consumer mindshare. Differentiation: actual negotiation, not just lead-gen.
+- Two-sided marketplaces take 24-36 months to reach network density. Cash burn risk.
+- Adversarial dynamic with dealers complicates dealer-side sales. Mitigation: separate brand for buyer-side ("Wolfpack Auto Shop") to preserve dealer-side credibility.
+
+**Strategic value:** Five-year vision worth seeding now. Optional: license the buyer-side tech to a strategic partner (TrueCar, Edmunds) instead of building distribution ourselves.
+
+### Wedge G: Migration-as-a-Service ("Off-CDK in 30 days")
+
+**Target:** Same 18,000 franchised dealers as Wedge D, but with the opposite philosophy — these are dealers who want to migrate and just need it to not take a year.
+
+**Why:** Migration consulting today costs $100-500K and takes 6-12 months. Our agents do the data mapping, normalization, parallel-run validation, and integration testing that humans bill $300/hour for. Price: $25-75K flat, eat the rest with agents. Then upsell our DMS or a Wedge D overlay relationship.
+
+**Required scope:** Automated CDK / Reynolds / Dealertrack data extraction harness, schema-mapping agent (LLM-driven), normalization rules library, parallel-run reconciliation engine (verify our data matches CDK's day-over-day), cutover orchestration, training materials. Lots of agentic reasoning over messy real-world data.
+
+**Pricing:** $25-75K flat fee for migration, scoped by dealership size. Optional ongoing $399-1,499 / month / rooftop for the destination DMS (ours or partner).
+
+**CAC:** $5-10K. Sells against the misery of CDK contracts coming up for renewal.
+
+**Time to first paying customer:** 90-120 days. Hardest milestone is reliable cross-DMS schema mapping; agents help but real-world data is hostile.
+
+**Tech advantage:** Agentic data engineering at machine pace. Each migration teaches the system; the 10th customer migrates in days, not weeks, because we have seen the schemas before.
+
+**Risks:**
+- Brittle. One missed field on a real customer can wipe out trust for the whole program. Mitigation: rigorous parallel-run validation gates; never cut over without full reconciliation.
+- Legal exposure if the destination DMS loses data. Mitigation: heavy insurance, contractual reps and warranties from customer that source data is accurate.
+- Dependency on having a destination DMS people want to migrate to. Either ours (back to Wedge A/B) or a partnership.
+
+**Strategic value:** Even if we never become a DMS company, this is a $50-200M revenue line on its own. And it eliminates the #1 reason dealers stay on legacy systems.
+
+### Wedge H: OEM-direct platform (high-ceiling, slow-cycle)
+
+**Target:** OEMs trying to own customer relationships directly (Tesla, Rivian, Polestar, Ford with Ford Direct, GM with Cadillac Subscription, Volvo Cars Recharge). Plus large fleet operators (Hertz EV fleet, Enterprise, Uber, last-mile delivery fleets).
+
+**Why:** OEMs and fleets are actively trying to dis-intermediate the dealer network. They need a Wolfpack-Auto-shaped platform to run direct sales, fleet leasing, service-on-OEM-payroll, OTA recall coordination, EV charging operations, subscription billing. Average contract value 10-50x a dealer. Customer count tiny (12-15 OEMs that matter globally, ~500 large fleet operators).
+
+**Required scope:** Multi-rooftop / multi-region / multi-language platform with EV-native primitives (charging schedules, OTA orchestration, battery health tracking), subscription billing, fleet leasing and asset management, recall coordination, telematics integration, OEM-specific finance product modeling.
+
+**Pricing:** $250K-2M annual contract value. Five-year terms typical. Implementation services $100K-500K.
+
+**CAC:** $50-250K. Long enterprise sale cycles (9-18 months). Heavy account-based marketing, conference presence at OEM technology summits, executive sponsors.
+
+**Time to first paying customer:** 12-24 months. Pilot first, then production. Faster with an OEM relationship via warm intro.
+
+**Tech advantage:** Multi-tenant from day one. Already supports the abstractions OEMs need (multi-location, multi-currency, programmatic API access). Our triple-write architecture (Postgres + vector + graph) is uniquely suited to telematics + OTA event streams that legacy DMSes cannot process at OEM scale.
+
+**Risks:**
+- Long sales cycle = high cash burn before revenue.
+- OEM procurement processes are brutal (vendor security reviews, ISO 27001, sometimes Auto-ISAC membership required).
+- Sales motion requires senior enterprise sellers we do not currently have. ~$300K base + variable.
+- Dealer-side product becomes politically awkward: OEMs see us as their tool, dealers see us as their tool. Resolve before pursuing both.
+
+**Strategic value:** Highest ceiling. One Ford contract = 50 dealer contracts. But it requires a different team, different sales motion, and different proof points than dealer-side.
+
+### Comparison summary: all eight wedges
+
+| Wedge | First $ in | TAM @ year 3 | Tech advantage leverage | Sales friction | Strategic ceiling |
+|-------|-----------|----|---|---|---|
+| A — AI-native DMS (independents) | 30-45d | $50-150M | medium | medium | medium-high |
+| B — Managed DMS (franchised) | 60-90d | $30-100M | medium | high | medium-high |
+| C — AI module on existing DMS | 90d | $15-40M | medium | low | low-medium |
+| **D — Overlay on legacy DMS** | **60-90d** | **$100-400M** | **very high** | **low** | **very high** |
+| **E — Compliance engine** | **45-60d** | **$50-200M** | **very high** | **very low** | **medium-high** |
+| F — Buyer-side agent | 90d (free) / 18mo (revenue) | $200M-1B+ | high | n/a (consumer) | very high |
+| G — Migration-as-a-Service | 90-120d | $50-200M | very high | medium | medium |
+| H — OEM-direct platform | 12-24mo | $200M-2B | high | very high | extremely high |
+
+### Revised recommendation
+
+The original document recommended Wedge A + B. After the alternatives analysis:
+
+1. **Lead with Wedge E (compliance engine).** Fastest revenue, lowest CAC, regulatory tailwind, builds the trust foundation that everything else stands on. Uses our existing AgenticQA scanner infrastructure with minimal new development.
+
+2. **Build Wedge D (overlay) in parallel.** This is the bet that breaks the migration moat protecting incumbents. Six-month engineering effort, but inverts the entire industry's competitive dynamic. See `docs/overlay-strategy-one-pager.md` for the detailed case.
+
+3. **Hold Wedge A as the destination.** Once Wedge D customers are dependent on us as their UX, offer them the option to migrate underlying DMS to ours. Wedge A becomes the back-end upgrade rather than the front-door product.
+
+4. **Wedges B, G, H as strategic options.** Stand them up as separate revenue lines once D and E reach proof points. Each can grow to $50-200M independently. H is the swing-for-the-fences if a Ford or Rivian relationship lands.
+
+5. **Deprioritize Wedge C.** Subsumed by Wedge D — overlay is a superset of the AI-module value proposition.
+
+6. **Wedge F as optional 5-year seed.** Either build a small consumer beachhead now or license tech to a strategic partner later. Do not staff it heavily until D and E are proven.
+
+**This is a meaningful pivot from the original recommendation.** The original was correct given a conventional "build a better DMS" framing. The alternatives matter because Wolfpack's actual technical advantage (multi-agent orchestration + browser automation + agentic data engineering) is wasted on conventional DMS competition and uniquely applicable to overlay, compliance, and migration. The incumbents cannot build any of D / E / G in the next 36 months without cannibalizing themselves.
+
+---
+
 ## Appendix A: Open questions for founders
 
 1. What is the realistic monthly operating cash burn at current team size?
