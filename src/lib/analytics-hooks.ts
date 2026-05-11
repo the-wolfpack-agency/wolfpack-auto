@@ -70,7 +70,16 @@ export type ServiceEvent =
   | "service.part_ordered"
   | "service.part_low_stock"
   | "service.part_added"
-  | "service.tech_added";
+  | "service.tech_added"
+  /* ---- recall + TSB awareness (migration 068) ----------------------- */
+  /** Emitted every time an open NHTSA recall is surfaced for a vehicle. */
+  | "service.recall_flagged"
+  /** Emitted every time an applicable TSB is surfaced for a vehicle. */
+  | "service.tsb_flagged"
+  /** Emitted when a service advisor marks a recall resolved. */
+  | "service.recall_resolved"
+  /** Emitted when an owner declines / defers a recall in writing. */
+  | "service.recall_dismissed";
 
 export type CommsEvent =
   | "comms.message_sent"
@@ -146,7 +155,12 @@ export type LeadEvent =
   | "lead.converted"
   | "lead.note_added"
   | "lead.note_edited"
-  | "lead.note_deleted";
+  | "lead.note_deleted"
+  | "lead.intake_received"
+  | "lead.enriched"
+  | "lead.routed"
+  | "lead.source_created"
+  | "lead.source_updated";
 
 export type SecurityEvent =
   | "security.scan_completed"
@@ -620,6 +634,28 @@ export type ProvenanceEvent =
   | "provenance.attestation_recorded"
   | "provenance.public_verified";
 
+/**
+ * Customer-facing pre-qualification flow (migration 067).
+ * Public `/pre-qual` page: identity -> soft credit -> income -> offers.
+ */
+export type PrequalEvent =
+  | "prequal.started"
+  | "prequal.credit_pulled"
+  | "prequal.income_verified"
+  | "prequal.offers_returned"
+  | "prequal.completed"
+  | "prequal.abandoned";
+
+/**
+ * Live inventory market intelligence events (migration 065).
+ * Emitted by `src/lib/market-intel/*` on every refresh and by the
+ * Vercel Cron `/api/cron/market-intel-refresh` target.
+ */
+export type InventoryMarketIntelEvent =
+  | "inventory.market_signal_generated"
+  | "inventory.price_recommended"
+  | "inventory.market_snapshot_captured";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -679,7 +715,9 @@ export type PlatformEvent =
   | DecisionVelocityEvent
   | DeviceHandoffEvent
   | NightOwlEvent
-  | ProvenanceEvent;
+  | ProvenanceEvent
+  | PrequalEvent
+  | InventoryMarketIntelEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -896,6 +934,19 @@ export function trackProvenance(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "provenance", ...meta });
+}
+
+/**
+ * Track a pre-qualification flow event. Public-facing soft-credit / income /
+ * offers flow at `/pre-qual`. Every state transition fires so the analytics
+ * brain can model funnel drop-off + cross-correlate with eventual deal close.
+ */
+export function trackPrequal(
+  event: PrequalEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "prequal", ...meta });
 }
 
 /**
@@ -1373,4 +1424,17 @@ export function trackNightOwl(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "night_owl", ...meta });
+}
+
+/**
+ * Track inventory market-intel events — valuation snapshots, comparable
+ * pulls, and pricing recommendations. Powers the dashboard market-intel
+ * card and the nightly refresh cron.
+ */
+export function trackInventoryMarketIntel(
+  event: InventoryMarketIntelEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "market_intel", ...meta });
 }

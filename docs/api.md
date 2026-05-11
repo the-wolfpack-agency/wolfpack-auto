@@ -3,7 +3,7 @@
 > Auto-generated 2026-05-11 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 278
+**Total routes:** 290
 
 ## Contents
 
@@ -25,6 +25,7 @@
 - [leads](#leads)
 - [openapi](#openapi)
 - [operator](#operator)
+- [prequal](#prequal)
 - [privacy](#privacy)
 - [security-posture](#security-posture)
 - [service](#service)
@@ -209,11 +210,14 @@
 | `POST` | `/api/admin/knowledge/query` | Knowledge Store Query Endpoint | Bearer | — |
 | `GET` | `/api/admin/lead-ingestion` | List lead-ingestion | Bearer | — |
 | `POST` | `/api/admin/lead-ingestion` | Create lead-ingestion | Bearer | — |
+| `GET` | `/api/admin/lead-sources` | List lead-sources | Bearer | — |
+| `POST` | `/api/admin/lead-sources` | Create lead-source | Bearer | — |
 | `GET` | `/api/admin/leads` | Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */ | Bearer | — |
 | `GET` | `/api/admin/leads/{id}` | Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */ | Bearer | — |
 | `PUT` | `/api/admin/leads/{id}` | Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */ | Bearer | — |
 | `DELETE` | `/api/admin/leads/{id}` | Fallback dealer UUID used when DEALER_ID env var is not set (demo mode). */ | Bearer | — |
 | `POST` | `/api/admin/leads/{id}/convert` | POST /api/admin/leads/[id]/convert — Convert a lead into a deal worksheet. | Bearer | Yes |
+| `GET` | `/api/admin/leads/{id}/enrichment` | List enrichment | Bearer | — |
 | `POST` | `/api/admin/leads/bulk` | Create bulk | Bearer | Yes |
 | `GET` | `/api/admin/leads/predict` | GET /api/admin/leads/predict  — Predictive scores for all active leads | Bearer | — |
 | `POST` | `/api/admin/leads/predict` | Create predict | Bearer | — |
@@ -350,9 +354,13 @@
 | `POST` | `/api/admin/vehicle-provenance/anchor` | Create anchor | Bearer | — |
 | `POST` | `/api/admin/vehicle-provenance/record` | Create record | Bearer | — |
 | `POST` | `/api/admin/vehicles` | Create vehicle | Bearer | — |
+| `GET` | `/api/admin/vehicles/{id}/recalls` | List recalls | Bearer | — |
+| `PATCH` | `/api/admin/vehicles/{id}/recalls/{recallId}` | Update recall | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}` | Get vehicle | Bearer | — |
 | `PUT` | `/api/admin/vehicles/{vin}` | Update vehicle | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}/buyers-guide` | List buyers-guide | Bearer | — |
+| `GET` | `/api/admin/vehicles/{vin}/market-intel` | GET  /api/admin/vehicles/[vin]/market-intel | Bearer | — |
+| `POST` | `/api/admin/vehicles/{vin}/market-intel` | GET  /api/admin/vehicles/[vin]/market-intel | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}/photos` | GET  /api/admin/vehicles/[vin]/photos — List photos for a vehicle | Bearer | Yes |
 | `POST` | `/api/admin/vehicles/{vin}/photos` | GET  /api/admin/vehicles/[vin]/photos — List photos for a vehicle | Bearer | Yes |
 | `GET` | `/api/admin/vehicles/backgrounds` | GET  /api/admin/vehicles/backgrounds — List all backgrounds (presets + custom) | Bearer | — |
@@ -425,8 +433,10 @@
 |--------|------|---------|------|-------------|
 | `GET` | `/api/cron/auction-sync` | List auction-sync | — | — |
 | `GET` | `/api/cron/calibrate-predictions` | List calibrate-predictions | — | — |
+| `GET` | `/api/cron/market-intel-refresh` | List market-intel-refresh | — | — |
 | `GET` | `/api/cron/predict-leads` | GET /api/cron/predict-leads — Vercel cron job endpoint | — | — |
 | `GET` | `/api/cron/process-sequences` | GET /api/cron/process-sequences — Vercel cron job endpoint | — | — |
+| `GET` | `/api/cron/recall-refresh` | List recall-refresh | — | — |
 
 ## csp-report
 
@@ -487,6 +497,7 @@
 |--------|------|---------|------|-------------|
 | `POST` | `/api/leads` | Create lead | — | Yes |
 | `POST` | `/api/leads/ingest` | POST /api/leads/ingest — Public webhook for third-party providers. | — | — |
+| `POST` | `/api/leads/intake` | POST /api/leads/intake — modern lead intake endpoint. | — | Yes |
 
 ## openapi
 
@@ -512,6 +523,15 @@
 | `POST` | `/api/operator/invites/accept` | Create accept | — | — |
 | `GET` | `/api/operator/stats` | List stats | — | — |
 | `GET` | `/api/operator/team` | List team | — | — |
+
+## prequal
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `POST` | `/api/prequal/{id}/credit` | Create credit | — | Yes |
+| `POST` | `/api/prequal/{id}/income` | Create income | — | Yes |
+| `GET` | `/api/prequal/{id}/offers` | GET  /api/prequal/[id]/offers  (PUBLIC, rate-limited, session-id auth) | — | Yes |
+| `POST` | `/api/prequal/start` | Create start | — | Yes |
 
 ## privacy
 

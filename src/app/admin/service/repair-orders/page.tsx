@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import RecallsPanel from "@/components/service/RecallsPanel";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -292,6 +293,13 @@ export default function RepairOrdersPage() {
               </select>
             </div>
           </div>
+
+          {/* Recalls + TSBs — flagged the moment a VIN is entered, before the writer can move past write-up */}
+          {form.vin && form.vin.length >= 11 && (
+            <div data-testid="repair-order-recalls-panel">
+              <RecallsPanel vehicleId={form.vin} title="Recalls and service bulletins" />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Customer Concern</label>

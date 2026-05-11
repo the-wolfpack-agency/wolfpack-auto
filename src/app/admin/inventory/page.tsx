@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { query } from "@/lib/db";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { MarketStatusDot, type Recommendation } from "@/components/admin/MarketStatusDot";
 import { placeholderVehicles } from "@/lib/placeholder-data";
 import { InventoryActions } from "@/components/admin/InventoryActions";
 import { InventorySearchInput } from "@/components/admin/InventorySearchInput";
@@ -28,6 +29,7 @@ interface InventoryVehicle {
   created_at: string;
   days_on_lot: number;
   is_ev: boolean;
+  market_recommendation: Recommendation | null;
 }
 
 interface PageProps {
@@ -91,8 +93,11 @@ async function getInventory(params: {
            (v.photos->0->>'url') AS photo_url,
            v.created_at,
            EXTRACT(EPOCH FROM (now() - v.created_at))::int / 86400 AS days_on_lot,
-           COALESCE(v.is_ev, false) AS is_ev
+           COALESCE(v.is_ev, false) AS is_ev,
+           vms.recommendation AS market_recommendation
          FROM vehicles v
+         LEFT JOIN vehicle_market_signals vms
+                ON vms.vehicle_id = v.id AND vms.dealer_id = v.dealer_id
          WHERE ${where}
          ORDER BY ${sortCol} ${sortDir}
          LIMIT $${idx} OFFSET $${idx + 1}`,
@@ -126,6 +131,7 @@ async function getInventory(params: {
       created_at: new Date(Date.now() - i * 86400000 * 3).toISOString(),
       days_on_lot: i * 3,
       is_ev: v.fuel === "Electric",
+      market_recommendation: null,
     }));
     return { vehicles: fallback, total: fallback.length, page };
   }
@@ -249,6 +255,9 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                 <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                   Status
                 </th>
+                <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
+                  Market
+                </th>
                 <th scope="col" className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
                   <a href={sortUrl("days")} className="inline-flex items-center gap-1 hover:text-gray-700" aria-label="Sort by days on lot">
                     Days on Lot
@@ -278,7 +287,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
               {vehicles.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-12 text-center text-sm text-gray-500"
                   >
                     No vehicles match your filters.
@@ -332,6 +341,9 @@ export default async function InventoryPage({ searchParams }: PageProps) {
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-sm lg:table-cell">
+                      <MarketStatusDot recommendation={v.market_recommendation} />
                     </td>
                     <td className="hidden whitespace-nowrap px-4 py-3 text-sm text-gray-700 md:table-cell">
                       {v.days_on_lot}

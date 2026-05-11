@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import VehicleForm, { type VehicleFormData } from "@/components/VehicleForm";
+import RecallsPanel from "@/components/service/RecallsPanel";
 
 export default function EditVehiclePage() {
   const params = useParams<{ vin: string }>();
@@ -145,11 +146,14 @@ export default function EditVehiclePage() {
       </div>
 
       {initialData && (
-        <VehicleForm
-          initialData={initialData}
-          onSubmit={handleSubmit}
-          isEditing
-        />
+        <div className="space-y-6">
+          <RecallsPanel vehicleId={vin} title="Recalls and service bulletins" />
+          <VehicleForm
+            initialData={initialData}
+            onSubmit={handleSubmit}
+            isEditing
+          />
+        </div>
       )}
     </>
   );

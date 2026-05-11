@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { MarketIntelCard } from "@/components/admin/MarketIntelCard";
 
 const CONDITIONS = ["new", "used", "certified"] as const;
 const FUEL_TYPES = ["gasoline", "hybrid", "electric", "diesel"] as const;
@@ -332,6 +333,9 @@ export default function EditInventoryPage() {
           </div>
         </div>
       )}
+
+      {/* Market Intel — live valuation + comparables + recommendation */}
+      <MarketIntelCard vin={vin} />
 
       <form onSubmit={handleSubmit} noValidate>
         {/* ---------------------------------------------------------------- */}

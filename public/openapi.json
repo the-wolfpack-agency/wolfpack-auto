@@ -4339,6 +4339,58 @@
         ]
       }
     },
+    "/api/admin/lead-sources": {
+      "get": {
+        "summary": "List lead-sources",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create lead-source",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/admin/leads/{id}/convert": {
       "post": {
         "summary": "POST /api/admin/leads/[id]/convert — Convert a lead into a deal worksheet.",
@@ -4365,6 +4417,33 @@
           }
         ],
         "x-rate-limited": true
+      }
+    },
+    "/api/admin/leads/{id}/enrichment": {
+      "get": {
+        "summary": "List enrichment",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/api/admin/leads/{id}": {
@@ -8019,9 +8098,115 @@
         ]
       }
     },
+    "/api/admin/vehicles/{id}/recalls/{recallId}": {
+      "patch": {
+        "summary": "Update recall",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/vehicles/{id}/recalls": {
+      "get": {
+        "summary": "List recalls",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/admin/vehicles/{vin}/buyers-guide": {
       "get": {
         "summary": "List buyers-guide",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/admin/vehicles/{vin}/market-intel": {
+      "get": {
+        "summary": "GET  /api/admin/vehicles/[vin]/market-intel",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "GET  /api/admin/vehicles/[vin]/market-intel",
         "tags": [
           "admin"
         ],
@@ -9196,6 +9381,28 @@
         }
       }
     },
+    "/api/cron/market-intel-refresh": {
+      "get": {
+        "summary": "List market-intel-refresh",
+        "tags": [
+          "cron"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/api/cron/predict-leads": {
       "get": {
         "summary": "GET /api/cron/predict-leads — Vercel cron job endpoint",
@@ -9221,6 +9428,28 @@
     "/api/cron/process-sequences": {
       "get": {
         "summary": "GET /api/cron/process-sequences — Vercel cron job endpoint",
+        "tags": [
+          "cron"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/cron/recall-refresh": {
+      "get": {
+        "summary": "List recall-refresh",
         "tags": [
           "cron"
         ],
@@ -9671,6 +9900,29 @@
         }
       }
     },
+    "/api/leads/intake": {
+      "post": {
+        "summary": "POST /api/leads/intake — modern lead intake endpoint.",
+        "tags": [
+          "leads"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "x-rate-limited": true
+      }
+    },
     "/api/leads": {
       "post": {
         "summary": "Create lead",
@@ -10012,6 +10264,98 @@
             "description": "Internal server error"
           }
         }
+      }
+    },
+    "/api/prequal/{id}/credit": {
+      "post": {
+        "summary": "Create credit",
+        "tags": [
+          "prequal"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "x-rate-limited": true
+      }
+    },
+    "/api/prequal/{id}/income": {
+      "post": {
+        "summary": "Create income",
+        "tags": [
+          "prequal"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "x-rate-limited": true
+      }
+    },
+    "/api/prequal/{id}/offers": {
+      "get": {
+        "summary": "GET  /api/prequal/[id]/offers  (PUBLIC, rate-limited, session-id auth)",
+        "tags": [
+          "prequal"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "x-rate-limited": true
+      }
+    },
+    "/api/prequal/start": {
+      "post": {
+        "summary": "Create start",
+        "tags": [
+          "prequal"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "x-rate-limited": true
       }
     },
     "/api/privacy/delete-data": {

@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/calibrate-predictions",
       "schedule": "0 2 * * 1"
+    },
+    {
+      "path": "/api/cron/recall-refresh",
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/cron/market-intel-refresh",
+      "schedule": "0 4 * * *"
     }
   ]
 }

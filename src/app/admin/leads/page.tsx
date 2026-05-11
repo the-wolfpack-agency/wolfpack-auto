@@ -647,6 +647,15 @@ export default function LeadsManagementPage() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/leads/${lead.id}`}
+                            data-testid={`lead-detail-link-${lead.id}`}
+                            className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-600/20 transition-colors hover:bg-gray-100"
+                            title="Open lead detail (enrichment + score + routing)"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Detail
+                          </Link>
                           {lead.status !== "converted" && lead.status !== "sold" && lead.status !== "lost" && (
                             <Link
                               href={`/admin/deals?from_lead=${lead.id}`}
