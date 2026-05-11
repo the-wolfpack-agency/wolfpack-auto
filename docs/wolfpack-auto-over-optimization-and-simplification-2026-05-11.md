@@ -437,3 +437,32 @@ Some of these inversions land cheap and fast (Sections 1, 3, 4 are mostly softwa
 The reason to think about all six together is to make sure the schema and architectural decisions support all of them. Once a foundation is wrong, retrofitting is expensive. Picking the right foundation now is the cheapest decision we can make.
 
 The competitive question is the same as the inversions doc: incumbents can copy individual capabilities slowly, but they cannot copy a coherent platform that ships all of this in 18-24 months because their architectural assumptions prevent it. The window is real and worth using.
+
+---
+
+## Scope discipline note (added 2026-05-11)
+
+The IoT and world-model content above is year-two and year-three thinking. It is NOT a year-one build mandate. Reading this doc as a checklist for what to build next would be a mistake.
+
+Year-one engineering focus stays on the revenue-generating software bets: Wedge E compliance engine, Wedge D overlay on legacy DMS, and Instinct cost-efficiency. Those are what generate paying customers. They are also what we have the capability to ship in 12 months with the current team.
+
+The IoT layer is in this doc for three reasons, all of which are compatible with NOT building it in year one:
+
+1. **Cheap architectural prep.** Adding `spatial_events` and `dealership_spaces` tables to the schema, and a sensor abstraction interface in the codebase, takes hours. These sit empty in year one but mean we are not refactoring the schema in year two when we add IoT. This is the only year-one work we actually do on IoT.
+2. **Sales narrative.** Having the IoT and world-model vision in the pitch deck helps land enterprise dealer-group deals NOW. Dealers buy systems with a future, not just current features. The vision sells; we deliver the software now and the spatial layer later.
+3. **Phone-as-tag for free.** The Wolfpack mobile app needs to exist anyway. Making it capable of phone-as-tag broadcasting from day one is an hours-not-weeks investment because we are building the app regardless.
+
+What we do NOT do in year one:
+- Invest in hardware logistics, kitting operations, or install-partner networks.
+- Build BLE receiver software, UHF RFID gate integration, or computer vision pipelines.
+- Distract Wedge E or Wedge D engineering with IoT work.
+- Sign hardware vendor partnerships before we have paying customers asking for IoT.
+
+What triggers year-two IoT work:
+- 5-10 paying Wolfpack Auto customers, of whom at least 3 are asking for spatial intelligence specifically.
+- Validated demand: customers willing to pay an explicit upcharge for the IoT layer, not just willing to have it bundled.
+- Engineering bandwidth: at least one additional engineer beyond the current team specifically allocated to IoT work.
+
+If those three triggers do not hit by month 12, the IoT bet is deferred to year three, not killed but not invested in.
+
+The CTO portfolio strategy doc said "the agency is not constrained by talent or tech, it is constrained by focus." That advice applies to this doc as well. Read this section first whenever planning sprint work.
