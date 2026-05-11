@@ -37,7 +37,7 @@ Each product graded on five axes:
 | Product | Revenue | IP defensibility | Timing | Team fit | DNA fit | Verdict |
 |---|---|---|---|---|---|---|
 | Wolfpack Auto | High ($5-25M) | Medium-High (with Wedge D/E) | Closing | High | Very high | **DOUBLE DOWN** with pivot |
-| Wolfpack Instinct | High ($3-15M) | Medium | Closing FAST | Very high | High | **SHIP NOW or kill** |
+| Wolfpack Instinct | High ($2-15M) | Medium-High (efficiency patents) | Open category, early-mover advantage | Very high | High + internal value floor | **SHIP NOW with cost-efficiency positioning** |
 | Wolfpack LMS | Medium ($1-5M) | Low | Slow but stable | Medium | Very high | **BUNDLE** with consulting, don't standalone |
 | Wolfpack Weekend | Low (under $500K) | Low | Unproven | Low | Medium | **PARK** unless dealer demand validates |
 | Templatized client sites | Low (under $300K) | Very low | Commodity | Low | Medium | **PRODUCTIZE or kill** |
@@ -47,7 +47,11 @@ Each product graded on five axes:
 
 **Wolfpack Auto.** The GTM strategy doc identified five disruption angles (Wedges D-H) that materially outperform the original "build a better DMS" framing. Wedge E (compliance engine) ships fastest, Wedge D (overlay on CDK) is the moat-breaking long bet. Estimated 12-month ARR ceiling $5-25M depending on wedge execution.
 
-**Wolfpack Instinct.** Innovative IP. AI agent for the Microsoft 365 stack and adjacent work surfaces. Anthropic and OpenAI are both shipping competing products (Claude Operator, GPT-Operator). The window is closing measured in months, not years. We have a structural advantage in two places: deeper integration with the specific workflows our consulting clients use (sales ops, finance ops, HR ops), and lower per-seat cost via efficient prompt routing. Ship 1.0 in 30 days or de-prioritize.
+**Wolfpack Instinct.** Innovative IP, positioned in a category no one else is claiming: **AI cost-efficiency.** Every other AI vendor right now is selling capability (more tokens, more agents, bigger context, fancier reasoning). Nobody is selling cost reduction. Instinct applies AI in a smart, limited, expensive-call-avoiding manner that gives clients the AI outcomes they want at a fraction of the LLM spend they currently waste. A company that swaps direct OpenAI / Anthropic API usage for Instinct-mediated calls immediately saves 50-80%.
+
+This positioning is structurally defensible because **Anthropic and OpenAI cannot compete in it.** Their revenue model depends on customers spending more on tokens, not less. The labs have a fundamental conflict of interest with the "save money on AI" pitch. Claude Operator / GPT Operator are agent products, not cost-optimization products — different category, different buyer, not in competition with Instinct.
+
+Even more important: **Wolfpack uses Instinct internally for its own consulting operations.** Work-pattern analysis, decision support, organizational intelligence, deliverable production. This dogfooding is the most credible proof point we have, and it sets a floor on the bet's value — even if external market adoption is slow, internal use compounds our consulting margins and gives us a structural edge over agency competitors who pay full freight on AI APIs.
 
 **Wolfpack LMS.** Useful inside our consulting upskilling business. Standalone? Crowded category (Cornerstone, Docebo, 360Learning) with low pricing power. Recommendation: tie tightly to the upskilling consulting offering. Bundle as part of every change-management engagement. Do not market or sell standalone.
 
@@ -71,12 +75,15 @@ The recommendation is to bet on three products and park or kill the rest.
 
 See `docs/gtm-strategy-2026-05-11.md` and `docs/overlay-strategy-one-pager.md` for detail.
 
-### Bet 2: Wolfpack Instinct GA in 30 days
+### Bet 2: Wolfpack Instinct as AI cost-efficiency platform
 
 - **Ship v1.0 publicly within 30 days.** Pricing, marketing, sales materials all live.
-- **Position against Claude Operator / GPT Operator.** Differentiator: "We integrate with the specific workflows your team actually runs in M365 + Slack + Salesforce + HubSpot. Operators are demos. Instinct is production."
-- **Target market: boutique consulting and professional services firms.** They are our consulting clients. We have direct distribution.
-- **Target $1-3M ARR by month 12.** $99-499 / user / month, 10-50 user deals.
+- **Lead positioning: cost reduction, not capability.** "Cut your AI spend 50-80% without losing the outcomes." Anthropic and OpenAI cannot run this play because their revenue depends on customers spending more.
+- **Pricing model tied to savings, not parity.** Charge a fixed monthly base ($499-1,999 / company) plus 30-50% of estimated savings, capped. Customer pays a fraction of what they currently waste on tokens. Win-win economics.
+- **Target market: any company with a meaningful AI spend.** Enterprise IT / finance / engineering teams are seeing AI line items hit top-3 in their cloud bills. Strong inbound demand for "make this stop growing."
+- **Distribution channel: our existing consulting client base + AI cost-audit lead-gen.** Offer a free "AI spend audit" as front-of-funnel. We use Instinct to do the audit. Two-thirds of audits convert to paid Instinct deployments.
+- **Internal dogfooding as proof point.** Quantify and publish "Wolfpack reduced its own AI spend by $X/month using Instinct." This is the credibility our outbound needs.
+- **Target $2-6M ARR by month 12.** Higher than originally projected because enterprise budgets for cost optimization are far easier to unlock than budgets for new productivity tools.
 
 ### Bet 3: Wolfpack LMS as consulting amplifier
 
@@ -158,7 +165,7 @@ If we lean into all six, we can credibly ship two production-grade products in 1
 
 1. **Agentic overlay on legacy enterprise software.** The Wedge D architecture: multi-agent orchestration driving legacy DMS / ERP / CRM via browser automation + API hybrids, with semantic UI element identification (resistant to vendor UI changes). Broadly applicable beyond auto.
 2. **AI compliance scanner for regulated financial transactions.** The Wedge E architecture: multi-rule agentic audit of TILA / FCRA / Reg B / Reg V / ECOA / FTC dealer-rule compliance with per-state extensions. Applicable to mortgage, consumer finance, leasing.
-3. **AI work-surface co-pilot with explicit workflow memory.** The Instinct architecture: agent-driven work-surface manipulation with persistent per-user workflow patterns learned from observed behavior. Differentiator from generic LLM "Operators."
+3. **Efficient AI orchestration with cost-routing and call-deduplication.** The Instinct architecture: prompt routing across model tiers (cheap model first, expensive model on fallback), result caching, semantic deduplication of redundant calls, and a measurement layer that quantifies dollar savings per workflow. Broadly applicable across any enterprise running heavy LLM workloads. Anthropic and OpenAI structurally cannot patent or productize this because it competes with their revenue model.
 
 **Three trade secrets to harden:**
 
@@ -232,11 +239,13 @@ The CEO has direct CDK relationships. Choosing Wedge D (overlay) means we operat
 
 This is a decision the CEO has to make explicitly: are the CDK relationships an intelligence asset to leverage for an adversarial play, or an asset to protect by staying friendly competitor?
 
-**Tension 2: Wolfpack Instinct is racing the AI labs.**
+**Tension 2: Instinct's positioning needs to be sharp from day one.**
 
-Anthropic and OpenAI are shipping competitive products. Our window is 6-12 months at most. Either we ship 1.0 in 30 days and lean into the differentiation, or we accept that Instinct becomes a Claude-Operator wrapper.
+Earlier internal framing positioned Instinct as a Claude-Operator competitor. That framing is wrong and would cost us the bet. The correct frame is AI cost-efficiency, an unclaimed category where Anthropic and OpenAI structurally cannot compete (their revenue depends on token spend growing, not shrinking).
 
-The honest read: this is a high-variance bet. If we ship well, we own a niche (boutique consulting work-surface automation) that the big labs will not bother with for 2-3 years. If we ship poorly, we waste 6 months and the bet becomes a sunk cost.
+The 30-day ship is real but the urgency is not because labs will eat us. The urgency is because enterprise AI-spend pain is acute right now and the company that defines the cost-optimization category first owns it. We are early but not uncontested forever.
+
+Internal dogfooding makes this bet lower-variance than the original framing implied. Worst case, we still get a more profitable consulting business from running on Instinct. Best case, we own a category that adds $2-6M ARR by month 12 and grows with every dollar enterprises spend on AI.
 
 **Tension 3: The consulting business may not love the product company.**
 
@@ -251,7 +260,7 @@ Severity-ranked.
 | Risk | Severity | Likelihood | Mitigation |
 |------|----------|------------|------------|
 | CEO/CTO misalignment on portfolio priorities | Catastrophic | Medium | Phase 0 alignment meeting. Written decision artifact. |
-| Anthropic ships Operator that subsumes Instinct | High | High | Ship 1.0 in 30 days. Focus on integration-depth differentiation. |
+| Instinct mispositioned as Operator competitor instead of cost-efficiency platform | High | Medium | Lock positioning to cost reduction in all sales / marketing. Reject capability-comparison conversations. |
 | CDK legal action on overlay (Wedge D) | High | Low-Medium | Pre-launch legal review. Customer-authorized agent framing. |
 | Consulting cash flow disruption | High | Low | Diversify clients. Maintain 6-month operating runway. |
 | Key engineer (CTO) bandwidth saturation | High | Medium | Phase 2 hire of AI/ML engineer. Document everything. |
