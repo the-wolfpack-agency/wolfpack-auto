@@ -5,7 +5,7 @@
 **Date:** May 11, 2026
 **Re:** Your contact at OneMagnify
 
-You mentioned you have a relationship with someone at OneMagnify. I looked at what they do publicly and I think there is a real opportunity here that is worth a 20-minute call from you. Quick rundown of what I found and what I would suggest doing about it.
+You mentioned you have a close relationship with someone at OneMagnify and you will be in the room with him soon either way. I looked at what they do publicly and I think there is a real opportunity to land in that conversation without much effort on your part. Quick rundown of what I found and how I would suggest dropping it into the meeting.
 
 ## What OneMagnify is right now
 
@@ -23,21 +23,25 @@ The deeper opportunity is bigger than that. They serve FordDirect. We have spent
 
 There is also a smaller but interesting third angle. Their Channel Solutions practice (the work they do for clients like Syngenta managing partner and retailer networks) is exactly the kind of channel-enablement work where Wolfpack LMS fits as an embedded training and certification layer. They sell more contract value, and we get distribution into their existing client base without building a separate sales team.
 
-## What I would recommend you do
+## How to drop this into the meeting
 
-Do not pitch all of this in the first conversation. Lead with just one thing: the free AI spend audit. Something like this when you reach out:
+Do not pitch all of this. Pick one moment in the conversation and float a single idea: a free AI spend audit on their stack. The pitch is short enough to feel like a casual mention rather than a sales move.
 
-> "Curious if you are seeing AI cost growth on your analytics workloads. We built something at Wolfpack that solves it. We have been using it internally and we would be happy to run a free audit on your stack to show you what is possible. No commitment. Want me to set you up with our CTO for a 30-minute scoping call?"
+Something close to this works:
 
-That is the whole opening. The audit takes us two weeks of my time. We hand them a savings number and a methodology document. They keep it either way. If they like what they see, we deploy Instinct and they pay a base monthly fee plus a share of the measured savings.
+> "One thing we have been doing at Wolfpack that might be useful for you. We built our own AI infrastructure that routes calls intelligently and cuts the bill 50 to 80 percent on heavy workloads. Anthropic and OpenAI obviously cannot sell this because it competes with their revenue. We have been running it internally on our own consulting work and the savings are real. If you ever want to see what your spend on Databricks and the LLM APIs actually looks like, we are happy to audit it for two weeks at no cost and show you the number. Whether you do anything with it or not, you keep the report."
 
-If that first move lands, the conversation expands naturally. After they have seen Instinct work, the channel partnership conversation (Instinct as part of their AI consulting practice, sold to their enterprise clients) becomes the natural next step. The FordDirect introduction comes after that, once we have earned the right to bring something serious to a relationship that important to them.
+Drop it once and let it sit. If he picks it up, hand the next step to me. If he does not, you have planted the idea for the next conversation without burning any political capital.
+
+The audit takes two weeks of my time. We give them a savings number and a methodology document either way. If they like what they see, we deploy Instinct and they pay a base monthly fee plus a share of the measured savings.
+
+If that first move lands, the conversation expands naturally over the next few months. After they have seen Instinct work, the channel partnership conversation (Instinct as part of their AI consulting practice, sold to their enterprise clients) becomes the natural next step. The FordDirect introduction comes after that, once we have earned the right to bring something serious to a relationship that important to them.
 
 ## What I need from you
 
-The introduction itself, ideally a warm call or coffee rather than email. After that, hand the conversation to me for the audit scoping and execution. The whole thing costs you one introduction and one approval to publish OneMagnify's savings number as a case study, which is the deal we make in exchange for doing the audit for free.
+Just the mention in the meeting and a hand-off to me afterward for the scoping call. The whole thing costs you one moment in a conversation you are already having, plus approval to publish OneMagnify's savings number as a case study. That case study is the deal we make in exchange for doing the audit for free.
 
-One additional ask before the audit actually starts: I need to file a provisional patent on the cost-routing architecture inside Instinct. That should be in motion before we share methodology with anyone outside Wolfpack. I will get patent counsel engaged this week so it is not a blocker.
+One thing I am taking care of on my end before the audit actually starts: I need to file a provisional patent on the cost-routing architecture inside Instinct. That should be in motion before we share methodology with anyone outside Wolfpack. I will get patent counsel engaged this week so it is not a blocker.
 
 ## Why this matters
 
@@ -47,6 +51,6 @@ If the channel partnership lands behind it, we are looking at $500K to $2M of in
 
 If the FordDirect path opens up, we are in a different conversation entirely. OEM-direct contracts run $1M to $5M each, and FordDirect is exactly the kind of customer Wolfpack Auto's overlay product was built for.
 
-The cost of finding out is one phone call from you and two weeks of my time. We do not get cheaper deal flow than that anywhere else.
+The cost of finding out is one mention in a meeting you are already having and two weeks of my time. We do not get cheaper deal flow than that anywhere else.
 
-I am ready to take the scoping call as soon as you make the introduction.
+I am ready to take the scoping call as soon as he says yes.
