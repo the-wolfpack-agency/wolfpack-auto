@@ -41,7 +41,7 @@ If that first move lands, the conversation expands naturally over the next few m
 
 Just the mention in the meeting and a hand-off to me afterward for the scoping call. The whole thing costs you one moment in a conversation you are already having, plus approval to publish OneMagnify's savings number as a case study. That case study is the deal we make in exchange for doing the audit for free.
 
-One thing I am taking care of on my end before the audit actually starts: I need to file a provisional patent on the cost-routing architecture inside Instinct. That should be in motion before we share methodology with anyone outside Wolfpack. I will get patent counsel engaged this week so it is not a blocker.
+One operational note on my end: when we run the audit, we share the savings number and a summary methodology with OneMagnify. We do not share the specific routing thresholds, prompt libraries, or implementation details that make Instinct actually work. That separation is straightforward to maintain and is how we keep the technical advantage even after a free audit.
 
 ## Why this matters
 

@@ -37,7 +37,7 @@ Each product graded on five axes:
 | Product | Revenue | IP defensibility | Timing | Team fit | DNA fit | Verdict |
 |---|---|---|---|---|---|---|
 | Wolfpack Auto | High ($5-25M) | Medium-High (with Wedge D/E) | Closing | High | Very high | **DOUBLE DOWN** with pivot |
-| Wolfpack Instinct | High ($2-15M) | Medium-High (efficiency patents) | Open category, early-mover advantage | Very high | High + internal value floor | **SHIP NOW with cost-efficiency positioning** |
+| Wolfpack Instinct | High ($2-15M) | Medium (trade secrets + time-to-market, NOT patents) | Open category, early-mover advantage | Very high | High + internal value floor | **SHIP NOW with cost-efficiency positioning** |
 | Wolfpack LMS | Medium ($1-5M) | Low | Slow but stable | Medium | Very high | **BUNDLE** with consulting, don't standalone |
 | Wolfpack Weekend | Medium (client engagement near approval) | Low-Medium (services + tooling) | Validated by inbound demand | Medium | High (services-heavy auto work) | **ACTIVATE** as client engagement |
 | Templatized client sites | Active service line (clients live) | Low (in templates), Medium (in CI/CD spine) | In production | Medium | Very high | **KEEP** as service line, productize the CI/CD spine separately |
@@ -122,18 +122,18 @@ If we lean into all six, we can credibly ship two production-grade products in 1
 
 - Founders' meeting on the kill / keep list. CEO must explicitly approve activating Weekend as a client engagement, keeping templated client sites as a service line, and deprioritizing AgenticQA productization (both Weekend and templated sites status updated 2026-05-11 based on inbound client demand).
 - Founders' meeting on the Wolfpack Auto wedge decision (E primary, D long bet). This is the politically loaded one because the CEO's CDK relationships either become a leverage asset (D) or a relationship to protect (A/C). Force the choice.
-- Patent attorney consult on three IP areas: overlay architecture, agentic compliance scanner, Instinct method.
+- Decide on cheap provisional patent filings ($1-3K each) for any genuinely novel combinations. Do NOT position patents as a primary moat: the underlying techniques (model routing, response caching, browser automation, agentic auditing) have extensive prior art and would not survive examination at meaningful scope. Real defensibility lives in trade secrets, execution, switching cost, and time-to-market.
 - Legal counsel for CDK overlay terms-of-service analysis. $25-50K spend.
 - Communicate portfolio decision to team. People work on different things; not everyone gets to keep their favorite project. Manage this carefully.
 
 ### Phase 1 — Revenue and IP (Days 30-90)
 
-**Output: 3-5 paying customers across the portfolio. Patent filings in motion.**
+**Output: 3-5 paying customers across the portfolio. Trade secret discipline and brand IP in motion.**
 
 - **Wolfpack Auto Wedge E:** 3 design-partner dealers signed (via CEO's network). Compliance engine MVP shipped. First $50-150K of ARR.
 - **Wolfpack Instinct:** v1.0 publicly live. Pricing page, sales materials, customer success playbook. First 10-25 paying users from consulting client base. $20-100K of ARR.
 - **LMS:** Bundled into 3 active consulting engagements. No standalone marketing.
-- **IP filings:** Provisional patents on overlay architecture and agentic compliance scanner. Trademark filings on "Wolfpack Method."
+- **IP work:** Trademark filings on "Wolfpack Method" and product names. Optional cheap provisional patent filings ($1-3K each) on any genuinely novel combinations, treated as priority-date insurance rather than primary moat.
 - **First hire:** Dealer-industry sales lead (Wedge E + D enabler).
 
 ### Phase 2 — Proof and scale (Days 90-180)
@@ -161,22 +161,32 @@ If we lean into all six, we can credibly ship two production-grade products in 1
 
 ## 5. IP strategy
 
-**Three patents to file in 2026:**
+**Honest framing first.** Earlier drafts of this strategy positioned utility patents as a primary defensibility moat across all three products. That was overstated. The underlying techniques across overlay (RPA, browser automation), agentic compliance scanning (rule engines, domain-specific agents), and AI cost routing (model tiering, response caching, semantic deduplication) all have extensive prior art in commercial products and open-source libraries. A utility patent on any of these as a category would face strong novelty challenges at meaningful scope.
 
-1. **Agentic overlay on legacy enterprise software.** The Wedge D architecture: multi-agent orchestration driving legacy DMS / ERP / CRM via browser automation + API hybrids, with semantic UI element identification (resistant to vendor UI changes). Broadly applicable beyond auto.
-2. **AI compliance scanner for regulated financial transactions.** The Wedge E architecture: multi-rule agentic audit of TILA / FCRA / Reg B / Reg V / ECOA / FTC dealer-rule compliance with per-state extensions. Applicable to mortgage, consumer finance, leasing.
-3. **Efficient AI orchestration with cost-routing and call-deduplication.** The Instinct architecture: prompt routing across model tiers (cheap model first, expensive model on fallback), result caching, semantic deduplication of redundant calls, and a measurement layer that quantifies dollar savings per workflow. Broadly applicable across any enterprise running heavy LLM workloads. Anthropic and OpenAI structurally cannot patent or productize this because it competes with their revenue model.
+The real moats live elsewhere. We can still file cheap provisional patents on specific novel combinations as priority-date insurance, but they are not the moat.
 
-**Three trade secrets to harden:**
+**Real moats:**
 
-1. Per-domain prompt engineering library for dealer F&I, sales, service, accounting workflows.
-2. ML fine-tuning approach for our specific agents.
-3. Customer-success playbooks (how we get 90%+ retention in markets where incumbents see 70%).
+1. **Trade secrets in our specific implementation.** Routing thresholds, prompt libraries, model-tier decision logic, cache eviction policies, agent fine-tuning approach, customer-success playbooks. Protected by not publishing them, by access controls, and by clear NDA discipline. Inexpensive to maintain, hard for competitors to replicate.
+2. **Time-to-market on category positioning.** "AI cost-efficiency platform" (Instinct) and "overlay on legacy DMS without migration" (Wolfpack Auto Wedge D) are currently unclaimed positions. First mover defines the buyer's mental model. Six to twelve months of head start is worth more than a patent that takes three years to issue.
+3. **Customer switching cost.** Once a customer routes traffic through Instinct or runs daily operations on a Wedge D overlay, swapping us out means re-instrumenting every workflow. That cost compounds with every integration. Pure engineering moat, not legal.
+4. **Data network effects.** Every customer's workload teaches our router better routing decisions. Every dealer's deals teach our compliance scanner better rule precision. Competitors starting fresh cannot replicate this without months of customer data we already have.
+5. **Internal Wolfpack dogfooding credibility.** Hard savings numbers from running on our own infrastructure are proof a competitor cannot copy in any amount of time.
+6. **Distribution.** Auto industry warm relationships through the CEO, consulting client distribution for Instinct, FordDirect path via OneMagnify. Distribution beats most software moats over time.
+
+**Optional cheap provisional patent filings.** $1-3K each. Treat as priority-date insurance, not strategic defensibility:
+- Specific novel combinations in our compliance scanner that genuinely have no obvious prior art.
+- Specific novel combinations in our overlay's semantic UI identification approach.
+- Any genuinely new pattern we discover during the next twelve months.
+
+Do not let the OneMagnify timeline or any customer engagement wait on patent filings.
 
 **Brand IP:**
 
-1. "Wolfpack Method" — register the trademark. Position as the agency-plus-agentic-platform hybrid. Build content around it (whitepapers, case studies, conference talks).
-2. Product names — Wolfpack Auto, Wolfpack Instinct, Wolfpack LMS, Wolfpack Sites (if kept). Trademark all.
+1. "Wolfpack Method" register the trademark. Position as the agency-plus-agentic-platform hybrid. Build content around it (whitepapers, case studies, conference talks).
+2. Product names: Wolfpack Auto, Wolfpack Instinct, Wolfpack LMS. Trademark all.
+
+Trademark is real defensibility for $250-1000 per mark. Patents are speculative defensibility for $15-25K each and three years. Allocate accordingly.
 
 ---
 
@@ -266,7 +276,7 @@ Severity-ranked.
 | Key engineer (CTO) bandwidth saturation | High | Medium | Phase 2 hire of AI/ML engineer. Document everything. |
 | First Wolfpack Auto pilot churns publicly | Medium | Medium | Hand-pick pilots. Founder time on customer success. |
 | Wolfpack Instinct fails to differentiate from Operator | Medium | Medium | Position around workflow depth, not model quality. |
-| Patent filings rejected | Low | Medium | File provisional patents quickly. Refine in continuation. |
+| Trade secrets leaked during sales / audits | Medium | Medium | NDA discipline. Publish methodology summaries, never full implementations. Access controls on routing logic and prompt libraries. |
 | SOC 2 Type I delays | Medium | Medium | Engage Vanta / Drata at month 2, not month 8. |
 
 ---
@@ -298,7 +308,7 @@ In exchange the CTO commits to:
 
 - Shipping Wedge E pilot-ready in 90 days.
 - Shipping Instinct 1.0 in 30 days.
-- Patent filings on overlay + compliance + Instinct architectures within 60 days.
+- Trademark filings on "Wolfpack Method" and product names within 60 days. Trade secret discipline (NDAs, methodology vs implementation separation) in place from day one.
 - Real ARR by month 6, not aspirational ARR.
 - Monthly founder-update doc tracking progress against this plan.
 

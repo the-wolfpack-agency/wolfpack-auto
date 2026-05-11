@@ -109,9 +109,9 @@ Three tensions the CEO must weigh in on personally.
 
 ## Slide 10: The 12-Month Plan at a Glance
 
-**Phase 0 (days 0-30): alignment.** Portfolio decision approved. Wedge decision approved. Patent attorney engaged. Legal review on CDK overlay terms ($25-50K). Team comms.
+**Phase 0 (days 0-30): alignment.** Portfolio decision approved. Wedge decision approved. Legal review on CDK overlay terms ($25-50K). Trademark filings initiated on "Wolfpack Method" and product names. Team comms.
 
-**Phase 1 (days 30-90): revenue and IP.** Three design-partner dealers signed for Wedge E. Instinct v1.0 publicly live. Three provisional patent filings in motion. First $50-150K of ARR on Auto, $20-100K on Instinct. First hire (dealer sales lead).
+**Phase 1 (days 30-90): revenue and IP.** Three design-partner dealers signed for Wedge E. Instinct v1.0 publicly live. Trade secret discipline in place. Trademark filings in motion. First $50-150K of ARR on Auto, $20-100K on Instinct. First hire (dealer sales lead).
 
 **Phase 2 (days 90-180): proof and scale.** 10-15 paying compliance customers. Wedge D overlay alpha with 3 pilots. 50-100 paying Instinct seats. SOC 2 Type I evidence collection complete. Wolfpack Method positioning live.
 
@@ -135,15 +135,18 @@ Burn vs revenue: consulting cash flow covers operations through month 6. Product
 
 ## Slide 12: The IP Moat
 
-Three patents filed in 2026:
+Honest framing: patents are not the moat here. The techniques underneath all three products have meaningful prior art. We may file cheap provisionals ($1-3K each) as priority-date insurance on genuinely novel combinations, but they are not what protects us.
 
-1. **Agentic overlay on legacy enterprise software.** The Wedge D architecture (multi-agent + browser automation + semantic UI). Broadly applicable beyond auto.
-2. **AI compliance scanner for regulated financial transactions.** The Wedge E architecture. Applicable to mortgage, consumer finance, leasing.
-3. **Efficient AI orchestration with cost-routing and call-deduplication.** The Instinct architecture. The labs structurally cannot patent or productize this (it competes with their revenue model).
+What actually protects us:
 
-Trade secrets: per-domain prompt libraries, agent fine-tuning approach, customer-success playbooks.
+1. **Trade secrets.** Routing thresholds, prompt libraries, model-tier decision logic, customer-success playbooks. Protected by NDAs, access controls, and not publishing full implementations.
+2. **Time-to-market on category positioning.** "AI cost-efficiency platform" and "overlay on legacy DMS without migration" are unclaimed positions today. Six to twelve months of head start defines the buyer's mental model.
+3. **Customer switching cost.** Once a customer is integrated, leaving means re-instrumenting workflows. Pure engineering moat.
+4. **Data network effects.** Customer workloads improve our routing and rule precision. New entrants start cold.
+5. **Internal dogfooding credibility.** Hard savings numbers from Wolfpack running on our own infrastructure are proof competitors cannot copy.
+6. **Distribution.** CEO relationships, consulting client base, FordDirect via OneMagnify. Distribution beats most software moats over time.
 
-Brand: trademark "Wolfpack Method" and every product name. Build content around it (whitepapers, case studies, conference talks).
+Brand: trademark "Wolfpack Method" and every product name ($250-1000 per mark). Real defensibility for cheap.
 
 ---
 
@@ -202,7 +205,7 @@ Top five risks, severity-ranked.
 
 - Wedge E pilot-ready in 90 days.
 - Instinct 1.0 publicly live in 30 days.
-- Three patent filings (overlay, compliance, Instinct) within 60 days.
+- Trademarks on "Wolfpack Method" and product names filed within 60 days. Trade secret discipline (NDAs, access control, methodology-vs-implementation separation) in place from day one.
 - Real ARR by month 6, not aspirational ARR.
 - Monthly founder-update doc tracking progress against this plan.
 

@@ -148,7 +148,7 @@ Do not pitch all five plays in the first conversation. Land Play 1 first. Earn t
 | They see Wolfpack as competition (AI services overlap) | Frame as infrastructure layer, not consulting overlap. We provide the tools they sell on top of. |
 | The new CEO does not yet have partnership authority | The Wolfpack CEO's contact provides the political cover. Confirm the contact is the right decision-maker before the audit. |
 | Our audit shows less savings than promised | Be conservative in the pitch (cite "50-80%" as the range, not the floor). Set audit expectations as "wide range possible." If our actual ML routing on their workload saves only 30%, that is still a real number worth selling. |
-| They run the audit and then build it themselves | Patent provisional on the efficient orchestration architecture must be filed before any audit data is shared. Engage patent counsel day one. |
+| They run the audit and then build it themselves | The audit shares the savings number and a summary methodology, NOT the specific routing thresholds, prompt libraries, or implementation details. Trade-secret separation is the moat, not patents. (Underlying techniques have meaningful prior art, so patenting them is not a real defense.) |
 | FordDirect intro conflict with our own Wedge H ambitions | The FordDirect relationship is OneMagnify's. We do not approach Ford direct around them. Channel relationship rules apply. |
 
 ---

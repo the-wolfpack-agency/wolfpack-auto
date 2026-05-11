@@ -10,7 +10,7 @@
 
 ## 1. Executive summary
 
-In 30 days Wolfpack Instinct ships v1.0 as the AI cost-efficiency platform. The lead message is "Cut your AI spend 50-80% without losing outcomes." We deliver: a free AI-spend audit (the front-of-funnel tool, run by Instinct itself), a savings-measurement dashboard, a public pricing page on a base + savings-share model, a marketing site, a sales playbook, and an internal-savings case study quantifying what Wolfpack saved running its own consulting operations on Instinct. Success at day 30 is 5 paying customers or 10 active audit pilots, public pricing live, and a provisional patent filed on the efficient AI orchestration architecture.
+In 30 days Wolfpack Instinct ships v1.0 as the AI cost-efficiency platform. The lead message is "Cut your AI spend 50-80% without losing outcomes." We deliver: a free AI-spend audit (the front-of-funnel tool, run by Instinct itself), a savings-measurement dashboard, a public pricing page on a base + savings-share model, a marketing site, a sales playbook, an internal-savings case study quantifying what Wolfpack saved running its own consulting operations on Instinct, and trade-secret discipline in place (methodology-vs-implementation separation, NDAs, access controls) so we can run paid audits without giving away the routing logic. Success at day 30 is 5 paying customers or 10 active audit pilots, public pricing live, and a trademark filing initiated on "Wolfpack Instinct" and "Wolfpack Method."
 
 ## 2. Current state assessment
 
@@ -31,7 +31,8 @@ What is NOT built and must ship in the 30 days:
 - Marketing site (currently the homepage is internal team-facing).
 - Sales materials (one-pager, demo script, cold templates).
 - Internal-savings case study with hard numbers.
-- Patent provisional draft.
+- Trade-secret discipline: NDA template, methodology-summary-vs-full-implementation separation in our audit deliverables, access controls on routing logic and prompt libraries.
+- Trademark filings for "Wolfpack Instinct" and "Wolfpack Method" ($250-1000 per mark).
 
 ## 3. v1.0 launch scope
 
@@ -57,7 +58,8 @@ What is NOT built and must ship in the 30 days:
 
 ### Week 1 (days 1-7) — Positioning lock and audit tool MVP
 - CEO sign-off on positioning and pricing (Section 7).
-- Patent provisional draft started with counsel.
+- Trade-secret discipline in place: NDA template, audit deliverable template that separates "savings summary methodology" (shareable) from "implementation specifics" (never shared).
+- Trademark filings initiated for "Wolfpack Instinct" and "Wolfpack Method."
 - Audit tool MVP: CSV ingest of LLM call logs, savings projection report rendered as PDF and dashboard view.
 - Router + cache instrumented for full cost telemetry per workflow.
 
@@ -77,7 +79,7 @@ What is NOT built and must ship in the 30 days:
 - Public launch announcement on LinkedIn, X, Wolfpack blog. CTO LinkedIn posts two and three go live.
 - 5 paying customers signed OR 10 active audit pilots in motion. Goal is paid customers; pilots are the fallback metric.
 - Conference / podcast appearance booked if a viable slot exists in the next 30 days.
-- Patent provisional filed.
+- Trademark filings submitted for "Wolfpack Instinct" and "Wolfpack Method."
 - Day 30 review (Section 12).
 
 ## 5. Engineering scope
@@ -103,7 +105,7 @@ CTO (Nick Homyk) is the sole engineer. Help is flagged where bandwidth is the bi
 **Week 4:**
 - Bug bash and copy polish based on pilot feedback.
 - Launch-day readiness: status page, rollback plan, on-call rota even if only the CTO.
-- Patent provisional finalized and filed.
+- Trademark applications submitted.
 
 **Data pipeline work:** every paying customer's LLM spend is tracked in `ai_call_log` with `dealer_id` -> `tenant_id` equivalent for multi-tenancy. Triple-write to Qdrant (semantic index of call types) and Neo4j (workflow graph) follows the same pattern as Wolfpack Auto. Savings are calculated nightly via a Vercel Cron at 03:00 UTC.
 
@@ -116,7 +118,7 @@ CTO (Nick Homyk) is the sole engineer. Help is flagged where bandwidth is the bi
 5. AI spend audit lead-magnet copy. Email capture form, automated welcome, and a 24-hour follow-up if the audit is not run.
 6. Cold outbound email templates, three variants: engineering-leader pitch (cost optimization angle), finance-leader pitch (cloud-bill control angle), AI-leader pitch (efficiency-without-degradation angle).
 7. Internal-savings case study. Title: "How Wolfpack cut its own AI spend by [X] dollars per month." Real numbers, real workflows, real screenshots. This is the most credible asset we can produce.
-8. Patent provisional filing draft. Covers cost-routing across model tiers, semantic call deduplication, response caching with TTL keyed on prompt similarity, and the dollar-savings measurement layer.
+8. Trade-secret protection package: NDA template for audit engagements, internal access-control review for routing logic and prompt libraries, audit deliverable template that documents the savings summary methodology but excludes the specific implementation details (the techniques themselves have substantial prior art; the defensible asset is our specific implementation and customer data accumulation, protected as trade secrets rather than patents).
 
 ## 7. Pricing decisions due in week 1
 
@@ -132,7 +134,7 @@ These numbers go on the pricing page only after CEO sign-off in week 1.
 
 - **Warm outbound to consulting clients.** Top priority. CEO supplies 10 warm intros (Section 11). CTO runs the audit conversation. Friendly pilots cost nothing to convert because the audit is free.
 - **Free AI-audit lead magnet.** Drives inbound. Promoted via LinkedIn posts, the Wolfpack newsletter if one exists, and the landing-page CTA.
-- **CTO LinkedIn content.** Three posts in the 30-day window: post one is the internal-savings case study, post two is a teardown of a real customer's wasted spend (with permission), post three is the patent-pending architecture post.
+- **CTO LinkedIn content.** Three posts in the 30-day window: post one is the internal-savings case study, post two is a teardown of a real customer's wasted spend (with permission), post three is the architectural philosophy post on why labs cannot offer cost-efficiency (revenue conflict argument).
 - **One conference or podcast appearance.** Pitch any AI-cost or FinOps-focused podcast in the next two weeks. If no booking, defer to month 2.
 - **Aggregator directory listings.** Submit to any AI cost-tracking or FinOps-tools directories that exist (Vantage, Tabular, etc.).
 
@@ -141,7 +143,8 @@ These numbers go on the pricing page only after CEO sign-off in week 1.
 - 5 paying customers OR 10 active audit pilots in motion.
 - Public pricing page live and tested through Stripe checkout end-to-end.
 - Internal-savings case study published with real Wolfpack numbers.
-- Patent provisional filed.
+- Trademark applications submitted for "Wolfpack Instinct" and "Wolfpack Method."
+- Trade-secret discipline live: NDA template, audit-deliverable template, access controls on routing logic.
 - At least three pieces of inbound-marketing content live (LinkedIn posts, blog, landing page).
 - Audit tool publicly available with self-serve onboarding (no CTO involvement required to start one).
 
@@ -149,7 +152,7 @@ These numbers go on the pricing page only after CEO sign-off in week 1.
 
 | Risk | Mitigation |
 |------|------------|
-| CTO bandwidth saturation across multiple products. | Defer non-Instinct work where possible. Flag Stripe wiring (week 2) and patent draft (week 1-4) as the candidates for outside help. |
+| CTO bandwidth saturation across multiple products. | Defer non-Instinct work where possible. Flag Stripe wiring (week 2) as the candidate for outside help if needed. |
 | Sales pitches Instinct as Operator competitor. | Lock positioning in week 1. CEO endorsement of "different category" framing. Demo script explicitly rejects the comparison. |
 | Customers prefer per-seat pricing. | Frame base + savings-share as "you pay a fraction of what you would otherwise waste." If a customer pushes back hard, hold the line; per-seat does not capture the value we deliver. |
 | Audit projects 60 percent savings but customer realizes 30 percent. | Be conservative in projection model. Always report a range, never a point estimate. Use historical Wolfpack savings as the ground-truth calibrator. Audit terms-of-service include a no-warranty clause on projection accuracy. |
