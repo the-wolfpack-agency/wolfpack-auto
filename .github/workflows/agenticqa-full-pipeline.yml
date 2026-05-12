@@ -221,20 +221,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run AgenticQA Security Scan
-        uses: nhomyk/AgenticQA@98f9f330cc499c7de5a9c11560a132e33eebecef  # main as of 2026-05-03
+      - uses: actions/setup-python@v5
         with:
-          path: '.'
-          fail-on-critical: 'false'
-          sarif: 'true'
-          pr-comment: 'true'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          python-version: '3.13'
 
-      - name: Upload SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: agenticqa.sarif
+      - name: Run AgenticQA app-security audit (codified, zero-token)
+        run: |
+          # Inlined scanner — nhomyk/AgenticQA GitHub Action not currently published.
+          # scripts/audit_app_security.py is synced via scripts/sync-from-agenticqa.sh
+          # and runs the same codified vulnerability patterns the action would.
+          python3 scripts/audit_app_security.py
+          python3 scripts/audit_history_exposure.py
         continue-on-error: true
 
   load-baseline:
@@ -318,7 +315,12 @@ jobs:
         run: npm run build
         env:
           DATABASE_URL: ''
+          NEXTAUTH_SECRET: 'ci-test-secret-not-real-64-chars-aaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+          NEXTAUTH_URL: 'http://localhost:3099'
       - name: Start server & verify all API routes
+        env:
+          NEXTAUTH_SECRET: 'ci-test-secret-not-real-64-chars-aaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+          NEXTAUTH_URL: 'http://localhost:3099'
         run: |
           DATABASE_URL= npx next start -p 3099 &
           for i in {1..15}; do
