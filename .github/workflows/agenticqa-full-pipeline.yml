@@ -164,14 +164,20 @@ jobs:
 
       - name: Run Playwright E2E tests (shard ${{ matrix.shard }}/4)
         id: playwright
+        # No `|| PLAYWRIGHT_FAILED=true` swallow — failures now propagate
+        # honestly. Capture failure artifacts via a separate `if: failure()`
+        # step below so the upload still happens.
         run: |
-          npx playwright test --project=chromium --workers=4 --shard=${{ matrix.shard }}/4 --reporter=github 2>&1 | tee playwright-output.log || PLAYWRIGHT_FAILED=true
-          if [ "$PLAYWRIGHT_FAILED" = "true" ]; then
-            mkdir -p test-failures
-            grep -i "error\|fail\|expected" playwright-output.log >> test-failures/playwright-errors.txt || true
-            echo "PLAYWRIGHT_FAILED=true" >> test-failures/summary.txt
-          fi
+          set -o pipefail
+          npx playwright test --project=chromium --workers=4 --shard=${{ matrix.shard }}/4 --reporter=github 2>&1 | tee playwright-output.log
           echo "status=completed" >> $GITHUB_OUTPUT
+
+      - name: Capture failure artifacts
+        if: failure() && steps.playwright.outcome == 'failure'
+        run: |
+          mkdir -p test-failures
+          grep -i "error\|fail\|expected" playwright-output.log >> test-failures/playwright-errors.txt || true
+          echo "PLAYWRIGHT_FAILED=true" >> test-failures/summary.txt
 
       - name: Upload test failures
         if: failure()
