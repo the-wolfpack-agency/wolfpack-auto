@@ -134,12 +134,23 @@ export function useAnalytics(): AnalyticsContextValue {
 const SESSION_KEY = "wolfpack_analytics_session";
 const FINGERPRINT_KEY = "wolfpack_analytics_fp";
 
+/** CSPRNG-backed token. Falls back to Date.now+counter only if Web Crypto is missing. */
+function secureToken(byteLen: number): string {
+  if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+    const buf = new Uint8Array(byteLen);
+    window.crypto.getRandomValues(buf);
+    return Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  // Should not happen in modern browsers; degrade gracefully.
+  return Date.now().toString(36);
+}
+
 function getOrCreateSession(): string {
   if (typeof window === "undefined") return "";
   try {
     let id = sessionStorage.getItem(SESSION_KEY);
     if (!id) {
-      id = `s_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      id = `s_${Date.now()}_${secureToken(6)}`;
       sessionStorage.setItem(SESSION_KEY, id);
     }
     return id;
@@ -153,8 +164,8 @@ function getOrCreateFingerprint(): string {
   try {
     let fp = localStorage.getItem(FINGERPRINT_KEY);
     if (!fp) {
-      // Simple anonymous fingerprint — no PII, just a random ID
-      fp = `fp_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+      // Anonymous fingerprint — no PII, CSPRNG-derived random ID
+      fp = `fp_${Date.now()}_${secureToken(8)}`;
       localStorage.setItem(FINGERPRINT_KEY, fp);
     }
     return fp;

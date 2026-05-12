@@ -88,10 +88,14 @@ export interface RouteToLendersResult {
 /* Validators                                                                 */
 /* -------------------------------------------------------------------------- */
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Anchored, length-bounded to avoid polynomial-time backtracking on
+// untrusted input. RFC 5321 caps local at 64 + domain at 255 → cap at 320.
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,63}$/;
 
 export function isValidLenderEmail(email: string): boolean {
-  return EMAIL_RE.test(email.trim());
+  const trimmed = email.trim();
+  if (trimmed.length > 320) return false;
+  return EMAIL_RE.test(trimmed);
 }
 
 export function isValidLenderType(t: string): t is LenderType {

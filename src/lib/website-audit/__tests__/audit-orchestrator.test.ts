@@ -28,7 +28,8 @@ describe("generateWebsiteAudit (shadow mode)", () => {
       now: new Date("2026-05-12T00:00:00Z"),
     });
     expect(result.status).toBe("delivered");
-    expect(result.pdf_url).toMatch(/^file:\/\/\/tmp\//);
+    // mkdtemp-based randomized OS tmpdir path; just check the run ID is preserved.
+    expect(result.pdf_url).toMatch(/^file:\/\/.*shadow-run-id-1234\.pdf$/);
     expect(result.summary_metrics).toBeDefined();
     const sm = result.summary_metrics as Record<string, unknown>;
     expect(typeof sm.overall_score).toBe("number");

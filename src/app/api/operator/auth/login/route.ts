@@ -34,9 +34,30 @@ export async function POST(request: NextRequest) {
   // Server-side signin: post into the NextAuth callback URL and pass
   // the Set-Cookie header through. This lets external test runners use
   // a stable URL instead of going through the NextAuth client library.
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : new URL(request.url).origin);
+  //
+  // SSRF hardening: the base URL must come from a trusted env var. We do
+  // NOT fall back to request.url's origin (Host-header controllable). If
+  // neither NEXTAUTH_URL nor VERCEL_URL is set, refuse the request.
+  let baseUrl: string;
+  if (process.env.NEXTAUTH_URL) {
+    baseUrl = process.env.NEXTAUTH_URL;
+  } else if (process.env.VERCEL_URL) {
+    baseUrl = `https://${process.env.VERCEL_URL}`;
+  } else {
+    return NextResponse.json(
+      { error: "Server misconfigured: NEXTAUTH_URL not set" },
+      { status: 500 },
+    );
+  }
+  // Validate scheme + restrict to https / localhost http only.
+  try {
+    const u = new URL(baseUrl);
+    if (!(u.protocol === "https:" || (u.protocol === "http:" && (u.hostname === "localhost" || u.hostname === "127.0.0.1")))) {
+      throw new Error("disallowed scheme");
+    }
+  } catch {
+    return NextResponse.json({ error: "Server misconfigured: invalid NEXTAUTH_URL" }, { status: 500 });
+  }
 
   // Fetch CSRF token so the callback accepts the credentials post.
   const csrfResp = await fetch(`${baseUrl}/api/auth/csrf`, {

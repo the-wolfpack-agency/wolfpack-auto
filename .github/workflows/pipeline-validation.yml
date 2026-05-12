@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate:
-    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/pipeline-validation.yml@main
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/pipeline-validation.yml@b468565eaff7ad4dd1b1872015282dd597dae022  # main
     with:
       severity: 'medium'
       fail_on_findings: 'false'

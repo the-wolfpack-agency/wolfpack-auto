@@ -3,7 +3,7 @@
 > Auto-generated 2026-05-12 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 305
+**Total routes:** 336
 
 ## Contents
 
@@ -12,6 +12,7 @@
 - [admin](#admin)
 - [agency](#agency)
 - [analytics](#analytics)
+- [audit-request](#audit-request)
 - [auth](#auth)
 - [chat](#chat)
 - [contact](#contact)
@@ -24,6 +25,7 @@
 - [images](#images)
 - [inventory](#inventory)
 - [leads](#leads)
+- [literacy](#literacy)
 - [openapi](#openapi)
 - [operator](#operator)
 - [prequal](#prequal)
@@ -32,11 +34,13 @@
 - [service](#service)
 - [status](#status)
 - [surveys](#surveys)
+- [touchpoints](#touchpoints)
 - [trade-in](#trade-in)
 - [vehicle-provenance](#vehicle-provenance)
 - [vehicles](#vehicles)
 - [walkaround](#walkaround)
 - [webhooks](#webhooks)
+- [website-audit-request](#website-audit-request)
 
 ## ab
 
@@ -94,6 +98,9 @@
 | `GET` | `/api/admin/annotations` | List annotations | Bearer | — |
 | `POST` | `/api/admin/annotations` | Create annotation | Bearer | — |
 | `DELETE` | `/api/admin/annotations` | Delete annotation | Bearer | — |
+| `GET` | `/api/admin/assistant/actions` | List actions | Bearer | — |
+| `POST` | `/api/admin/assistant/chat` | Create chat | Bearer | — |
+| `GET` | `/api/admin/assistant/conversations` | List conversations | Bearer | — |
 | `GET` | `/api/admin/auction/benchmarks` | List benchmarks | Bearer | — |
 | `GET` | `/api/admin/auction/opportunities` | List opportunities | Bearer | — |
 | `POST` | `/api/admin/auction/opportunities/{id}/{action}` | Create opportunity | Bearer | — |
@@ -166,6 +173,10 @@
 | `POST` | `/api/admin/digital-retail/calculator` | POST /api/admin/digital-retail/calculator | — | Yes |
 | `GET` | `/api/admin/digital-retail/credit-app` | List credit-app | Bearer | — |
 | `POST` | `/api/admin/digital-retail/credit-app` | Create credit-app | Bearer | — |
+| `GET` | `/api/admin/dms-adapters` | List dms-adapters | Bearer | — |
+| `POST` | `/api/admin/dms-adapters/{provider}` | Create dms-adapter | Bearer | — |
+| `PATCH` | `/api/admin/dms-adapters/{provider}` | Update dms-adapter | Bearer | — |
+| `DELETE` | `/api/admin/dms-adapters/{provider}` | Delete dms-adapter | Bearer | — |
 | `GET` | `/api/admin/documents` | List documents | Bearer | Yes |
 | `POST` | `/api/admin/documents` | Create document | Bearer | Yes |
 | `GET` | `/api/admin/documents/{id}` | Get document | Bearer | — |
@@ -180,6 +191,10 @@
 | `DELETE` | `/api/admin/domains` | Delete domain | Bearer | — |
 | `GET` | `/api/admin/drip-campaigns` | List drip-campaigns | Bearer | — |
 | `POST` | `/api/admin/drip-campaigns` | Create drip-campaign | Bearer | — |
+| `GET` | `/api/admin/ecommerce-adapters` | List ecommerce-adapters | Bearer | — |
+| `POST` | `/api/admin/ecommerce-adapters/{provider}` | Create ecommerce-adapter | Bearer | — |
+| `PATCH` | `/api/admin/ecommerce-adapters/{provider}` | Update ecommerce-adapter | Bearer | — |
+| `DELETE` | `/api/admin/ecommerce-adapters/{provider}` | Delete ecommerce-adapter | Bearer | — |
 | `GET` | `/api/admin/econtracting` | GET  /api/admin/econtracting — List contract envelopes (filterable) | Bearer | Yes |
 | `POST` | `/api/admin/econtracting` | GET  /api/admin/econtracting — List contract envelopes (filterable) | Bearer | Yes |
 | `GET` | `/api/admin/econtracting/{contractId}` | GET   /api/admin/econtracting/[contractId] — Single contract detail | Bearer | — |
@@ -195,6 +210,7 @@
 | `POST` | `/api/admin/error-monitor` | Create error-monitor | Bearer | — |
 | `GET` | `/api/admin/export/analytics` | GET /api/admin/export/analytics | Bearer | — |
 | `GET` | `/api/admin/export/leads` | List leads | Bearer | — |
+| `GET` | `/api/admin/fi-audit-runs` | List fi-audit-runs | — | — |
 | `GET` | `/api/admin/fi-products` | GET  /api/admin/fi-products — List F&I product catalog | Bearer | — |
 | `POST` | `/api/admin/fi-products` | GET  /api/admin/fi-products — List F&I product catalog | Bearer | — |
 | `GET` | `/api/admin/floor-plan` | List floor-plan | Bearer | — |
@@ -251,6 +267,36 @@
 | `POST` | `/api/admin/lenders` | Create lender | Bearer | Yes |
 | `GET` | `/api/admin/lenders/{id}` | Get lender | Bearer | — |
 | `PATCH` | `/api/admin/lenders/{id}` | Update lender | Bearer | — |
+| `GET` | `/api/admin/literacy/actions` | List actions | — | — |
+| `POST` | `/api/admin/literacy/actions` | Create action | — | — |
+| `PATCH` | `/api/admin/literacy/actions/{id}` | Update action | — | — |
+| `DELETE` | `/api/admin/literacy/actions/{id}` | Delete action | — | — |
+| `GET` | `/api/admin/literacy/concepts` | List concepts | — | — |
+| `POST` | `/api/admin/literacy/concepts` | Create concept | — | — |
+| `GET` | `/api/admin/literacy/concepts/{id}` | Get concept | — | — |
+| `PATCH` | `/api/admin/literacy/concepts/{id}` | Update concept | — | — |
+| `DELETE` | `/api/admin/literacy/concepts/{id}` | Delete concept | — | — |
+| `GET` | `/api/admin/literacy/mappings` | List mappings | — | — |
+| `POST` | `/api/admin/literacy/mappings` | Create mapping | — | — |
+| `DELETE` | `/api/admin/literacy/mappings/{id}` | Delete mapping | — | — |
+| `GET` | `/api/admin/literacy/metrics` | List metrics | — | — |
+| `POST` | `/api/admin/literacy/metrics` | Create metric | — | — |
+| `GET` | `/api/admin/literacy/metrics/{id}` | Get metric | — | — |
+| `PATCH` | `/api/admin/literacy/metrics/{id}` | Update metric | — | — |
+| `DELETE` | `/api/admin/literacy/metrics/{id}` | Delete metric | — | — |
+| `GET` | `/api/admin/literacy/tooltips` | List tooltips | — | — |
+| `POST` | `/api/admin/literacy/tooltips` | Create tooltip | — | — |
+| `PATCH` | `/api/admin/literacy/tooltips/{id}` | Update tooltip | — | — |
+| `DELETE` | `/api/admin/literacy/tooltips/{id}` | Delete tooltip | — | — |
+| `GET` | `/api/admin/literacy/translations` | List translations | — | — |
+| `POST` | `/api/admin/literacy/translations` | Create translation | — | — |
+| `PATCH` | `/api/admin/literacy/translations/{id}` | Update translation | — | — |
+| `DELETE` | `/api/admin/literacy/translations/{id}` | Delete translation | — | — |
+| `GET` | `/api/admin/literacy/walkthroughs` | List walkthroughs | — | — |
+| `POST` | `/api/admin/literacy/walkthroughs` | Create walkthrough | — | — |
+| `GET` | `/api/admin/literacy/walkthroughs/{id}` | Get walkthrough | — | — |
+| `PATCH` | `/api/admin/literacy/walkthroughs/{id}` | Update walkthrough | — | — |
+| `DELETE` | `/api/admin/literacy/walkthroughs/{id}` | Delete walkthrough | — | — |
 | `GET` | `/api/admin/locations` | List locations | Bearer | — |
 | `POST` | `/api/admin/locations` | Create location | Bearer | — |
 | `GET` | `/api/admin/locations/{locationId}` | Get location | Bearer | — |
@@ -359,6 +405,8 @@
 | `GET` | `/api/admin/tasks` | List tasks | Bearer | — |
 | `POST` | `/api/admin/tasks` | Create task | Bearer | — |
 | `PATCH` | `/api/admin/tasks` | Update task | Bearer | — |
+| `GET` | `/api/admin/touchpoints` | List touchpoints | Bearer | — |
+| `GET` | `/api/admin/touchpoints/{id}` | Get touchpoint | Bearer | — |
 | `GET` | `/api/admin/trade-in` | List trade-in | Bearer | — |
 | `GET` | `/api/admin/training` | List training | Bearer | — |
 | `POST` | `/api/admin/training` | Create training | Bearer | — |
@@ -415,6 +463,7 @@
 | `DELETE` | `/api/admin/webhooks/{id}` | Single webhook config — GET/PATCH/DELETE operations. | Bearer | — |
 | `POST` | `/api/admin/webhooks/{id}/test` | Test webhook delivery — sends a sample payload to verify the URL. | Bearer | — |
 | `GET` | `/api/admin/webhooks/deliveries` | Webhook delivery log — lists recent deliveries with optional status filter. | Bearer | — |
+| `GET` | `/api/admin/website-audit-runs` | List website-audit-runs | — | — |
 
 ## agency
 
@@ -432,6 +481,13 @@
 | `GET` | `/api/analytics/events` | Log dataflow warnings once per process lifecycle. */ | — | Yes |
 | `POST` | `/api/analytics/events` | Log dataflow warnings once per process lifecycle. */ | — | Yes |
 | `GET` | `/api/analytics/insights` | List insights | — | — |
+
+## audit-request
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `POST` | `/api/audit-request` | Create audit-request | — | Yes |
+| `GET` | `/api/audit-request/{id}` | Get audit-request | — | — |
 
 ## auth
 
@@ -524,6 +580,12 @@
 | `POST` | `/api/leads/ingest` | POST /api/leads/ingest — Public webhook for third-party providers. | — | — |
 | `POST` | `/api/leads/intake` | POST /api/leads/intake — modern lead intake endpoint. | — | Yes |
 
+## literacy
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `GET` | `/api/literacy/walkthrough/{concept_slug}` | Get walkthrough | Bearer | — |
+
 ## openapi
 
 | Method | Path | Summary | Auth | Rate-limited |
@@ -592,6 +654,12 @@
 |--------|------|---------|------|-------------|
 | `POST` | `/api/surveys/respond` | POST /api/surveys/respond — Public endpoint (no auth required). | — | Yes |
 
+## touchpoints
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `POST` | `/api/touchpoints/scan` | Create scan | — | Yes |
+
 ## trade-in
 
 | Method | Path | Summary | Auth | Rate-limited |
@@ -627,3 +695,10 @@
 | `POST` | `/api/webhooks/stripe` | Create stripe | — | — |
 | `POST` | `/api/webhooks/telemetry/{provider}` | Create telemetry | — | — |
 | `POST` | `/api/webhooks/twilio` | POST /api/webhooks/twilio — Public webhook for Twilio inbound SMS. | — | — |
+
+## website-audit-request
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `POST` | `/api/website-audit-request` | Create website-audit-request | — | Yes |
+| `GET` | `/api/website-audit-request/{id}` | Get website-audit-request | — | — |

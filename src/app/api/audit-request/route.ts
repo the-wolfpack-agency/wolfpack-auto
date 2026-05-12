@@ -294,9 +294,13 @@ async function persistCSV(text: string): Promise<string | null> {
     }
   }
   const fs = await import("fs/promises");
-  const path = `/tmp/fi-audit-source-${stamp}.csv`;
-  await fs.writeFile(path, text, "utf-8");
-  return `file://${path}`;
+  const os = await import("os");
+  const pathMod = await import("path");
+  // Unpredictable per-write directory + 0600 perms.
+  const dir = await fs.mkdtemp(pathMod.join(os.tmpdir(), "fi-audit-source-"));
+  const filePath = pathMod.join(dir, `${stamp}.csv`);
+  await fs.writeFile(filePath, text, { encoding: "utf-8", mode: 0o600 });
+  return `file://${filePath}`;
 }
 
 /**

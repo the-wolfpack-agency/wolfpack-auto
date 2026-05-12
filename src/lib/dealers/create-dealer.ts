@@ -10,6 +10,7 @@
  * sites get identical behavior.
  */
 
+import { randomBytes } from "crypto";
 import { trackSystem } from "@/lib/analytics-hooks";
 
 export interface CreateDealerInput {
@@ -59,7 +60,8 @@ export function sanitizeSlug(slug: string): string {
  * Format: Wp<base36-time>! — meets the project's password validator.
  */
 export function generateTempPassword(): string {
-  const r = Math.random().toString(36).slice(-4);
+  // CSPRNG-backed: 6 random bytes → base36-ish suffix (security-sensitive credential).
+  const r = randomBytes(6).toString("base64url").slice(0, 8);
   return `Wp${Date.now().toString(36).slice(-6)}${r}A1!`;
 }
 

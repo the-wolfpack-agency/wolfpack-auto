@@ -5,9 +5,12 @@ on:
     - cron: '30 3 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   benchmark:
-    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/sdet-trend-benchmark.yml@main
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/sdet-trend-benchmark.yml@b468565eaff7ad4dd1b1872015282dd597dae022  # main
     with:
       jest_command: 'npx jest --json --silent'
       node_version: '22'

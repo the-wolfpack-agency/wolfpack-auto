@@ -555,10 +555,13 @@ async function uploadPDF(runId: string, buffer: Buffer): Promise<string> {
       console.error("[fi-audit] S3 upload failed, falling back to /tmp:", err);
     }
   }
-  // /tmp fallback
+  // /tmp fallback — use mkdtemp + 0600 perms for tenant isolation.
   const fs = await import("fs/promises");
-  const tmpPath = `/tmp/fi-audit-${runId}.pdf`;
-  await fs.writeFile(tmpPath, buffer);
+  const os = await import("os");
+  const path = await import("path");
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "fi-audit-"));
+  const tmpPath = path.join(dir, `${runId}.pdf`);
+  await fs.writeFile(tmpPath, buffer, { mode: 0o600 });
   return `file://${tmpPath}`;
 }
 

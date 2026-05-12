@@ -346,8 +346,13 @@ async function uploadPDF(runId: string, buffer: Buffer): Promise<string> {
     }
   }
   const fs = await import("fs/promises");
-  const tmpPath = `/tmp/website-audit-${runId}.pdf`;
-  await fs.writeFile(tmpPath, buffer);
+  const os = await import("os");
+  const path = await import("path");
+  // Use mkdtemp + restrictive perms so multiple tenants on the same host
+  // can't predict/overwrite each other's audit PDFs.
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "website-audit-"));
+  const tmpPath = path.join(dir, `${runId}.pdf`);
+  await fs.writeFile(tmpPath, buffer, { mode: 0o600 });
   return `file://${tmpPath}`;
 }
 

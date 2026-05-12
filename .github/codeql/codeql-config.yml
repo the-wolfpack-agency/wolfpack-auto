@@ -1,0 +1,15 @@
+name: "Wolfpack Auto CodeQL config"
+
+# Reusable sanitizer/sink model pack so CodeQL recognizes our
+# repo-local sanitizeForLog() as a log-injection sanitizer and
+# stops re-flagging already-sanitized console.* call sites.
+packs:
+  - ./.github/codeql/wolfpack-auto-models
+
+queries:
+  - uses: security-extended
+
+paths-ignore:
+  - "**/__pycache__/**"
+  - "**/node_modules/**"
+  - "**/.next/**"

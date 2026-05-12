@@ -5,10 +5,18 @@ import { encryptPII } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit-log";
 import { trackLead } from "@/lib/analytics-hooks";
 
-/** Strip HTML tags and escape remaining special characters to prevent stored XSS. */
+/** Strip HTML tags and escape remaining special characters to prevent stored XSS.
+ * Loops until no `<...>` tag remains so nested constructs like `<<x>script>`
+ * can't survive a single replace pass (codeql: incomplete-multi-character-sanitization).
+ */
 function sanitizeInput(str: string): string {
-  return str
-    .replace(/<[^>]*>/g, "") // strip HTML tags
+  let prev: string;
+  let out = str;
+  do {
+    prev = out;
+    out = out.replace(/<[^>]*>/g, "");
+  } while (out !== prev);
+  return out
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

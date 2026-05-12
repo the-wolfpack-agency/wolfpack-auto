@@ -12,6 +12,7 @@
  * isolated even though the underlying data is technically public.
  */
 
+import { sanitizeForLog } from "@/lib/log-sanitize";
 import { caClient } from "./ca-client";
 import { flClient } from "./fl-client";
 import { txClient } from "./tx-client";
@@ -77,9 +78,13 @@ export async function dispatchTitleLien(
     // Per the contract, clients should never throw — but if one does, we
     // collapse cleanly to an honest upstream_error result rather than
     // letting a 500 bubble into the route.
+    // Plain string concatenation (no format-string interpolation of user
+    // data) + sanitizer to avoid log-injection from state-code header.
     console.warn(
-      `[title-lien] dispatcher caught throw from ${normalizedState} client:`,
-      err instanceof Error ? err.message : String(err),
+      "[title-lien] dispatcher caught throw from " +
+        sanitizeForLog(normalizedState) +
+        " client:",
+      err instanceof Error ? sanitizeForLog(err.message) : sanitizeForLog(String(err)),
     );
     return {
       vin: normalizedVin,

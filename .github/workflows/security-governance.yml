@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   governance:
-    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/security-governance.yml@main
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/security-governance.yml@b468565eaff7ad4dd1b1872015282dd597dae022  # main
     with:
       repo: ${{ github.repository }}
       max_age_days: 90
