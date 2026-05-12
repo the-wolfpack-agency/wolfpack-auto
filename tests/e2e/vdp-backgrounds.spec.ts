@@ -9,11 +9,21 @@
 
 import { test, expect } from "@playwright/test";
 
+// SHADOW: all /api/admin/* routes are auth-gated; unauthenticated CI gets 401.
+// /admin/* pages redirect to /admin/login. We skip the auth-dependent assertions
+// in shadow and preserve the full assertions for DEMO_MODE / authenticated runs.
+const SHADOW_MODE = !process.env.DATABASE_URL && process.env.DEMO_MODE !== "true";
+
 /* ------------------------------------------------------------------ */
 /*  API: List presets                                                   */
 /* ------------------------------------------------------------------ */
 
 test.describe("VDP Backgrounds — API", () => {
+  // SHADOW: admin background API is auth-gated. Skip the whole describe in shadow.
+  test.beforeEach(() => {
+    test.skip(SHADOW_MODE, "auth-gated /api/admin/vehicles/backgrounds (DEMO_MODE=true or session required)");
+  });
+
   test("GET /api/admin/vehicles/backgrounds returns 200 with presets", async ({
     request,
   }) => {
@@ -103,6 +113,11 @@ test.describe("VDP Backgrounds — API", () => {
 /* ------------------------------------------------------------------ */
 
 test.describe("VDP Backgrounds — Recommendations", () => {
+  // SHADOW: auth-gated admin endpoints. Skip in shadow.
+  test.beforeEach(() => {
+    test.skip(SHADOW_MODE, "auth-gated recommend API");
+  });
+
   test("GET /api/admin/vehicles/backgrounds/recommend returns recommendation", async ({
     request,
   }) => {
@@ -161,6 +176,7 @@ test.describe("VDP Backgrounds — Insights", () => {
   test("GET /api/admin/vehicles/backgrounds/insights returns 200", async ({
     request,
   }) => {
+    test.skip(SHADOW_MODE, "auth-gated insights API");
     const res = await request.get(
       "/api/admin/vehicles/backgrounds/insights",
     );
@@ -178,6 +194,11 @@ test.describe("VDP Backgrounds — Insights", () => {
 /* ------------------------------------------------------------------ */
 
 test.describe("VDP Backgrounds — Admin Page", () => {
+  // SHADOW: /admin/inventory/backgrounds redirects to /admin/login without a session.
+  test.beforeEach(() => {
+    test.skip(SHADOW_MODE, "auth-gated admin page (redirects to login in shadow)");
+  });
+
   test("backgrounds admin page renders", async ({ page }) => {
     await page.goto("/admin/inventory/backgrounds");
     await expect(page.getByTestId("backgrounds-page")).toBeVisible();

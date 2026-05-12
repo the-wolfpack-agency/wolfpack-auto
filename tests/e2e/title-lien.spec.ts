@@ -10,6 +10,9 @@
 
 import { test, expect } from "@playwright/test";
 
+// SHADOW: /api/admin/vehicles/[id]/title-lien is auth-gated → 401 without session.
+const SHADOW_MODE = !process.env.DATABASE_URL && process.env.DEMO_MODE !== "true";
+
 const KNOWN_VEHICLE_ID =
   process.env.E2E_VEHICLE_ID ??
   // Falls back to a known shadow VIN. The admin route accepts both UUID
@@ -23,6 +26,11 @@ test.describe("Admin — GET /api/admin/vehicles/[id]/title-lien", () => {
     const resp = await request.get(
       `/api/admin/vehicles/${encodeURIComponent(KNOWN_VEHICLE_ID)}/title-lien?state=FL`,
     );
+    // SHADOW: auth-gated admin route → 401 without session
+    if (SHADOW_MODE) {
+      expect([200, 401]).toContain(resp.status());
+      return;
+    }
     expect(resp.status()).toBe(200);
     const body = await resp.json();
     // Two shapes are valid:
@@ -45,11 +53,11 @@ test.describe("Admin — GET /api/admin/vehicles/[id]/title-lien", () => {
     // In DEMO_MODE the route short-circuits to 200 before the state check,
     // so this assertion runs only when DATABASE_URL is set in the env that
     // the dev server saw. Both 200 (shadow) and 400 (real) are acceptable
-    // — both are valid documented contracts.
+    // — both are valid documented contracts. SHADOW: auth-gated → also 401.
     const resp = await request.get(
       `/api/admin/vehicles/${encodeURIComponent(KNOWN_VEHICLE_ID)}/title-lien`,
     );
-    expect([200, 400]).toContain(resp.status());
+    expect([200, 400, 401]).toContain(resp.status());
   });
 });
 
