@@ -644,17 +644,78 @@ export type PrequalEvent =
   | "prequal.income_verified"
   | "prequal.offers_returned"
   | "prequal.completed"
-  | "prequal.abandoned";
+  | "prequal.abandoned"
+  // Stream B (migration 070): real-data routing to dealer's own lender stack
+  // and BYO Plaid credentials for income verification.
+  | "prequal.lender_packet_built"
+  | "prequal.lender_packet_emailed"
+  | "prequal.lender_route_failed"
+  | "prequal.plaid_byo_income_pulled"
+  | "prequal.plaid_byo_income_failed";
 
 /**
- * Live inventory market intelligence events (migration 065).
- * Emitted by `src/lib/market-intel/*` on every refresh and by the
- * Vercel Cron `/api/cron/market-intel-refresh` target.
+ * Live inventory market intelligence events (migration 065 + 069).
+ * Emitted by `src/lib/market-intel/*` on every refresh, by the
+ * Vercel Cron `/api/cron/market-intel-refresh` target, and by the
+ * BYO-credentials per-vehicle proxy routes (Carfax / AutoCheck / Edmunds
+ * — migration 069) which feed real-world signals into the same surface.
  */
 export type InventoryMarketIntelEvent =
   | "inventory.market_signal_generated"
   | "inventory.price_recommended"
-  | "inventory.market_snapshot_captured";
+  | "inventory.market_snapshot_captured"
+  | "market_intel.edmunds_valuation_fetched"
+  | "carfax.report_fetched"
+  | "autocheck.report_fetched";
+
+/**
+ * BYO external-credentials lifecycle events (migration 069).
+ * Emitted by `src/lib/external-credentials/*` whenever a dealer adds /
+ * rotates / revokes an API credential for KBB / vAuto / MMR / Carfax /
+ * AutoCheck / Plaid / Edmunds, or whenever the proxy route uses one.
+ */
+export type CredentialsEvent =
+  | "credentials.byo_added"
+  | "credentials.byo_rotated"
+  | "credentials.byo_revoked"
+  | "credentials.byo_proxy_call_succeeded"
+  | "credentials.byo_proxy_call_failed";
+
+/**
+ * Analytics console view/drill events. Emitted whenever a Wolfpack admin
+ * opens or drills into one of the operator-facing read-only analytics
+ * surfaces (F&I product penetration heatmap, tech utilization grid, etc.).
+ * Other streams should extend this union if they add a new view surface;
+ * names stay `analytics.<noun>_<verb_past>`.
+ */
+export type AnalyticsViewEvent =
+  | "analytics.fi_penetration_viewed"
+  | "analytics.fi_penetration_drilled"
+  | "analytics.tech_utilization_viewed"
+  | "analytics.tech_utilization_drilled"
+  // Stream C (migration 071) — trim-velocity + lead-source-ROI dashboards
+  | "analytics.trim_velocity_viewed"
+  | "analytics.trim_velocity_drilled"
+  | "analytics.lead_source_roi_viewed"
+  | "analytics.lead_source_roi_drilled";
+
+/**
+ * State title/lien lookup events (Stream E, migration 073).
+ * Emitted by `src/lib/title-lien/*` on every lookup attempt.
+ */
+export type TitleLienEvent =
+  | "title_lien.lookup_succeeded"
+  | "title_lien.lookup_failed"
+  | "title_lien.state_not_supported";
+
+/**
+ * USPS address-validation events (Stream E, migration 073).
+ * Emitted on every lead-capture / dealer-settings address save attempt.
+ */
+export type AddressValidationEvent =
+  | "address.validation_succeeded"
+  | "address.validation_corrected"
+  | "address.validation_failed";
 
 export type PlatformEvent =
   | DealEvent
@@ -717,7 +778,11 @@ export type PlatformEvent =
   | NightOwlEvent
   | ProvenanceEvent
   | PrequalEvent
-  | InventoryMarketIntelEvent;
+  | InventoryMarketIntelEvent
+  | AnalyticsViewEvent
+  | TitleLienEvent
+  | AddressValidationEvent
+  | CredentialsEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -1437,4 +1502,54 @@ export function trackInventoryMarketIntel(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "market_intel", ...meta });
+}
+
+/**
+ * Track an analytics-console view/drill event. Read-only operator surfaces
+ * emit this so the learning system can score which analytics views actually
+ * drive dealer-operator action.
+ */
+export function trackAnalyticsView(
+  event: AnalyticsViewEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "analytics_view", ...meta });
+}
+
+/**
+ * Track a state title/lien lookup outcome (Stream E, migration 073).
+ * Fires on every admin lookup attempt — success, failure, or unsupported.
+ */
+export function trackTitleLien(
+  event: TitleLienEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "title_lien", ...meta });
+}
+
+/**
+ * Track a USPS address-validation outcome (Stream E, migration 073).
+ * Fires on every lead-capture / dealer-settings address save attempt.
+ */
+export function trackAddressValidation(
+  event: AddressValidationEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "address_validation", ...meta });
+}
+
+/**
+ * Track a BYO-credential lifecycle event (migration 069). Emitted by
+ * `src/lib/external-credentials/*` whenever a dealer adds/rotates/revokes
+ * a per-dealer API credential or when the proxy route makes a call.
+ */
+export function trackCredentials(
+  event: CredentialsEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "credentials", ...meta });
 }

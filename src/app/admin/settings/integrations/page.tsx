@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ExternalCredentialsPanel from "@/components/admin/ExternalCredentialsPanel";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -238,6 +239,10 @@ export default function IntegrationsPage() {
           Connect your CRM, automation tools, and custom webhooks to sync lead
           and inventory data in real time.
         </p>
+      </div>
+
+      <div className="mb-8">
+        <ExternalCredentialsPanel />
       </div>
 
       <div className="space-y-6">
