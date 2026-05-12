@@ -11,7 +11,7 @@ import {
   type TrimVelocityRow,
   type TrimVelocityResult,
   type TrimVelocityDrillDown,
-} from "@/lib/analytics-engine/trim-velocity";
+} from "@/lib/analytics-engine/trim-velocity-shared";
 
 /* -------------------------------------------------------------------------- */
 /*  Page                                                                       */

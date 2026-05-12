@@ -11,7 +11,7 @@ import {
   type LeadSourceRoiRow,
   type LeadSourceRoiResult,
   type LeadSourceDrillDown,
-} from "@/lib/analytics-engine/lead-source-roi";
+} from "@/lib/analytics-engine/lead-source-roi-shared";
 
 type SortKey = "gross" | "conversion" | "leads" | "time-to-close";
 
