@@ -1,12 +1,23 @@
 name: Security Audit
 
+# Thin caller of the AgenticQA-core reusable workflow. The audit logic
+# (CI/CD posture + app-security + history-exposure + pragma self-tests)
+# lives in `the-wolfpack-agency/AgenticQA-core/.github/workflows/full-audit-suite.yml`
+# and is installed via `pip install agenticqa-core` inside that workflow.
+#
+# Local scripts (audit_app_security.py / audit_cicd_security.py /
+# audit_history_exposure.py / test_audit_app_security.py) have been removed
+# in favor of the installed-package CLI entrypoints (agenticqa-audit-app,
+# agenticqa-audit-cicd, agenticqa-audit-history, agenticqa-test-app-security-pragmas).
+#
+# Note: post-audit GitHub-native gates (Dependabot alert gate + CodeQL gate)
+# stay here because they require repo-scoped GH_TOKEN access and aren't
+# part of the AgenticQA scanner suite.
+
 on:
-  # Nightly at 03:17 UTC — off-peak, after most timezones' end-of-day pushes.
   schedule:
     - cron: "17 3 * * *"
-  # Manual trigger.
   workflow_dispatch:
-  # On every push to main so a regression flagged by any audit fails CI.
   push:
     branches: [main]
 
@@ -21,82 +32,28 @@ concurrency:
 
 jobs:
   audit:
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/full-audit-suite.yml@main
+    with:
+      severity: 'high'
+      fail_on_findings: 'true'
+    secrets: inherit
+
+  github-native-gates:
+    needs: [audit]
+    if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-        with:
-          # Need full history so audit_history_exposure can walk the
-          # entire git log — shallow clone misses old commits.
-          fetch-depth: 0
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
-        with:
-          python-version: "3.13"
-
-      - name: CI/CD posture audit
-        run: |
-          python3 scripts/audit_cicd_security.py --json > cicd-audit.json
-          python3 scripts/audit_cicd_security.py --severity high
-          # High count must stay zero on main.
-          HIGH=$(python3 -c "import json; print(sum(1 for f in json.load(open('cicd-audit.json'))['findings'] if f['severity']=='high'))")
-          echo "::notice::cicd_audit_high=$HIGH"
-          if [ "$HIGH" -gt "0" ]; then
-            echo "::error::CI/CD audit reports $HIGH high-severity findings"
-            exit 1
-          fi
-
-      - name: App-security audit self-tests
-        run: |
-          # Pragma-suppression behavior is load-bearing — run the in-memory
-          # self-tests before the real audit so a regressed pragma can't
-          # silently mask findings.
-          python3 scripts/test_audit_app_security.py
-
-      - name: App-security audit
-        run: |
-          python3 scripts/audit_app_security.py --json > app-audit.json
-          python3 scripts/audit_app_security.py --severity high
-          HIGH=$(python3 -c "import json; print(sum(1 for f in json.load(open('app-audit.json'))['findings'] if f['severity']=='high'))")
-          echo "::notice::app_audit_high=$HIGH"
-          # App audit ceiling. Started at 86 high (mostly A4
-          # cross-tenant findings); dropped to 13 after batch A+B
-          # triage; dropped to 0 on 2026-05-05 after pragma-escape
-          # support added for A5/A6/A8 + twilio sig regex broadened.
-          # Floor is now 0 — any new high-severity finding fails CI.
-          CEILING=0
-          if [ "$HIGH" -gt "$CEILING" ]; then
-            echo "::error::App-security audit reports $HIGH high-severity findings (ceiling=$CEILING). Triage at https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            exit 1
-          fi
-
-      - name: History-exposure audit
-        run: |
-          python3 scripts/audit_history_exposure.py --json > history-audit.json
-          python3 scripts/audit_history_exposure.py
-          HIGH=$(python3 -c "import json; print(sum(1 for f in json.load(open('history-audit.json'))['findings'] if f['severity']=='high'))")
-          echo "::notice::history_audit_high=$HIGH"
-          if [ "$HIGH" -gt "0" ]; then
-            echo "::error::History exposes $HIGH sensitive names — review audit_history_exposure output above"
-            exit 1
-          fi
-
-      # GitHub-native security gates — closes the "scans pass green
-      # but real alerts pile up" loop. Each step queries the GitHub
-      # API for OPEN findings produced by Dependabot or CodeQL and
-      # fails CI if any high/critical alert is unaddressed.
       - name: Dependabot alert gate
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Tally open Dependabot alerts at high/critical severity.
           HIGH_CRIT=$(gh api "/repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open&per_page=100" \
             --jq '[.[] | select(.security_advisory.severity == "high" or .security_advisory.severity == "critical")] | length')
           echo "::notice::dependabot_high_or_critical=$HIGH_CRIT"
           if [ "$HIGH_CRIT" -gt "0" ]; then
-            echo "::error::$HIGH_CRIT open Dependabot alerts at high/critical severity — see https://github.com/${GITHUB_REPOSITORY}/security/dependabot"
+            echo "::error::$HIGH_CRIT open Dependabot alerts at high/critical severity"
             exit 1
           fi
-          # Medium alerts: warn, don't fail (yet). Lower threshold once below 5.
           MED=$(gh api "/repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open&per_page=100" \
             --jq '[.[] | select(.security_advisory.severity == "medium")] | length')
           echo "::notice::dependabot_medium=$MED"
@@ -110,22 +67,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Open code-scanning alerts at error severity (= high/critical).
           ERR=$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" \
             --jq '[.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")] | length')
           echo "::notice::codeql_high_or_critical=$ERR"
           if [ "$ERR" -gt "0" ]; then
-            echo "::error::$ERR open CodeQL high/critical findings — see https://github.com/${GITHUB_REPOSITORY}/security/code-scanning"
+            echo "::error::$ERR open CodeQL high/critical findings"
             exit 1
           fi
-
-      - name: Upload audit artifacts
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
-        with:
-          name: security-audits-${{ github.run_id }}
-          path: |
-            cicd-audit.json
-            app-audit.json
-            history-audit.json
-          retention-days: 30

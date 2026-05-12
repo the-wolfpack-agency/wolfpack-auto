@@ -32,11 +32,22 @@ WOLFPACK_AUTO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Manifest of AgenticQA-sourced files that wolfpack-auto's pipeline depends on.
 # Format: source_relative_to_agenticqa_root  dest_relative_to_wolfpack_auto_root
+#
+# Note: audit_app_security / audit_cicd_security / audit_history_exposure /
+# test_audit_app_security were REMOVED from this manifest on 2026-05-12 when
+# wolfpack-auto switched to consuming AgenticQA-core as an installed pip
+# package (CLI entrypoints: agenticqa-audit-app, agenticqa-audit-cicd,
+# agenticqa-audit-history, agenticqa-test-app-security-pragmas). The workflows
+# `security-audit.yml` (now a thin caller of AgenticQA-core's reusable
+# workflow) and `agenticqa-full-pipeline.yml` (installs agenticqa-core in
+# its Phase 1 compliance job) do not require local copies.
+#
+# sre_autofix.py is intentionally kept local: agenticqa-full-pipeline.yml's
+# linting-fix job runs `python scripts/sre_autofix.py --path . --max-passes 3`
+# and modifies tree files in-place, which is easier to manage as a synced
+# script than as an installed CLI.
 MANIFEST=(
   "scripts/sre_autofix.py                       scripts/sre_autofix.py"
-  "scripts/audit_app_security.py                scripts/audit_app_security.py"
-  "scripts/audit_history_exposure.py            scripts/audit_history_exposure.py"
-  "scripts/test_audit_app_security.py           scripts/test_audit_app_security.py"
   "scripts/probe_security_headers.py            scripts/probe_security_headers.py"
   "scripts/probe_error_disclosure.py            scripts/probe_error_disclosure.py"
   "scripts/branch_protection_enforcer.py        scripts/branch_protection_enforcer.py"
