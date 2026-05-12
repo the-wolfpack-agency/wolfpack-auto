@@ -1,5 +1,10 @@
 name: AgenticQA Full Pipeline
 
+# Composition of thin callers against reusable workflows in
+# the-wolfpack-agency/AgenticQA-core.  Caller-specific jobs (Playwright
+# sharding + caching, shadow-mode route sweep, load baseline, SRE auto-fix
+# self-commit) stay inline; everything generic delegates upstream.
+
 on:
   # push/pull_request/schedule disabled until May 1 (Actions minutes budget)
   # push:
@@ -31,36 +36,8 @@ jobs:
   # ──────────────────────────────────────────────────
 
   pipeline-rescue:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     name: "Pipeline Health Check"
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-        with:
-          fetch-depth: 0
-      - name: Validate workflow YAML
-        run: |
-          pip install pyyaml -q
-          VALID=true
-          for file in .github/workflows/*.yml; do
-            if [ -f "$file" ]; then
-              if python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$file" 2>&1; then
-                echo "  $file valid"
-              else
-                echo "  $file INVALID"
-                VALID=false
-              fi
-            fi
-          done
-          [ "$VALID" = true ] || exit 1
-      - name: Check for repair loops
-        run: |
-          REPAIR_COUNT=$(git log --oneline -10 | grep -c "auto-fix\|workflow repair" || true)
-          if [ "$REPAIR_COUNT" -gt 3 ]; then
-            echo "::error::Too many consecutive auto-fix commits — possible infinite loop"
-            exit 1
-          fi
-          echo "Pipeline health: OK (${REPAIR_COUNT} recent repairs)"
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/pipeline-health-check.yml@main
 
   lint:
     needs: [pipeline-rescue]
@@ -83,6 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: "SRE Agent: Auto-Fix"
+    # Stays inline: needs caller GITHUB_TOKEN to commit + push back to main.
+    # Reusable workflows can't easily propagate that without granting wider
+    # secrets:inherit which we don't want.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
         with:
@@ -174,7 +154,6 @@ jobs:
       - name: Start production server
         run: |
           npm run start &
-          # Wait for server to be ready (up to 30s)
           for i in $(seq 1 15); do
             if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
               echo "Server ready after $((i * 2))s"
@@ -218,6 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: "Phase 1: Security & Accessibility"
+    # Already calls agenticqa-core CLI directly - don't re-wrap.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
         with:
@@ -228,9 +208,6 @@ jobs:
           python-version: '3.13'
 
       - name: Install AgenticQA-core
-        # Canonical audit scripts live in the-wolfpack-agency/AgenticQA-core.
-        # Local copies were removed; consume via the installed package's
-        # CLI entrypoints (agenticqa-audit-app, agenticqa-audit-history).
         run: |
           python -m pip install --upgrade pip
           pip install "agenticqa-core @ git+https://github.com/the-wolfpack-agency/AgenticQA-core.git@main"
@@ -390,101 +367,18 @@ jobs:
   sdet-agent:
     needs: [phase-1-testing, phase-1-compliance]
     if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     name: "Phase 1: SDET Agent"
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
-        with:
-          node-version: "22"
-      - run: npm ci
-      - name: Download test results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
-        with:
-          pattern: test-results-shard-*
-          path: ./test-results-data
-          merge-multiple: true
-        continue-on-error: true
-      - name: SDET Analysis
-        run: |
-          echo "## SDET Agent Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [ -f test-results-data/playwright-output.log ]; then
-            TOTAL=$(grep -c "✓\|✗\|passed\|failed" test-results-data/playwright-output.log 2>/dev/null || echo "0")
-            PASSED=$(grep -c "passed" test-results-data/playwright-output.log 2>/dev/null || echo "0")
-            FAILED=$(grep -c "failed" test-results-data/playwright-output.log 2>/dev/null || echo "0")
-            echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Test lines | ${TOTAL} |" >> $GITHUB_STEP_SUMMARY
-            echo "| Passed refs | ${PASSED} |" >> $GITHUB_STEP_SUMMARY
-            echo "| Failed refs | ${FAILED} |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No test results artifact available" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Coverage gap analysis
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Coverage Gaps" >> $GITHUB_STEP_SUMMARY
-
-          TESTED_ROUTES=$(grep -r "page.goto\|request.get\|request.post" tests/ --include="*.spec.ts" -h | grep -oP '"/[^"]*"' | sort -u | wc -l || echo "0")
-          TOTAL_API_ROUTES=$(find src/app/api -name "route.ts" | wc -l || echo "0")
-          TOTAL_PAGES=$(find src/app -name "page.tsx" -not -path "*/api/*" | wc -l || echo "0")
-
-          echo "| Asset | Count |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| API routes | ${TOTAL_API_ROUTES} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Pages | ${TOTAL_PAGES} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tested route refs | ${TESTED_ROUTES} |" >> $GITHUB_STEP_SUMMARY
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/agent-sdet.yml@main
+    with:
+      artifact_pattern: 'test-results-shard-*'
 
   compliance-agent:
     needs: [phase-1-testing, phase-1-compliance]
     if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     name: "Phase 1: Compliance Agent"
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
-        with:
-          node-version: "22"
-      - run: npm ci
-      - name: Compliance analysis
-        run: |
-          echo "## Compliance Agent Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Security headers check
-          echo "### Security Patterns" >> $GITHUB_STEP_SUMMARY
-          HEADERS_FILE=$(find src -name "middleware.ts" -o -name "next.config.*" | head -1)
-          if [ -n "$HEADERS_FILE" ]; then
-            for header in "X-Frame-Options" "X-Content-Type-Options" "Strict-Transport-Security" "Content-Security-Policy"; do
-              if grep -rq "$header" src/ next.config.* 2>/dev/null; then
-                echo "- $header: configured" >> $GITHUB_STEP_SUMMARY
-              else
-                echo "- $header: **missing**" >> $GITHUB_STEP_SUMMARY
-              fi
-            done
-          fi
-
-          # PII protection check
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### PII Protection" >> $GITHUB_STEP_SUMMARY
-          SSN_REFS=$(grep -rn "ssn\|social.*security\|SSN" src/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | wc -l || echo "0")
-          ENCRYPT_REFS=$(grep -rn "encrypt\|AES\|cipher" src/ --include="*.ts" --include="*.tsx" -l 2>/dev/null | wc -l || echo "0")
-          echo "- Files referencing SSN/PII: ${SSN_REFS}" >> $GITHUB_STEP_SUMMARY
-          echo "- Files with encryption: ${ENCRYPT_REFS}" >> $GITHUB_STEP_SUMMARY
-
-          # Env var leak check
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Secret Exposure" >> $GITHUB_STEP_SUMMARY
-          NEXT_PUBLIC_SECRETS=$(grep -rn "NEXT_PUBLIC.*SECRET\|NEXT_PUBLIC.*KEY\|NEXT_PUBLIC.*PASSWORD" src/ .env* 2>/dev/null | wc -l || echo "0")
-          echo "- NEXT_PUBLIC_ secret leaks: ${NEXT_PUBLIC_SECRETS}" >> $GITHUB_STEP_SUMMARY
-          if [ "$NEXT_PUBLIC_SECRETS" -gt 0 ]; then
-            echo "::warning::Potential secret exposure via NEXT_PUBLIC_ env vars"
-          fi
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/agent-compliance.yml@main
+    with:
+      src_path: 'src/'
 
   # ──────────────────────────────────────────────────
   # Phase 2: Fullstack Agent (fixes from Phase 1)
@@ -493,44 +387,11 @@ jobs:
   fullstack-agent:
     needs: [sdet-agent, compliance-agent, shadow-verification]
     if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
     name: "Phase 2: Fullstack Agent"
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
-        with:
-          node-version: "22"
-      - run: npm ci
-      - name: Download test failures
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
-        with:
-          pattern: test-failures-shard-*
-          path: ./test-failures
-          merge-multiple: true
-        continue-on-error: true
-      - name: Analyze and fix
-        run: |
-          echo "## Fullstack Agent" >> $GITHUB_STEP_SUMMARY
-
-          if [ -d test-failures ] && [ "$(ls -A test-failures 2>/dev/null)" ]; then
-            echo "### Test Failures Detected" >> $GITHUB_STEP_SUMMARY
-            cat test-failures/*.txt >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
-
-            # Build check — ensure production build still works
-            echo "### Build Verification" >> $GITHUB_STEP_SUMMARY
-            if DATABASE_URL= npm run build 2>&1; then
-              echo "- Production build: PASS" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- Production build: **FAIL**" >> $GITHUB_STEP_SUMMARY
-              echo "::error::Production build failed"
-            fi
-          else
-            echo "No test failures to fix — all clear" >> $GITHUB_STEP_SUMMARY
-          fi
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/agent-fullstack.yml@main
+    with:
+      artifact_pattern: 'test-failures-shard-*'
+      verify_build: true
 
   # ──────────────────────────────────────────────────
   # Phase 3: SRE Agent (production readiness)
@@ -542,6 +403,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: "Phase 3: SRE Agent"
+    # Stays inline: production-readiness checks here are Next.js/npm-specific
+    # (.next bundle size, npm audit, src/ console.log hygiene, process.env
+    # cataloging).  Generic version would lose those signals.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
@@ -553,27 +417,23 @@ jobs:
           echo "## SRE Agent — Production Readiness" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Bundle size check
           echo "### Bundle Analysis" >> $GITHUB_STEP_SUMMARY
           if [ -d .next ]; then
             BUNDLE_SIZE=$(du -sh .next/ 2>/dev/null | cut -f1)
             echo "- Build output size: ${BUNDLE_SIZE}" >> $GITHUB_STEP_SUMMARY
           fi
 
-          # Dependency audit
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Dependency Security" >> $GITHUB_STEP_SUMMARY
           AUDIT_OUTPUT=$(npm audit --production 2>&1 || true)
           VULN_COUNT=$(echo "$AUDIT_OUTPUT" | grep -c "vulnerability" || echo "0")
           echo "- npm audit: ${VULN_COUNT} vulnerability references" >> $GITHUB_STEP_SUMMARY
 
-          # Check for console.log in production code
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Code Hygiene" >> $GITHUB_STEP_SUMMARY
           CONSOLE_LOGS=$(grep -rn "console\.log" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "// debug\|// TODO\|test\|spec" | wc -l || echo "0")
           echo "- console.log in src/: ${CONSOLE_LOGS}" >> $GITHUB_STEP_SUMMARY
 
-          # Environment variable documentation
           ENV_VARS=$(grep -roh 'process\.env\.\w*' src/ 2>/dev/null | sort -u | wc -l || echo "0")
           echo "- Environment variables used: ${ENV_VARS}" >> $GITHUB_STEP_SUMMARY
 
@@ -599,43 +459,33 @@ jobs:
           echo "Pipeline healthy"
 
   pipeline-summary:
-    needs: [pipeline-rescue, linting-fix, lint, phase-1-testing, phase-1-compliance, shadow-verification, load-baseline, sdet-agent, compliance-agent, fullstack-agent, sre-agent, pipeline-health]
+    needs:
+      - pipeline-rescue
+      - linting-fix
+      - lint
+      - phase-1-testing
+      - phase-1-compliance
+      - shadow-verification
+      - load-baseline
+      - sdet-agent
+      - compliance-agent
+      - fullstack-agent
+      - sre-agent
+      - pipeline-health
     if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
     name: "Pipeline Summary"
-    steps:
-      - name: Generate summary
-        run: |
-          echo "## AgenticQA Full Pipeline Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Phase | Job | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 0 | Pipeline Health Check | ${{ needs.pipeline-rescue.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 0 | SRE Linting Auto-Fix | ${{ needs.linting-fix.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 0 | Code Linting | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 1 | Consolidated Testing | ${{ needs.phase-1-testing.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 1 | Security & Accessibility | ${{ needs.phase-1-compliance.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 1 | Shadow Mode Verification | ${{ needs.shadow-verification.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 1 | Load Baseline | ${{ needs.load-baseline.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 1 | SDET Agent | ${{ needs.sdet-agent.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 1 | Compliance Agent | ${{ needs.compliance-agent.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 2 | Fullstack Agent | ${{ needs.fullstack-agent.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 3 | SRE Agent | ${{ needs.sre-agent.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Final | Health Verification | ${{ needs.pipeline-health.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Determine overall result
-          FAILED=false
-          for result in "${{ needs.lint.result }}" "${{ needs.phase-1-testing.result }}" "${{ needs.phase-1-compliance.result }}" "${{ needs.shadow-verification.result }}"; do
-            if [ "$result" = "failure" ]; then
-              FAILED=true
-            fi
-          done
-
-          if [ "$FAILED" = "true" ]; then
-            echo "::error::Pipeline failed — do not deploy"
-            echo "**RESULT: FAILED — do not deploy**" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-          echo "**RESULT: ALL PHASES PASSED — safe to deploy**" >> $GITHUB_STEP_SUMMARY
+    uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/pipeline-summary.yml@main
+    with:
+      pipeline_rescue_result: ${{ needs.pipeline-rescue.result }}
+      lint_result: ${{ needs.lint.result }}
+      linting_fix_result: ${{ needs.linting-fix.result }}
+      phase_1_testing_result: ${{ needs.phase-1-testing.result }}
+      phase_1_compliance_result: ${{ needs.phase-1-compliance.result }}
+      shadow_verification_result: ${{ needs.shadow-verification.result }}
+      load_baseline_result: ${{ needs.load-baseline.result }}
+      sdet_agent_result: ${{ needs.sdet-agent.result }}
+      compliance_agent_result: ${{ needs.compliance-agent.result }}
+      fullstack_agent_result: ${{ needs.fullstack-agent.result }}
+      sre_agent_result: ${{ needs.sre-agent.result }}
+      pipeline_health_result: ${{ needs.pipeline-health.result }}
+      gating_jobs: 'lint,phase_1_testing,phase_1_compliance,shadow_verification'
