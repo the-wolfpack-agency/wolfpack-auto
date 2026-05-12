@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, isAuthenticated } from "@/lib/auth-guard";
 import { trackAssistant } from "@/lib/analytics-hooks";
 import {
+  getTenantVertical,
   listActions,
   type AssistantCategory,
   type AssistantRole,
@@ -39,12 +40,17 @@ export async function GET(request: NextRequest) {
   // Dealer-side roles drive the allowlist filter.
   const role = (auth.user.role ?? "admin") as AssistantRole;
 
+  // Resolve the tenant's vertical (defaults to 'auto' pre-launch). Returns
+  // the action subset where vertical = tenant_vertical OR vertical = 'any'.
+  const tenantVertical = await getTenantVertical(auth.user.dealer_id);
+
   try {
     const actions = await listActions({
       category,
       side_effect: sideEffect,
       active_only: !includeInactive,
       role,
+      vertical: tenantVertical,
       limit: 500,
     });
     try {
@@ -52,6 +58,7 @@ export async function GET(request: NextRequest) {
         role,
         category: category ?? "",
         side_effect: sideEffect ?? "",
+        vertical: tenantVertical,
         result_count: actions.length,
       });
     } catch { /* analytics must never block */ }
@@ -60,9 +67,10 @@ export async function GET(request: NextRequest) {
       actions,
       count: actions.length,
       role,
+      vertical: tenantVertical,
     });
   } catch (err) {
     console.error("[assistant/actions] GET error:", err);
-    return NextResponse.json({ actions: [], count: 0, role });
+    return NextResponse.json({ actions: [], count: 0, role, vertical: tenantVertical });
   }
 }

@@ -32,6 +32,7 @@ function mkAction(overrides: Partial<AssistantAction>): AssistantAction {
     side_effect: "mutating",
     dry_run_supported: true,
     category: "leads",
+    vertical: "any",
     active: true,
     created_at: "",
     updated_at: "",

@@ -21,6 +21,8 @@ import type {
   AssistantAction,
   AssistantRole,
   MatchedAction,
+  TenantVertical,
+  Vertical,
 } from "./types";
 
 /* ------------------------------------------------------------------ */
@@ -47,6 +49,23 @@ export function canRoleInvoke(
   const override = capabilityOverrides.find((c) => c.role === role);
   if (override) return override.enabled;
   return true;
+}
+
+/**
+ * True iff `action` is available in the given tenant `vertical`. An action
+ * tagged 'any' is always available. Otherwise the action's vertical must
+ * match the tenant's vertical.
+ *
+ * When `tenantVertical` is undefined, vertical-gating is skipped (Wolfpack
+ * staff curation mode or pre-migration callers).
+ */
+export function isActionInVertical(
+  action: Pick<AssistantAction, "vertical">,
+  tenantVertical: TenantVertical | undefined,
+): boolean {
+  if (!tenantVertical) return true;
+  const v: Vertical = action.vertical ?? "any";
+  return v === "any" || v === tenantVertical;
 }
 
 /* ------------------------------------------------------------------ */
@@ -119,6 +138,12 @@ export interface MatchOptions {
   minConfidence?: number;
   /** Cap on candidate count returned. Default 5. */
   limit?: number;
+  /**
+   * Tenant vertical. When set, actions whose `vertical` is neither 'any' nor
+   * the tenant's vertical are filtered out before scoring. When unset, no
+   * vertical filter is applied (matches legacy callers).
+   */
+  vertical?: TenantVertical;
 }
 
 /**
@@ -133,10 +158,12 @@ export function matchActions(
 ): MatchedAction[] {
   const minConfidence = opts.minConfidence ?? 0.15;
   const limit = Math.max(1, Math.min(opts.limit ?? 5, 20));
+  const tenantVertical = opts.vertical;
 
   const scored: MatchedAction[] = [];
   for (const action of actions) {
     if (!canRoleInvoke(action, role)) continue;
+    if (!isActionInVertical(action, tenantVertical)) continue;
     const confidence = scoreAction(prompt, action);
     if (confidence < minConfidence) continue;
     scored.push({

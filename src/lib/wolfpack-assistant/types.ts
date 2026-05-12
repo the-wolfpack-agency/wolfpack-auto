@@ -60,6 +60,28 @@ export type AssistantSatisfactionSignal =
 /** Direction of a conversation message. */
 export type AssistantMessageDirection = "user" | "assistant";
 
+/**
+ * Vertical dimension on every assistant_action + tenant_vertical row.
+ * Year-1 ships only `auto`; year-2 onwards opens `retail`; `service` +
+ * `hospitality` are future verticals. `any` actions apply to every vertical.
+ *
+ * See docs/wolfpack-platform-multivertical-2026-05-12.md for the strategic
+ * frame and migration 080 for the schema.
+ */
+export type Vertical =
+  | "auto"
+  | "retail"
+  | "service"
+  | "hospitality"
+  | "any";
+
+/**
+ * Subset of Vertical that a tenant can actually be. `any` is only valid on
+ * the action side (an action that applies to every vertical). A tenant must
+ * be in exactly one concrete vertical.
+ */
+export type TenantVertical = Exclude<Vertical, "any">;
+
 /* ------------------------------------------------------------------ */
 /*  Row shapes                                                          */
 /* ------------------------------------------------------------------ */
@@ -74,6 +96,16 @@ export interface AssistantAction {
   side_effect: AssistantSideEffect;
   dry_run_supported: boolean;
   category: AssistantCategory | null;
+  vertical: Vertical;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Tenant-to-vertical association row (migration 080). */
+export interface TenantVerticalRow {
+  tenant_id: string;
+  vertical: TenantVertical;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -143,6 +175,11 @@ export interface CreateActionInput {
   side_effect: AssistantSideEffect;
   dry_run_supported?: boolean;
   category?: AssistantCategory | null;
+  /**
+   * Vertical the action applies to. Defaults to 'any' (all verticals)
+   * when omitted — see migration 080.
+   */
+  vertical?: Vertical;
   active?: boolean;
 }
 
@@ -154,6 +191,7 @@ export interface PatchActionInput {
   side_effect?: AssistantSideEffect;
   dry_run_supported?: boolean;
   category?: AssistantCategory | null;
+  vertical?: Vertical;
   active?: boolean;
 }
 
@@ -246,6 +284,23 @@ export const ASSISTANT_SATISFACTION_SIGNALS: readonly AssistantSatisfactionSigna
   "neutral",
   "negative",
   "unknown",
+] as const;
+
+/** Allowed vertical values on an action row. Mirrors migration 080 CHECK. */
+export const ASSISTANT_VERTICALS: readonly Vertical[] = [
+  "auto",
+  "retail",
+  "service",
+  "hospitality",
+  "any",
+] as const;
+
+/** Allowed tenant vertical values. Excludes 'any' — a tenant is in one vertical. */
+export const TENANT_VERTICALS: readonly TenantVertical[] = [
+  "auto",
+  "retail",
+  "service",
+  "hospitality",
 ] as const;
 
 /** Slug rule: lowercase, alphanumerics + dot + underscore. 1-120 chars. */

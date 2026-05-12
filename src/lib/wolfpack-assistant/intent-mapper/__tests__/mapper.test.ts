@@ -36,6 +36,7 @@ function seededActions(): AssistantAction[] {
     side_effect: seed.side_effect,
     dry_run_supported: seed.dry_run_supported ?? true,
     category: seed.category ?? null,
+    vertical: seed.vertical ?? "any",
     active: seed.active ?? true,
     created_at: "2026-05-12T00:00:00Z",
     updated_at: "2026-05-12T00:00:00Z",

@@ -697,6 +697,24 @@ export type DMSAdapterEvent =
   | "dms_adapter.credential_rotated";
 
 /**
+ * E-commerce adapter lifecycle events (migration 082).
+ *
+ * Emitted by `src/lib/ecommerce-adapters/*` whenever a tenant configures,
+ * rotates, or revokes an e-commerce adapter credential, and whenever the
+ * assistant / action-registry executes (or fails to execute) an adapter
+ * capability against a tenant's e-commerce stack (Shopify, BigCommerce,
+ * Adobe Commerce, Klaviyo, Attentive, Meta Ads, Google Ads). Year-2 retail
+ * vertical foundation per
+ * `docs/wolfpack-platform-multivertical-2026-05-12.md`. Every action
+ * becomes a learning signal — the data moat the overlay product relies on.
+ */
+export type EcommerceAdapterEvent =
+  | "ecommerce_adapter.configured"
+  | "ecommerce_adapter.action_executed"
+  | "ecommerce_adapter.action_failed"
+  | "ecommerce_adapter.credential_rotated";
+
+/**
  * Analytics console view/drill events. Emitted whenever a Wolfpack admin
  * opens or drills into one of the operator-facing read-only analytics
  * surfaces (F&I product penetration heatmap, tech utilization grid, etc.).
@@ -826,6 +844,19 @@ export type AssistantEvent =
   | "assistant.intent_unmatched"
   | "assistant.parameter_extracted";
 
+/**
+ * Touchpoint lifecycle events (migration 081). Emitted by
+ * `src/lib/touchpoints/dispatcher.ts` on every physical-world scan
+ * (QR today; NFC/RFID/iBeacon year-2). Powers the admin recent-scans
+ * dashboard + feeds the learning system so we can correlate physical
+ * touchpoints with downstream conversion.
+ */
+export type TouchpointEvent =
+  | "touchpoint.scanned"
+  | "touchpoint.unknown_payload"
+  | "touchpoint.action_triggered"
+  | "touchpoint.duplicate_suppressed";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -893,10 +924,12 @@ export type PlatformEvent =
   | AddressValidationEvent
   | CredentialsEvent
   | DMSAdapterEvent
+  | EcommerceAdapterEvent
   | FIAuditEvent
   | WebsiteAuditEvent
   | LiteracyEvent
-  | AssistantEvent;
+  | AssistantEvent
+  | TouchpointEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -1758,4 +1791,44 @@ export function trackDMSAdapter(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "dms_adapter", ...meta });
+}
+
+/**
+ * Track an e-commerce adapter lifecycle event (migration 082).
+ *
+ * Fired by `src/lib/ecommerce-adapters/adapter-registry.ts` whenever a
+ * tenant configures, rotates, or revokes an e-commerce adapter credential
+ * (Shopify, BigCommerce, Adobe Commerce, Klaviyo, Attentive, Meta Ads,
+ * Google Ads), and whenever the adapter executes (or fails to execute) a
+ * capability call. Year-2 retail-vertical foundation per
+ * `docs/wolfpack-platform-multivertical-2026-05-12.md`. Every action
+ * becomes a learning signal — the data moat the overlay product relies on.
+ *
+ * `tenant_id` is passed through the legacy `dealer_id` analytics column
+ * (vertical-agnostic tenancy reuses the same column to avoid a schema
+ * fork). Retail tenants pass their tenant UUID; auto dealers continue to
+ * pass `dealer_id`.
+ */
+export function trackEcommerceAdapter(
+  event: EcommerceAdapterEvent,
+  tenant_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, tenant_id, { module: "ecommerce_adapter", ...meta });
+}
+
+/**
+ * Track a touchpoint lifecycle event (migration 081).
+ *
+ * Emitted by `src/lib/touchpoints/dispatcher.ts` on every physical-world
+ * scan -- QR today; NFC / RFID / iBeacon year-two. The dealer_id is the
+ * tenant scanning context (route layer resolves it from the
+ * registration table or the public route's tenant-by-host helper).
+ */
+export function trackTouchpoint(
+  event: TouchpointEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "touchpoint", ...meta });
 }

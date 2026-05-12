@@ -27,11 +27,18 @@ export {
 export type { ListActionsOptions } from "./action-registry";
 export {
   canRoleInvoke,
+  isActionInVertical,
   matchActions,
   scoreAction,
   tokenize,
 } from "./capability-matcher";
 export type { MatchOptions } from "./capability-matcher";
+export {
+  DEFAULT_TENANT_VERTICAL,
+  getTenantVertical,
+  setTenantVertical,
+} from "./vertical-lookup";
+export type { SetTenantVerticalInput } from "./vertical-lookup";
 export {
   startConversation,
   appendMessage,

@@ -100,6 +100,9 @@ describe("GET /api/admin/assistant/actions", () => {
 
   test("200 + actions list when authed", async () => {
     mockGetServerSession.mockResolvedValue(authedSession("admin"));
+    // 1. tenant_verticals lookup (migration 080) → default to 'auto'
+    mockQuery.mockResolvedValueOnce({ rows: [{ vertical: "auto" }] });
+    // 2. listActions
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -112,6 +115,7 @@ describe("GET /api/admin/assistant/actions", () => {
           side_effect: "mutating",
           dry_run_supported: true,
           category: "leads",
+          vertical: "auto",
           active: true,
           created_at: "",
           updated_at: "",
@@ -124,20 +128,62 @@ describe("GET /api/admin/assistant/actions", () => {
     const body = await res.json();
     expect(body.actions).toHaveLength(1);
     expect(body.actions[0].slug).toBe("leads.update_routing_rule");
+    expect(body.vertical).toBe("auto");
     expect(mockTrackAssistant).toHaveBeenCalledWith(
       "assistant.action_listed",
       DEALER,
-      expect.objectContaining({ role: "admin", result_count: 1 }),
+      expect.objectContaining({ role: "admin", result_count: 1, vertical: "auto" }),
     );
   });
 
   test("passes category + side_effect filters into the DB query", async () => {
     mockGetServerSession.mockResolvedValue(authedSession("admin"));
+    // tenant_verticals lookup + listActions
+    mockQuery.mockResolvedValueOnce({ rows: [{ vertical: "auto" }] });
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const { GET } = await import("../actions/route");
     await GET(req("/api/admin/assistant/actions?category=leads&side_effect=read"));
-    expect(mockQuery.mock.calls[0][0]).toMatch(/category = \$1/);
-    expect(mockQuery.mock.calls[0][1]).toEqual(["leads", "read", "admin"]);
+    // The first call is the tenant_verticals lookup; listActions is second.
+    expect(mockQuery.mock.calls[1][0]).toMatch(/category = \$1/);
+    // params include category, side_effect, role, and tenant vertical
+    expect(mockQuery.mock.calls[1][1]).toEqual(["leads", "read", "admin", "auto"]);
+  });
+
+  test("auto tenant: listActions is constrained to vertical='auto' (auto + any rows)", async () => {
+    mockGetServerSession.mockResolvedValue(authedSession("admin"));
+    mockQuery.mockResolvedValueOnce({ rows: [{ vertical: "auto" }] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const { GET } = await import("../actions/route");
+    await GET(req("/api/admin/assistant/actions"));
+    const [sql, params] = mockQuery.mock.calls[1];
+    expect(sql).toMatch(/\(vertical = \$\d+ OR vertical = 'any'\)/);
+    expect(params).toContain("auto");
+  });
+
+  test("retail tenant: listActions is constrained to vertical='retail' (retail + any rows)", async () => {
+    mockGetServerSession.mockResolvedValue(authedSession("admin"));
+    // tenant_verticals lookup → 'retail'
+    mockQuery.mockResolvedValueOnce({ rows: [{ vertical: "retail" }] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const { GET } = await import("../actions/route");
+    const res = await GET(req("/api/admin/assistant/actions"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.vertical).toBe("retail");
+    const [, params] = mockQuery.mock.calls[1];
+    expect(params).toContain("retail");
+    expect(params).not.toContain("auto");
+  });
+
+  test("missing tenant_verticals row → defaults to 'auto'", async () => {
+    mockGetServerSession.mockResolvedValue(authedSession("admin"));
+    // tenant_verticals lookup → no row
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const { GET } = await import("../actions/route");
+    const res = await GET(req("/api/admin/assistant/actions"));
+    const body = await res.json();
+    expect(body.vertical).toBe("auto");
   });
 });
 
@@ -224,6 +270,8 @@ describe("POST /api/admin/assistant/chat", () => {
         },
       ],
     });
+    // tenant_verticals lookup (migration 080)
+    mockQuery.mockResolvedValueOnce({ rows: [{ vertical: "auto" }] });
     // listActions
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -334,6 +382,8 @@ describe("POST /api/admin/assistant/chat", () => {
         },
       ],
     });
+    // tenant_verticals lookup
+    mockQuery.mockResolvedValueOnce({ rows: [{ vertical: "auto" }] });
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -397,6 +447,8 @@ describe("POST /api/admin/assistant/chat", () => {
         },
       ],
     });
+    // tenant_verticals lookup
+    mockQuery.mockResolvedValueOnce({ rows: [{ vertical: "auto" }] });
     // listActions returns nothing relevant
     mockQuery.mockResolvedValueOnce({ rows: [] });
     mockQuery.mockResolvedValue({ rows: [{ next_index: 0 }] });

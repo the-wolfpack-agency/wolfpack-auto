@@ -6,6 +6,7 @@
 
 import {
   canRoleInvoke,
+  isActionInVertical,
   matchActions,
   scoreAction,
   tokenize,
@@ -23,6 +24,7 @@ function mkAction(overrides: Partial<AssistantAction>): AssistantAction {
     side_effect: "mutating",
     dry_run_supported: true,
     category: "leads",
+    vertical: "any",
     active: true,
     created_at: "",
     updated_at: "",
@@ -153,5 +155,104 @@ describe("matchActions", () => {
     const a = matchActions("update lead routing", "gm", ACTIONS);
     const b = matchActions("update lead routing", "gm", ACTIONS);
     expect(b).toEqual(a);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Vertical filtering (migration 080)
+// ---------------------------------------------------------------------------
+
+describe("isActionInVertical", () => {
+  test("'any' action is available in every tenant vertical", () => {
+    expect(isActionInVertical(mkAction({ vertical: "any" }), "auto")).toBe(true);
+    expect(isActionInVertical(mkAction({ vertical: "any" }), "retail")).toBe(true);
+    expect(isActionInVertical(mkAction({ vertical: "any" }), "hospitality")).toBe(true);
+  });
+
+  test("auto action is available to auto tenants only", () => {
+    expect(isActionInVertical(mkAction({ vertical: "auto" }), "auto")).toBe(true);
+    expect(isActionInVertical(mkAction({ vertical: "auto" }), "retail")).toBe(false);
+    expect(isActionInVertical(mkAction({ vertical: "auto" }), "hospitality")).toBe(false);
+  });
+
+  test("retail action is available to retail tenants only", () => {
+    expect(isActionInVertical(mkAction({ vertical: "retail" }), "retail")).toBe(true);
+    expect(isActionInVertical(mkAction({ vertical: "retail" }), "auto")).toBe(false);
+  });
+
+  test("undefined tenantVertical skips the gate (curation mode)", () => {
+    expect(isActionInVertical(mkAction({ vertical: "auto" }), undefined)).toBe(true);
+    expect(isActionInVertical(mkAction({ vertical: "retail" }), undefined)).toBe(true);
+  });
+});
+
+describe("matchActions — vertical filter", () => {
+  const ACTIONS_BY_VERTICAL: AssistantAction[] = [
+    mkAction({
+      slug: "leads.update_routing_rule",
+      display_name: "Update lead routing",
+      description: "Change which sales rep gets which new leads.",
+      allowed_roles: ["admin"],
+      vertical: "auto",
+    }),
+    mkAction({
+      slug: "commerce.update_routing_rule",
+      display_name: "Update commerce routing",
+      description: "Change which agent gets which new e-commerce orders.",
+      allowed_roles: ["admin"],
+      vertical: "retail",
+      category: "marketing",
+    }),
+    mkAction({
+      slug: "notifications.update_routing_rule",
+      display_name: "Update notification routing",
+      description: "Cross-vertical routing config — applies to every tenant.",
+      allowed_roles: ["admin"],
+      vertical: "any",
+      category: "notifications",
+    }),
+  ];
+
+  test("auto tenant sees auto + any, never retail", () => {
+    const out = matchActions("update routing", "admin", ACTIONS_BY_VERTICAL, {
+      vertical: "auto",
+      minConfidence: 0,
+    });
+    const slugs = out.map((m) => m.slug);
+    expect(slugs).toContain("leads.update_routing_rule");
+    expect(slugs).toContain("notifications.update_routing_rule");
+    expect(slugs).not.toContain("commerce.update_routing_rule");
+  });
+
+  test("retail tenant sees retail + any, never auto", () => {
+    const out = matchActions("update routing", "admin", ACTIONS_BY_VERTICAL, {
+      vertical: "retail",
+      minConfidence: 0,
+    });
+    const slugs = out.map((m) => m.slug);
+    expect(slugs).toContain("commerce.update_routing_rule");
+    expect(slugs).toContain("notifications.update_routing_rule");
+    expect(slugs).not.toContain("leads.update_routing_rule");
+  });
+
+  test("hospitality tenant sees only 'any' actions when no hospitality-specific seeds exist", () => {
+    const out = matchActions("update routing", "admin", ACTIONS_BY_VERTICAL, {
+      vertical: "hospitality",
+      minConfidence: 0,
+    });
+    const slugs = out.map((m) => m.slug);
+    expect(slugs).toEqual(["notifications.update_routing_rule"]);
+  });
+
+  test("vertical filter omitted = legacy behavior (no vertical gate)", () => {
+    const out = matchActions("update routing", "admin", ACTIONS_BY_VERTICAL, {
+      minConfidence: 0,
+    });
+    const slugs = out.map((m) => m.slug).sort();
+    expect(slugs).toEqual([
+      "commerce.update_routing_rule",
+      "leads.update_routing_rule",
+      "notifications.update_routing_rule",
+    ]);
   });
 });

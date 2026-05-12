@@ -33,6 +33,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "leads",
+    vertical: "auto",
   },
   {
     slug: "leads.assign_lead",
@@ -50,6 +51,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "leads",
+    vertical: "auto",
   },
 
   // -------------------- F&I --------------------
@@ -68,6 +70,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "fi",
+    vertical: "auto",
   },
   {
     slug: "fi.set_attach_target",
@@ -85,6 +88,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "fi",
+    vertical: "auto",
   },
   {
     slug: "audit.run_fi_penetration",
@@ -100,6 +104,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "read",
     dry_run_supported: false,
     category: "audit",
+    vertical: "auto",
   },
 
   // -------------------- service --------------------
@@ -123,6 +128,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "service",
+    vertical: "auto",
   },
   {
     slug: "service.add_special_closure",
@@ -140,6 +146,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "service",
+    vertical: "auto",
   },
 
   // -------------------- inventory --------------------
@@ -159,6 +166,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "inventory",
+    vertical: "auto",
   },
   {
     slug: "inventory.adjust_price",
@@ -176,6 +184,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "inventory",
+    vertical: "auto",
   },
 
   // -------------------- comms / email --------------------
@@ -198,6 +207,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "read",
     dry_run_supported: false,
     category: "marketing",
+    vertical: "any",
   },
 
   // -------------------- notifications --------------------
@@ -217,6 +227,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "notifications",
+    vertical: "any",
   },
   {
     slug: "notifications.subscribe_alert",
@@ -234,6 +245,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "notifications",
+    vertical: "any",
   },
 
   // -------------------- analytics --------------------
@@ -251,6 +263,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "read",
     dry_run_supported: false,
     category: "analytics",
+    vertical: "any",
   },
   {
     slug: "analytics.compare_to_peer",
@@ -266,6 +279,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "read",
     dry_run_supported: false,
     category: "analytics",
+    vertical: "any",
   },
 
   // -------------------- learning --------------------
@@ -283,6 +297,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "read",
     dry_run_supported: false,
     category: "learning",
+    vertical: "any",
   },
   {
     slug: "learning.explain_metric",
@@ -299,6 +314,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "read",
     dry_run_supported: false,
     category: "learning",
+    vertical: "any",
   },
 
   // -------------------- general / admin --------------------
@@ -318,6 +334,7 @@ export const SEED_ACTIONS: ReadonlyArray<CreateActionInput> = [
     side_effect: "mutating",
     dry_run_supported: true,
     category: "general",
+    vertical: "any",
   },
 ];
 

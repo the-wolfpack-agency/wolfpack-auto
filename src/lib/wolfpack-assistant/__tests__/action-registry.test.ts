@@ -236,3 +236,163 @@ describe("getActionBySlug", () => {
     expect(await getActionBySlug("nope")).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Vertical filtering (migration 080)
+// ---------------------------------------------------------------------------
+
+describe("listActions — vertical filter", () => {
+  test("appends (vertical = $N OR vertical = 'any') predicate when vertical supplied", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await listActions({ vertical: "auto" });
+    const [sql, params] = mockQuery.mock.calls[0];
+    expect(sql).toMatch(/\(vertical = \$1 OR vertical = 'any'\)/);
+    expect(params).toEqual(["auto"]);
+  });
+
+  test("combines role + vertical into a single WHERE clause", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await listActions({ role: "fi_manager", vertical: "auto", active_only: true });
+    const [sql, params] = mockQuery.mock.calls[0];
+    expect(sql).toMatch(/active = TRUE AND \(\$1 = ANY\(allowed_roles\) OR 'any' = ANY\(allowed_roles\)\) AND \(vertical = \$2 OR vertical = 'any'\)/);
+    expect(params).toEqual(["fi_manager", "auto"]);
+  });
+
+  test("omits vertical predicate when not supplied (Wolfpack staff curation mode)", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await listActions({ role: "admin" });
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).not.toMatch(/vertical = /);
+  });
+
+  test("SELECT includes vertical column", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await listActions({});
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).toMatch(/SELECT[^F]*vertical/s);
+  });
+});
+
+describe("createAction + upsertActionBySlug — vertical persistence", () => {
+  test("createAction defaults vertical to 'any' when not provided", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] }) // dupe check
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: "id",
+            slug: VALID_INPUT.slug,
+            display_name: VALID_INPUT.display_name,
+            description: VALID_INPUT.description,
+            parameter_schema: VALID_INPUT.parameter_schema,
+            allowed_roles: VALID_INPUT.allowed_roles,
+            side_effect: VALID_INPUT.side_effect,
+            dry_run_supported: true,
+            category: null,
+            vertical: "any",
+            active: true,
+            created_at: "",
+            updated_at: "",
+          },
+        ],
+      });
+    await createAction(VALID_INPUT);
+    const insertCall = mockQuery.mock.calls[1];
+    // 10 columns now (vertical added at slot 9, 0-indexed 8)
+    expect(insertCall[1]).toHaveLength(10);
+    expect(insertCall[1][8]).toBe("any");
+  });
+
+  test("createAction persists explicit vertical='auto'", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: "id",
+            slug: VALID_INPUT.slug,
+            display_name: VALID_INPUT.display_name,
+            description: VALID_INPUT.description,
+            parameter_schema: VALID_INPUT.parameter_schema,
+            allowed_roles: VALID_INPUT.allowed_roles,
+            side_effect: VALID_INPUT.side_effect,
+            dry_run_supported: true,
+            category: null,
+            vertical: "auto",
+            active: true,
+            created_at: "",
+            updated_at: "",
+          },
+        ],
+      });
+    const action = await createAction({ ...VALID_INPUT, vertical: "auto" });
+    expect(action.vertical).toBe("auto");
+    expect(mockQuery.mock.calls[1][1][8]).toBe("auto");
+  });
+
+  test("createAction rejects unknown vertical value", async () => {
+    await expect(
+      createAction({ ...VALID_INPUT, vertical: "spaceship" as any }),
+    ).rejects.toBeInstanceOf(AssistantValidationError);
+  });
+
+  test("upsertActionBySlug carries vertical through ON CONFLICT update", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "id",
+          slug: VALID_INPUT.slug,
+          display_name: VALID_INPUT.display_name,
+          description: VALID_INPUT.description,
+          parameter_schema: VALID_INPUT.parameter_schema,
+          allowed_roles: VALID_INPUT.allowed_roles,
+          side_effect: VALID_INPUT.side_effect,
+          dry_run_supported: true,
+          category: null,
+          vertical: "retail",
+          active: true,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+    });
+    await upsertActionBySlug({ ...VALID_INPUT, vertical: "retail" });
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).toMatch(/vertical = EXCLUDED\.vertical/);
+    expect(mockQuery.mock.calls[0][1][8]).toBe("retail");
+  });
+});
+
+describe("patchAction — vertical update", () => {
+  test("includes vertical in UPDATE SET when provided", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "id",
+          slug: VALID_INPUT.slug,
+          display_name: VALID_INPUT.display_name,
+          description: VALID_INPUT.description,
+          parameter_schema: {},
+          allowed_roles: VALID_INPUT.allowed_roles,
+          side_effect: "mutating",
+          dry_run_supported: true,
+          category: "leads",
+          vertical: "auto",
+          active: true,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+    });
+    await patchAction("id", { vertical: "auto" });
+    const sql = mockQuery.mock.calls[0][0];
+    expect(sql).toMatch(/vertical = \$1/);
+    expect(mockQuery.mock.calls[0][1][0]).toBe("auto");
+  });
+
+  test("rejects unknown vertical in patch", async () => {
+    await expect(
+      patchAction("id", { vertical: "spaceship" as any }),
+    ).rejects.toBeInstanceOf(AssistantValidationError);
+  });
+});

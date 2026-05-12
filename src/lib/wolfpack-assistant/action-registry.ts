@@ -25,12 +25,15 @@ import type {
   AssistantSideEffect,
   CreateActionInput,
   PatchActionInput,
+  TenantVertical,
+  Vertical,
 } from "./types";
 import {
   ASSISTANT_CATEGORIES,
   ASSISTANT_ROLES,
   ASSISTANT_SIDE_EFFECTS,
   ASSISTANT_SLUG_PATTERN,
+  ASSISTANT_VERTICALS,
 } from "./types";
 
 /* ------------------------------------------------------------------ */
@@ -89,6 +92,12 @@ function validateCreate(input: CreateActionInput): void {
       `unknown category: ${input.category}`,
     );
   }
+  if (input.vertical !== undefined && !ASSISTANT_VERTICALS.includes(input.vertical)) {
+    throw new AssistantValidationError(
+      "vertical",
+      `unknown vertical: ${input.vertical}`,
+    );
+  }
 }
 
 function validatePatch(patch: PatchActionInput): void {
@@ -103,6 +112,9 @@ function validatePatch(patch: PatchActionInput): void {
   }
   if (patch.category !== undefined && patch.category !== null && !ASSISTANT_CATEGORIES.includes(patch.category)) {
     throw new AssistantValidationError("category", `unknown category: ${patch.category}`);
+  }
+  if (patch.vertical !== undefined && !ASSISTANT_VERTICALS.includes(patch.vertical)) {
+    throw new AssistantValidationError("vertical", `unknown vertical: ${patch.vertical}`);
   }
   if (patch.allowed_roles !== undefined) {
     if (!Array.isArray(patch.allowed_roles) || patch.allowed_roles.length === 0) {
@@ -123,6 +135,7 @@ function validatePatch(patch: PatchActionInput): void {
 function mapRow(row: Record<string, unknown>): AssistantAction {
   const allowed = row.allowed_roles;
   const schemaRaw = row.parameter_schema;
+  const verticalRaw = row.vertical;
   return {
     id: String(row.id),
     slug: String(row.slug),
@@ -136,6 +149,10 @@ function mapRow(row: Record<string, unknown>): AssistantAction {
     side_effect: row.side_effect as AssistantSideEffect,
     dry_run_supported: Boolean(row.dry_run_supported),
     category: (row.category as AssistantCategory | null) ?? null,
+    vertical:
+      verticalRaw && ASSISTANT_VERTICALS.includes(verticalRaw as Vertical)
+        ? (verticalRaw as Vertical)
+        : "any",
     active: Boolean(row.active),
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
@@ -155,6 +172,13 @@ export interface ListActionsOptions {
   side_effect?: AssistantSideEffect;
   active_only?: boolean;
   role?: AssistantRole;
+  /**
+   * Tenant vertical (auto/retail/service/hospitality). When set, the query
+   * returns actions whose `vertical` matches OR is 'any' — the shared
+   * cross-vertical bucket. When unset, no vertical filter is applied
+   * (Wolfpack staff curation mode).
+   */
+  vertical?: TenantVertical;
   limit?: number;
 }
 
@@ -181,11 +205,15 @@ export async function listActions(
     params.push(opts.role);
     where.push(`($${params.length} = ANY(allowed_roles) OR 'any' = ANY(allowed_roles))`);
   }
+  if (opts.vertical) {
+    params.push(opts.vertical);
+    where.push(`(vertical = $${params.length} OR vertical = 'any')`);
+  }
 
   const limit = Math.min(Math.max(opts.limit ?? 200, 1), 1000);
   const sql = `
     SELECT id, slug, display_name, description, parameter_schema, allowed_roles,
-           side_effect, dry_run_supported, category, active, created_at, updated_at
+           side_effect, dry_run_supported, category, vertical, active, created_at, updated_at
       FROM assistant_actions
       ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
       ORDER BY slug
@@ -200,7 +228,7 @@ export async function getActionBySlug(slug: string): Promise<AssistantAction | n
   const { query } = await import("@/lib/db");
   const result = await query<Record<string, unknown>>(
     `SELECT id, slug, display_name, description, parameter_schema, allowed_roles,
-            side_effect, dry_run_supported, category, active, created_at, updated_at
+            side_effect, dry_run_supported, category, vertical, active, created_at, updated_at
        FROM assistant_actions WHERE slug = $1 LIMIT 1`,
     [slug],
   );
@@ -212,7 +240,7 @@ export async function getActionById(id: string): Promise<AssistantAction | null>
   const { query } = await import("@/lib/db");
   const result = await query<Record<string, unknown>>(
     `SELECT id, slug, display_name, description, parameter_schema, allowed_roles,
-            side_effect, dry_run_supported, category, active, created_at, updated_at
+            side_effect, dry_run_supported, category, vertical, active, created_at, updated_at
        FROM assistant_actions WHERE id = $1 LIMIT 1`,
     [id],
   );
@@ -248,10 +276,10 @@ export async function createAction(
   const result = await query<Record<string, unknown>>(
     `INSERT INTO assistant_actions
        (slug, display_name, description, parameter_schema, allowed_roles,
-        side_effect, dry_run_supported, category, active)
-     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)
+        side_effect, dry_run_supported, category, vertical, active)
+     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10)
      RETURNING id, slug, display_name, description, parameter_schema, allowed_roles,
-               side_effect, dry_run_supported, category, active, created_at, updated_at`,
+               side_effect, dry_run_supported, category, vertical, active, created_at, updated_at`,
     [
       input.slug,
       input.display_name,
@@ -261,6 +289,7 @@ export async function createAction(
       input.side_effect,
       input.dry_run_supported ?? true,
       input.category ?? null,
+      input.vertical ?? "any",
       input.active ?? true,
     ],
   );
@@ -281,8 +310,8 @@ export async function upsertActionBySlug(
   const result = await query<Record<string, unknown>>(
     `INSERT INTO assistant_actions
        (slug, display_name, description, parameter_schema, allowed_roles,
-        side_effect, dry_run_supported, category, active)
-     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9)
+        side_effect, dry_run_supported, category, vertical, active)
+     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (slug) DO UPDATE
        SET display_name = EXCLUDED.display_name,
            description = EXCLUDED.description,
@@ -291,10 +320,11 @@ export async function upsertActionBySlug(
            side_effect = EXCLUDED.side_effect,
            dry_run_supported = EXCLUDED.dry_run_supported,
            category = EXCLUDED.category,
+           vertical = EXCLUDED.vertical,
            active = EXCLUDED.active,
            updated_at = NOW()
      RETURNING id, slug, display_name, description, parameter_schema, allowed_roles,
-               side_effect, dry_run_supported, category, active, created_at, updated_at`,
+               side_effect, dry_run_supported, category, vertical, active, created_at, updated_at`,
     [
       input.slug,
       input.display_name,
@@ -304,6 +334,7 @@ export async function upsertActionBySlug(
       input.side_effect,
       input.dry_run_supported ?? true,
       input.category ?? null,
+      input.vertical ?? "any",
       input.active ?? true,
     ],
   );
@@ -333,6 +364,7 @@ export async function patchAction(
   if (patch.side_effect !== undefined) push("side_effect", patch.side_effect);
   if (patch.dry_run_supported !== undefined) push("dry_run_supported", patch.dry_run_supported);
   if (patch.category !== undefined) push("category", patch.category);
+  if (patch.vertical !== undefined) push("vertical", patch.vertical);
   if (patch.active !== undefined) push("active", patch.active);
 
   if (sets.length === 0) return getActionById(id);
@@ -343,7 +375,7 @@ export async function patchAction(
         SET ${sets.join(", ")}, updated_at = NOW()
       WHERE id = $${params.length}
       RETURNING id, slug, display_name, description, parameter_schema, allowed_roles,
-                side_effect, dry_run_supported, category, active, created_at, updated_at`,
+                side_effect, dry_run_supported, category, vertical, active, created_at, updated_at`,
     params,
   );
   return result.rows[0] ? mapRow(result.rows[0]) : null;

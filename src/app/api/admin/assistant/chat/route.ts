@@ -40,6 +40,7 @@ import { trackAssistant } from "@/lib/analytics-hooks";
 import {
   appendMessage,
   evaluatePromptGate,
+  getTenantVertical,
   listActions,
   mapIntent,
   startConversation,
@@ -141,8 +142,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Load role-appropriate active actions.
-  const candidates = await listActions({ active_only: true, role, limit: 500 });
+  // Resolve the tenant's vertical so the candidate set respects the
+  // vertical filter (action.vertical = tenant_vertical OR 'any').
+  const tenantVertical = await getTenantVertical(dealerId);
+
+  // Load role-appropriate, vertical-appropriate active actions.
+  const candidates = await listActions({
+    active_only: true,
+    role,
+    vertical: tenantVertical,
+    limit: 500,
+  });
 
   // Run the deterministic intent mapper.
   let mapperResult: MapperResult;
@@ -279,6 +289,7 @@ export async function POST(request: NextRequest) {
     is_stub: true as const,
     message: responseMessage,
     conversation_id: conversationId ?? "no-db",
+    vertical: tenantVertical,
   };
 
   return NextResponse.json(response);
