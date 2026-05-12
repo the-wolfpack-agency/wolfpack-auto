@@ -4,9 +4,14 @@ const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
   // Neon serverless: keep pool small to avoid exhausting connection slots.
   // Neon's pooler handles multiplexing — local pool is just a buffer.
-  max: 12,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 5_000,
+  max: 8,
+  // Drop idle connections quickly so cold-suspended Neon compute can't
+  // produce zombie connections that warm function instances hold forever.
+  idleTimeoutMillis: 10_000,
+  // 15s connection timeout — covers Neon free-tier compute cold start (5-15s)
+  // and serverless function warmup. Without this, cold-start storms cascade
+  // into 30s+ user-visible hangs (incident 2026-05-12).
+  connectionTimeoutMillis: 15_000,
   // 10s query timeout — prevents hung queries from monopolizing the pool.
   // Applied at the connection level so it works without explicit transactions.
   statement_timeout: 10_000,
