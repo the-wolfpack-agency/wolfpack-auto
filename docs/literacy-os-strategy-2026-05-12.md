@@ -48,31 +48,40 @@ The asset is the structured ontology, not any individual surface. The ontology h
 
 ## Why this is a credible product, not a vibes pitch
 
-Three structural advantages Wolfpack has that the major competitors do not:
+Four structural advantages Wolfpack has that the major competitors do not:
 
 1. **Operating DOS as foundation.** The underlying data (analytics_events, fi_deals, leads, repair_orders, micro_behavioral views) is already flowing. Triple-write to Neo4j makes the ontology a natural fit — the graph store is already there. Competitors building from scratch would need to ship the DOS first.
 
 2. **The "speak dealer, not data" rule already exists in the codebase.** `.ai/client-context.md` mandates plain-English copy on every dealer surface. The Literacy OS is the structured generalization of that already-enforced rule.
 
-3. **Domain + engineering pairing.** Hoxsie owns dealer-industry domain context. Engineering owns the platform. Most software vendors have one or the other. Most consultancies have one. Almost nobody has both at this scale.
+3. **The team that authors curriculum for JD-Power-winning OEM programs already exists.** Zocchi is the senior curriculum designer. Megan designs the surfaces. Alicia delivers in-person training events with hospitality-grade execution. Max produces broadcast-quality video. Jorge and Hoxsie carry OEM relationships. This is the rarest possible combination in dealer software: domain expertise + production capability + platform engineering in one organization. See `docs/wolfpack-team-capabilities-2026-05-12.md`.
+
+4. **JD Power proof point.** PCNA has won JD Power awards multi-year on the back of Wolfpack work. That outcome is the strongest single proof point in the dealer-software market and is structurally hard for any pure-software competitor to claim.
 
 ---
 
-## The content problem and how we solve it without a senior content hire
+## The content problem dissolves with the team we actually have
 
-The honest pushback on this concept is "you need a deep dealer-operations + digital-UX hybrid to author 200-500 curated mappings. That hire is hard, slow, and expensive."
+Earlier drafts of this doc framed content authoring as a hard-to-hire concern ("you need a deep dealer-operations + digital-UX hybrid to author 200-500 mappings"). That framing was wrong. See `docs/wolfpack-team-capabilities-2026-05-12.md` for the corrected team-leverage frame.
 
-The reframe: **we build the authoring engine first; we author the seed ontology incrementally; AI scales expansion within the structured framework.**
+The team already has the senior curriculum designer: **Zocchi** is a highly regarded trainer and course content builder who already does this work for OEM training programs that have contributed to PCNA's JD Power awards. The ontology authoring is the productized form of work he already delivers daily.
+
+Supporting roles in the content production chain:
+- **Megan** designs the role-specific surfaces, the deliverable PDFs, and the brand systems each OEM-themed instance needs.
+- **Alicia** brings hospitality and class-setup expertise to in-person training event delivery, which the ontology drives.
+- **Max** produces broadcast-quality video assets that augment text-only training and become first-class objects in the ontology (a "training video" attached to a "translation" or an "action").
+
+The "hire a senior content lead" concern from earlier drafts becomes "scale Zocchi's authoring capacity once the engine is in active production use." That hire is real but is year-one Q4 work, not a gating dependency.
+
+The reframe stays: **we build the authoring engine first; we author the seed ontology under Zocchi's lead; AI scales expansion within the structured framework.**
 
 Three components:
 
 1. **Ontology authoring tool** — CRUD interface for concepts, mappings, metrics, translations, actions. Audit-logged. Versioned. Today's session ships migration 075 and the lib that powers it.
-2. **AI-assisted expansion** — given a starter ontology and a new metric or concept, an LLM proposes candidate translations and analogs. A human reviewer approves, rejects, or refines. This is exactly the cost-efficient-AI pattern that Wolfpack Instinct is positioned around: structured ontology controls the vocabulary, LLM as rendering layer, tight token budget, controlled output quality.
+2. **AI-assisted expansion** — given a starter ontology and a new metric or concept, an LLM proposes candidate translations and analogs. Zocchi (lead) and other team reviewers approve, reject, or refine. This is exactly the cost-efficient-AI pattern that Wolfpack Instinct is positioned around: structured ontology controls the vocabulary, LLM as rendering layer, tight token budget, controlled output quality.
 3. **Outcome feedback loop** — every translation and action emitted to a dealer gets tagged with an outcome (did the dealer click? did the recommended action get taken? did the metric move?). Low-performing translations get demoted; high-performing ones get promoted. The ontology learns.
 
-Seed ontology in the first 90 days: 50-100 curated mappings, hand-written by CTO + Hoxsie working from the dealer pain examples in this doc. Year-one target: 300-500 mappings, 60% AI-proposed and human-approved, 40% hand-authored. Year-two target: 1,500-2,500 mappings.
-
-The first authoring sessions are content-design work, not engineering work. They're 2-4 hour CTO + Hoxsie working sessions, every 2 weeks. Costs no incremental headcount in year one.
+Seed ontology in the first 90 days: today's session shipped 63 starter entries, hand-written by CTO from the dealer pain examples in this doc. Zocchi + CTO content-design sessions every 2 weeks grow this to 150-200 entries by end of Q2 and 300-500 by end of Q3. Year-two target: 1,500-2,500 mappings. The first authoring sessions are content-design work, not engineering work.
 
 ---
 
