@@ -220,7 +220,7 @@ describe("PATCH /api/operator/dealers/[id]", () => {
         method: "PATCH",
         body: JSON.stringify({ is_active: false }),
       }),
-      { params },
+      { params: Promise.resolve(params) },
     );
     expect(res.status).toBe(401);
   });
@@ -233,7 +233,7 @@ describe("PATCH /api/operator/dealers/[id]", () => {
         method: "PATCH",
         body: JSON.stringify({ is_active: false }),
       }),
-      { params: { id: "not-a-uuid" } },
+      { params: Promise.resolve({ id: "not-a-uuid" }) },
     );
     expect(res.status).toBe(400);
   });
@@ -243,7 +243,7 @@ describe("PATCH /api/operator/dealers/[id]", () => {
     const { PATCH } = await import("../dealers/[id]/route");
     const res = await PATCH(
       req(`/api/operator/dealers/${params.id}`, { method: "PATCH", body: JSON.stringify({}) }),
-      { params },
+      { params: Promise.resolve(params) },
     );
     expect(res.status).toBe(400);
   });
@@ -260,7 +260,7 @@ describe("PATCH /api/operator/dealers/[id]", () => {
         method: "PATCH",
         body: JSON.stringify({ is_active: false }),
       }),
-      { params },
+      { params: Promise.resolve(params) },
     );
     expect(res.status).toBe(200);
   });
@@ -270,7 +270,7 @@ describe("PATCH /api/operator/dealers/[id]", () => {
     const { DELETE } = await import("../dealers/[id]/route");
     const res = await DELETE(
       req(`/api/operator/dealers/${params.id}`, { method: "DELETE" }),
-      { params },
+      { params: Promise.resolve(params) },
     );
     expect(res.status).toBe(403);
   });
@@ -280,7 +280,7 @@ describe("PATCH /api/operator/dealers/[id]", () => {
     const { DELETE } = await import("../dealers/[id]/route");
     const res = await DELETE(
       req(`/api/operator/dealers/${params.id}`, { method: "DELETE" }),
-      { params },
+      { params: Promise.resolve(params) },
     );
     expect(res.status).toBe(403);
   });
@@ -294,7 +294,7 @@ describe("PATCH /api/operator/dealers/[id]", () => {
     const { DELETE } = await import("../dealers/[id]/route");
     const res = await DELETE(
       req(`/api/operator/dealers/${params.id}`, { method: "DELETE" }),
-      { params },
+      { params: Promise.resolve(params) },
     );
     expect(res.status).toBe(200);
     const body = await res.json();

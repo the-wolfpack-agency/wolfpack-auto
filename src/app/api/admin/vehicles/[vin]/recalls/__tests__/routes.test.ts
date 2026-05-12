@@ -1,8 +1,8 @@
 /**
  * Contract tests for the recalls + TSB awareness admin + cron routes.
  *
- *   GET    /api/admin/vehicles/[id]/recalls                 — 200 / 401 / 404
- *   PATCH  /api/admin/vehicles/[id]/recalls/[recallId]      — 200 / 400 / 401
+ *   GET    /api/admin/vehicles/[vin]/recalls                 — 200 / 401 / 404
+ *   PATCH  /api/admin/vehicles/[vin]/recalls/[recallId]      — 200 / 400 / 401
  *   GET    /api/cron/recall-refresh                         — idempotent + 200
  *
  * All external boundaries (auth, recalls-store, audit, analytics) are mocked
@@ -41,8 +41,8 @@ jest.mock("@/lib/analytics-hooks", () => ({
 
 import { NextRequest } from "next/server";
 
-import { GET as getRecalls } from "@/app/api/admin/vehicles/[id]/recalls/route";
-import { PATCH as patchRecall } from "@/app/api/admin/vehicles/[id]/recalls/[recallId]/route";
+import { GET as getRecalls } from "@/app/api/admin/vehicles/[vin]/recalls/route";
+import { PATCH as patchRecall } from "@/app/api/admin/vehicles/[vin]/recalls/[recallId]/route";
 import { GET as cronRefresh } from "@/app/api/cron/recall-refresh/route";
 
 const DEALER = "00000000-0000-4000-a000-000000000001";
@@ -79,17 +79,17 @@ beforeEach(() => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  GET /api/admin/vehicles/[id]/recalls                                */
+/*  GET /api/admin/vehicles/[vin]/recalls                                */
 /* ------------------------------------------------------------------ */
 
-describe("GET /api/admin/vehicles/[id]/recalls", () => {
+describe("GET /api/admin/vehicles/[vin]/recalls", () => {
   it("returns 401 when unauthenticated", async () => {
     mockRequireAuth.mockResolvedValueOnce(unauthed());
     const req = new NextRequest(
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/recalls`,
     );
     const res = await getRecalls(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(401);
   });
@@ -101,7 +101,7 @@ describe("GET /api/admin/vehicles/[id]/recalls", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/recalls`,
     );
     const res = await getRecalls(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(404);
   });
@@ -133,7 +133,7 @@ describe("GET /api/admin/vehicles/[id]/recalls", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/recalls`,
     );
     const res = await getRecalls(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -154,10 +154,10 @@ describe("GET /api/admin/vehicles/[id]/recalls", () => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  PATCH /api/admin/vehicles/[id]/recalls/[recallId]                   */
+/*  PATCH /api/admin/vehicles/[vin]/recalls/[recallId]                   */
 /* ------------------------------------------------------------------ */
 
-describe("PATCH /api/admin/vehicles/[id]/recalls/[recallId]", () => {
+describe("PATCH /api/admin/vehicles/[vin]/recalls/[recallId]", () => {
   it("returns 401 when unauthenticated", async () => {
     mockRequireAuth.mockResolvedValueOnce(unauthed());
     const req = new NextRequest(
@@ -169,7 +169,7 @@ describe("PATCH /api/admin/vehicles/[id]/recalls/[recallId]", () => {
       },
     );
     const res = await patchRecall(req, {
-      params: Promise.resolve({ id: VEHICLE_ID, recallId: "r1" }),
+      params: Promise.resolve({ vin: VEHICLE_ID, recallId: "r1" }),
     });
     expect(res.status).toBe(401);
   });
@@ -185,7 +185,7 @@ describe("PATCH /api/admin/vehicles/[id]/recalls/[recallId]", () => {
       },
     );
     const res = await patchRecall(req, {
-      params: Promise.resolve({ id: VEHICLE_ID, recallId: "r1" }),
+      params: Promise.resolve({ vin: VEHICLE_ID, recallId: "r1" }),
     });
     expect(res.status).toBe(400);
   });
@@ -211,7 +211,7 @@ describe("PATCH /api/admin/vehicles/[id]/recalls/[recallId]", () => {
       },
     );
     const res = await patchRecall(req, {
-      params: Promise.resolve({ id: VEHICLE_ID, recallId: "r1" }),
+      params: Promise.resolve({ vin: VEHICLE_ID, recallId: "r1" }),
     });
     expect(res.status).toBe(200);
     expect(mockTrackService).toHaveBeenCalledWith(
@@ -243,7 +243,7 @@ describe("PATCH /api/admin/vehicles/[id]/recalls/[recallId]", () => {
       },
     );
     const res = await patchRecall(req, {
-      params: Promise.resolve({ id: VEHICLE_ID, recallId: "r1" }),
+      params: Promise.resolve({ vin: VEHICLE_ID, recallId: "r1" }),
     });
     expect(res.status).toBe(200);
     expect(mockTrackService).toHaveBeenCalledWith(

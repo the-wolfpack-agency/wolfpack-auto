@@ -1,5 +1,5 @@
 /**
- * Contract tests for /api/admin/vehicles/[id]/title-lien.
+ * Contract tests for /api/admin/vehicles/[vin]/title-lien.
  *
  *   200 — authed + supported state (or honest stub) + cache write fires.
  *   400 — missing or invalid `state` query.
@@ -44,7 +44,7 @@ jest.mock("@/lib/db", () => ({
 }));
 
 import { NextRequest } from "next/server";
-import { GET } from "@/app/api/admin/vehicles/[id]/title-lien/route";
+import { GET } from "@/app/api/admin/vehicles/[vin]/title-lien/route";
 
 const DEALER = "00000000-0000-4000-a000-000000000001";
 const VEHICLE_ID = "00000000-0000-4000-b000-000000000001";
@@ -78,14 +78,14 @@ beforeEach(() => {
   process.env.DATABASE_URL = "postgresql://test";
 });
 
-describe("GET /api/admin/vehicles/[id]/title-lien", () => {
+describe("GET /api/admin/vehicles/[vin]/title-lien", () => {
   it("returns 200 with shadow_mode when DATABASE_URL is unset", async () => {
     delete process.env.DATABASE_URL;
     const req = new NextRequest(
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien?state=FL`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -99,7 +99,7 @@ describe("GET /api/admin/vehicles/[id]/title-lien", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien?state=FL`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(401);
   });
@@ -110,7 +110,7 @@ describe("GET /api/admin/vehicles/[id]/title-lien", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(400);
   });
@@ -121,7 +121,7 @@ describe("GET /api/admin/vehicles/[id]/title-lien", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien?state=FLA`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(400);
   });
@@ -133,7 +133,7 @@ describe("GET /api/admin/vehicles/[id]/title-lien", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien?state=FL`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(404);
   });
@@ -160,7 +160,7 @@ describe("GET /api/admin/vehicles/[id]/title-lien", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien?state=FL`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -198,7 +198,7 @@ describe("GET /api/admin/vehicles/[id]/title-lien", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien?state=NY`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(200);
     expect(mockTrackTitleLien).toHaveBeenCalledWith(
@@ -232,7 +232,7 @@ describe("GET /api/admin/vehicles/[id]/title-lien", () => {
       `http://localhost/api/admin/vehicles/${VEHICLE_ID}/title-lien?state=FL`,
     );
     const res = await GET(req, {
-      params: Promise.resolve({ id: VEHICLE_ID }),
+      params: Promise.resolve({ vin: VEHICLE_ID }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
