@@ -20,6 +20,19 @@ interface Stats {
   }>;
 }
 
+interface AuditRun {
+  id: string;
+  dealership_name: string;
+  contact_name: string;
+  contact_email: string;
+  status: string;
+  requested_at: string;
+}
+
+interface WebsiteAuditRun extends AuditRun {
+  website_url: string;
+}
+
 export default function OperatorDashboardPage() {
   return (
     <OperatorChrome>
@@ -32,6 +45,8 @@ function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [audits, setAudits] = useState<AuditRun[]>([]);
+  const [websiteAudits, setWebsiteAudits] = useState<WebsiteAuditRun[]>([]);
 
   useEffect(() => {
     fetch("/api/operator/stats")
@@ -42,6 +57,18 @@ function Dashboard() {
       .then((data: Stats) => setStats(data))
       .catch((err) => setError(err instanceof Error ? err.message : String(err)))
       .finally(() => setLoading(false));
+
+    // F&I audit lead-magnet follow-up surface — top 5 most recent
+    fetch("/api/admin/fi-audit-runs?limit=5")
+      .then((r) => (r.ok ? r.json() : { runs: [] }))
+      .then((data: { runs?: AuditRun[] }) => setAudits(data.runs ?? []))
+      .catch(() => setAudits([]));
+
+    // Website audit lead-magnet follow-up surface — top 5 most recent
+    fetch("/api/admin/website-audit-runs?limit=5")
+      .then((r) => (r.ok ? r.json() : { runs: [] }))
+      .then((data: { runs?: WebsiteAuditRun[] }) => setWebsiteAudits(data.runs ?? []))
+      .catch(() => setWebsiteAudits([]));
   }, []);
 
   return (
@@ -81,6 +108,98 @@ function Dashboard() {
               accent="neutral"
               testid="stat-onboarding"
             />
+          </div>
+
+          <div
+            className="rounded-xl border border-surface-border bg-white p-5 shadow-card"
+            data-testid="recent-audit-requests"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Recent F&amp;I audit requests
+              </h3>
+              <Link
+                href="/api/admin/fi-audit-runs"
+                className="text-xs text-blue-700 hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+            {audits.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No audit submissions yet. Once dealers submit the public F&amp;I
+                audit form, they will appear here for BDC follow-up.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {audits.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-start justify-between gap-3 text-sm"
+                  >
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        {a.dealership_name}
+                      </span>
+                      <span className="text-gray-500">
+                        {" "}
+                        · {a.contact_name} ({a.contact_email})
+                      </span>
+                      <span className="text-gray-400"> · {a.status}</span>
+                    </div>
+                    <time className="shrink-0 text-xs text-gray-400">
+                      {new Date(a.requested_at).toLocaleString()}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div
+            className="rounded-xl border border-surface-border bg-white p-5 shadow-card"
+            data-testid="recent-website-audit-requests"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">
+                Recent Website audit requests
+              </h3>
+              <Link
+                href="/api/admin/website-audit-runs"
+                className="text-xs text-blue-700 hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+            {websiteAudits.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No Website audit submissions yet. Once dealers submit the
+                public Website audit form, they will appear here for BDC
+                follow-up.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {websiteAudits.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-start justify-between gap-3 text-sm"
+                  >
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        {a.dealership_name}
+                      </span>
+                      <span className="text-gray-500">
+                        {" "}· {a.website_url}
+                      </span>
+                      <span className="text-gray-400"> · {a.status}</span>
+                    </div>
+                    <time className="shrink-0 text-xs text-gray-400">
+                      {new Date(a.requested_at).toLocaleString()}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="rounded-xl border border-surface-border bg-white p-5 shadow-card" data-testid="recent-actions">
