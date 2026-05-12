@@ -37,6 +37,10 @@ MANIFEST=(
   "scripts/audit_app_security.py                scripts/audit_app_security.py"
   "scripts/audit_history_exposure.py            scripts/audit_history_exposure.py"
   "scripts/test_audit_app_security.py           scripts/test_audit_app_security.py"
+  "scripts/probe_security_headers.py            scripts/probe_security_headers.py"
+  "scripts/probe_error_disclosure.py            scripts/probe_error_disclosure.py"
+  "scripts/branch_protection_enforcer.py        scripts/branch_protection_enforcer.py"
+  "scripts/secret_age_tracker.py                scripts/secret_age_tracker.py"
 )
 
 # ---- Args -------------------------------------------------------------------
