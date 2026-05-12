@@ -122,3 +122,4 @@ export async function safeQuery<T>(
     throw err;
   }
 }
+// trigger redeploy after DATABASE_URL env var update
