@@ -38,7 +38,7 @@ import { auditLog } from "@/lib/audit-log";
 import { trackTitleLien } from "@/lib/analytics-hooks";
 
 interface RouteContext {
-  params: Promise<{ id: string }>;
+  params: Promise<{ vin: string }>;
 }
 
 export async function GET(
@@ -59,7 +59,7 @@ export async function GET(
   const authResult = await requireAuth(request);
   if (!isAuthenticated(authResult)) return authResult;
 
-  const { id } = await context.params;
+  const { vin } = await context.params;
   if (!id || typeof id !== "string") {
     return NextResponse.json(
       { error: "Vehicle id is required" },

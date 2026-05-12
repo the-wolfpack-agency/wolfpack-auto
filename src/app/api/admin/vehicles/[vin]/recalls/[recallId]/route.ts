@@ -26,7 +26,7 @@ import { trackService } from "@/lib/analytics-hooks";
 import { loadVehicle, setRecallStatus } from "@/lib/recalls";
 
 interface RouteContext {
-  params: Promise<{ id: string; recallId: string }>;
+  params: Promise<{ vin: string; recallId: string }>;
 }
 
 const PatchBody = z.object({
@@ -45,8 +45,8 @@ export async function PATCH(
   const authResult = await requireAuth(request);
   if (!isAuthenticated(authResult)) return authResult;
 
-  const { id, recallId } = await context.params;
-  if (!id || !recallId) {
+  const { vin, recallId } = await context.params;
+  if (!vin || !recallId) {
     return NextResponse.json(
       { error: "Vehicle id and recall id are required" },
       { status: 400 },
@@ -71,7 +71,7 @@ export async function PATCH(
   const userId = authResult.user.id;
 
   try {
-    const vehicle = await loadVehicle(dealerId, id);
+    const vehicle = await loadVehicle(dealerId, vin);
     if (!vehicle) {
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }
