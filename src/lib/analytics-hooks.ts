@@ -732,6 +732,21 @@ export type FIAuditEvent =
   | "fi_audit.demo_booked";
 
 /**
+ * Website Audit engagement-opener events (migration 078).
+ * Emitted by the public `/audits/website` flow on every state transition.
+ * Second engagement-opener artifact for the Dealer Excellence Program.
+ */
+export type WebsiteAuditEvent =
+  | "website_audit.request_submitted"
+  | "website_audit.scan_started"
+  | "website_audit.scan_completed"
+  | "website_audit.scan_failed"
+  | "website_audit.pdf_generated"
+  | "website_audit.delivered"
+  | "website_audit.opened"
+  | "website_audit.demo_booked";
+
+/**
  * Dealership Literacy Ontology events (migration 075).
  * Emitted by `src/lib/literacy-ontology/*` and the
  * `/api/admin/literacy/*` authoring routes. Every concept / mapping /
@@ -757,7 +772,39 @@ export type LiteracyEvent =
   | "literacy.action_updated"
   | "literacy.action_deleted"
   | "literacy.action_recommended"
-  | "literacy.outcome_recorded";
+  | "literacy.outcome_recorded"
+  /* ---- in-platform literacy layer (migration 076) -------------------- */
+  /** Walkthrough lifecycle (curated + ai_proposed multi-step tours). */
+  | "literacy.walkthrough_created"
+  | "literacy.walkthrough_updated"
+  | "literacy.walkthrough_deleted"
+  | "walkthrough.viewed"
+  | "walkthrough.step_completed"
+  | "walkthrough.dismissed"
+  | "walkthrough.completed"
+  /** Tooltip lifecycle + render-side surface events. */
+  | "literacy.tooltip_created"
+  | "literacy.tooltip_updated"
+  | "literacy.tooltip_deleted"
+  | "tooltip.opened"
+  | "tooltip.dismissed";
+
+/**
+ * Wolfpack Assistant lifecycle events (migration 077). Emitted by the
+ * action registry, capability matcher, conversation logger, and the
+ * /api/admin/assistant/* routes. The conversational layer (year-one
+ * Q3-Q4) will additionally emit `assistant.action_proposed` and
+ * `assistant.action_executed` for every LLM-mapped action.
+ */
+export type AssistantEvent =
+  | "assistant.action_listed"
+  | "assistant.chat_prompt_received"
+  | "assistant.action_proposed"
+  | "assistant.action_executed"
+  | "assistant.action_rejected"
+  | "assistant.dry_run_requested"
+  | "assistant.conversation_started"
+  | "assistant.conversation_ended";
 
 export type PlatformEvent =
   | DealEvent
@@ -826,7 +873,9 @@ export type PlatformEvent =
   | AddressValidationEvent
   | CredentialsEvent
   | FIAuditEvent
-  | LiteracyEvent;
+  | WebsiteAuditEvent
+  | LiteracyEvent
+  | AssistantEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -1615,6 +1664,22 @@ export function trackFIAudit(
 }
 
 /**
+ * Track a Website Audit event (migration 078). Emitted by the public
+ * `/audits/website` flow on every state transition: submission, scan
+ * lifecycle, PDF generation, delivery, demo booking.
+ *
+ * `dealer_id` is the audit-run UUID here (these are pre-customer leads
+ * with no dealer tenancy yet). Pass the row id so events correlate.
+ */
+export function trackWebsiteAudit(
+  event: WebsiteAuditEvent,
+  audit_run_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, audit_run_id, { module: "website_audit", ...meta });
+}
+
+/**
  * Track a Dealership Literacy Ontology event (migration 075). Emitted by
  * `src/lib/literacy-ontology/*` mutating helpers and by the
  * `/api/admin/literacy/*` authoring routes.
@@ -1633,4 +1698,26 @@ export function trackLiteracy(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "literacy", ...meta });
+}
+
+/**
+ * Track a Wolfpack Assistant event (migration 077). Emitted by the
+ * action registry, capability matcher, conversation logger, and the
+ * `/api/admin/assistant/*` routes.
+ *
+ * For action-registry lifecycle events (action_listed) where the action
+ * registry is agency-shared, pass an agency-scoped pseudo-dealer_id
+ * ("wolfpack-assistant" works) as the `dealer_id` argument. For
+ * conversation events (chat_prompt_received, action_proposed,
+ * action_executed, action_rejected, dry_run_requested,
+ * conversation_started, conversation_ended) pass the real dealer_id so
+ * the learning loop can correlate the conversation back to dealer
+ * outcomes.
+ */
+export function trackAssistant(
+  event: AssistantEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "assistant", ...meta });
 }
