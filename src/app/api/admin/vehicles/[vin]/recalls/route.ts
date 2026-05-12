@@ -45,14 +45,14 @@ export async function GET(
   if (!isAuthenticated(authResult)) return authResult;
 
   const { vin } = await context.params;
-  if (!id || typeof id !== "string") {
-    return NextResponse.json({ error: "Vehicle id is required" }, { status: 400 });
+  if (!vin || typeof vin !== "string") {
+    return NextResponse.json({ error: "Vehicle vin is required" }, { status: 400 });
   }
 
   const dealerId = authResult.user.dealer_id;
 
   try {
-    const vehicle = await loadVehicle(dealerId, id);
+    const vehicle = await loadVehicle(dealerId, vin);
     if (!vehicle) {
       return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
     }

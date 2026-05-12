@@ -59,7 +59,7 @@ export async function GET(
   const authResult = await requireAuth(request);
   if (!isAuthenticated(authResult)) return authResult;
 
-  const { vin } = await context.params;
+  const { vin: id } = await context.params;
   if (!id || typeof id !== "string") {
     return NextResponse.json(
       { error: "Vehicle id is required" },

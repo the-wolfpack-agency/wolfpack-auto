@@ -1,13 +1,14 @@
 # Wolfpack Auto — API Reference
 
-> Auto-generated 2026-05-11 from `src/app/api/**/route.ts`.  
+> Auto-generated 2026-05-12 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 290
+**Total routes:** 305
 
 ## Contents
 
 - [ab](#ab)
+- [address](#address)
 - [admin](#admin)
 - [agency](#agency)
 - [analytics](#analytics)
@@ -45,6 +46,12 @@
 | `POST` | `/api/ab/convert` | POST /api/ab/convert | — | Yes |
 | `GET` | `/api/ab/results` | GET /api/ab/results?test=hero-cta | — | — |
 
+## address
+
+| Method | Path | Summary | Auth | Rate-limited |
+|--------|------|---------|------|-------------|
+| `POST` | `/api/address/validate` | Create validate | — | Yes |
+
 ## admin
 
 | Method | Path | Summary | Auth | Rate-limited |
@@ -71,13 +78,17 @@
 | `POST` | `/api/admin/analytics/calibration` | GET /api/admin/analytics/calibration | Bearer | — |
 | `GET` | `/api/admin/analytics/cohorts` | List cohorts | Bearer | — |
 | `GET` | `/api/admin/analytics/dashboard` | GET /api/admin/analytics/dashboard | Bearer | — |
+| `GET` | `/api/admin/analytics/fi-penetration` | List fi-penetration | Bearer | — |
 | `GET` | `/api/admin/analytics/health` | GET /api/admin/analytics/health | Bearer | — |
 | `GET` | `/api/admin/analytics/intelligence` | GET /api/admin/analytics/intelligence | Bearer | — |
+| `GET` | `/api/admin/analytics/lead-source-roi` | List lead-source-roi | Bearer | — |
 | `GET` | `/api/admin/analytics/learning` | List learning | Bearer | — |
 | `GET` | `/api/admin/analytics/micro-signals` | List micro-signals | Bearer | — |
 | `GET` | `/api/admin/analytics/platform-health` | GET /api/admin/analytics/platform-health | Bearer | — |
 | `POST` | `/api/admin/analytics/query` | POST /api/admin/analytics/query | Bearer | — |
 | `GET` | `/api/admin/analytics/subdashboards` | Sub-Dashboard Aggregation API | Bearer | — |
+| `GET` | `/api/admin/analytics/tech-utilization` | List tech-utilization | Bearer | — |
+| `GET` | `/api/admin/analytics/trim-velocity` | List trim-velocity | Bearer | — |
 | `GET` | `/api/admin/analytics/verification` | List verification | Bearer | — |
 | `POST` | `/api/admin/analytics/verification` | Analytics Verification API | Bearer | — |
 | `GET` | `/api/admin/annotations` | List annotations | Bearer | — |
@@ -110,6 +121,10 @@
 | `PATCH` | `/api/admin/compliance/checks/{id}` | Update check | Bearer | — |
 | `GET` | `/api/admin/connected-vehicles` | List connected-vehicles | Bearer | — |
 | `POST` | `/api/admin/connected-vehicles/connect` | Create connect | Bearer | — |
+| `GET` | `/api/admin/credentials` | GET  /api/admin/credentials             — list dealer credentials | Bearer | — |
+| `POST` | `/api/admin/credentials` | Create credential | Bearer | — |
+| `PATCH` | `/api/admin/credentials/{id}` | Update credential | Bearer | — |
+| `DELETE` | `/api/admin/credentials/{id}` | PATCH  /api/admin/credentials/[id]  — rotate the stored plaintext | Bearer | — |
 | `GET` | `/api/admin/credit/history` | List history | Bearer | — |
 | `POST` | `/api/admin/credit/pull` | Create pull | Bearer | Yes |
 | `GET` | `/api/admin/customers` | List customers | Bearer | — |
@@ -125,6 +140,10 @@
 | `POST` | `/api/admin/dealer-users` | Create dealer-user | Bearer | — |
 | `PATCH` | `/api/admin/dealer-users/{id}` | PATCH  /api/admin/dealer-users/[id] — update user (name, role, active toggle) | Bearer | — |
 | `DELETE` | `/api/admin/dealer-users/{id}` | Delete dealer-user | Bearer | — |
+| `GET` | `/api/admin/dealer/lenders` | List lenders | Bearer | — |
+| `POST` | `/api/admin/dealer/lenders` | Create lender | Bearer | — |
+| `PATCH` | `/api/admin/dealer/lenders/{id}` | Update lender | Bearer | — |
+| `DELETE` | `/api/admin/dealer/lenders/{id}` | Delete lender | Bearer | — |
 | `GET` | `/api/admin/dealers` | List dealers | Bearer | — |
 | `POST` | `/api/admin/dealers` | Create dealer | Bearer | — |
 | `PATCH` | `/api/admin/dealers` | Update dealer | Bearer | — |
@@ -275,6 +294,8 @@
 | `POST` | `/api/admin/payroll` | Create payroll | Bearer | — |
 | `GET` | `/api/admin/payroll/commissions` | List commissions | Bearer | — |
 | `POST` | `/api/admin/payroll/commissions` | Create commission | Bearer | — |
+| `POST` | `/api/admin/prequal/{id}/plaid-income` | Create plaid-income | Bearer | — |
+| `POST` | `/api/admin/prequal/{id}/route-to-lender` | Create route-to-lender | Bearer | — |
 | `GET` | `/api/admin/pricing` | GET  /api/admin/pricing  — return latest pricing report (cached < 24h) | Bearer | Yes |
 | `POST` | `/api/admin/pricing` | GET  /api/admin/pricing  — return latest pricing report (cached < 24h) | Bearer | Yes |
 | `PATCH` | `/api/admin/pricing/{vehicleId}` | Update pricing | Bearer | — |
@@ -354,15 +375,19 @@
 | `POST` | `/api/admin/vehicle-provenance/anchor` | Create anchor | Bearer | — |
 | `POST` | `/api/admin/vehicle-provenance/record` | Create record | Bearer | — |
 | `POST` | `/api/admin/vehicles` | Create vehicle | Bearer | — |
-| `GET` | `/api/admin/vehicles/{id}/recalls` | List recalls | Bearer | — |
-| `PATCH` | `/api/admin/vehicles/{id}/recalls/{recallId}` | Update recall | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}` | Get vehicle | Bearer | — |
 | `PUT` | `/api/admin/vehicles/{vin}` | Update vehicle | Bearer | — |
+| `GET` | `/api/admin/vehicles/{vin}/autocheck` | List autocheck | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}/buyers-guide` | List buyers-guide | Bearer | — |
+| `GET` | `/api/admin/vehicles/{vin}/carfax` | List carfax | Bearer | — |
+| `GET` | `/api/admin/vehicles/{vin}/edmunds-valuation` | List edmunds-valuation | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}/market-intel` | GET  /api/admin/vehicles/[vin]/market-intel | Bearer | — |
 | `POST` | `/api/admin/vehicles/{vin}/market-intel` | GET  /api/admin/vehicles/[vin]/market-intel | Bearer | — |
 | `GET` | `/api/admin/vehicles/{vin}/photos` | GET  /api/admin/vehicles/[vin]/photos — List photos for a vehicle | Bearer | Yes |
 | `POST` | `/api/admin/vehicles/{vin}/photos` | GET  /api/admin/vehicles/[vin]/photos — List photos for a vehicle | Bearer | Yes |
+| `GET` | `/api/admin/vehicles/{vin}/recalls` | List recalls | Bearer | — |
+| `PATCH` | `/api/admin/vehicles/{vin}/recalls/{recallId}` | Update recall | Bearer | — |
+| `GET` | `/api/admin/vehicles/{vin}/title-lien` | List title-lien | Bearer | — |
 | `GET` | `/api/admin/vehicles/backgrounds` | GET  /api/admin/vehicles/backgrounds — List all backgrounds (presets + custom) | Bearer | — |
 | `POST` | `/api/admin/vehicles/backgrounds` | GET  /api/admin/vehicles/backgrounds — List all backgrounds (presets + custom) | Bearer | — |
 | `POST` | `/api/admin/vehicles/backgrounds/batch` | Create batch | Bearer | — |
