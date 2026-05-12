@@ -682,6 +682,21 @@ export type CredentialsEvent =
   | "credentials.byo_proxy_call_failed";
 
 /**
+ * DMS adapter lifecycle events (migration 079).
+ *
+ * Emitted by `src/lib/dms-adapters/*` whenever a dealer configures, rotates,
+ * or revokes a DMS adapter credential, and whenever the assistant /
+ * action-registry executes (or fails to execute) an adapter capability
+ * against a dealer's DMS. Powers the overlay product's data moat — every
+ * action becomes a learning signal.
+ */
+export type DMSAdapterEvent =
+  | "dms_adapter.configured"
+  | "dms_adapter.action_executed"
+  | "dms_adapter.action_failed"
+  | "dms_adapter.credential_rotated";
+
+/**
  * Analytics console view/drill events. Emitted whenever a Wolfpack admin
  * opens or drills into one of the operator-facing read-only analytics
  * surfaces (F&I product penetration heatmap, tech utilization grid, etc.).
@@ -804,7 +819,12 @@ export type AssistantEvent =
   | "assistant.action_rejected"
   | "assistant.dry_run_requested"
   | "assistant.conversation_started"
-  | "assistant.conversation_ended";
+  | "assistant.conversation_ended"
+  /** Intent mapper events (2026-05-12 NLP layer). */
+  | "assistant.intent_matched"
+  | "assistant.intent_ambiguous"
+  | "assistant.intent_unmatched"
+  | "assistant.parameter_extracted";
 
 export type PlatformEvent =
   | DealEvent
@@ -872,6 +892,7 @@ export type PlatformEvent =
   | TitleLienEvent
   | AddressValidationEvent
   | CredentialsEvent
+  | DMSAdapterEvent
   | FIAuditEvent
   | WebsiteAuditEvent
   | LiteracyEvent
@@ -1720,4 +1741,21 @@ export function trackAssistant(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "assistant", ...meta });
+}
+
+/**
+ * Track a DMS adapter lifecycle event (migration 079).
+ *
+ * Fired by `src/lib/dms-adapters/adapter-registry.ts` whenever a dealer
+ * configures, rotates, or revokes a DMS adapter credential, and whenever
+ * the adapter executes (or fails to execute) a capability call. Every
+ * action becomes a learning signal — the data moat the overlay product
+ * relies on.
+ */
+export function trackDMSAdapter(
+  event: DMSAdapterEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "dms_adapter", ...meta });
 }

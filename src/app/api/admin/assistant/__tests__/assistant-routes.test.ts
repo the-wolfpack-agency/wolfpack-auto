@@ -314,6 +314,110 @@ describe("POST /api/admin/assistant/chat", () => {
       DEALER,
     );
   });
+
+  test("200 includes MapperResult shape (matches, best_match, is_ambiguous, unmatched_tokens)", async () => {
+    mockGetServerSession.mockResolvedValue(authedSession("admin"));
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "conv-2",
+          dealer_id: DEALER,
+          user_id: USER,
+          user_role: "admin",
+          conversation_started_at: "now",
+          conversation_ended_at: null,
+          message_count: 0,
+          actions_proposed: 0,
+          actions_executed: 0,
+          actions_rejected: 0,
+          satisfaction_signal: null,
+        },
+      ],
+    });
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "1",
+          slug: "leads.update_routing_rule",
+          display_name: "Update lead routing rule",
+          description: "Change which sales rep gets which new leads.",
+          parameter_schema: { type: "object", properties: { strategy: {}, rep_name: {}, count: {} } },
+          allowed_roles: ["admin"],
+          side_effect: "mutating",
+          dry_run_supported: true,
+          category: "leads",
+          active: true,
+          created_at: "",
+          updated_at: "",
+        },
+      ],
+    });
+    // Two message appends + counter updates
+    mockQuery.mockResolvedValue({ rows: [{ next_index: 0 }] });
+
+    const { POST } = await import("../chat/route");
+    const res = await POST(
+      req("/api/admin/assistant/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          prompt: "route the next 5 leads to maria",
+        }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    // MapperResult shape
+    expect(body.mapper).toBeDefined();
+    expect(Array.isArray(body.mapper.matches)).toBe(true);
+    expect(body.mapper.matches.length).toBeGreaterThan(0);
+    expect(body.mapper.best_match).not.toBeNull();
+    expect(body.mapper.best_match.action_slug).toBe("leads.update_routing_rule");
+    expect(typeof body.mapper.is_ambiguous).toBe("boolean");
+    expect(Array.isArray(body.mapper.unmatched_tokens)).toBe(true);
+    // Legacy shape preserved
+    expect(body.matched_actions[0].slug).toBe("leads.update_routing_rule");
+  });
+
+  test("200 with no match emits intent_unmatched analytics event", async () => {
+    mockGetServerSession.mockResolvedValue(authedSession("admin"));
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "conv-3",
+          dealer_id: DEALER,
+          user_id: USER,
+          user_role: "admin",
+          conversation_started_at: "now",
+          conversation_ended_at: null,
+          message_count: 0,
+          actions_proposed: 0,
+          actions_executed: 0,
+          actions_rejected: 0,
+          satisfaction_signal: null,
+        },
+      ],
+    });
+    // listActions returns nothing relevant
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValue({ rows: [{ next_index: 0 }] });
+
+    const { POST } = await import("../chat/route");
+    const res = await POST(
+      req("/api/admin/assistant/chat", {
+        method: "POST",
+        body: JSON.stringify({ prompt: "xenoblade chronicles dlc" }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.mapper.matches).toEqual([]);
+    expect(body.mapper.best_match).toBeNull();
+    expect(mockTrackAssistant).toHaveBeenCalledWith(
+      "assistant.intent_unmatched",
+      DEALER,
+      expect.objectContaining({ role: "admin" }),
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

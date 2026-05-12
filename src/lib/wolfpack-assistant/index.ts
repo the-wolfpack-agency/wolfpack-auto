@@ -63,3 +63,31 @@ export {
   seedAssistantActions,
 } from "./seed-actions";
 export type { AssistantSeedResult } from "./seed-actions";
+
+/* Intent mapper — deterministic NLP layer over the action registry. */
+export {
+  mapIntent,
+  extractParameters,
+  filterParametersForAction,
+  scoreKeywords,
+  scoreAllActions,
+  resolveTiebreak,
+  resolveTiebreakSync,
+  combineConfidence,
+  isAmbiguous,
+  ACTION_PATTERNS,
+  patternsForAction,
+  findPatternHit,
+  AMBIGUITY_THRESHOLD,
+  MIN_MATCH_CONFIDENCE,
+  MAX_MATCHES,
+} from "./intent-mapper";
+export type {
+  IntentMatch,
+  IntentMatchSource,
+  MapperResult,
+  MapperContext,
+  ActionPattern,
+  ExtractedParameters,
+  TiebreakInput,
+} from "./intent-mapper";
