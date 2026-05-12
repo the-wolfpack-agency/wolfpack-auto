@@ -1,14 +1,14 @@
-# F&I Penetration Audit — engagement-opener spec
+# F&I Penetration Audit — wedge product spec
 
 **Date:** 2026-05-12
 **Decision target:** founder alignment meeting
-**Status:** REVISED 2026-05-12 evening. Reframed from cold-outbound SaaS lead-magnet to **engagement-opener** for the OEM-led GTM motion documented in `docs/oem-led-gtm-strategy-2026-05-12.md` and the Dealer Excellence Program structure in `docs/dealer-excellence-program-2026-05-12.md`. The same artifact serves two purposes: a free deliverable in OEM-pitch conversations, and an inbound capture mechanism for direct-to-dealer opportunities we will not turn down.
+**Scope discipline:** this is ONE wedge product, not five. The point is to validate the wedge motion before adding more.
 
 ---
 
 ## The product in one sentence
 
-A 4-page PDF audit of a dealership's F&I performance that opens conversations with OEMs about full Dealer Excellence Program engagements AND captures inbound direct-to-dealer interest as a secondary motion.
+A free 4-page PDF audit of a dealership's F&I performance that books a paid Wolfpack Auto demo with a warm prospect who has already shared their data.
 
 ## Why this one wins
 
@@ -17,18 +17,14 @@ A 4-page PDF audit of a dealership's F&I performance that opens conversations wi
 3. **The DMS competitors do not surface this well.** CDK, Reynolds, and Dealertrack all have F&I reporting, but it's buried, slow, and pre-aggregated. A focused, readable 4-page PDF that ranks managers and products and recommends specific actions is materially better.
 4. **The engine already exists.** Migration 072 + `src/lib/analytics-engine/fi-penetration.ts` from today's Stream D do the heavy lifting. The audit is a PDF generator on top.
 5. **Defensibility is real.** The recommendations are based on the dealer's own data + industry benchmark comparisons. Anyone building from public data alone can't match it.
-6. **Megan-designed deliverable quality.** The PDF gets a master-designer pass before public release. Visual quality matches the JD Power-grade work the team is known for, which is structurally different from generic SaaS lead-magnet output.
-7. **OEM-pitch artifact.** In OEM-led conversations (per `docs/oem-led-gtm-strategy-2026-05-12.md`), the audit becomes a tangible demonstration of the deliverable quality the OEM would receive across a full Dealer Excellence Program engagement.
 
 ## ICP (ideal customer profile)
 
-**Primary buyer (under OEM-led motion):** OEM dealer-excellence program lead at PCNA, Audi, Toyota, Kia, or other OEM where the team has relationships. The audit is one artifact within the broader Dealer Excellence Program pitch.
+**Primary buyer (decision-maker):** F&I Director or General Sales Manager at a single rooftop doing 60-200 deals/month.
 
-**Secondary buyer (direct-to-dealer inbound):** F&I Director, GM, or General Sales Manager at a single rooftop doing 60-200 deals/month. Captured via the public landing page. We do not pursue cold outbound to this segment, but we serve inbound at a smaller engagement tier.
+**Secondary buyer:** Dealer-group Controller or VP of F&I overseeing 3-20 rooftops.
 
-**Tertiary buyer:** Dealer-group Controller or VP of F&I overseeing 3-20 rooftops. Reached primarily through OEM channels or trade-show inbound.
-
-**NOT the buyer:** the salesperson, the BDC, the receptionist, an OEM rep without dealer-program budget authority.
+**NOT the buyer:** the salesperson, the BDC, the receptionist, an OEM rep.
 
 ## The free-audit deliverable (4 pages, PDF)
 
@@ -65,28 +61,18 @@ A 4-page PDF audit of a dealership's F&I performance that opens conversations wi
 4. **Audit run table** — migration 074 adds `fi_audit_runs` table for lead capture + audit history. Used by the BDC to follow up on warm leads.
 5. **Outbound email** — sends the PDF to the dealer via Resend.
 
-### Frontend (2-3 engineer-days + Megan design pass)
+### Frontend (2-3 engineer-days)
 
 1. **Landing page** — `src/app/audits/fi-penetration/page.tsx`. Single-purpose page. Three sections: (1) the pitch ("Free F&I audit. 4-page PDF. No call required."), (2) a single form (name, email, dealership, upload), (3) a sample audit page rendered inline for credibility.
-2. **Sample audit PDF** — `public/sample-fi-audit.pdf` (committed today in functional form). **Megan design pass required** before public release; current output is functional but needs the master-designer polish that distinguishes Wolfpack deliverables.
-3. **Follow-up email sequence** — three emails: instant audit delivery, 3-day "did you act on opportunity #1?" check-in, 10-day "let's talk about your program options" close (replaces the earlier "book a demo" framing under the OEM-led motion).
+2. **Sample audit PDF** — `public/sample-fi-audit.pdf`. Synthetic example for prospects who want to see the deliverable before submitting data.
+3. **Follow-up email sequence** — three emails: instant audit delivery, 3-day "did you act on opportunity #1?" check-in, 10-day "book a demo" close.
 
-### Sales motion (OEM-led primary, direct-dealer inbound secondary)
+### Sales motion (Hoxsie + future sales lead)
 
-**Primary motion (OEM-led, owned by Hoxsie + Jorge + team-member relationships per OEM):**
-1. Audit is delivered as a free sample artifact in OEM-pitch conversations to demonstrate Dealer Excellence Program deliverable quality.
-2. PCNA (Hoxsie), Audi (Jorge), Kia (Jorge), Toyota (Hoxsie + team), and other OEM contacts receive the audit as part of the productization conversation.
-3. OEM signs program engagement; audit becomes part of the annual onboarding wave (per `docs/dealer-excellence-program-2026-05-12.md`).
-
-**Secondary motion (direct-dealer inbound, Hoxsie + senior team rotation):**
-1. Landing page lives at `audits.wolfpackauto.com/fi-penetration` (or subpath on main site).
-2. Inbound submissions trigger a CRM row in Wolfpack Auto's staff console (`/operator`) for follow-up.
-3. Conference / trade-show distribution: NADA Show (January), F&I Showcase (April). Hand out Megan-designed one-pagers pointing to the URL.
-4. We do NOT invest in cold-outbound sales infrastructure to F&I Directors. Inbound only.
-
-**Routing logic:**
-- Inbound from an OEM-affiliated dealer: route to the OEM relationship owner (Hoxsie for PCNA, Jorge for Audi/Kia, etc.) for warm conversion.
-- Inbound from unaffiliated dealer: serve at the direct-engagement tier per the Dealer Excellence Program pricing.
+1. **Landing page lives at `audits.wolfpackauto.com/fi-penetration`** (or subpath on main site).
+2. **LinkedIn outbound** — Hoxsie or the sales hire DMs F&I Directors in target markets with the audit link.
+3. **Conference / trade-show distribution** — NADA Show (January), F&I Showcase (April). Hand out one-pagers pointing to the URL.
+4. **Audit response triggers a CRM row** in Wolfpack Auto's own staff console (`/operator`) for follow-up.
 
 ## What this is NOT
 
