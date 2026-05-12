@@ -28,10 +28,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
@@ -40,7 +40,7 @@ jobs:
         run: npm ci
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
@@ -124,7 +124,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: shadow-playwright-report-${{ github.run_id }}
           path: |
@@ -148,7 +148,7 @@ jobs:
 
       - name: Create GitHub issue on failure
         if: always() && steps.outcome.outputs.shadow_failed == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
