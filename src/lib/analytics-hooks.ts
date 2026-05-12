@@ -717,6 +717,48 @@ export type AddressValidationEvent =
   | "address.validation_corrected"
   | "address.validation_failed";
 
+/**
+ * F&I Penetration Audit lead-magnet events (migration 074).
+ * Emitted by the public `/audits/fi-penetration` flow on every state
+ * transition — submission, generation, delivery, demo booking.
+ */
+export type FIAuditEvent =
+  | "fi_audit.request_submitted"
+  | "fi_audit.csv_uploaded"
+  | "fi_audit.generated"
+  | "fi_audit.delivered"
+  | "fi_audit.delivery_failed"
+  | "fi_audit.opened"
+  | "fi_audit.demo_booked";
+
+/**
+ * Dealership Literacy Ontology events (migration 075).
+ * Emitted by `src/lib/literacy-ontology/*` and the
+ * `/api/admin/literacy/*` authoring routes. Every concept / mapping /
+ * translation / action mutation fans out one of these so the curated
+ * ontology has a full audit history in analytics_events. Also covers the
+ * rendering side: every time a translation gets shown to a dealer surface
+ * or a recommended action gets emitted.
+ */
+export type LiteracyEvent =
+  | "literacy.concept_created"
+  | "literacy.concept_updated"
+  | "literacy.concept_deleted"
+  | "literacy.mapping_created"
+  | "literacy.mapping_deleted"
+  | "literacy.metric_created"
+  | "literacy.metric_updated"
+  | "literacy.metric_deleted"
+  | "literacy.translation_created"
+  | "literacy.translation_updated"
+  | "literacy.translation_deleted"
+  | "literacy.translation_rendered"
+  | "literacy.action_created"
+  | "literacy.action_updated"
+  | "literacy.action_deleted"
+  | "literacy.action_recommended"
+  | "literacy.outcome_recorded";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -782,7 +824,9 @@ export type PlatformEvent =
   | AnalyticsViewEvent
   | TitleLienEvent
   | AddressValidationEvent
-  | CredentialsEvent;
+  | CredentialsEvent
+  | FIAuditEvent
+  | LiteracyEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -1552,4 +1596,41 @@ export function trackCredentials(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "credentials", ...meta });
+}
+
+/**
+ * Track an F&I Penetration Audit lifecycle event (migration 074). Public
+ * `/audits/fi-penetration` lead magnet — every state transition fires so
+ * the BDC follow-up funnel + learning system get a complete view.
+ *
+ * `dealer_id` is the audit-run UUID here (these are pre-customer leads
+ * with no dealer tenancy yet). Pass the row id so events correlate.
+ */
+export function trackFIAudit(
+  event: FIAuditEvent,
+  audit_run_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, audit_run_id, { module: "fi_audit", ...meta });
+}
+
+/**
+ * Track a Dealership Literacy Ontology event (migration 075). Emitted by
+ * `src/lib/literacy-ontology/*` mutating helpers and by the
+ * `/api/admin/literacy/*` authoring routes.
+ *
+ * For curated-ontology lifecycle events (concept/mapping/metric/translation/
+ * action created/updated/deleted) the curated tables are agency-shared, so
+ * pass an agency-scoped pseudo-dealer_id ("wolfpack-ontology" works) as the
+ * `dealer_id` argument — these events aren't per-dealer telemetry. For
+ * render-side events (`translation_rendered`, `action_recommended`,
+ * `outcome_recorded`) pass the real dealer_id so the learning loop can
+ * correlate the rendered translation back to outcome rows.
+ */
+export function trackLiteracy(
+  event: LiteracyEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "literacy", ...meta });
 }
