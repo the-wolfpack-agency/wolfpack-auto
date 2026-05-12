@@ -123,7 +123,7 @@ def file_role(path: Path) -> str:
 # ── Patterns ──────────────────────────────────────────────────────
 
 RE_REQUIRE_AUTH = re.compile(
-    r"\b(requireAuth|requireRole|requireCapability|getServerSession)\s*\("
+    r"\b(requireAuth|requireRole|requireCapability|requireWolfpackStaff|requireAgencyAuth|getServerSession)\s*\("
 )
 # Routes legitimately reachable WITHOUT a session (pre-login flows).
 # Adding to this list IS a security review — confirm the route's
