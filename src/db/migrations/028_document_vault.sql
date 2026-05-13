@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS documents (
   id TEXT PRIMARY KEY,
   dealer_id UUID NOT NULL,
   deal_id TEXT,
-  lead_id TEXT,
+  lead_id UUID,
   vehicle_vin TEXT,
   doc_type TEXT CHECK (doc_type IN ('purchase_agreement','title','registration','insurance','disclosure','credit_app','trade_title','lien_release','inspection','other')),
   name TEXT NOT NULL,

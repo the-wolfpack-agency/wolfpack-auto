@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS deal_worksheets (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   dealer_id     UUID NOT NULL REFERENCES dealers(id),
-  lead_id       TEXT REFERENCES leads(id),
+  lead_id       UUID REFERENCES leads(id),
   vehicle_vin   TEXT NOT NULL,
 
   -- Deal structure

@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS credit_pulls (
   id TEXT PRIMARY KEY,
   dealer_id UUID NOT NULL,
-  lead_id TEXT,
+  lead_id UUID,
   applicant_name TEXT NOT NULL,
   ssn_hash TEXT,                   -- SHA-256 hash, never stored raw
   bureau TEXT CHECK (bureau IN ('equifax','experian','transunion','tri_merge')),

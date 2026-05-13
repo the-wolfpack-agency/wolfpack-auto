@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS follow_up_sequences (
 CREATE TABLE IF NOT EXISTS message_log (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   dealer_id     UUID NOT NULL REFERENCES dealers(id),
-  lead_id       TEXT REFERENCES leads(id),
+  lead_id       UUID REFERENCES leads(id),
   channel       TEXT NOT NULL CHECK (channel IN ('email','sms')),
   direction     TEXT NOT NULL CHECK (direction IN ('outbound','inbound')),
   recipient     TEXT NOT NULL,  -- email or phone
