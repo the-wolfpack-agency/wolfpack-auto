@@ -4,9 +4,11 @@
 CREATE TABLE IF NOT EXISTS ofac_screenings (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   dealer_id       UUID NOT NULL REFERENCES dealers(id),
-  -- `deals` is a backward-compat VIEW over `deal_worksheets` (migration 036).
+  -- `deals` is a backward-compat VIEW over `deal_worksheets` (migration 036);
   -- Postgres won't FK against a view, so reference the underlying table.
-  deal_id         UUID REFERENCES deal_worksheets(id),
+  -- deal_worksheets.id is TEXT (uses gen_random_uuid()::text), so the FK
+  -- column must be TEXT too.
+  deal_id         TEXT REFERENCES deal_worksheets(id),
   customer_name   TEXT NOT NULL,
   customer_dob_masked TEXT,  -- month/year only, NEVER full DOB
   status          TEXT NOT NULL DEFAULT 'clear'

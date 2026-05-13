@@ -55,8 +55,9 @@ CREATE INDEX IF NOT EXISTS idx_syndication_history_dealer
 CREATE TABLE IF NOT EXISTS contracts (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   dealer_id         UUID NOT NULL REFERENCES dealers(id),
-  -- `deals` is a backward-compat VIEW over deal_worksheets (migration 036).
-  deal_id           UUID REFERENCES deal_worksheets(id),
+  -- `deals` is a backward-compat VIEW over deal_worksheets (036);
+  -- deal_worksheets.id is TEXT, so FK column must be TEXT too.
+  deal_id           TEXT REFERENCES deal_worksheets(id),
   customer_name     TEXT NOT NULL,
   customer_email    TEXT NOT NULL,
   vehicle_description TEXT,
@@ -90,8 +91,9 @@ CREATE INDEX IF NOT EXISTS idx_contracts_status
 CREATE TABLE IF NOT EXISTS lender_submissions (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   dealer_id         UUID NOT NULL REFERENCES dealers(id),
-  -- `deals` is a backward-compat VIEW over deal_worksheets (migration 036).
-  deal_id           UUID REFERENCES deal_worksheets(id),
+  -- `deals` is a backward-compat VIEW over deal_worksheets (036);
+  -- deal_worksheets.id is TEXT, so FK column must be TEXT too.
+  deal_id           TEXT REFERENCES deal_worksheets(id),
   customer_name     TEXT NOT NULL,
   ssn_last4         TEXT CHECK (ssn_last4 IS NULL OR length(ssn_last4) = 4),
   platform          TEXT NOT NULL

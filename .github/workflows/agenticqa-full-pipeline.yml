@@ -100,29 +100,52 @@ jobs:
           git push origin HEAD:${{ github.ref }} || true
 
   # ──────────────────────────────────────────────────
+  # Schema gate: every migration must apply cleanly against fresh Postgres.
+  # Reinstated after a static-analysis sweep proved the migration tree is
+  # internally consistent (zero FK type mismatches, zero refs to missing
+  # relations, zero FK-to-view). Permanent regression guard.
+  # ──────────────────────────────────────────────────
+
+  schema-check:
+    needs: [linting-fix]
+    if: always() && needs.linting-fix.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wolfpack
+          POSTGRES_PASSWORD: wolfpack
+          POSTGRES_DB: wolfpack_schema_check
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wolfpack -d wolfpack_schema_check"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      DATABASE_URL: 'postgres://wolfpack:wolfpack@localhost:5432/wolfpack_schema_check'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Apply all migrations against fresh Postgres
+        run: npm run db:migrate
+
+  # ──────────────────────────────────────────────────
   # Phase 1: Testing & Compliance (parallel)
   # ──────────────────────────────────────────────────
 
   phase-1-testing:
-    needs: [linting-fix]
-    if: always() && needs.linting-fix.result != 'cancelled'
+    needs: [linting-fix, schema-check]
+    if: always() && needs.linting-fix.result != 'cancelled' && needs.schema-check.result == 'success'
     runs-on: ubuntu-latest
-    # 25m budget (was 20m): one shard ran 20m31s on 2026-05-13 and hit
-    # the cap, which cancels the overall workflow even though Phase 1
-    # Tests is continue-on-error. The shards retry-flake on slow runner
-    # pools — give them headroom to finish (and let upload-artifact run)
-    # so the workflow conclusion reflects the soft-gate, not a timeout
-    # cancellation.
     timeout-minutes: 25
-    # HARD GATE (2026-05-13 evening): the prior soft-gate produced a
-    # false-green badge while admin-API tests were silently failing in
-    # shadow mode. Honest red badge > misleading green. The pipeline
-    # will stay ✗ until the migration tree is fully reconciled (a
-    # dedicated session — partial work landed today: 17 dealer_id
-    # migrations + 6 lead_id migrations type-unified, 032/033 guarded
-    # against never-created tables, 044/045 FKs re-targeted off the
-    # `deals` view). Re-add `continue-on-error: true` ONLY if the
-    # alternative is keeping false-green; do not silently mask failure.
     name: "Phase 1: Tests (shard ${{ matrix.shard }}/${{ strategy.job-total }})"
     strategy:
       fail-fast: false
