@@ -88,31 +88,25 @@ CREATE INDEX IF NOT EXISTS idx_contracts_status
 /* 3. LENDER ROUTING — credit app submission to RouteOne / DealerTrack      */
 /* ======================================================================== */
 
-CREATE TABLE IF NOT EXISTS lender_submissions (
-  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dealer_id         UUID NOT NULL REFERENCES dealers(id),
-  -- `deals` is a backward-compat VIEW over deal_worksheets (036);
-  -- deal_worksheets.id is TEXT, so FK column must be TEXT too.
-  deal_id           TEXT REFERENCES deal_worksheets(id),
-  customer_name     TEXT NOT NULL,
-  ssn_last4         TEXT CHECK (ssn_last4 IS NULL OR length(ssn_last4) = 4),
-  platform          TEXT NOT NULL
-                      CHECK (platform IN ('routeone', 'dealertrack', 'direct')),
-  lender_name       TEXT NOT NULL,
-  lender_id         TEXT,
-  status            TEXT NOT NULL DEFAULT 'submitted'
-                      CHECK (status IN ('submitted', 'pending', 'approved', 'declined', 'counter_offer', 'funded', 'expired')),
-  apr_offered       NUMERIC(5,2),
-  term_offered      INTEGER,
-  amount_approved   NUMERIC(12,2),
-  stipulations      JSONB DEFAULT '[]'::jsonb,
-  submitted_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  responded_at      TIMESTAMPTZ,
-  expires_at        TIMESTAMPTZ,
-  notes             TEXT,
-  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+-- `lender_submissions` already exists from migration 021_fi_deals.sql with a
+-- smaller column set. The CREATE TABLE IF NOT EXISTS would no-op on fresh DBs
+-- AND on established DBs, then subsequent indexes on dealer_id would fail
+-- because 021's version lacks that column. Use ALTER TABLE ADD COLUMN
+-- IF NOT EXISTS for every column 045 needs that 021 didn't have.
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS dealer_id UUID REFERENCES dealers(id);
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS ssn_last4 TEXT
+  CHECK (ssn_last4 IS NULL OR length(ssn_last4) = 4);
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS platform TEXT
+  CHECK (platform IS NULL OR platform IN ('routeone', 'dealertrack', 'direct'));
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS lender_id TEXT;
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS apr_offered NUMERIC(5,2);
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS term_offered INTEGER;
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS amount_approved NUMERIC(12,2);
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS stipulations JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE lender_submissions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_lender_submissions_dealer
   ON lender_submissions(dealer_id, submitted_at DESC);
