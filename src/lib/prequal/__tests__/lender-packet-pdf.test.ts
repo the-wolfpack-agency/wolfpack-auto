@@ -150,7 +150,10 @@ describe("buildLenderPacket", () => {
     const packet = buildLenderPacket(
       baseInput({ customerName: "<script>alert(1)</script>" }),
     );
-    expect(packet.html).not.toMatch(/<script>/);
+    // case-insensitive — defends against an HTML-escape that lowers
+    // the tag but leaves a literal "<SCRIPT" in the output. CodeQL
+    // js/bad-tag-filter rule wants the tag-match to ignore case.
+    expect(packet.html).not.toMatch(/<script>/i);
     expect(packet.html).toMatch(/&lt;script&gt;/);
   });
 

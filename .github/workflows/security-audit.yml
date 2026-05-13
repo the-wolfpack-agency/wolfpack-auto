@@ -60,8 +60,18 @@ jobs:
           # on 403. The naive `$(gh api ... || echo "skip")` form
           # concatenates the JSON with "skip" and breaks the integer
           # compare below — capture the exit status separately.
+          #
+          # We deliberately filter to tool.name == "CodeQL". OpenSSF
+          # Scorecard ALSO uploads to /code-scanning/alerts with
+          # security_severity_level=high (MaintainedID, CodeReviewID,
+          # TokenPermissionsID — structural opinions about repo age /
+          # workflow permissions, not exploitable code paths). They have
+          # their own workflow (scorecard.yml) and dashboard; gating
+          # pushes on them confuses "is there an exploitable bug?" with
+          # "is the repo's supply-chain posture perfect?". Surface their
+          # count as a notice so we don't forget about them.
           if ERR=$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" \
-              --jq '[.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")] | length' 2>/dev/null); then
+              --jq '[.[] | select(.tool.name == "CodeQL") | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")] | length' 2>/dev/null); then
             :
           else
             ERR="skip"
@@ -70,7 +80,12 @@ jobs:
             echo "::warning::Code-scanning API not accessible — skipping gate"
             exit 0
           fi
+          # Surface the Scorecard count separately so structural posture
+          # regressions still get a notice in the run log.
+          SCORECARD=$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" \
+            --jq '[.[] | select(.tool.name == "Scorecard") | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")] | length' 2>/dev/null || echo "?")
           echo "::notice::codeql_high_or_critical=$ERR"
+          echo "::notice::scorecard_high_or_critical=$SCORECARD (not gated)"
           if [ "$ERR" -gt "0" ]; then
             echo "::error::$ERR open CodeQL high/critical findings"
             exit 1
