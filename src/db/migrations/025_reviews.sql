@@ -1,7 +1,7 @@
 -- Review management: aggregated reviews from Google, Yelp, Facebook, etc.
 CREATE TABLE IF NOT EXISTS reviews (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   platform      TEXT NOT NULL CHECK (platform IN ('google','yelp','facebook','cars_com','edmunds','dealerrater','other')),
   external_id   TEXT,  -- platform-specific review ID
   reviewer_name TEXT NOT NULL,
@@ -23,7 +23,7 @@ CREATE INDEX idx_reviews_rating ON reviews(dealer_id, rating);
 
 CREATE TABLE IF NOT EXISTS review_response_templates (
   id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id   UUID NOT NULL REFERENCES dealers(id),
   name        TEXT NOT NULL,
   tone        TEXT NOT NULL CHECK (tone IN ('positive','neutral','recovery')),
   body        TEXT NOT NULL,

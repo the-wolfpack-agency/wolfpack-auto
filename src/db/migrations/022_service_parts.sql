@@ -1,7 +1,7 @@
 -- Service & Parts module
 CREATE TABLE IF NOT EXISTS service_appointments (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   customer_name TEXT NOT NULL,
   customer_email TEXT,
   customer_phone TEXT,
@@ -25,7 +25,7 @@ CREATE INDEX idx_service_appts_vin ON service_appointments(vehicle_vin);
 
 CREATE TABLE IF NOT EXISTS repair_orders (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   ro_number     TEXT NOT NULL,
   appointment_id TEXT REFERENCES service_appointments(id),
   customer_name TEXT NOT NULL,
@@ -59,7 +59,7 @@ CREATE INDEX idx_repair_orders_vin ON repair_orders(vehicle_vin);
 
 CREATE TABLE IF NOT EXISTS parts_inventory (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   part_number   TEXT NOT NULL,
   name          TEXT NOT NULL,
   category      TEXT DEFAULT 'general',
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS parts_inventory (
 
 CREATE TABLE IF NOT EXISTS technicians (
   id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id   UUID NOT NULL REFERENCES dealers(id),
   name        TEXT NOT NULL,
   specialties TEXT[],  -- e.g. {'engine','transmission','electrical'}
   certifications TEXT[],
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS technicians (
 
 CREATE TABLE IF NOT EXISTS service_history (
   id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id   UUID NOT NULL REFERENCES dealers(id),
   vehicle_vin TEXT NOT NULL,
   ro_id       TEXT REFERENCES repair_orders(id),
   service_date TIMESTAMPTZ NOT NULL,

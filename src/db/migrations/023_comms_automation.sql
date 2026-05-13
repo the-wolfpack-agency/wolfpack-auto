@@ -1,7 +1,7 @@
 -- Communication automation: templates, sequences, message log
 CREATE TABLE IF NOT EXISTS message_templates (
   id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id   UUID NOT NULL REFERENCES dealers(id),
   name        TEXT NOT NULL,
   channel     TEXT NOT NULL CHECK (channel IN ('email','sms')),
   subject     TEXT,  -- email only
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS message_templates (
 
 CREATE TABLE IF NOT EXISTS follow_up_sequences (
   id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id   UUID NOT NULL REFERENCES dealers(id),
   name        TEXT NOT NULL,
   trigger_on  TEXT NOT NULL CHECK (trigger_on IN ('lead_created','status_change','appointment_set','no_response','post_sale')),
   steps       JSONB NOT NULL DEFAULT '[]',
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS follow_up_sequences (
 
 CREATE TABLE IF NOT EXISTS message_log (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   lead_id       TEXT REFERENCES leads(id),
   channel       TEXT NOT NULL CHECK (channel IN ('email','sms')),
   direction     TEXT NOT NULL CHECK (direction IN ('outbound','inbound')),

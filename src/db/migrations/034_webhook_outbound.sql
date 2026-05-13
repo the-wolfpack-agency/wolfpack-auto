@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS webhook_configs (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id TEXT NOT NULL,
+  dealer_id UUID NOT NULL,
   url TEXT NOT NULL,
   secret TEXT NOT NULL,
   events TEXT[] NOT NULL DEFAULT '{*}',

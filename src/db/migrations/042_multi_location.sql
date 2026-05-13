@@ -1,7 +1,7 @@
 -- Multi-location support: dealer groups with sub-locations
 CREATE TABLE IF NOT EXISTS dealer_locations (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id UUID NOT NULL REFERENCES dealers(id),
   name TEXT NOT NULL,
   address_street TEXT,
   address_city TEXT,

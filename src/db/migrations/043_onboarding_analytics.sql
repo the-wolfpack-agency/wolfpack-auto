@@ -1,7 +1,7 @@
 -- Onboarding funnel analytics
 CREATE TABLE IF NOT EXISTS onboarding_events (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT,
+  dealer_id UUID,
   event_type TEXT NOT NULL,
   step_name TEXT,
   metadata JSONB DEFAULT '{}',
@@ -17,11 +17,11 @@ CREATE TABLE IF NOT EXISTS demo_sessions (
   prospect_email TEXT,
   prospect_name TEXT,
   company_name TEXT,
-  demo_dealer_id TEXT REFERENCES dealers(id),
+  demo_dealer_id UUID REFERENCES dealers(id),
   started_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '24 hours',
   pages_visited JSONB DEFAULT '[]',
   is_converted BOOLEAN DEFAULT false,
-  converted_dealer_id TEXT REFERENCES dealers(id)
+  converted_dealer_id UUID REFERENCES dealers(id)
 );
 CREATE INDEX IF NOT EXISTS idx_demo_sessions_email ON demo_sessions(prospect_email);

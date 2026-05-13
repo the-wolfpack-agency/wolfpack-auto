@@ -65,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_analytics_events_metadata  ON analytics_events US
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS data_exports (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   export_type TEXT         NOT NULL CHECK (export_type IN ('analytics', 'leads', 'inventory', 'all')),
   format      TEXT         NOT NULL DEFAULT 'csv' CHECK (format IN ('csv', 'json', 'parquet')),
   destination TEXT         NOT NULL DEFAULT 'download' CHECK (destination IN ('download', 's3', 'snowflake', 'databricks')),
@@ -88,7 +88,7 @@ CREATE POLICY data_exports_tenant ON data_exports
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS customer_vehicles (
   id                TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id         TEXT         NOT NULL,
+  dealer_id         UUID         NOT NULL,
   customer_id       TEXT         NOT NULL REFERENCES customers(id),
   vin               TEXT,
   year              INTEGER,
@@ -121,7 +121,7 @@ CREATE TRIGGER customer_vehicles_updated_at BEFORE UPDATE ON customer_vehicles
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS households (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   family_name TEXT         NOT NULL,
   created_at  TIMESTAMPTZ  DEFAULT NOW(),
   updated_at  TIMESTAMPTZ  DEFAULT NOW()
@@ -161,7 +161,7 @@ CREATE INDEX IF NOT EXISTS idx_household_vehicles_household ON household_vehicle
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS sms_messages (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   lead_id     TEXT         REFERENCES leads(id),
   direction   TEXT         NOT NULL CHECK (direction IN ('inbound', 'outbound')),
   "from"      TEXT         NOT NULL,
@@ -185,7 +185,7 @@ CREATE POLICY sms_messages_tenant ON sms_messages
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS drip_campaigns (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   name        TEXT         NOT NULL,
   trigger     TEXT         NOT NULL DEFAULT 'lead_created',
   steps       JSONB        NOT NULL DEFAULT '[]',
@@ -204,7 +204,7 @@ CREATE POLICY drip_campaigns_tenant ON drip_campaigns
 CREATE TABLE IF NOT EXISTS campaign_enrollments (
   id           TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
   campaign_id  TEXT         NOT NULL REFERENCES drip_campaigns(id) ON DELETE CASCADE,
-  dealer_id    TEXT         NOT NULL,
+  dealer_id    UUID         NOT NULL,
   lead_id      TEXT         NOT NULL REFERENCES leads(id),
   current_step INTEGER      DEFAULT 0,
   status       TEXT         DEFAULT 'active' CHECK (status IN ('active', 'completed', 'unsubscribed', 'converted')),
@@ -226,7 +226,7 @@ CREATE POLICY campaign_enrollments_tenant ON campaign_enrollments
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS call_recordings (
   id            TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT         NOT NULL,
+  dealer_id     UUID         NOT NULL,
   lead_id       TEXT         REFERENCES leads(id),
   phone_number  TEXT,
   direction     TEXT         DEFAULT 'inbound' CHECK (direction IN ('inbound', 'outbound')),
@@ -252,7 +252,7 @@ CREATE POLICY call_recordings_tenant ON call_recordings
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS session_replays (
   session_id     TEXT         PRIMARY KEY,
-  dealer_id      TEXT         NOT NULL,
+  dealer_id      UUID         NOT NULL,
   started_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   ended_at       TIMESTAMPTZ,
   duration_ms    INTEGER      DEFAULT 0,
@@ -287,7 +287,7 @@ CREATE INDEX IF NOT EXISTS idx_session_replay_events_session ON session_replay_e
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS client_errors (
   id           TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id    TEXT         NOT NULL,
+  dealer_id    UUID         NOT NULL,
   fingerprint  TEXT         NOT NULL,
   message      TEXT         NOT NULL,
   stack        TEXT,
@@ -311,7 +311,7 @@ CREATE POLICY client_errors_tenant ON client_errors
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS surveys (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   title       TEXT         NOT NULL,
   description TEXT,
   questions   JSONB        NOT NULL DEFAULT '[]',
@@ -330,7 +330,7 @@ CREATE POLICY surveys_tenant ON surveys
 CREATE TABLE IF NOT EXISTS survey_responses (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
   survey_id   TEXT         NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   session_id  TEXT,
   responses   JSONB        NOT NULL DEFAULT '{}',
   nps_score   INTEGER,
@@ -348,7 +348,7 @@ CREATE POLICY survey_responses_tenant ON survey_responses
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS user_tests (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   title       TEXT         NOT NULL,
   description TEXT,
   tasks       JSONB        NOT NULL DEFAULT '[]',
@@ -365,7 +365,7 @@ CREATE POLICY user_tests_tenant ON user_tests
 CREATE TABLE IF NOT EXISTS test_recordings (
   id              TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
   test_id         TEXT         NOT NULL REFERENCES user_tests(id) ON DELETE CASCADE,
-  dealer_id       TEXT         NOT NULL,
+  dealer_id       UUID         NOT NULL,
   participant_id  TEXT         NOT NULL,
   task_results    JSONB        DEFAULT '[]',
   completed       BOOLEAN      DEFAULT false,
@@ -385,7 +385,7 @@ CREATE POLICY test_recordings_tenant ON test_recordings
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS reinsurance_programs (
   id                 TEXT          PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id          TEXT          NOT NULL,
+  dealer_id          UUID          NOT NULL,
   name               TEXT          NOT NULL,
   type               TEXT          NOT NULL DEFAULT 'CFC' CHECK (type IN ('CFC', 'DOWC', 'retro')),
   status             TEXT          NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending')),
@@ -411,7 +411,7 @@ CREATE TRIGGER reinsurance_programs_updated_at BEFORE UPDATE ON reinsurance_prog
 CREATE TABLE IF NOT EXISTS reinsurance_policies (
   id               TEXT          PRIMARY KEY DEFAULT gen_random_uuid()::text,
   program_id       TEXT          NOT NULL REFERENCES reinsurance_programs(id) ON DELETE CASCADE,
-  dealer_id        TEXT          NOT NULL,
+  dealer_id        UUID          NOT NULL,
   product_category TEXT          NOT NULL CHECK (product_category IN ('VSC', 'GAP', 'maintenance', 'tire_wheel', 'key_replacement', 'paint_protection', 'windshield', 'other')),
   ceded_premium    NUMERIC(12,2) DEFAULT 0,
   deal_id          TEXT,
@@ -427,7 +427,7 @@ CREATE POLICY reinsurance_policies_tenant ON reinsurance_policies
 CREATE TABLE IF NOT EXISTS reinsurance_claims (
   id          TEXT          PRIMARY KEY DEFAULT gen_random_uuid()::text,
   policy_id   TEXT          NOT NULL REFERENCES reinsurance_policies(id) ON DELETE CASCADE,
-  dealer_id   TEXT          NOT NULL,
+  dealer_id   UUID          NOT NULL,
   paid_amount NUMERIC(12,2) DEFAULT 0,
   status      TEXT          NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'paid', 'denied')),
   filed_at    TIMESTAMPTZ   DEFAULT NOW(),
@@ -444,7 +444,7 @@ CREATE POLICY reinsurance_claims_tenant ON reinsurance_claims
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS erating_cache (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   vin         TEXT         NOT NULL,
   provider    TEXT         NOT NULL,
   product     TEXT         NOT NULL,
@@ -469,7 +469,7 @@ CREATE POLICY erating_cache_tenant ON erating_cache
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS deliveries (
   id               TEXT          PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id        TEXT          NOT NULL,
+  dealer_id        UUID          NOT NULL,
   vehicle_vin      TEXT,
   customer_id      TEXT,
   customer_name    TEXT,
@@ -500,7 +500,7 @@ CREATE TRIGGER deliveries_updated_at BEFORE UPDATE ON deliveries
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS vehicle_delivery_tracker (
   id           TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id    TEXT         NOT NULL,
+  dealer_id    UUID         NOT NULL,
   vin          TEXT         NOT NULL,
   current_stage TEXT        NOT NULL DEFAULT 'acquired' CHECK (current_stage IN ('acquired', 'in_transit', 'arrived', 'inspection', 'reconditioning', 'photos', 'listed', 'sold', 'delivered')),
   milestones   JSONB        DEFAULT '[]',
@@ -521,7 +521,7 @@ CREATE POLICY vehicle_delivery_tracker_tenant ON vehicle_delivery_tracker
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS walkarounds (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   vin         TEXT         NOT NULL,
   status      TEXT         NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'recording', 'published', 'archived')),
   metadata    JSONB        DEFAULT '{}',
@@ -554,7 +554,7 @@ CREATE INDEX IF NOT EXISTS idx_walkaround_segments_walkaround ON walkaround_segm
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS lead_ingestion_feeds (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   name        TEXT         NOT NULL DEFAULT 'Untitled Feed',
   source      TEXT         NOT NULL CHECK (source IN ('autotrader', 'cars_com', 'cargurus', 'generic_adf', 'carfax', 'truecar', 'edmunds', 'custom')),
   format      TEXT         DEFAULT 'adf_xml' CHECK (format IN ('adf_xml', 'json', 'csv')),
@@ -572,7 +572,7 @@ CREATE POLICY lead_ingestion_feeds_tenant ON lead_ingestion_feeds
 
 CREATE TABLE IF NOT EXISTS ingested_leads (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   feed_id     TEXT         REFERENCES lead_ingestion_feeds(id),
   lead_id     TEXT         REFERENCES leads(id),
   source      TEXT,
@@ -593,7 +593,7 @@ CREATE POLICY ingested_leads_tenant ON ingested_leads
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS dashboard_annotations (
   id           TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id    TEXT         NOT NULL,
+  dealer_id    UUID         NOT NULL,
   dashboard_id TEXT         NOT NULL DEFAULT 'main',
   date         DATE         NOT NULL,
   text         TEXT         NOT NULL,
@@ -614,7 +614,7 @@ CREATE POLICY dashboard_annotations_tenant ON dashboard_annotations
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS customer_touchpoints (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT         NOT NULL,
+  dealer_id   UUID         NOT NULL,
   customer_id TEXT         NOT NULL,
   channel     TEXT         NOT NULL CHECK (channel IN ('online', 'phone', 'email', 'in_store', 'sms', 'chat', 'social')),
   timestamp   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),

@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS compliance_checks (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT NOT NULL,
+  dealer_id UUID NOT NULL,
   lead_id TEXT,
   deal_id TEXT,
   check_type TEXT CHECK (check_type IN ('red_flags','ofac','id_verification')),

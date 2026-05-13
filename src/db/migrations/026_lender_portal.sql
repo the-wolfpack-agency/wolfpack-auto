@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS lender_profiles (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT NOT NULL,
+  dealer_id UUID NOT NULL,
   lender_name TEXT NOT NULL,
   lender_code TEXT,                -- RouteOne / DealerTrack lender code
   portal TEXT CHECK (portal IN ('routeone','dealertrack','cudl','direct')),
@@ -19,7 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_lender_profiles_dealer ON lender_profiles(dealer_
 
 CREATE TABLE IF NOT EXISTS deal_submissions (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT NOT NULL,
+  dealer_id UUID NOT NULL,
   deal_id TEXT NOT NULL,
   lender_id TEXT REFERENCES lender_profiles(id),
   portal TEXT,

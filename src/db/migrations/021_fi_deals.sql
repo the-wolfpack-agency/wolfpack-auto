@@ -1,7 +1,7 @@
 -- F&I Deal Desking: deal worksheets, F&I products, lender submissions
 CREATE TABLE IF NOT EXISTS deal_worksheets (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   lead_id       TEXT REFERENCES leads(id),
   vehicle_vin   TEXT NOT NULL,
 
@@ -50,7 +50,7 @@ CREATE INDEX idx_deal_worksheets_status ON deal_worksheets(dealer_id, status);
 -- F&I product catalog (warranties, GAP, paint protection, etc.)
 CREATE TABLE IF NOT EXISTS fi_product_catalog (
   id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id   TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id   UUID NOT NULL REFERENCES dealers(id),
   name        TEXT NOT NULL,
   category    TEXT NOT NULL CHECK (category IN ('warranty','gap','paint_protection','tire_wheel','theft','maintenance','other')),
   provider    TEXT,

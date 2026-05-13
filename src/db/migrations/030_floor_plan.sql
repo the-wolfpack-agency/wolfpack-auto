@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS floor_plan_lines (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT NOT NULL,
+  dealer_id UUID NOT NULL,
   vehicle_vin TEXT NOT NULL,
   vehicle_desc TEXT,
   lender TEXT NOT NULL,  -- e.g. "NextGear Capital", "AFC", "Ally Floor Plan"

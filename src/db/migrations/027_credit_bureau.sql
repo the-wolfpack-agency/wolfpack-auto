@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS credit_pulls (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT NOT NULL,
+  dealer_id UUID NOT NULL,
   lead_id TEXT,
   applicant_name TEXT NOT NULL,
   ssn_hash TEXT,                   -- SHA-256 hash, never stored raw

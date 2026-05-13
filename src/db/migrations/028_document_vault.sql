@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS documents (
   id TEXT PRIMARY KEY,
-  dealer_id TEXT NOT NULL,
+  dealer_id UUID NOT NULL,
   deal_id TEXT,
   lead_id TEXT,
   vehicle_vin TEXT,

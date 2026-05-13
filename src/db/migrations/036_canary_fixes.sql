@@ -49,7 +49,7 @@ CREATE INDEX IF NOT EXISTS idx_sales_log_deleted_at ON sales_log (deleted_at) WH
 
 CREATE TABLE IF NOT EXISTS customers (
   id         TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id  TEXT NOT NULL,
+  dealer_id  UUID NOT NULL,
   name       TEXT NOT NULL,
   email      TEXT,
   phone      TEXT,
@@ -70,7 +70,7 @@ CREATE INDEX IF NOT EXISTS idx_customers_deleted_at ON customers(deleted_at) WHE
 
 CREATE TABLE IF NOT EXISTS marketing_campaigns (
   id                TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id         TEXT NOT NULL,
+  dealer_id         UUID NOT NULL,
   name              TEXT NOT NULL,
   status            TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'paused', 'completed', 'archived')),
   budget            NUMERIC(12,2) DEFAULT 0,
@@ -98,7 +98,7 @@ CREATE INDEX IF NOT EXISTS idx_marketing_campaigns_deleted_at ON marketing_campa
 
 CREATE TABLE IF NOT EXISTS dealer_users (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL,
+  dealer_id     UUID NOT NULL,
   email         TEXT NOT NULL UNIQUE,
   name          TEXT NOT NULL,
   password_hash TEXT NOT NULL DEFAULT '',

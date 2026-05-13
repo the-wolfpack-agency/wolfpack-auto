@@ -1,7 +1,7 @@
 -- Deal accounting: sales log, commissions, financial reporting
 CREATE TABLE IF NOT EXISTS sales_log (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   deal_id       TEXT REFERENCES deal_worksheets(id),
   vehicle_vin   TEXT NOT NULL,
   vehicle_desc  TEXT,
@@ -45,7 +45,7 @@ CREATE INDEX idx_sales_log_person ON sales_log(dealer_id, salesperson);
 
 CREATE TABLE IF NOT EXISTS commissions (
   id            TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-  dealer_id     TEXT NOT NULL REFERENCES dealers(id),
+  dealer_id     UUID NOT NULL REFERENCES dealers(id),
   sale_id       TEXT REFERENCES sales_log(id),
   employee_name TEXT NOT NULL,
   role          TEXT NOT NULL CHECK (role IN ('salesperson','fi_manager','sales_manager','bdc')),
