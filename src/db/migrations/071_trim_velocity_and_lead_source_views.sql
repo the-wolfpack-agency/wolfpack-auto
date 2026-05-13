@@ -62,7 +62,7 @@ SELECT
 FROM vehicles v
 LEFT JOIN deal_worksheets dw
   ON dw.vehicle_vin = v.vin
- AND dw.dealer_id   = v.dealer_id::text
+ AND dw.dealer_id   = v.dealer_id
 WHERE v.make IS NOT NULL
   AND v.model IS NOT NULL
 GROUP BY v.dealer_id, v.make, v.model, v.trim, v.year;
@@ -107,8 +107,8 @@ SELECT
   ) AS avg_days_to_close
 FROM leads l
 LEFT JOIN deal_worksheets dw
-  ON dw.lead_id   = l.id::text
- AND dw.dealer_id = l.dealer_id::text
+  ON dw.lead_id   = l.id
+ AND dw.dealer_id = l.dealer_id
 GROUP BY l.dealer_id, COALESCE(NULLIF(l.source, ''), 'unknown');
 
 COMMENT ON VIEW v_lead_source_roi IS
