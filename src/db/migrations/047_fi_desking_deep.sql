@@ -11,7 +11,10 @@ BEGIN;
 CREATE TABLE deal_desk (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   dealer_id       UUID NOT NULL REFERENCES dealers(id) ON DELETE CASCADE,
-  deal_id         UUID REFERENCES fi_deals(id) ON DELETE SET NULL,
+  -- `fi_deals` is not a real table; the F&I deal record lives in
+  -- `deal_worksheets` (migration 021). deal_worksheets.id is TEXT
+  -- (gen_random_uuid()::text), so the FK column must be TEXT.
+  deal_id         TEXT REFERENCES deal_worksheets(id) ON DELETE SET NULL,
   vehicle_id      UUID REFERENCES vehicles(id) ON DELETE SET NULL,
   customer_id     UUID,
 
