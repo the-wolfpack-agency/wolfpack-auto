@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS data_exports (
 CREATE INDEX IF NOT EXISTS idx_data_exports_dealer ON data_exports (dealer_id);
 ALTER TABLE data_exports ENABLE ROW LEVEL SECURITY;
 CREATE POLICY data_exports_tenant ON data_exports
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 3. customer_vehicles — equity mining
@@ -111,7 +111,7 @@ CREATE INDEX IF NOT EXISTS idx_customer_vehicles_customer ON customer_vehicles (
 CREATE INDEX IF NOT EXISTS idx_customer_vehicles_vin      ON customer_vehicles (vin);
 ALTER TABLE customer_vehicles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY customer_vehicles_tenant ON customer_vehicles
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TRIGGER customer_vehicles_updated_at BEFORE UPDATE ON customer_vehicles
   FOR EACH ROW EXECUTE FUNCTION set_updated_at_column();
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS households (
 CREATE INDEX IF NOT EXISTS idx_households_dealer ON households (dealer_id);
 ALTER TABLE households ENABLE ROW LEVEL SECURITY;
 CREATE POLICY households_tenant ON households
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS household_members (
   id           TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -178,7 +178,7 @@ CREATE INDEX IF NOT EXISTS idx_sms_messages_lead    ON sms_messages (lead_id);
 CREATE INDEX IF NOT EXISTS idx_sms_messages_created ON sms_messages (created_at);
 ALTER TABLE sms_messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY sms_messages_tenant ON sms_messages
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 6. drip_campaigns — behavior-triggered email sequences
@@ -199,7 +199,7 @@ CREATE INDEX IF NOT EXISTS idx_drip_campaigns_dealer ON drip_campaigns (dealer_i
 CREATE INDEX IF NOT EXISTS idx_drip_campaigns_active ON drip_campaigns (active) WHERE active = true;
 ALTER TABLE drip_campaigns ENABLE ROW LEVEL SECURITY;
 CREATE POLICY drip_campaigns_tenant ON drip_campaigns
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS campaign_enrollments (
   id           TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -219,7 +219,7 @@ CREATE INDEX IF NOT EXISTS idx_campaign_enrollments_dealer   ON campaign_enrollm
 CREATE INDEX IF NOT EXISTS idx_campaign_enrollments_status   ON campaign_enrollments (status) WHERE status = 'active';
 ALTER TABLE campaign_enrollments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY campaign_enrollments_tenant ON campaign_enrollments
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 7. call_recordings — call intelligence / conversation analysis
@@ -245,7 +245,7 @@ CREATE INDEX IF NOT EXISTS idx_call_recordings_lead      ON call_recordings (lea
 CREATE INDEX IF NOT EXISTS idx_call_recordings_recorded  ON call_recordings (recorded_at);
 ALTER TABLE call_recordings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY call_recordings_tenant ON call_recordings
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 8. session_replays + session_replay_events — session recording
@@ -268,7 +268,7 @@ CREATE INDEX IF NOT EXISTS idx_session_replays_dealer  ON session_replays (deale
 CREATE INDEX IF NOT EXISTS idx_session_replays_started ON session_replays (started_at);
 ALTER TABLE session_replays ENABLE ROW LEVEL SECURITY;
 CREATE POLICY session_replays_tenant ON session_replays
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS session_replay_events (
   id         BIGSERIAL    PRIMARY KEY,
@@ -304,7 +304,7 @@ CREATE INDEX IF NOT EXISTS idx_client_errors_captured    ON client_errors (captu
 CREATE INDEX IF NOT EXISTS idx_client_errors_unresolved  ON client_errors (dealer_id, fingerprint) WHERE resolved_at IS NULL;
 ALTER TABLE client_errors ENABLE ROW LEVEL SECURITY;
 CREATE POLICY client_errors_tenant ON client_errors
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 10. surveys + survey_responses
@@ -325,7 +325,7 @@ CREATE INDEX IF NOT EXISTS idx_surveys_dealer ON surveys (dealer_id);
 CREATE INDEX IF NOT EXISTS idx_surveys_active ON surveys (active) WHERE active = true;
 ALTER TABLE surveys ENABLE ROW LEVEL SECURITY;
 CREATE POLICY surveys_tenant ON surveys
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS survey_responses (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -341,7 +341,7 @@ CREATE INDEX IF NOT EXISTS idx_survey_responses_survey ON survey_responses (surv
 CREATE INDEX IF NOT EXISTS idx_survey_responses_dealer ON survey_responses (dealer_id);
 ALTER TABLE survey_responses ENABLE ROW LEVEL SECURITY;
 CREATE POLICY survey_responses_tenant ON survey_responses
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 11. user_tests + test_recordings — user testing
@@ -360,7 +360,7 @@ CREATE TABLE IF NOT EXISTS user_tests (
 CREATE INDEX IF NOT EXISTS idx_user_tests_dealer ON user_tests (dealer_id);
 ALTER TABLE user_tests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY user_tests_tenant ON user_tests
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS test_recordings (
   id              TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -378,7 +378,7 @@ CREATE INDEX IF NOT EXISTS idx_test_recordings_test ON test_recordings (test_id)
 CREATE INDEX IF NOT EXISTS idx_test_recordings_dealer ON test_recordings (dealer_id);
 ALTER TABLE test_recordings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY test_recordings_tenant ON test_recordings
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 12. reinsurance — programs, policies, claims
@@ -403,7 +403,7 @@ CREATE TABLE IF NOT EXISTS reinsurance_programs (
 CREATE INDEX IF NOT EXISTS idx_reinsurance_programs_dealer ON reinsurance_programs (dealer_id);
 ALTER TABLE reinsurance_programs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY reinsurance_programs_tenant ON reinsurance_programs
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TRIGGER reinsurance_programs_updated_at BEFORE UPDATE ON reinsurance_programs
   FOR EACH ROW EXECUTE FUNCTION set_updated_at_column();
@@ -422,7 +422,7 @@ CREATE INDEX IF NOT EXISTS idx_reinsurance_policies_program ON reinsurance_polic
 CREATE INDEX IF NOT EXISTS idx_reinsurance_policies_dealer  ON reinsurance_policies (dealer_id);
 ALTER TABLE reinsurance_policies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY reinsurance_policies_tenant ON reinsurance_policies
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS reinsurance_claims (
   id          TEXT          PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -437,7 +437,7 @@ CREATE TABLE IF NOT EXISTS reinsurance_claims (
 CREATE INDEX IF NOT EXISTS idx_reinsurance_claims_policy ON reinsurance_claims (policy_id);
 ALTER TABLE reinsurance_claims ENABLE ROW LEVEL SECURITY;
 CREATE POLICY reinsurance_claims_tenant ON reinsurance_claims
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 13. erating_cache — cached F&I product rates
@@ -462,7 +462,7 @@ CREATE INDEX IF NOT EXISTS idx_erating_cache_vin    ON erating_cache (vin);
 CREATE INDEX IF NOT EXISTS idx_erating_cache_lookup ON erating_cache (dealer_id, vin, provider);
 ALTER TABLE erating_cache ENABLE ROW LEVEL SECURITY;
 CREATE POLICY erating_cache_tenant ON erating_cache
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 14. deliveries — store-to-door delivery scheduling
@@ -490,7 +490,7 @@ CREATE INDEX IF NOT EXISTS idx_deliveries_status  ON deliveries (status);
 CREATE INDEX IF NOT EXISTS idx_deliveries_date    ON deliveries (slot_date);
 ALTER TABLE deliveries ENABLE ROW LEVEL SECURITY;
 CREATE POLICY deliveries_tenant ON deliveries
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TRIGGER deliveries_updated_at BEFORE UPDATE ON deliveries
   FOR EACH ROW EXECUTE FUNCTION set_updated_at_column();
@@ -514,7 +514,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_delivery_tracker_dealer ON vehicle_delive
 CREATE INDEX IF NOT EXISTS idx_vehicle_delivery_tracker_stage  ON vehicle_delivery_tracker (current_stage);
 ALTER TABLE vehicle_delivery_tracker ENABLE ROW LEVEL SECURITY;
 CREATE POLICY vehicle_delivery_tracker_tenant ON vehicle_delivery_tracker
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 16. walkarounds + walkaround_segments — video walkaround
@@ -535,7 +535,7 @@ CREATE INDEX IF NOT EXISTS idx_walkarounds_vin    ON walkarounds (vin);
 CREATE INDEX IF NOT EXISTS idx_walkarounds_status ON walkarounds (status);
 ALTER TABLE walkarounds ENABLE ROW LEVEL SECURITY;
 CREATE POLICY walkarounds_tenant ON walkarounds
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS walkaround_segments (
   id               TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -568,7 +568,7 @@ CREATE TABLE IF NOT EXISTS lead_ingestion_feeds (
 CREATE INDEX IF NOT EXISTS idx_lead_ingestion_feeds_dealer ON lead_ingestion_feeds (dealer_id);
 ALTER TABLE lead_ingestion_feeds ENABLE ROW LEVEL SECURITY;
 CREATE POLICY lead_ingestion_feeds_tenant ON lead_ingestion_feeds
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 CREATE TABLE IF NOT EXISTS ingested_leads (
   id          TEXT         PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -586,7 +586,7 @@ CREATE INDEX IF NOT EXISTS idx_ingested_leads_feed   ON ingested_leads (feed_id)
 CREATE INDEX IF NOT EXISTS idx_ingested_leads_at     ON ingested_leads (ingested_at);
 ALTER TABLE ingested_leads ENABLE ROW LEVEL SECURITY;
 CREATE POLICY ingested_leads_tenant ON ingested_leads
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 18. dashboard_annotations — in-app annotations on dashboard widgets
@@ -607,7 +607,7 @@ CREATE INDEX IF NOT EXISTS idx_dashboard_annotations_dealer ON dashboard_annotat
 CREATE INDEX IF NOT EXISTS idx_dashboard_annotations_date   ON dashboard_annotations (date);
 ALTER TABLE dashboard_annotations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY dashboard_annotations_tenant ON dashboard_annotations
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 19. customer_touchpoints — omnichannel timeline
@@ -629,7 +629,7 @@ CREATE INDEX IF NOT EXISTS idx_customer_touchpoints_customer ON customer_touchpo
 CREATE INDEX IF NOT EXISTS idx_customer_touchpoints_ts       ON customer_touchpoints (timestamp);
 ALTER TABLE customer_touchpoints ENABLE ROW LEVEL SECURITY;
 CREATE POLICY customer_touchpoints_tenant ON customer_touchpoints
-  USING (dealer_id = current_setting('app.current_dealer_id', true));
+  USING (dealer_id = current_setting('app.current_dealer_id', true)::uuid);
 
 -- ============================================================================
 -- 20. Add missing columns to customers table (equity-mining + households need them)
