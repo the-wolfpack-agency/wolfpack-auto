@@ -15,4 +15,16 @@ CREATE INDEX IF NOT EXISTS idx_sales_log_dealer ON sales_log(dealer_id);
 CREATE INDEX IF NOT EXISTS idx_commissions_dealer ON commissions(dealer_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_dealer ON reviews(dealer_id);
 CREATE INDEX IF NOT EXISTS idx_review_response_templates_dealer ON review_response_templates(dealer_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_dealer ON audit_logs(dealer_id);
+-- Defensive: `audit_logs` is not created by any migration in the tree
+-- (production has it from legacy/manual state, similar to the `webhooks`
+-- guard in 032_soft_delete.sql). Skip cleanly on a fresh DB.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'audit_logs'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_dealer ON audit_logs(dealer_id);
+  END IF;
+END
+$$;
