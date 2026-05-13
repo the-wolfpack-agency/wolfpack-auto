@@ -107,7 +107,13 @@ jobs:
     needs: [linting-fix]
     if: always() && needs.linting-fix.result != 'cancelled'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 25m budget (was 20m): one shard ran 20m31s on 2026-05-13 and hit
+    # the cap, which cancels the overall workflow even though Phase 1
+    # Tests is continue-on-error. The shards retry-flake on slow runner
+    # pools — give them headroom to finish (and let upload-artifact run)
+    # so the workflow conclusion reflects the soft-gate, not a timeout
+    # cancellation.
+    timeout-minutes: 25
     # SOFT GATE (2026-05-13): the Postgres-in-CI attempt surfaced a
     # systemic schema-inconsistency (dealers.id UUID vs dealer_id TEXT
     # in 12+ later migrations) that needs dedicated reconciliation
