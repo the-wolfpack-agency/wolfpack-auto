@@ -45,7 +45,21 @@ ALTER TABLE sales_log ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NU
 CREATE INDEX IF NOT EXISTS idx_sales_log_deleted_at ON sales_log (deleted_at) WHERE deleted_at IS NULL;
 
 -- Webhooks
-ALTER TABLE webhooks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
-CREATE INDEX IF NOT EXISTS idx_webhooks_deleted_at ON webhooks (deleted_at) WHERE deleted_at IS NULL;
+-- Defensive: `webhooks` is not created by any migration in the tree
+-- (production has it from legacy/manual state). On a fresh DB this
+-- migration runs before any such legacy state exists, so skip cleanly
+-- when the table is absent. Established envs keep the existing
+-- ADD COLUMN IF NOT EXISTS semantic untouched.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'webhooks'
+  ) THEN
+    ALTER TABLE webhooks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ DEFAULT NULL;
+    CREATE INDEX IF NOT EXISTS idx_webhooks_deleted_at ON webhooks (deleted_at) WHERE deleted_at IS NULL;
+  END IF;
+END
+$$;
 
 COMMIT;
