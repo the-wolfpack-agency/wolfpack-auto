@@ -29,10 +29,15 @@ import {
 } from "@/lib/dms-adapters";
 
 export async function GET(request: NextRequest) {
-  // Decide which auth gate to use. If `dealer_id` query param is present,
-  // assume cross-dealer admin → Wolfpack-staff gate. Otherwise dealer-side.
+  // Authenticate FIRST, unconditionally — the user-controlled dealer_id
+  // query param only decides which data is returned, never which auth
+  // check runs. Defends against CodeQL js/user-controlled-bypass.
+  const auth = await requireAuth(request);
+  if (!isAuthenticated(auth)) return auth;
+
   const requestedDealerId = request.nextUrl.searchParams.get("dealer_id");
 
+  // Cross-dealer path: only Wolfpack staff may name an arbitrary dealer.
   if (requestedDealerId) {
     const staff = await requireWolfpackStaff(request, "viewer");
     if (!isWolfpackStaff(staff)) return staff;
@@ -46,9 +51,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const auth = await requireAuth(request);
-  if (!isAuthenticated(auth)) return auth;
-
+  // Dealer-side path: owner / admin only.
   if (auth.user.role !== "owner" && auth.user.role !== "admin") {
     return NextResponse.json(
       { error: "Insufficient permissions — dealer-admin required" },

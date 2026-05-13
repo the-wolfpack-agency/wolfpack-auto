@@ -78,13 +78,13 @@ export async function dispatchTitleLien(
     // Per the contract, clients should never throw — but if one does, we
     // collapse cleanly to an honest upstream_error result rather than
     // letting a 500 bubble into the route.
-    // Plain string concatenation (no format-string interpolation of user
-    // data) + sanitizer to avoid log-injection from state-code header.
+    // Keep the FORMAT string literal so user-controlled state codes can't
+    // smuggle %s / %d into console.warn's format-arg position. Sanitized
+    // values are passed as separate arguments.
+    const errDetail = err instanceof Error ? err.message : String(err);
     console.warn(
-      "[title-lien] dispatcher caught throw from " +
-        sanitizeForLog(normalizedState) +
-        " client:",
-      err instanceof Error ? sanitizeForLog(err.message) : sanitizeForLog(String(err)),
+      "[title-lien] dispatcher caught throw from client:",
+      { state: sanitizeForLog(normalizedState), err: sanitizeForLog(errDetail) },
     );
     return {
       vin: normalizedVin,

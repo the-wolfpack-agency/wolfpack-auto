@@ -35,10 +35,15 @@ import {
 } from "@/lib/ecommerce-adapters";
 
 export async function GET(request: NextRequest) {
-  // Decide which auth gate to use. If `tenant_id` query param is present,
-  // assume cross-tenant admin → Wolfpack-staff gate. Otherwise tenant-side.
+  // Authenticate FIRST, unconditionally — the user-controlled tenant_id
+  // query param only decides which data is returned, never which auth
+  // check runs. Defends against CodeQL js/user-controlled-bypass.
+  const auth = await requireAuth(request);
+  if (!isAuthenticated(auth)) return auth;
+
   const requestedTenantId = request.nextUrl.searchParams.get("tenant_id");
 
+  // Cross-tenant path: only Wolfpack staff may name an arbitrary tenant.
   if (requestedTenantId) {
     const staff = await requireWolfpackStaff(request, "viewer");
     if (!isWolfpackStaff(staff)) return staff;
@@ -52,9 +57,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const auth = await requireAuth(request);
-  if (!isAuthenticated(auth)) return auth;
-
+  // Tenant-side path: owner / admin only.
   if (auth.user.role !== "owner" && auth.user.role !== "admin") {
     return NextResponse.json(
       { error: "Insufficient permissions — tenant-admin required" },
