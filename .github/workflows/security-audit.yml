@@ -56,8 +56,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ERR=$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" \
-            --jq '[.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")] | length' 2>/dev/null || echo "skip")
+          # NOTE: gh api writes its error JSON to stdout AND exits non-zero
+          # on 403. The naive `$(gh api ... || echo "skip")` form
+          # concatenates the JSON with "skip" and breaks the integer
+          # compare below — capture the exit status separately.
+          if ERR=$(gh api "/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?state=open&per_page=100" \
+              --jq '[.[] | select(.rule.security_severity_level == "high" or .rule.security_severity_level == "critical")] | length' 2>/dev/null); then
+            :
+          else
+            ERR="skip"
+          fi
           if [ "$ERR" = "skip" ]; then
             echo "::warning::Code-scanning API not accessible — skipping gate"
             exit 0
