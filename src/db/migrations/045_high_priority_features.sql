@@ -143,7 +143,10 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_history_vin
 CREATE INDEX IF NOT EXISTS idx_vehicle_history_dealer
   ON vehicle_history_reports(dealer_id, pulled_at DESC);
 
--- Unique constraint: one active report per vin+provider (latest wins)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_vehicle_history_active
-  ON vehicle_history_reports(dealer_id, vin, provider)
-  WHERE expires_at > NOW();
+-- Lookup index for vin+provider. Note: cannot use a partial unique
+-- predicate `WHERE expires_at > NOW()` because NOW() is STABLE, not
+-- IMMUTABLE, and Postgres rejects volatile functions in index
+-- predicates. Enforce "one active per vin+provider" at the application
+-- layer instead. A plain index still serves the lookup pattern.
+CREATE INDEX IF NOT EXISTS idx_vehicle_history_active
+  ON vehicle_history_reports(dealer_id, vin, provider, expires_at DESC);

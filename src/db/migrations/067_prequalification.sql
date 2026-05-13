@@ -149,9 +149,12 @@ CREATE INDEX IF NOT EXISTS idx_prequal_offers_session
   ON prequal_offers (session_id, apr_bps ASC);
 CREATE INDEX IF NOT EXISTS idx_prequal_offers_dealer_created
   ON prequal_offers (dealer_id, created_at DESC);
+-- Plain index on expires_at — cannot use partial predicate
+-- `WHERE expires_at > NOW()` because NOW() is STABLE, not IMMUTABLE,
+-- and Postgres rejects volatile functions in index predicates.
+-- "Active offers" filter happens at the application layer.
 CREATE INDEX IF NOT EXISTS idx_prequal_offers_expires
-  ON prequal_offers (expires_at)
-  WHERE expires_at > NOW();
+  ON prequal_offers (expires_at);
 
 ALTER TABLE prequal_offers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS prequal_offers_tenant ON prequal_offers;
