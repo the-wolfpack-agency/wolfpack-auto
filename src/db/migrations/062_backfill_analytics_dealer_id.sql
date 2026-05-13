@@ -26,9 +26,11 @@ DECLARE
   active_dealer_count INT;
   canonical_dealer_id TEXT;
 BEGIN
-  SELECT COUNT(*) INTO active_dealer_count FROM dealers
-   WHERE COALESCE(deleted_at, NULL) IS NULL OR TRUE;
-  -- ^ guard against either schema; we only need a count.
+  -- `dealers` doesn't have a `deleted_at` column in the in-tree schema
+  -- (032_soft_delete adds it to 10 other tables but skipped dealers).
+  -- Postgres validates the column reference at parse time even though
+  -- `OR TRUE` made the predicate semantically a no-op. Just count.
+  SELECT COUNT(*) INTO active_dealer_count FROM dealers;
 
   IF active_dealer_count = 1 THEN
     SELECT id::text INTO canonical_dealer_id FROM dealers
