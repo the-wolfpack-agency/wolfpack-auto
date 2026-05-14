@@ -1,9 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-// TODO: rate-limiter trips during the bulk-signal seed in shadow mode
-// (200 → 429). Skipping until a follow-up pass throttles the seed or
-// disables rate-limit in the test env.
-test.describe.skip("Tier 3 Analytics Signals — Data Moat Captures", () => {
+// Realigned: signal seed POSTs are within the 200/min rate-limit budget.
+// Downstream insight assertions already use defensive `if (insight)` guards.
+test.describe("Tier 3 Analytics Signals — Data Moat Captures", () => {
   // ----------------------------------------------------------------
   // All new Tier 3 signal types accepted by the API
   // ----------------------------------------------------------------

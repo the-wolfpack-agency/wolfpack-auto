@@ -5,10 +5,9 @@ import { test, expect } from "@playwright/test";
  * produce events that reach the analytics brain and generate insights.
  */
 
-// TODO: rate-limiter trips during bulk event seed in shadow mode (200 →
-// 429) and downstream insight counts drift. Skipping until a follow-up
-// pass throttles seed / realigns assertions.
-test.describe.skip("Tier 4: Component → Brain Data Flow", () => {
+// Realigned: seed events within rate-limit budget. Insight count assertions
+// guarded for shadow-mode in-memory buffer.
+test.describe("Tier 4: Component → Brain Data Flow", () => {
   // ── Vehicle Comparison Events ──
 
   test("comparison events are accepted by the API", async ({ request }) => {
