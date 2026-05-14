@@ -8,6 +8,16 @@
  */
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: PII encryption verification requires the leads write
+// path (POST /api/leads expects 201 + lead_id) and the privacy export/delete
+// endpoints, all of which need a real Postgres. In shadow mode
+// (DATABASE_URL='') leads are not persisted, so encryption-at-rest cannot
+// be exercised. Re-run with DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                   */
 /* -------------------------------------------------------------------------- */
