@@ -9,6 +9,11 @@ import {
   testResponsive,
 } from "../shared/page-checks";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 // Known VIN from placeholder data
 const TEST_VIN = "1HGCV1F34PA000001";
 const VDP_PATH = `/inventory/${TEST_VIN}`;

@@ -22,6 +22,11 @@ import {
   testAnalyticsEventFiring,
 } from "./shared/page-checks";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 // ---------------------------------------------------------------------------
 // ALL PAGES — add every new page here. Tests auto-apply to each.
 // ---------------------------------------------------------------------------

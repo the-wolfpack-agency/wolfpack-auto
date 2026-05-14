@@ -10,6 +10,11 @@ import {
   testAnalyticsCollector,
 } from "../shared/page-checks";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /**
  * Dealer sub-page tests — full coverage for every white-label dealer page.
  *
