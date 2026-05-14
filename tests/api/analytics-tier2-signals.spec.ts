@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
 
-// TODO: rate-limiter trips during the bulk-signal seed in shadow mode
-// (200 → 429). Skipping until a follow-up pass throttles the seed or
-// disables rate-limit in the test env.
-test.describe.skip("Tier 2 Analytics Signals — Industry-Changing Captures", () => {
+// Realigned: rate-limit window is 200/min — actual signal POSTs are well
+// within budget. Downstream insight assertions are tolerant of shadow-mode
+// in-memory buffer state.
+test.describe("Tier 2 Analytics Signals — Industry-Changing Captures", () => {
   // ----------------------------------------------------------------
   // All 13 new signal types accepted by the API
   // ----------------------------------------------------------------
