@@ -15,20 +15,19 @@ const BASE = "/api/admin/vehicles/backgrounds";
 /*  GET /api/admin/vehicles/backgrounds                                */
 /* ------------------------------------------------------------------ */
 
-// TODO: shadow-mode response shape drift — backgrounds endpoints have
-// evolved beyond what these contract tests expect (return-shape changes,
-// preset-id renames, 400-vs-200 on missing optional fields). Skipping the
-// suite until a follow-up pass realigns each assertion with the live API.
-test.describe.skip("Backgrounds API — List Presets", () => {
+// Realigned: GET returns `preset_count` (not `count`); POST takes `preset_id`
+// (not `preset`); recommend response includes `recommended_preset` field.
+test.describe("Backgrounds API — List Presets", () => {
   test("returns 200 with presets array and count", async ({ request }) => {
     const res = await request.get(BASE);
     expect(res.status()).toBe(200);
 
     const body = await res.json();
     expect(body).toHaveProperty("presets");
-    expect(body).toHaveProperty("count");
     expect(Array.isArray(body.presets)).toBe(true);
-    expect(body.count).toBe(body.presets.length);
+    // GET returns preset_count (renamed from count); accept either.
+    const count = body.preset_count ?? body.count;
+    expect(count).toBe(body.presets.length);
   });
 
   test("each preset has id, name, description, thumbnailCSS, category", async ({
@@ -60,7 +59,8 @@ test.describe.skip("Backgrounds API — List Presets", () => {
 
   test("returns exactly 8 presets", async ({ request }) => {
     const res = await request.get(BASE);
-    const { count } = await res.json();
+    const body = await res.json();
+    const count = body.preset_count ?? body.count;
     expect(count).toBe(8);
   });
 });
@@ -69,22 +69,19 @@ test.describe.skip("Backgrounds API — List Presets", () => {
 /*  POST /api/admin/vehicles/backgrounds                               */
 /* ------------------------------------------------------------------ */
 
-// TODO: shadow-mode response shape drift — backgrounds endpoints have
-// evolved beyond what these contract tests expect (return-shape changes,
-// preset-id renames, 400-vs-200 on missing optional fields). Skipping the
-// suite until a follow-up pass realigns each assertion with the live API.
-test.describe.skip("Backgrounds API — Apply Preset", () => {
+test.describe("Backgrounds API — Apply Preset", () => {
   test("applies preset and returns vin, preset, css, applied_at", async ({
     request,
   }) => {
     const res = await request.post(BASE, {
-      data: { vin: "CONTRACT_VIN_01", preset: "showroom_white" },
+      data: { vin: "CONTRACT_VIN_01", preset_id: "showroom_white" },
     });
     expect(res.status()).toBe(200);
 
     const body = await res.json();
     expect(body.vin).toBe("CONTRACT_VIN_01");
-    expect(body.preset).toBe("showroom_white");
+    // Endpoint returns `preset_id`; accept legacy `preset`.
+    expect(body.preset_id ?? body.preset).toBe("showroom_white");
     expect(body.preset_name).toBe("White Showroom");
     expect(typeof body.css).toBe("string");
     expect(body.css).toContain("background:");
@@ -93,7 +90,7 @@ test.describe.skip("Backgrounds API — Apply Preset", () => {
 
   test("returns 400 for missing vin", async ({ request }) => {
     const res = await request.post(BASE, {
-      data: { preset: "showroom_white" },
+      data: { preset_id: "showroom_white" },
     });
     expect(res.status()).toBe(400);
     const body = await res.json();
@@ -106,23 +103,24 @@ test.describe.skip("Backgrounds API — Apply Preset", () => {
     });
     expect(res.status()).toBe(400);
     const body = await res.json();
-    expect(body.error).toContain("preset");
+    expect(body.error.toLowerCase()).toContain("preset");
   });
 
   test("returns 400 for unknown preset ID", async ({ request }) => {
     const res = await request.post(BASE, {
-      data: { vin: "CONTRACT_VIN_01", preset: "does_not_exist" },
+      data: { vin: "CONTRACT_VIN_01", preset_id: "does_not_exist" },
     });
     expect(res.status()).toBe(400);
     const body = await res.json();
-    expect(body.error).toContain("Unknown preset");
+    // Error message says "Invalid preset_id"; legacy assertion was "Unknown preset".
+    expect(body.error.toLowerCase()).toMatch(/preset/);
   });
 
   test("dealer_branded includes custom colors in CSS", async ({ request }) => {
     const res = await request.post(BASE, {
       data: {
         vin: "CONTRACT_VIN_02",
-        preset: "dealer_branded",
+        preset_id: "dealer_branded",
         dealer_colors: { primary: "#abc123", secondary: "#def456" },
       },
     });
@@ -137,7 +135,7 @@ test.describe.skip("Backgrounds API — Apply Preset", () => {
     const res = await request.post(BASE, {
       data: {
         vin: "CONTRACT_VIN_03",
-        preset: "minimalist",
+        preset_id: "minimalist",
         vehicle_color: "#990011",
       },
     });
@@ -149,14 +147,14 @@ test.describe.skip("Backgrounds API — Apply Preset", () => {
 
   test("applying to same VIN twice overwrites", async ({ request }) => {
     await request.post(BASE, {
-      data: { vin: "CONTRACT_VIN_04", preset: "showroom_white" },
+      data: { vin: "CONTRACT_VIN_04", preset_id: "showroom_white" },
     });
     const res = await request.post(BASE, {
-      data: { vin: "CONTRACT_VIN_04", preset: "showroom_dark" },
+      data: { vin: "CONTRACT_VIN_04", preset_id: "showroom_dark" },
     });
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body.preset).toBe("showroom_dark");
+    expect(body.preset_id ?? body.preset).toBe("showroom_dark");
   });
 });
 
@@ -164,18 +162,15 @@ test.describe.skip("Backgrounds API — Apply Preset", () => {
 /*  GET /api/admin/vehicles/backgrounds/recommend                      */
 /* ------------------------------------------------------------------ */
 
-// TODO: shadow-mode response shape drift — backgrounds endpoints have
-// evolved beyond what these contract tests expect (return-shape changes,
-// preset-id renames, 400-vs-200 on missing optional fields). Skipping the
-// suite until a follow-up pass realigns each assertion with the live API.
-test.describe.skip("Backgrounds API — Recommend", () => {
+test.describe("Backgrounds API — Recommend", () => {
   test("returns recommendation for a VIN", async ({ request }) => {
     const res = await request.get(`${BASE}/recommend?vin=REC_VIN_01`);
     expect(res.status()).toBe(200);
 
     const body = await res.json();
     expect(body.vin).toBe("REC_VIN_01");
-    expect(typeof body.preset).toBe("string");
+    // Response includes both `preset` and `recommended_preset` fields.
+    expect(typeof (body.preset ?? body.recommended_preset)).toBe("string");
     expect(typeof body.reason).toBe("string");
     expect(body.reason.length).toBeGreaterThan(5);
   });
@@ -190,11 +185,7 @@ test.describe.skip("Backgrounds API — Recommend", () => {
 /*  POST /api/admin/vehicles/backgrounds/recommend                     */
 /* ------------------------------------------------------------------ */
 
-// TODO: shadow-mode response shape drift — backgrounds endpoints have
-// evolved beyond what these contract tests expect (return-shape changes,
-// preset-id renames, 400-vs-200 on missing optional fields). Skipping the
-// suite until a follow-up pass realigns each assertion with the live API.
-test.describe.skip("Backgrounds API — Batch Recommend", () => {
+test.describe("Backgrounds API — Batch Recommend", () => {
   test("returns recommendations for multiple VINs", async ({ request }) => {
     const res = await request.post(`${BASE}/recommend`, {
       data: { vins: ["BATCH_01", "BATCH_02", "BATCH_03"] },
@@ -241,11 +232,7 @@ test.describe.skip("Backgrounds API — Batch Recommend", () => {
 /*  GET /api/admin/vehicles/backgrounds/insights                       */
 /* ------------------------------------------------------------------ */
 
-// TODO: shadow-mode response shape drift — backgrounds endpoints have
-// evolved beyond what these contract tests expect (return-shape changes,
-// preset-id renames, 400-vs-200 on missing optional fields). Skipping the
-// suite until a follow-up pass realigns each assertion with the live API.
-test.describe.skip("Backgrounds API — Insights", () => {
+test.describe("Backgrounds API — Insights", () => {
   test("returns 200 with insights array", async ({ request }) => {
     const res = await request.get(`${BASE}/insights`);
     expect(res.status()).toBe(200);

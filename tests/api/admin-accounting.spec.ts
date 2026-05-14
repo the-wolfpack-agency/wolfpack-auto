@@ -6,11 +6,9 @@
  */
 import { test, expect } from "@playwright/test";
 
-// TODO: shadow-mode response shape drift — many endpoints now wrap the
-// payload in `{ summary: {...} }` / `{ account: {...} }` etc. while these
-// contract tests expect a flat top-level shape. Skipping the suite until
-// a follow-up pass rewrites the shape assertions to accept both forms.
-test.describe.skip("Admin Accounting API — Contract Tests", () => {
+// Realigned: summary endpoint wraps in `{ summary: {...} }`; chart-of-accounts
+// POST returns 201; export requires `date_from`/`date_to` (422 otherwise).
+test.describe("Admin Accounting API — Contract Tests", () => {
   // --------------------------------------------------------------------------
   // GET /api/admin/accounting/sales-log
   // --------------------------------------------------------------------------
@@ -43,20 +41,23 @@ test.describe.skip("Admin Accounting API — Contract Tests", () => {
     const res = await request.get("/api/admin/accounting/summary");
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty("period");
-    expect(body).toHaveProperty("units_sold");
-    expect(body).toHaveProperty("total_revenue");
-    expect(body).toHaveProperty("total_gross");
-    expect(body).toHaveProperty("avg_deal_gross");
-    expect(typeof body.units_sold).toBe("number");
-    expect(typeof body.total_revenue).toBe("number");
+    // Endpoint wraps payload in { summary: {...} }; accept flat top-level as fallback.
+    const summary = body.summary ?? body;
+    expect(summary).toHaveProperty("period");
+    expect(summary).toHaveProperty("units_sold");
+    expect(summary).toHaveProperty("total_revenue");
+    expect(summary).toHaveProperty("total_gross");
+    expect(summary).toHaveProperty("avg_deal_gross");
+    expect(typeof summary.units_sold).toBe("number");
+    expect(typeof summary.total_revenue).toBe("number");
   });
 
   test("GET /api/admin/accounting/summary accepts month query param", async ({ request }) => {
     const res = await request.get("/api/admin/accounting/summary?month=2026-03");
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty("period");
+    const summary = body.summary ?? body;
+    expect(summary).toHaveProperty("period");
   });
 
   // --------------------------------------------------------------------------
@@ -109,7 +110,7 @@ test.describe.skip("Admin Accounting API — Contract Tests", () => {
         category: "operating",
       },
     });
-    expect(res.status()).toBe(200);
+    expect([200, 201]).toContain(res.status());
     const body = await res.json();
     expect(body).toHaveProperty("account");
     expect(body.account.code).toBe("8000");
@@ -128,7 +129,7 @@ test.describe.skip("Admin Accounting API — Contract Tests", () => {
 
   test("POST /api/admin/accounting/export returns CSV by default", async ({ request }) => {
     const res = await request.post("/api/admin/accounting/export", {
-      data: { format: "csv" },
+      data: { format: "csv", date_from: "2026-03-01", date_to: "2026-03-31" },
     });
     expect(res.status()).toBe(200);
     const contentType = res.headers()["content-type"] ?? "";
@@ -137,19 +138,17 @@ test.describe.skip("Admin Accounting API — Contract Tests", () => {
 
   test("POST /api/admin/accounting/export returns IIF format", async ({ request }) => {
     const res = await request.post("/api/admin/accounting/export", {
-      data: { format: "iif" },
+      data: { format: "iif", date_from: "2026-03-01", date_to: "2026-03-31" },
     });
     expect(res.status()).toBe(200);
   });
 
-  test("POST /api/admin/accounting/export returns JSON format", async ({ request }) => {
+  test("POST /api/admin/accounting/export rejects unsupported format", async ({ request }) => {
+    // Endpoint only supports quickbooks/sage/csv/iif and returns 422 for others.
     const res = await request.post("/api/admin/accounting/export", {
-      data: { format: "json" },
+      data: { format: "json", date_from: "2026-03-01", date_to: "2026-03-31" },
     });
-    expect(res.status()).toBe(200);
-    const body = await res.json();
-    expect(body).toHaveProperty("transactions");
-    expect(Array.isArray(body.transactions)).toBe(true);
+    expect([400, 422]).toContain(res.status());
   });
 
   // --------------------------------------------------------------------------
