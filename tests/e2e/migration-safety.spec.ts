@@ -202,14 +202,14 @@ test.describe("Migration safety", () => {
     migrations = loadMigrations();
   });
 
-  /* 1. All 36 migration files exist and are valid SQL */
-  test("all 36 migration files exist and contain valid SQL", async ({
+  /* 1. All migration files on disk exist and contain valid SQL */
+  test("all migration files exist and contain valid SQL", async ({
     request,
   }) => {
     expect(
       migrations.length,
-      `Expected 36 migration files (001-010, 020-045), found ${migrations.length}`,
-    ).toBe(36);
+      `Expected ${EXPECTED_MIGRATION_NUMBERS.length} migrations on disk, found ${migrations.length}`,
+    ).toBe(EXPECTED_MIGRATION_NUMBERS.length);
 
     const issues: string[] = [];
 
@@ -412,8 +412,20 @@ test.describe("Migration safety", () => {
     const knownTables = new Set<string>();
     const issues: string[] = [];
 
+    // Strip DO-block-guarded ALTERs (defensive: `IF EXISTS (... information_schema.tables ...)
+    // THEN ALTER TABLE x ... END IF`). These only execute when the table is
+    // present, so they're not real ordering issues. The scanner can't trace
+    // PL/pgSQL control flow, so we filter the SQL before extraction.
+    const stripGuardedAlters = (sql: string): string =>
+      sql.replace(
+        /DO\s*\$\$\s*BEGIN[\s\S]*?IF\s+EXISTS\s*\(\s*SELECT[\s\S]*?information_schema\.tables[\s\S]*?\)\s*THEN[\s\S]*?END\s+IF\s*;[\s\S]*?END\s*\$\$\s*;?/gi,
+        "",
+      );
+
     for (const m of migrations) {
-      // Collect tables created in this migration
+      const safeContent = stripGuardedAlters(m.content);
+      // Collect tables created in this migration (unchanged content — CREATE
+      // TABLE is allowed at top level; DO-block strip only affects ALTERs).
       const created = extractCreateTableNames(m.content);
 
       // Check REFERENCES in this migration
@@ -443,8 +455,9 @@ test.describe("Migration safety", () => {
         }
       }
 
-      // Also check ALTER TABLE targets
-      const altered = extractAlterTableNames(m.content);
+      // Also check ALTER TABLE targets — use the DO-block-stripped content so
+      // defensively-guarded ALTERs (only run when table exists) are ignored.
+      const altered = extractAlterTableNames(safeContent);
       for (const tbl of altered) {
         if (!knownTables.has(tbl) && !created.includes(tbl)) {
           issues.push(
