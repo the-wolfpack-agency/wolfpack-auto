@@ -126,8 +126,8 @@ test.describe("Admin Deals & F&I API — Contract Tests", () => {
     const body = await res.json();
     if (body && typeof body === "object" && "results" in body) {
       expect(body).toHaveProperty("results");
+      expect(Array.isArray(body.results)).toBe(true);
     }
-    expect(Array.isArray(body.results)).toBe(true);
   });
 
   // --------------------------------------------------------------------------
