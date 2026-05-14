@@ -9,6 +9,15 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 
+// Shadow-mode skip: this smoke loops every admin page expecting content
+// (deals, inventory, customers, service ROs, etc.). All of those pages
+// hydrate from Postgres reads; in shadow mode (DATABASE_URL='') they 401 or
+// blank out and the assertions fail. Re-run with DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /* ========================================================================== */
 /* Helpers                                                                    */
 /* ========================================================================== */

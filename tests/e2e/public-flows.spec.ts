@@ -1,5 +1,15 @@
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: this suite walks inventory VDPs, contact-form submit,
+// inventory filter/sort/paginate, and other journeys that depend on real
+// inventory + lead persistence. In shadow mode (DATABASE_URL='') VDPs 404,
+// contact POSTs short-circuit, and the navigations fail. Re-run with
+// DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /**
  * Public site end-to-end flow tests.
  *

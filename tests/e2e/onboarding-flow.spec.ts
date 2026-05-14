@@ -10,6 +10,16 @@
 
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: onboarding wizard E2E exercises team invites (writes
+// invite_tokens row), DMS provider selection, dealership creation, and the
+// /admin/getting-started checklist that reads onboarding analytics rows. In
+// shadow mode (DATABASE_URL='') these writes silently no-op and the wizard
+// never progresses past step 1. Re-run with DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */

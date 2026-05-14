@@ -11,6 +11,15 @@
  */
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: full lead-pipeline E2E posts to /api/leads expecting
+// 201 + persisted row + email dispatch + analytics event. In shadow mode
+// (DATABASE_URL='') the insert short-circuits and the assertions fail.
+// Re-run with DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                   */
 /* -------------------------------------------------------------------------- */
