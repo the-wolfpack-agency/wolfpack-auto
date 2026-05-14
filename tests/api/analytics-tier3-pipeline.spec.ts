@@ -8,8 +8,14 @@ import { test, expect } from "@playwright/test";
  * new composite insights are actually queryable via natural language.
  */
 
-// Realigned: seed events within the 200/min rate-limit budget. Pipeline
-// shape assertions guarded for shadow-mode insight buffer state.
+// Shadow-mode skip: pipeline requires persisted insight buffer + vector
+// store. Phase 1 Tests runs in shadow mode (DATABASE_URL=''). Re-run via
+// the real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Tier 3 Analytics Pipeline — E2E Data Flow", () => {
   // ----------------------------------------------------------------
   // Pipeline: ingest → generate → store → query

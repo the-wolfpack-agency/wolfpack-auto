@@ -15,6 +15,15 @@
 
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: webhook handlers + admin vehicle/lead/inventory routes
+// all read/write Postgres (leads, vehicles, deals, push subscriptions). In
+// shadow mode (DATABASE_URL='') the round-trips collapse. Re-run via the
+// real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /* ===================================================================== */
 /*  Resend Webhook Handler                                                */
 /* ===================================================================== */

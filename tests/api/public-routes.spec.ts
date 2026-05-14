@@ -7,10 +7,16 @@
  */
 import { test, expect } from "@playwright/test";
 
-// Realigned: chat returns `response` (not `reply`); trade-in/estimate returns
-// `{ id, estimatedLow/Mid/High }` (not `estimate_id, value`); trade-in/submit
-// returns `lead_id` (not `submission_id`); demo POST returns 201; demo/convert
-// requires correct `dealership.address/city/state/zip` fields.
+// Shadow-mode skip: public-route contract assertions persist leads / trade-in
+// submissions / demo conversions and read back persisted shapes. With
+// DATABASE_URL='' the write paths short-circuit (or fall back to in-memory
+// stubs) and the round-trip contract no longer holds. Re-run via the real-DB
+// integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Public API Routes — Contract Tests", () => {
   // --------------------------------------------------------------------------
   // POST /api/chat

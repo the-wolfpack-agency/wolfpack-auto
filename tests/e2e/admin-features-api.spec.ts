@@ -10,6 +10,15 @@
  */
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: every admin GET route here proxies to a Postgres-backed
+// query (engagement_reports, marketing, competitive, tasks, etc.). In shadow
+// mode (DATABASE_URL='') the routes return 500/401 instead of 200. Re-run
+// via the real-DB integration phase or locally with DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

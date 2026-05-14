@@ -1,5 +1,13 @@
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: EventCollector → /api/analytics/events round-trip checks
+// require persisted analytics state. Re-run via the real-DB integration
+// phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Analytics UI Integration — EventCollector in browser", () => {
   // ----------------------------------------------------------------
   // Verify the EventCollector fires events from actual page interactions

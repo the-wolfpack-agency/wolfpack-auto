@@ -7,6 +7,15 @@ import { test, expect } from "@playwright/test";
  * rather than scanning buttons in reverse order.
  */
 
+// Shadow-mode skip: chat widget requires dealer config from Postgres (the
+// "Wolfpack Motors" header text comes from dealer_branding rows) and the
+// "type message and get response" test hits /api/chat which needs DB-backed
+// inventory + suggested-actions. Re-run via the real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 async function openChat(page: import("@playwright/test").Page) {
   const bubble = page.locator('button[aria-label="Open chat assistant"]');
   await expect(bubble).toBeVisible({ timeout: 8_000 });

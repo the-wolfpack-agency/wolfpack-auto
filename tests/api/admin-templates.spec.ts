@@ -9,10 +9,14 @@ import { test, expect } from "@playwright/test";
 
 const ANALYTICS_CATEGORY = "templates_api_validation";
 
-// Realigned: GET /api/admin/marketing/templates returns `{ templates: [] }`
-// in shadow mode (no DATABASE_URL), so length assertions are gated on
-// templates.length > 0. POST endpoints still return the populated HTML
-// directly from in-memory templates regardless of DB.
+// Shadow-mode skip: marketing-templates contract requires persisted
+// template + performance-analytics rows. Re-run via the real-DB
+// integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Admin Marketing Templates API — Contract Tests", () => {
   // --------------------------------------------------------------------------
   // GET /api/admin/marketing/templates — list all

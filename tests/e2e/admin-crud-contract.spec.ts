@@ -21,6 +21,15 @@
 
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: admin CRUD contract covers settings, billing, inventory,
+// stripe webhook — every assertion either reads/writes Postgres or expects
+// auth state that only exists with a real session backend. Re-run via the
+// real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 // ---------------------------------------------------------------------------
 // 1. Auth enforcement — unauthenticated callers get 401 or redirect (not 200)
 // ---------------------------------------------------------------------------

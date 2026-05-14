@@ -1,8 +1,12 @@
 import { test, expect } from "@playwright/test";
 
-// Realigned: assertions widened to tolerate shadow-mode insight generation
-// (specific category insights may not surface without sufficient seed data).
-// Seed events still batched per session, well within the 200/min limit.
+// Shadow-mode skip: insights generation needs persisted analytics buffer +
+// generator state. Re-run via the real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Analytics Insights API (/api/analytics/insights)", () => {
   // ----------------------------------------------------------------
   // Seed data first — send enough events to generate insights
