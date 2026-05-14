@@ -14,6 +14,11 @@ import {
   authPatch,
 } from "./helpers";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 let cookies: string;
 
 test.beforeAll(async ({ request }) => {

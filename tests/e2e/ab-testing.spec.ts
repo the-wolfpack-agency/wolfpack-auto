@@ -11,6 +11,11 @@
 
 import { test, expect } from "@playwright/test";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("A/B Testing API", () => {
   test("GET /api/admin/analytics/ab-tests returns 200 with tests array", async ({
     request,

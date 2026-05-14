@@ -16,6 +16,11 @@
 import { test, expect } from "@playwright/test";
 import crypto from "crypto";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 const VIN = "1HGBH41JXMN109186";
 const SAMSARA = "/api/webhooks/telemetry/samsara";
 
