@@ -12,6 +12,12 @@
 
 import { test, expect } from "@playwright/test";
 
+// Add immediately after imports:
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set."
+);
+
 /* ------------------------------------------------------------------ */
 /*  Import pure functions for direct unit-style validation             */
 /* ------------------------------------------------------------------ */

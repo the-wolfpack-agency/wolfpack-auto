@@ -9,6 +9,12 @@ import {
   testResponsive,
 } from "../shared/page-checks";
 
+// Add immediately after imports:
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set."
+);
+
 test.describe("Financing Page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/financing", { waitUntil: "domcontentloaded" });

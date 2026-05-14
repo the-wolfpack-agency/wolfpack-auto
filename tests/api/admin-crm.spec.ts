@@ -6,6 +6,12 @@
  */
 import { test, expect } from "@playwright/test";
 
+// Add immediately after imports:
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set."
+);
+
 // Realigned: customers/[id], leads/[id] wrap payload in `{ customer }` /
 // `{ lead }`; leads/[id]/convert returns 201; lead detail 404s in shadow
 // without DB (skipped tests gated on `leads.length > 0` already cover this).
