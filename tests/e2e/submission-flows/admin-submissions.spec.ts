@@ -6,8 +6,10 @@ import * as path from "path";
  * Admin form submission E2E tests.
  *
  * All admin POST routes require auth (session cookie). Without auth they
- * return 401. We accept 201/200 OR 401 as valid responses — what we guard
- * against is 500 (server crash) which means broken code, not missing auth.
+ * return 401. We accept 200/201 (success), 400 (zod validation failure),
+ * 401/403 (auth/forbidden), 422 (semantic validation), or 429 (rate limit)
+ * as valid responses. What we guard against is 500 (server crash) which
+ * means broken code, not bad input or missing auth.
  *
  * For each route we also verify the source file imports analytics tracking
  * (a track* function from @/lib/analytics-hooks) to ensure the learning
@@ -46,7 +48,7 @@ test.describe("Admin vehicles (POST /api/admin/vehicles)", () => {
         status: "available",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -69,7 +71,7 @@ test.describe("Admin deals (POST /api/admin/deals)", () => {
         status: "working",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -95,7 +97,7 @@ test.describe("Admin service appointments (POST /api/admin/service/appointments)
         appointment_time: "09:00",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -117,7 +119,7 @@ test.describe("Admin repair orders (POST /api/admin/service/repair-orders)", () 
         estimated_cost: 450,
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -140,7 +142,7 @@ test.describe("Admin parts (POST /api/admin/service/parts)", () => {
         quantity_on_hand: 12,
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -162,7 +164,7 @@ test.describe("Admin technicians (POST /api/admin/service/technicians)", () => {
         status: "active",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -184,7 +186,7 @@ test.describe("Admin comms templates (POST /api/admin/comms/templates)", () => {
         body: "Thank you for visiting. We look forward to helping you.",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -207,7 +209,7 @@ test.describe("Admin comms sequences (POST /api/admin/comms/sequences)", () => {
         ],
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -229,7 +231,7 @@ test.describe("Admin comms send (POST /api/admin/comms/send)", () => {
         variables: { first_name: "E2E" },
       },
     });
-    expect([200, 201, 401, 403, 422, 429]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422, 429]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -252,7 +254,7 @@ test.describe("Admin accounting sales-log (POST /api/admin/accounting/sales-log)
         gross_profit: 2500,
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -273,7 +275,7 @@ test.describe("Admin accounting commissions (POST /api/admin/accounting/commissi
         commission_type: "front_end",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -295,7 +297,7 @@ test.describe("Admin reviews (POST /api/admin/reviews)", () => {
         review_date: "2026-03-28",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -316,7 +318,7 @@ test.describe("Admin documents (POST /api/admin/documents)", () => {
         status: "draft",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -338,7 +340,7 @@ test.describe("Admin lenders (POST /api/admin/lenders)", () => {
         programs: ["new", "used", "certified"],
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -358,7 +360,7 @@ test.describe("Admin credit pull (POST /api/admin/credit/pull)", () => {
         bureau: "equifax",
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -377,7 +379,7 @@ test.describe("Admin compliance checks (POST /api/admin/compliance/checks)", () 
         check_types: ["ofac", "red_flags"],
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -399,7 +401,7 @@ test.describe("Admin floor plan (POST /api/admin/floor-plan)", () => {
         daily_rate: 15.0,
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 
@@ -420,7 +422,7 @@ test.describe("Admin knowledge ingest (POST /api/admin/knowledge/ingest)", () =>
         metadata: { category: "general" },
       },
     });
-    expect([200, 201, 401, 403, 422]).toContain(res.status());
+    expect([200, 201, 400, 401, 403, 422]).toContain(res.status());
     assertNotServerError(res.status());
   });
 

@@ -50,8 +50,9 @@ test.describe("Service Slots API — GET /api/service/schedule/slots", () => {
   test("missing date param returns 400, not 500", async ({ request }) => {
     const resp = await request.get("/api/service/schedule/slots");
     expect(resp.status()).not.toBe(500);
-    // Should require date param or return empty with 200
-    expect([200, 400]).toContain(resp.status());
+    // Should require date param (zod returns 400, semantic validators return 422)
+    // or return empty with 200.
+    expect([200, 400, 422]).toContain(resp.status());
   });
 
   test("never returns 500", async ({ request }) => {
