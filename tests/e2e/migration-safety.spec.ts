@@ -30,10 +30,14 @@ const MIGRATIONS_DIR = path.resolve(
 const ROLLBACK_DIR = path.join(MIGRATIONS_DIR, "rollback");
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 
-/** Expected migration numbers — 001-010, 020-045 (gap 011-019 is reserved) */
-const EXPECTED_MIGRATION_NUMBERS: string[] = [];
-for (let i = 1; i <= 10; i++) EXPECTED_MIGRATION_NUMBERS.push(String(i).padStart(3, "0"));
-for (let i = 20; i <= 45; i++) EXPECTED_MIGRATION_NUMBERS.push(String(i).padStart(3, "0"));
+/** Expected migration numbers — auto-derived from disk so the test stays
+ *  in sync with new migrations without manual edits. Filters out the
+ *  rollback/ subdir, README files, and anything that isn't an NNN_*.sql. */
+const EXPECTED_MIGRATION_NUMBERS: string[] = fs
+  .readdirSync(MIGRATIONS_DIR, { withFileTypes: true })
+  .filter((d) => d.isFile() && /^\d{3}_.*\.sql$/.test(d.name))
+  .map((d) => d.name.slice(0, 3))
+  .sort();
 
 /** PII-sensitive column name patterns */
 const PII_COLUMN_PATTERNS = [
