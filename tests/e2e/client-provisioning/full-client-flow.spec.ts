@@ -14,6 +14,11 @@
  */
 import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres + a seeded test dealer (see scripts/seed-test-dealer.ts). Phase 1 Tests runs in shadow mode. Run via the real-DB integration phase or locally with DATABASE_URL set."
+);
+
 /* ========================================================================== */
 /* Helpers                                                                    */
 /* ========================================================================== */
