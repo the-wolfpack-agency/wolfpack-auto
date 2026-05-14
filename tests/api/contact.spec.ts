@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { csrfHeaders } from "../e2e/helpers/csrf";
 
 test.describe("Contact API (/api/contact)", () => {
   const validPayload = {
@@ -11,7 +12,9 @@ test.describe("Contact API (/api/contact)", () => {
   };
 
   test("POST with valid data returns 201", async ({ request }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         ...validPayload,
         email: `valid-${Date.now()}@example.com`,
@@ -26,7 +29,9 @@ test.describe("Contact API (/api/contact)", () => {
   });
 
   test("POST with missing first_name returns 422", async ({ request }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         ...validPayload,
         first_name: "",
@@ -47,7 +52,9 @@ test.describe("Contact API (/api/contact)", () => {
   });
 
   test("POST with missing last_name returns 422", async ({ request }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         ...validPayload,
         last_name: "",
@@ -59,7 +66,9 @@ test.describe("Contact API (/api/contact)", () => {
   });
 
   test("POST with invalid email returns 422", async ({ request }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         ...validPayload,
         email: "not-a-valid-email",
@@ -77,7 +86,9 @@ test.describe("Contact API (/api/contact)", () => {
   });
 
   test("POST with missing email returns 422", async ({ request }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         ...validPayload,
         email: "",
@@ -88,7 +99,9 @@ test.describe("Contact API (/api/contact)", () => {
   });
 
   test("POST with missing message returns 422", async ({ request }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         ...validPayload,
         message: "",
@@ -102,11 +115,13 @@ test.describe("Contact API (/api/contact)", () => {
   test("rate limiting: 4th submission same email returns 429", async ({
     request,
   }) => {
+    const headers = await csrfHeaders(request);
     const rateEmail = `ratelimit-${Date.now()}@example.com`;
 
     // Send 3 requests (the limit is 3 per email per hour)
     for (let i = 0; i < 3; i++) {
       const res = await request.post("/api/contact", {
+        headers,
         data: {
           ...validPayload,
           email: rateEmail,
@@ -117,6 +132,7 @@ test.describe("Contact API (/api/contact)", () => {
 
     // 4th request should be rate limited
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         ...validPayload,
         email: rateEmail,
@@ -129,8 +145,9 @@ test.describe("Contact API (/api/contact)", () => {
   });
 
   test("POST with invalid JSON returns 400", async ({ request }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...headers, "Content-Type": "application/json" },
       data: "not-json{{{",
     });
 
@@ -141,7 +158,9 @@ test.describe("Contact API (/api/contact)", () => {
   test("POST with all optional fields omitted returns 201", async ({
     request,
   }) => {
+    const headers = await csrfHeaders(request);
     const res = await request.post("/api/contact", {
+      headers,
       data: {
         first_name: "Minimal",
         last_name: "Test",
