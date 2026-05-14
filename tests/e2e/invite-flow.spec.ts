@@ -12,6 +12,11 @@
 
 import { test, expect } from "@playwright/test";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 // Tests are independent — no serial mode needed
 
 // ---------------------------------------------------------------------------

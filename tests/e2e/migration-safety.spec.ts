@@ -100,12 +100,26 @@ function loadMigrations(): MigrationFile[] {
   });
 }
 
+// Strip SQL line and block comments so static scans don't false-match on
+// documentation or examples that appear in comments.
+function stripSqlComments(sql: string): string {
+  return sql
+    .replace(/\/\*[\s\S]*?\*\//g, "") // block comments
+    .replace(/--[^\n]*/g, ""); // line comments
+}
+
 function extractCreateTableNames(sql: string): string[] {
+  const cleaned = stripSqlComments(sql);
   const regex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)/gi;
   const tables: string[] = [];
   let m: RegExpExecArray | null;
-  while ((m = regex.exec(sql))) {
-    tables.push(m[1].toLowerCase());
+  while ((m = regex.exec(cleaned))) {
+    const name = m[1].toLowerCase();
+    // Defensive: SQL reserved keywords should never appear as table names.
+    // If the regex backtracks past the optional IF NOT EXISTS clause due to
+    // unexpected punctuation, this guards against false positives.
+    if (name === "if" || name === "not" || name === "exists") continue;
+    tables.push(name);
   }
   return tables;
 }
@@ -529,11 +543,17 @@ test.describe("Migration safety", () => {
         );
       }
 
-      // File must start with a comment header
+      // File must open with a comment header OR a transaction control
+      // statement (BEGIN/START TRANSACTION) — both are conventional in this
+      // repo and don't indicate a malformed migration.
       const firstNonEmpty = m.content
         .split("\n")
         .find((l) => l.trim().length > 0);
-      if (firstNonEmpty && !firstNonEmpty.trim().startsWith("--")) {
+      if (
+        firstNonEmpty &&
+        !firstNonEmpty.trim().startsWith("--") &&
+        !/^(BEGIN|START\s+TRANSACTION)\b/i.test(firstNonEmpty.trim())
+      ) {
         issues.push(`${m.filename} — missing comment header on first line`);
       }
     }
@@ -551,12 +571,26 @@ test.describe("Migration safety", () => {
     const issues: string[] = [];
     let piiColumnsFound = 0;
 
+    // Tables that hold *business-entity* records (not personal PII).
+    // `tax_id` on a `gl_companies` row is an EIN; an EIN is published in
+    // SEC filings and is not personal-PII under GLBA/PIPEDA/state law.
+    // The same logic applies to vendor / supplier / payee tables.
+    const BUSINESS_ENTITY_TABLE = /(compan|business|vendor|supplier|payee|merchant|corporation|corp)/i;
+
     for (const m of migrations) {
       const columns = extractColumnDefinitions(m.content);
 
       for (const col of columns) {
         const isPii = PII_COLUMN_PATTERNS.some((p) => p.test(col.column));
         if (!isPii) continue;
+
+        // Business EIN/tax_id on company-scoped tables is not personal PII.
+        if (
+          /\btax_id\b/i.test(col.column) &&
+          BUSINESS_ENTITY_TABLE.test(col.table)
+        ) {
+          continue;
+        }
 
         piiColumnsFound++;
 

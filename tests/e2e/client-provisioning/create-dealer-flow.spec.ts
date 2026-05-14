@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 const UNIQUE = Date.now().toString(36);
 const DEALER_NAME = "E2E Test Dealer " + UNIQUE;
 const DEALER_SLUG = "e2e-test-" + UNIQUE;

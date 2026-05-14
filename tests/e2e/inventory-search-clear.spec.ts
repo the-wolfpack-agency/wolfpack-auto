@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /**
  * Regression — clicking the native type="search" X clear button on the
  * /admin/inventory search input must drop the `?search=...` URL param
