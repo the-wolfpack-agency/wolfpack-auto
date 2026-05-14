@@ -7,11 +7,10 @@
  */
 import { test, expect } from "@playwright/test";
 
-// TODO: shadow-mode response shape drift — analytics / pricing / competitive /
-// engagement / funnel-health / marketing endpoints return wrapped payloads
-// while these contract tests expect a flat shape. Skipping until a follow-up
-// pass realigns assertions.
-test.describe.skip("Admin Intelligence API — Contract Tests", () => {
+// Realigned: competitive returns `{ competitors }` (renamed from `records`);
+// analytics/query returns `{ answer }` only on matched intents (otherwise
+// suggestion shape); other endpoints already match.
+test.describe("Admin Intelligence API — Contract Tests", () => {
   // --------------------------------------------------------------------------
   // GET /api/admin/analytics/dashboard
   // --------------------------------------------------------------------------
@@ -150,8 +149,9 @@ test.describe.skip("Admin Intelligence API — Contract Tests", () => {
     const res = await request.get("/api/admin/competitive");
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body).toHaveProperty("records");
-    expect(Array.isArray(body.records)).toBe(true);
+    // Endpoint returns `competitors` (renamed from `records`).
+    const records = body.competitors ?? body.records;
+    expect(Array.isArray(records)).toBe(true);
   });
 
   // --------------------------------------------------------------------------
