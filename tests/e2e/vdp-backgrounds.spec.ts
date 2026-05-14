@@ -12,7 +12,13 @@ import { test, expect } from "@playwright/test";
 // SHADOW: all /api/admin/* routes are auth-gated; unauthenticated CI gets 401.
 // /admin/* pages redirect to /admin/login. We skip the auth-dependent assertions
 // in shadow and preserve the full assertions for DEMO_MODE / authenticated runs.
-const SHADOW_MODE = !process.env.DATABASE_URL && process.env.DEMO_MODE !== "true";
+//
+// 2026-05-14: also treat empty DATABASE_URL as shadow-equivalent — DEMO_MODE
+// bypasses auth but does NOT supply a real DB, and these endpoints return
+// empty/short-circuited responses without DATABASE_URL.
+const NO_DB = !process.env.DATABASE_URL;
+const SHADOW_MODE = NO_DB && process.env.DEMO_MODE !== "true";
+const NO_BACKING_DB = NO_DB; // alias used in shadow-equivalent skips
 
 /* ------------------------------------------------------------------ */
 /*  API: List presets                                                   */
@@ -33,7 +39,8 @@ test.describe("VDP Backgrounds — API", () => {
     const body = await res.json();
     expect(body.presets).toBeDefined();
     expect(Array.isArray(body.presets)).toBe(true);
-    expect(body.count).toBeGreaterThan(0);
+    // Route returns preset_count / total_count, not the legacy `count` field.
+    expect(body.preset_count ?? body.count).toBeGreaterThan(0);
 
     // Every preset has required fields
     for (const p of body.presets) {
@@ -48,14 +55,15 @@ test.describe("VDP Backgrounds — API", () => {
   test("POST /api/admin/vehicles/backgrounds applies a preset", async ({
     request,
   }) => {
+    // Route schema uses `preset_id` (not `preset`).
     const res = await request.post("/api/admin/vehicles/backgrounds", {
-      data: { vin: "TEST_VIN_001", preset: "showroom_dark" },
+      data: { vin: "TEST_VIN_001", preset_id: "showroom_dark" },
     });
     expect(res.status()).toBe(200);
 
     const body = await res.json();
     expect(body.vin).toBe("TEST_VIN_001");
-    expect(body.preset).toBe("showroom_dark");
+    expect(body.preset_id ?? body.preset).toBe("showroom_dark");
     expect(body.css).toContain("background:");
     expect(body.applied_at).toBeTruthy();
   });
@@ -64,19 +72,20 @@ test.describe("VDP Backgrounds — API", () => {
     request,
   }) => {
     const res = await request.post("/api/admin/vehicles/backgrounds", {
-      data: { vin: "TEST_VIN_001", preset: "nonexistent_preset" },
+      data: { vin: "TEST_VIN_001", preset_id: "nonexistent_preset" },
     });
     expect(res.status()).toBe(400);
 
     const body = await res.json();
-    expect(body.error).toContain("Unknown preset");
+    // Server message is "Invalid preset_id" — match either wording.
+    expect(body.error).toMatch(/unknown preset|invalid preset/i);
   });
 
   test("POST /api/admin/vehicles/backgrounds rejects missing vin", async ({
     request,
   }) => {
     const res = await request.post("/api/admin/vehicles/backgrounds", {
-      data: { preset: "showroom_white" },
+      data: { preset_id: "showroom_white" },
     });
     expect(res.status()).toBe(400);
   });
@@ -96,7 +105,7 @@ test.describe("VDP Backgrounds — API", () => {
     const res = await request.post("/api/admin/vehicles/backgrounds", {
       data: {
         vin: "TEST_VIN_002",
-        preset: "dealer_branded",
+        preset_id: "dealer_branded",
         dealer_colors: { primary: "#ff6600", secondary: "#003399" },
       },
     });
@@ -114,8 +123,11 @@ test.describe("VDP Backgrounds — API", () => {
 
 test.describe("VDP Backgrounds — Recommendations", () => {
   // SHADOW: auth-gated admin endpoints. Skip in shadow.
+  // NO_BACKING_DB: without DATABASE_URL, the route short-circuits to an
+  // empty {recommendations: []} response — the contract assertions don't apply.
   test.beforeEach(() => {
     test.skip(SHADOW_MODE, "auth-gated recommend API");
+    test.skip(NO_BACKING_DB, "recommend route short-circuits without DATABASE_URL");
   });
 
   test("GET /api/admin/vehicles/backgrounds/recommend returns recommendation", async ({
@@ -202,7 +214,9 @@ test.describe("VDP Backgrounds — Admin Page", () => {
   test("backgrounds admin page renders", async ({ page }) => {
     await page.goto("/admin/inventory/backgrounds");
     await expect(page.getByTestId("backgrounds-page")).toBeVisible();
-    await expect(page.getByText("Photo Backgrounds")).toBeVisible();
+    // "Photo Backgrounds" appears in multiple places (nav + page title + crumb).
+    // Use .first() to avoid strict-mode violations.
+    await expect(page.getByText("Photo Backgrounds").first()).toBeVisible();
   });
 
   test("preset picker cards are rendered", async ({ page }) => {
@@ -235,10 +249,12 @@ test.describe("VDP Backgrounds — Admin Page", () => {
   test("performance tab switches to insights view", async ({ page }) => {
     await page.goto("/admin/inventory/backgrounds");
     await page.getByText("Performance").click();
-    // Either the insights table or the no-data message should appear
-    const content = page.locator(
-      "[data-testid='insights-table'], text=No data yet",
-    );
+    // Either the insights table or the no-data message should appear.
+    // Cannot mix CSS + text= in a single locator() string — use Playwright's
+    // .or() chaining instead.
+    const content = page
+      .locator("[data-testid='insights-table']")
+      .or(page.getByText("No data yet"));
     await expect(content.first()).toBeVisible({ timeout: 5000 });
   });
 });

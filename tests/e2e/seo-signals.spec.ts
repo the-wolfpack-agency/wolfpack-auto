@@ -271,8 +271,11 @@ test.describe("SEO Signals — Analytics Events", () => {
     });
   });
 
-  test("analytics collect endpoint accepts seo signal events", async ({ request }) => {
-    const resp = await request.post("/api/analytics/collect", {
+  test("analytics events endpoint accepts seo signal events", async ({ request }) => {
+    // Endpoint corrected 2026-05-14: route is /api/analytics/events,
+    // not /api/analytics/collect. The events shape matches the zod schema
+    // at src/app/api/analytics/events/route.ts.
+    const resp = await request.post("/api/analytics/events", {
       data: {
         events: [
           {
