@@ -9,6 +9,14 @@
  */
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: accounting export reads from general_ledger_entries
+// (migration 048) + chart_of_accounts. Without DATABASE_URL the routes
+// return empty bodies / 503. Re-run via the real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 // ---------------------------------------------------------------------------
 // API: POST /api/admin/accounting/export — CSV format
 // ---------------------------------------------------------------------------

@@ -7,8 +7,14 @@
  */
 import { test, expect } from "@playwright/test";
 
-// Realigned: appointments / repair-orders POST returns `{ success, id, mode? }`
-// (no longer wrapped `{ appointment }` / `{ repair_order }`).
+// Shadow-mode skip: service appointments / repair-orders / parts / technicians
+// contracts assert persisted rows + read-back. Re-run via the real-DB
+// integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Admin Service API — Contract Tests", () => {
   // --------------------------------------------------------------------------
   // GET /api/admin/service/appointments

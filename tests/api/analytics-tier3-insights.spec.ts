@@ -8,6 +8,13 @@ import { test, expect } from "@playwright/test";
  * plus 3 cross-reference insights.
  */
 
+// Shadow-mode skip: requires persisted analytics buffer + insight generator
+// state. Re-run via the real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 const BASE_SESSION = "insight3_test";
 const BASE_FP = "insight3_fp";
 

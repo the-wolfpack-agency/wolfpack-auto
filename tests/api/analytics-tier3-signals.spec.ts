@@ -1,7 +1,12 @@
 import { test, expect } from "@playwright/test";
 
-// Realigned: signal seed POSTs are within the 200/min rate-limit budget.
-// Downstream insight assertions already use defensive `if (insight)` guards.
+// Shadow-mode skip: downstream insight assertions need a real insight buffer
+// + Qdrant pair. Re-run via the real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Tier 3 Analytics Signals — Data Moat Captures", () => {
   // ----------------------------------------------------------------
   // All new Tier 3 signal types accepted by the API

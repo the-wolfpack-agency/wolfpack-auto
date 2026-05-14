@@ -11,6 +11,14 @@ import { test, expect } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
+// Shadow-mode skip: closed-loop test asserts events flow into learning
+// metrics; the metric side requires Postgres (deals, comms, service rows)
+// for the aggregator to compute. Re-run via the real-DB integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /* ========================================================================== */
 /* Helpers                                                                    */
 /* ========================================================================== */

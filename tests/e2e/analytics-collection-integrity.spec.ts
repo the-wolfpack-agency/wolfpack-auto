@@ -14,6 +14,14 @@ import { test, expect, type APIRequestContext } from "@playwright/test";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 
+// Shadow-mode skip: the entire pipeline (EventCollector → /api/analytics/events
+// → Postgres → Hydration → Brain) requires a live DB. Re-run via the real-DB
+// integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /* -------------------------------------------------------------------------- */
 /* Helper: send events and verify acceptance                                  */
 /* -------------------------------------------------------------------------- */

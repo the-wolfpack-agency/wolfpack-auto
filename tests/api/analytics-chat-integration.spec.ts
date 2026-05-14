@@ -1,7 +1,13 @@
 import { test, expect } from "@playwright/test";
 
-// Realigned: chat assertions already use `body.response` (matches current
-// endpoint). Insight-surfacing assertions tolerant of shadow-mode buffer.
+// Shadow-mode skip: chat ↔ brain assertions depend on persisted insight
+// surfacing through the analytics buffer. Re-run via the real-DB
+// integration phase.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Chat ↔ Analytics Brain Integration", () => {
   // ----------------------------------------------------------------
   // Seed behavioral data that the chat should be able to surface
