@@ -9,6 +9,11 @@
 
 import { test, expect, type APIRequestContext } from "@playwright/test";
 
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 const BASE_URL = process.env.E2E_URL || "http://localhost:3000";
 
 /* -------------------------------------------------------------------------- */
