@@ -109,9 +109,9 @@ The triple-write architecture is the deep-tech win here. Most products store dat
 
 ### How a non-technical reader can verify
 
-- "Every event is typed": [`src/lib/analytics-hooks.ts`](../../src/lib/analytics-hooks.ts). Search for `type DealEvent`, `type ServiceEvent`, etc. Every event the app fires must use one of these. TypeScript blocks typos at build time.
-- "Triple-write is real": [`src/lib/triple-write.ts`](../../src/lib/triple-write.ts). See the three sequential `await` calls, one per store.
-- "Insights are generated, not hand-coded": [`src/lib/analytics-engine.ts`](../../src/lib/analytics-engine.ts), `generateInsights()` function returns a `BehavioralInsight[]` computed at runtime.
+- "Every event is typed": [`src/lib/analytics-hooks.ts`](src/lib/analytics-hooks.ts). Search for `type DealEvent`, `type ServiceEvent`, etc. Every event the app fires must use one of these. TypeScript blocks typos at build time.
+- "Triple-write is real": [`src/lib/triple-write.ts`](src/lib/triple-write.ts). See the three sequential `await` calls, one per store.
+- "Insights are generated, not hand-coded": [`src/lib/analytics-engine.ts`](src/lib/analytics-engine.ts), `generateInsights()` function returns a `BehavioralInsight[]` computed at runtime.
 - "Per-dealer baselines": every insight query filters by `dealer_id` (RLS-enforced).
 
 ---
@@ -120,15 +120,15 @@ The triple-write architecture is the deep-tech win here. Most products store dat
 
 Read in order:
 
-1. Architecture narrative: [`docs/analytics-and-learning.md`](../analytics-and-learning.md). The closed-loop story.
-2. Event registry: [`src/lib/analytics-hooks.ts`](../../src/lib/analytics-hooks.ts). The source of truth for event types. Every domain has its own union: `DealEvent`, `ServiceEvent`, `LeadEvent`, etc. Each is a string-literal union. Typos fail at compile time.
-3. The hook: `trackEvent()` in [`src/lib/analytics.ts`](../../src/lib/analytics.ts). Fire-and-forget, never blocks the user's request.
-4. The brain: [`src/lib/analytics-engine.ts`](../../src/lib/analytics-engine.ts).
+1. Architecture narrative: [`docs/analytics-and-learning.md`](docs/analytics-and-learning.md). The closed-loop story.
+2. Event registry: [`src/lib/analytics-hooks.ts`](src/lib/analytics-hooks.ts). The source of truth for event types. Every domain has its own union: `DealEvent`, `ServiceEvent`, `LeadEvent`, etc. Each is a string-literal union. Typos fail at compile time.
+3. The hook: `trackEvent()` in [`src/lib/analytics.ts`](src/lib/analytics.ts). Fire-and-forget, never blocks the user's request.
+4. The brain: [`src/lib/analytics-engine.ts`](src/lib/analytics-engine.ts).
    - `recordEvent()` feeds an in-memory buffer, then triple-write.
    - `generateInsights()` reads rollups, applies pattern detectors, returns plain-English statements.
-5. Triple-write: [`src/lib/triple-write.ts`](../../src/lib/triple-write.ts). Postgres (source of truth), Qdrant (vector embedding for similarity), Neo4j (edge for relationships). If Qdrant or Neo4j is down, Postgres still wins. The system emits `system.triple_write_degraded` and keeps running.
-6. Signal aggregation: [`src/lib/micro-behavioral-signals.ts`](../../src/lib/micro-behavioral-signals.ts). Rolls raw events into the signal rollups consumed by both the brain and the lead scorer.
-7. Insight schema: [`src/db/migrations/054_micro_behavioral_views.sql`](../../src/db/migrations/054_micro_behavioral_views.sql). Pre-aggregated views for fast insight queries.
+5. Triple-write: [`src/lib/triple-write.ts`](src/lib/triple-write.ts). Postgres (source of truth), Qdrant (vector embedding for similarity), Neo4j (edge for relationships). If Qdrant or Neo4j is down, Postgres still wins. The system emits `system.triple_write_degraded` and keeps running.
+6. Signal aggregation: [`src/lib/micro-behavioral-signals.ts`](src/lib/micro-behavioral-signals.ts). Rolls raw events into the signal rollups consumed by both the brain and the lead scorer.
+7. Insight schema: [`src/db/migrations/054_micro_behavioral_views.sql`](src/db/migrations/054_micro_behavioral_views.sql). Pre-aggregated views for fast insight queries.
 
 ### How to add a new insight
 

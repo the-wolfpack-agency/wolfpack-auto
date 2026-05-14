@@ -102,8 +102,8 @@ All six together are the differentiator. Any one of them alone is achievable. Th
 
 ### How a non-technical reader can verify the claims
 
-- "It actually uses 45 signals": [`src/lib/predictive-lead-scorer.ts`](../../src/lib/predictive-lead-scorer.ts), grep for the `SignalVector` interface (every field is one signal).
-- "It learns from outcomes": [`src/lib/prediction-calibrator.ts`](../../src/lib/prediction-calibrator.ts), see the `updateWeights` function and the unit tests.
+- "It actually uses 45 signals": [`src/lib/predictive-lead-scorer.ts`](src/lib/predictive-lead-scorer.ts), grep for the `SignalVector` interface (every field is one signal).
+- "It learns from outcomes": [`src/lib/prediction-calibrator.ts`](src/lib/prediction-calibrator.ts), see the `updateWeights` function and the unit tests.
 - "Per-dealer weights": the weights are stored per `dealer_id` in `lead_scoring_weights` (migration 007).
 - "Verified in tests": `npm run test:unit -- predictive-lead-scorer` runs 60+ tests including the learning loop.
 
@@ -113,14 +113,14 @@ All six together are the differentiator. Any one of them alone is achievable. Th
 
 Read these in order:
 
-1. Conceptual overview: [`docs/analytics-and-learning.md`](../analytics-and-learning.md), section "Closed-loop architecture".
-2. The scorer: [`src/lib/predictive-lead-scorer.ts`](../../src/lib/predictive-lead-scorer.ts).
+1. Conceptual overview: [`docs/analytics-and-learning.md`](docs/analytics-and-learning.md), section "Closed-loop architecture".
+2. The scorer: [`src/lib/predictive-lead-scorer.ts`](src/lib/predictive-lead-scorer.ts).
    - Inputs: a `lead_id` and a `SignalVector` (45+ fields).
    - Pipeline: feature extraction, weighted scoring, confidence calibration, action recommendation.
    - Sparse-data fallback: when signals are missing, generates a low-confidence score from lead metadata alone. Never throws.
-3. Signal generation: [`src/lib/micro-behavioral-signals.ts`](../../src/lib/micro-behavioral-signals.ts) and [`src/lib/analytics-engine.ts`](../../src/lib/analytics-engine.ts). These read raw `analytics_events` rows and roll them into the 45-dim SignalVector.
-4. The learning loop: [`src/lib/prediction-calibrator.ts`](../../src/lib/prediction-calibrator.ts). Runs nightly via cron. Reads predictions made N days ago. Compares them against actual deal outcomes (closed? what window?). Adjusts signal weights via gradient descent.
-5. The data schema: [`src/db/migrations/007_lead_scoring.sql`](../../src/db/migrations/007_lead_scoring.sql). Three tables: `lead_scoring_weights`, `lead_scores`, `score_predictions`.
+3. Signal generation: [`src/lib/micro-behavioral-signals.ts`](src/lib/micro-behavioral-signals.ts) and [`src/lib/analytics-engine.ts`](src/lib/analytics-engine.ts). These read raw `analytics_events` rows and roll them into the 45-dim SignalVector.
+4. The learning loop: [`src/lib/prediction-calibrator.ts`](src/lib/prediction-calibrator.ts). Runs nightly via cron. Reads predictions made N days ago. Compares them against actual deal outcomes (closed? what window?). Adjusts signal weights via gradient descent.
+5. The data schema: [`src/db/migrations/007_lead_scoring.sql`](src/db/migrations/007_lead_scoring.sql). Three tables: `lead_scoring_weights`, `lead_scores`, `score_predictions`.
 6. Where it surfaces: `src/app/(admin)/admin/leads/page.tsx` (the UI), `/api/admin/leads/scored` (the API contract test is in `src/__tests__/admin-api-contracts.test.ts`).
 
 ### How to extend without breaking the loop
