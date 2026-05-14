@@ -19,6 +19,12 @@ import { test, expect } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
+// Add immediately after imports:
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set."
+);
+
 const ROOT = path.resolve(__dirname, "../..");
 
 // ---------------------------------------------------------------------------

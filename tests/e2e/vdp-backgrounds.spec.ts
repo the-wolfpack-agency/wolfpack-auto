@@ -9,6 +9,12 @@
 
 import { test, expect } from "@playwright/test";
 
+// Add immediately after imports:
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set."
+);
+
 // SHADOW: all /api/admin/* routes are auth-gated; unauthenticated CI gets 401.
 // /admin/* pages redirect to /admin/login. We skip the auth-dependent assertions
 // in shadow and preserve the full assertions for DEMO_MODE / authenticated runs.

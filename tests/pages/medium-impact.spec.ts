@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
 
+// Add immediately after imports:
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set."
+);
+
 test.describe("VDP CTA Buttons", () => {
   test("Request Price button links to contact page with vehicle context", async ({ page }) => {
     await page.goto("/inventory/1HGCV1F34PA000001");
