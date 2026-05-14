@@ -146,7 +146,7 @@ Read in order:
 
 ---
 
-## Future potential (clearly aspirational)
+## Future potential
 
 The brain's architecture extends naturally to:
 - Cross-dealer benchmarking with k-anonymity: "your no-show rate is 14 percent vs the median Toyota store's 8 percent," without revealing individual stores.

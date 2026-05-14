@@ -131,7 +131,7 @@ Read these in order:
 
 ---
 
-## Future potential (clearly aspirational)
+## Future potential
 
 The same model architecture extends to:
 - Service-appointment no-show prediction: predict which booked appointments will not show, so the dealer triple-books cautiously. Same signals (engagement, return-visits), different outcome (showed up: yes or no).
