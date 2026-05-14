@@ -151,27 +151,17 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
-    # Live Postgres per shard so admin APIs can actually serve data
-    # (was: DATABASE_URL='' shadow mode → 401 cascade across the suite).
-    # Each matrix shard gets its own service container — isolated state,
-    # parallel-safe.
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: wolfpack
-          POSTGRES_PASSWORD: wolfpack
-          POSTGRES_DB: wolfpack_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U wolfpack -d wolfpack_test"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 12
+    # Phase 1 Tests run in shadow mode (DATABASE_URL='') BY DESIGN. The
+    # admin contract specs explicitly test the demo-fallback path
+    # ("Runs in shadow mode (DATABASE_URL='') — expects demo/fallback data").
+    # Adding a live DB triggers real auth and breaks those contract
+    # tests. The schema-check gate (separate job) is the regression
+    # guard for migration correctness — that's the durable win from
+    # 2026-05-13's reconciliation work. Future integration tests that
+    # need a real DB belong in a separate suite, not here.
     env:
       CI: true
-      DATABASE_URL: 'postgres://wolfpack:wolfpack@localhost:5432/wolfpack_test'
+      DATABASE_URL: ''
       NEO4J_URL: ''
       REDIS_URL: ''
       NEXTAUTH_URL: 'http://localhost:3000'
@@ -184,12 +174,6 @@ jobs:
           cache: npm
 
       - run: npm ci
-
-      - name: Apply database migrations
-        run: npm run db:migrate
-
-      - name: Seed demo data (dealer + vehicles + leads)
-        run: npm run db:seed
 
       - name: Cache Playwright browsers
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5
