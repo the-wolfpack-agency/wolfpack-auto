@@ -10,6 +10,16 @@
 import { test, expect } from "@playwright/test";
 import path from "path";
 
+// Shadow-mode skip: logo upload + PUT /api/admin/settings hit dealer_settings
+// + dealer_branding tables and S3. In shadow mode (DATABASE_URL='') the
+// /admin/settings page 401s and the upload routes short-circuit, so the
+// "renders uploader" + "accepts valid PNG" assertions cannot pass. Re-run
+// with DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 test.describe("Logo Upload — Settings Branding", () => {
   test("settings page renders logo uploader", async ({ page }) => {
     await page.goto("/admin/settings", { waitUntil: "domcontentloaded" });

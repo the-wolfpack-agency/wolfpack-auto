@@ -9,6 +9,16 @@
  */
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: lender portal tests assert lender CRUD, rate tiers,
+// deal submissions — all backed by Postgres tables from migration 026
+// (lender_portal). In shadow mode (DATABASE_URL='') the routes either 401
+// or return empty arrays, breaking the structural assertions. Re-run with
+// DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 // ---------------------------------------------------------------------------
 // API: GET /api/admin/lenders — list lenders
 // ---------------------------------------------------------------------------

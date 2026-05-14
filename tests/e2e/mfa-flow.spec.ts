@@ -1,5 +1,15 @@
 import { test, expect } from "@playwright/test";
 
+// Shadow-mode skip: although most MFA assertions are "not 500", a handful
+// require persisted mfa_secrets rows (migration 020) + persisted user rows
+// to verify enrollment + verification + login flow. In shadow mode
+// (DATABASE_URL='') those paths cannot complete and the targeted tests fail.
+// Re-run with DATABASE_URL set.
+test.skip(
+  !process.env.DATABASE_URL,
+  "Needs real Postgres (Phase 1 Tests runs in shadow mode). Run via the real-DB integration phase or locally with DATABASE_URL set.",
+);
+
 /**
  * mfa-flow.spec.ts
  *
