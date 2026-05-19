@@ -67,7 +67,7 @@ const MOCK_COMMISSIONS: CommissionEntry[] = [
   },
   {
     id: "comm-004",
-    employee_name: "Mike Reynolds",
+    employee_name: "Mike Chen",
     employee_role: "salesperson",
     sale_id: "sale-003",
     deal_description: "2024 Ford F-150 XLT — Michael Chen",

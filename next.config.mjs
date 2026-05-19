@@ -35,6 +35,16 @@ const nextConfig = {
     ],
   },
 
+  async redirects() {
+    return [
+      /* The obvious /login URL was a dead 404 — admins live under
+       *  /admin/login. Demo dealers who guess the canonical login path
+       *  now land on the right page. */
+      { source: "/login", destination: "/admin/login", permanent: false },
+      { source: "/signin", destination: "/admin/login", permanent: false },
+    ];
+  },
+
   async headers() {
     return [
       {

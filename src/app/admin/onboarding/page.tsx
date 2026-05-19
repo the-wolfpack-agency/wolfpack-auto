@@ -26,12 +26,12 @@ const STEPS = [
 const STORAGE_KEY = "wolfpack_onboarding_progress";
 
 const DMS_PROVIDERS = [
-  { value: "cdk", label: "CDK Global" },
-  { value: "reynolds", label: "Reynolds & Reynolds" },
-  { value: "dealertrack", label: "DealerTrack" },
-  { value: "tekion", label: "Tekion" },
-  { value: "dealersocket", label: "DealerSocket" },
-  { value: "routeone", label: "RouteOne" },
+  { value: "csv", label: "CSV / Generic" },
+  { value: "xml", label: "XML / Generic" },
+  { value: "dms_a", label: "Provider A" },
+  { value: "dms_b", label: "Provider B" },
+  { value: "dms_c", label: "Provider C" },
+  { value: "other", label: "Other — connect later" },
 ] as const;
 
 type TeamMember = { email: string; role: "admin" | "manager" | "staff" };

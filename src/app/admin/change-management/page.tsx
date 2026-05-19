@@ -358,7 +358,7 @@ export default function ChangeManagementPage() {
                   value={formOwner}
                   onChange={(e) => setFormOwner(e.target.value)}
                   className="mt-1.5 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                  placeholder="Mike Reynolds"
+                  placeholder="Mike Chen"
                 />
               </div>
             </div>

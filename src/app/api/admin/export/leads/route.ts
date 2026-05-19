@@ -116,7 +116,7 @@ const SAMPLE_LEADS: Lead[] = [
     id: "lead-008", dealer_id: "demo-dealer", first_name: "Lauren", last_name: "Okafor",
     email: "lauren.okafor@gmail.com", phone: "+15551112233", vehicle_id: null,
     vehicle_interest: "2024 Tesla Model 3", source: "website_form", status: "contacted",
-    temperature: "warm", notes: "", structured_notes: [], assigned_to: "Mike Reynolds",
+    temperature: "warm", notes: "", structured_notes: [], assigned_to: "Mike Chen",
     message: "", follow_up_date: null, activity: [],
     utm_source: "facebook", utm_medium: "social", utm_campaign: "ev-promo",
     referrer_url: "https://www.facebook.com",

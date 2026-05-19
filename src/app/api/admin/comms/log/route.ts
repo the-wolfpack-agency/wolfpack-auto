@@ -36,7 +36,7 @@ const MOCK_LOG: MessageLogEntry[] = [
     template_id: "tpl-001",
     lead_id: "lead-042",
     status: "opened",
-    sent_by: "Mike Reynolds",
+    sent_by: "Mike Chen",
     sent_at: "2026-03-27T14:30:00Z",
   },
   {
@@ -101,7 +101,7 @@ const MOCK_LOG: MessageLogEntry[] = [
     template_id: null,
     lead_id: "lead-048",
     status: "delivered",
-    sent_by: "Mike Reynolds",
+    sent_by: "Mike Chen",
     sent_at: "2026-03-25T15:30:00Z",
   },
   {
@@ -153,7 +153,7 @@ const MOCK_LOG: MessageLogEntry[] = [
     template_id: null,
     lead_id: "lead-045",
     status: "failed",
-    sent_by: "Mike Reynolds",
+    sent_by: "Mike Chen",
     sent_at: "2026-03-23T11:00:00Z",
   },
 ];

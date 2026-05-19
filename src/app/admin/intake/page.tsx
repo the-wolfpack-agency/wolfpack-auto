@@ -58,13 +58,11 @@ const DEALER_ID = process.env.NEXT_PUBLIC_DEALER_ID ?? "00000000-0000-4000-a000-
 
 const DMS_PROVIDERS = [
   { value: "GENERIC_CSV", label: "CSV / Generic" },
-  { value: "CDK", label: "CDK Global" },
-  { value: "REYNOLDS", label: "Reynolds & Reynolds" },
-  { value: "DEALERTRACK", label: "DealerTrack" },
-  { value: "TEKION", label: "Tekion" },
-  { value: "DEALERSOCKET", label: "DealerSocket" },
-  { value: "ROUTEONE", label: "RouteOne" },
-  { value: "GENERIC_XML", label: "XML" },
+  { value: "GENERIC_XML", label: "XML / Generic" },
+  { value: "DMS_A", label: "Provider A" },
+  { value: "DMS_B", label: "Provider B" },
+  { value: "DMS_C", label: "Provider C" },
+  { value: "OTHER", label: "Other — connect later" },
 ] as const;
 
 /* ------------------------------------------------------------------ */

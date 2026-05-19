@@ -300,7 +300,7 @@ export default function TrainingPage() {
               required
               value={fEmployee}
               onChange={(e) => setFEmployee(e.target.value)}
-              placeholder="e.g. Mike Reynolds"
+              placeholder="e.g. Mike Chen"
               className="w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               style={{ fontSize: 16 }}
             />

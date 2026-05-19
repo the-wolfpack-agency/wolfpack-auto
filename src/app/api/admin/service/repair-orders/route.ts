@@ -65,7 +65,7 @@ const MOCK_ROS: RepairOrder[] = [
     vin: "1FTEW1EP3MFA78901",
     odometer: 47832,
     status: "waiting_approval",
-    advisor: "Mike Reynolds",
+    advisor: "Mike Chen",
     technician: "Carlos Rivera",
     line_items: [
       {
@@ -155,7 +155,7 @@ const MOCK_ROS: RepairOrder[] = [
     vin: "3GCUYDED4LG567890",
     odometer: 61284,
     status: "completed",
-    advisor: "Mike Reynolds",
+    advisor: "Mike Chen",
     technician: "Maria Santos",
     line_items: [
       {

@@ -54,7 +54,7 @@ const MOCK_REPORTS: EngagementReport[] = [
   {
     id: "er-003",
     customer_name: "Robert Garcia",
-    employee_name: "Mike Reynolds",
+    employee_name: "Mike Chen",
     interaction_type: "walk_in",
     outcome: "lost",
     competitor_mentioned: "CarMax",

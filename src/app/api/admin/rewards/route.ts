@@ -28,7 +28,7 @@ export interface RecentAward {
 
 const MOCK_LEADERBOARD: LeaderboardEntry[] = [
   { employee: "Sarah Chen", points: 820, badges: ["gold", "top-closer"], rank: 1 },
-  { employee: "Mike Reynolds", points: 610, badges: ["silver", "leader"], rank: 2 },
+  { employee: "Mike Chen", points: 610, badges: ["silver", "leader"], rank: 2 },
   { employee: "Priya Patel", points: 445, badges: ["silver"], rank: 3 },
   { employee: "James Kowalski", points: 290, badges: ["bronze"], rank: 4 },
   { employee: "Tom Bradley", points: 175, badges: ["bronze"], rank: 5 },
@@ -38,7 +38,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
 const MOCK_RECENT_AWARDS: RecentAward[] = [
   { employee: "Sarah Chen", award: "Top Closer — March", points: 150, date: "2026-03-25T10:00:00Z" },
   { employee: "Priya Patel", award: "Customer Satisfaction Star", points: 75, date: "2026-03-24T14:00:00Z" },
-  { employee: "Mike Reynolds", award: "Team Leadership Award", points: 100, date: "2026-03-22T09:00:00Z" },
+  { employee: "Mike Chen", award: "Team Leadership Award", points: 100, date: "2026-03-22T09:00:00Z" },
   { employee: "James Kowalski", award: "Fastest Response Time", points: 50, date: "2026-03-20T16:00:00Z" },
 ];
 

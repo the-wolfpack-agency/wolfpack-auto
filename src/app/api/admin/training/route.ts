@@ -28,7 +28,7 @@ interface Certification {
 const SAMPLE_CERTIFICATIONS: Certification[] = [
   {
     id: "cert-001",
-    employee_name: "Mike Reynolds",
+    employee_name: "Mike Chen",
     program_name: "Product Knowledge — EV Lineup",
     oem_program_id: "OEM-EV-2024",
     status: "completed",
@@ -39,7 +39,7 @@ const SAMPLE_CERTIFICATIONS: Certification[] = [
   },
   {
     id: "cert-002",
-    employee_name: "Mike Reynolds",
+    employee_name: "Mike Chen",
     program_name: "Finance & Insurance Compliance",
     oem_program_id: null,
     status: "in_progress",

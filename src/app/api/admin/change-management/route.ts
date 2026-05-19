@@ -41,7 +41,7 @@ const MOCK_CHANGES: ChangeRecord[] = [
     category: "pricing",
     impact: "high",
     status: "active",
-    owner: "Mike Reynolds",
+    owner: "Mike Chen",
     effective_date: "2026-03-01",
     metrics_before: {
       avg_time_to_contact_hours: 18,

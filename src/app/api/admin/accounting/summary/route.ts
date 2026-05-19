@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
     by_salesperson: [
       { name: "Jake Martinez", units: 3, front_gross: 8450, back_gross: 5075, fi_gross: 5550, total_gross: 19075 },
       { name: "Tom Bradley", units: 3, front_gross: 9800, back_gross: 4900, fi_gross: 5850, total_gross: 20550 },
-      { name: "Mike Reynolds", units: 2, front_gross: 7550, back_gross: 4850, fi_gross: 5100, total_gross: 17500 },
+      { name: "Mike Chen", units: 2, front_gross: 7550, back_gross: 4850, fi_gross: 5100, total_gross: 17500 },
     ],
     by_deal_type: [
       { type: "retail", count: 7, gross: 52925 },

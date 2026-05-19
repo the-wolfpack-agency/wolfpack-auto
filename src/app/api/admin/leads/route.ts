@@ -10,7 +10,7 @@ const DEALER_ID =
   process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 const TEAM_MEMBERS = [
-  "Mike Reynolds",
+  "Mike Chen",
   "Sarah Chen",
   "James Kowalski",
   "Priya Patel",
@@ -73,7 +73,7 @@ const SAMPLE_LEADS: Lead[] = [
     follow_up_date: "2026-03-26T10:00:00Z",
     activity: [
       { id: "a2", type: "status_change", description: "Lead created with status New", author: "System", created_at: "2026-03-22T09:00:00Z" },
-      { id: "a3", type: "assignment", description: "Assigned to Sarah Chen", author: "Mike Reynolds", created_at: "2026-03-22T09:15:00Z" },
+      { id: "a3", type: "assignment", description: "Assigned to Sarah Chen", author: "Mike Chen", created_at: "2026-03-22T09:15:00Z" },
       { id: "a4", type: "status_change", description: "Status changed from New to Contacted", author: "Sarah Chen", created_at: "2026-03-23T14:30:00Z" },
     ],
     utm_source: null,
@@ -104,7 +104,7 @@ const SAMPLE_LEADS: Lead[] = [
     follow_up_date: "2026-03-26T09:00:00Z",
     activity: [
       { id: "a5", type: "status_change", description: "Lead created with status New", author: "System", created_at: "2026-03-20T15:00:00Z" },
-      { id: "a6", type: "assignment", description: "Assigned to James Kowalski", author: "Mike Reynolds", created_at: "2026-03-20T15:10:00Z" },
+      { id: "a6", type: "assignment", description: "Assigned to James Kowalski", author: "Mike Chen", created_at: "2026-03-20T15:10:00Z" },
       { id: "a7", type: "status_change", description: "Status changed from New to Contacted", author: "James Kowalski", created_at: "2026-03-20T16:00:00Z" },
       { id: "a8", type: "status_change", description: "Status changed from Contacted to Qualified", author: "James Kowalski", created_at: "2026-03-21T11:00:00Z" },
     ],
@@ -246,15 +246,15 @@ const SAMPLE_LEADS: Lead[] = [
     temperature: "warm",
     notes: "",
     structured_notes: [
-      { id: "n8", text: "Interested in EV tax credits. Sent info packet.", author: "Mike Reynolds", created_at: "2026-03-24T09:00:00Z" },
+      { id: "n8", text: "Interested in EV tax credits. Sent info packet.", author: "Mike Chen", created_at: "2026-03-24T09:00:00Z" },
     ],
-    assigned_to: "Mike Reynolds",
+    assigned_to: "Mike Chen",
     message: "Do you have any Model 3s in stock? What about the tax credit?",
     follow_up_date: "2026-03-28T14:00:00Z",
     activity: [
       { id: "a16", type: "status_change", description: "Lead created with status New", author: "System", created_at: "2026-03-23T16:00:00Z" },
-      { id: "a17", type: "assignment", description: "Assigned to Mike Reynolds", author: "System", created_at: "2026-03-23T16:05:00Z" },
-      { id: "a18", type: "status_change", description: "Status changed from New to Contacted", author: "Mike Reynolds", created_at: "2026-03-24T09:00:00Z" },
+      { id: "a17", type: "assignment", description: "Assigned to Mike Chen", author: "System", created_at: "2026-03-23T16:05:00Z" },
+      { id: "a18", type: "status_change", description: "Status changed from New to Contacted", author: "Mike Chen", created_at: "2026-03-24T09:00:00Z" },
     ],
     utm_source: "facebook",
     utm_medium: "social",
@@ -312,7 +312,7 @@ const SAMPLE_LEADS: Lead[] = [
     follow_up_date: "2026-03-27T11:00:00Z",
     activity: [
       { id: "a20", type: "status_change", description: "Lead created with status New", author: "System", created_at: "2026-03-23T11:00:00Z" },
-      { id: "a21", type: "assignment", description: "Assigned to Priya Patel", author: "Mike Reynolds", created_at: "2026-03-23T11:15:00Z" },
+      { id: "a21", type: "assignment", description: "Assigned to Priya Patel", author: "Mike Chen", created_at: "2026-03-23T11:15:00Z" },
       { id: "a22", type: "status_change", description: "Status changed to Qualified", author: "Priya Patel", created_at: "2026-03-25T09:00:00Z" },
     ],
     utm_source: null,
