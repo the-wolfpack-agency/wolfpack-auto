@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { reportClientError } from "@/lib/client-log";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -250,7 +251,7 @@ export default function DealDetailPage() {
         setSelectedFiIds(new Set(d.fi_products.map((p) => p.id)));
       }
     } catch (err) {
-      console.error("Failed to fetch deal:", err);
+      reportClientError("admin.deal_detail.fetch_failed", err);
     } finally {
       setLoading(false);
     }
@@ -265,7 +266,7 @@ export default function DealDetailPage() {
         setCatalog(data.products ?? []);
       }
     } catch (err) {
-      console.error("Failed to fetch F&I catalog:", err);
+      reportClientError("admin.deal_detail.fi_catalog_failed", err);
     }
   }, []);
 
@@ -296,7 +297,7 @@ export default function DealDetailPage() {
         setCalcResult(data.calculation);
       }
     } catch (err) {
-      console.error("Calculate failed:", err);
+      reportClientError("admin.deal_detail.calculate_failed", err);
     } finally {
       setCalculating(false);
     }
@@ -316,7 +317,7 @@ export default function DealDetailPage() {
         setDeal(data.deal);
       }
     } catch (err) {
-      console.error("Status update failed:", err);
+      reportClientError("admin.deal_detail.status_update_failed", err);
     } finally {
       setSaving(false);
     }

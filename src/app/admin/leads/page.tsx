@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import LeadDetailPanel from "@/components/LeadDetailPanel";
+import { reportClientError } from "@/lib/client-log";
 import type {
   Lead,
   LeadStatus,
@@ -130,7 +131,7 @@ export default function LeadsManagementPage() {
         setTeamMembers(data.team_members ?? []);
       }
     } catch (err) {
-      console.error("Failed to fetch leads:", err);
+      reportClientError("admin.leads.fetch_failed", err);
     } finally {
       setLoading(false);
     }
@@ -161,7 +162,7 @@ export default function LeadsManagementPage() {
         setPredictions(map);
       }
     } catch (err) {
-      console.error("Failed to fetch predictions:", err);
+      reportClientError("admin.leads.predictions_failed", err);
     } finally {
       setPredictLoading(false);
     }
@@ -252,7 +253,7 @@ export default function LeadsManagementPage() {
         setBulkValue("");
       }
     } catch (err) {
-      console.error("Bulk operation failed:", err);
+      reportClientError("admin.leads.bulk_failed", err);
     } finally {
       setBulkLoading(false);
     }

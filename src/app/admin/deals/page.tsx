@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { reportClientError } from "@/lib/client-log";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -169,7 +170,7 @@ export default function DealDeskingPage() {
 
         setShowNewDeal(true);
       } catch (err) {
-        console.error("Failed to fetch lead for conversion:", err);
+        reportClientError("admin.deals.lead_conversion_fetch_failed", err);
         // Still open the modal — user can fill manually
         setShowNewDeal(true);
       }
@@ -194,7 +195,7 @@ export default function DealDeskingPage() {
         setDeals(data.deals ?? []);
       }
     } catch (err) {
-      console.error("Failed to fetch deals:", err);
+      reportClientError("admin.deals.fetch_failed", err);
     } finally {
       setLoading(false);
     }
@@ -281,7 +282,7 @@ export default function DealDeskingPage() {
         fetchDeals();
       }
     } catch (err) {
-      console.error("Create deal failed:", err);
+      reportClientError("admin.deals.create_failed", err);
     } finally {
       setCreating(false);
     }
