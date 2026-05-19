@@ -178,8 +178,14 @@ function getOrCreateFingerprint(): string {
 /*  Event buffer & flush                                               */
 /* ------------------------------------------------------------------ */
 
-const FLUSH_INTERVAL_MS = 5_000;
-const FLUSH_THRESHOLD = 20;
+/* Raised from 5s/20 events to 30s/100 events on 2026-05-19 after the
+ * Neon data-transfer quota was exhausted. The earlier cadence was
+ * writing every open tab into analytics_events six times faster than
+ * the retention cron could prune. The beforeunload flush handler still
+ * catches in-flight events when a user closes the tab so no signal is
+ * lost. See scripts/scan-db-burners.sh + docs/handoff-2026-05-19.md. */
+const FLUSH_INTERVAL_MS = 30_000;
+const FLUSH_THRESHOLD = 100;
 
 /** Categorize a numeric value into a privacy-safe range bucket. */
 function categorizeValue(val: string): string {

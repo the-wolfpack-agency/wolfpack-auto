@@ -257,8 +257,8 @@ export default function EngagementAlertsPage() {
   useEffect(() => {
     loadAlerts();
 
-    // Real-time polling every 30 seconds
-    const interval = setInterval(loadAlerts, 30 * 1000);
+    // Polling every 2 minutes (raised from 30s — Neon-quota fix 2026-05-19)
+    const interval = setInterval(loadAlerts, 120 * 1000);
     return () => clearInterval(interval);
   }, [loadAlerts]);
 

@@ -86,7 +86,7 @@ export function HotLeadsWidget() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 30 * 1000);
+    const interval = setInterval(load, 120 * 1000); // 2 min (raised from 30s — Neon-quota fix 2026-05-19)
     return () => clearInterval(interval);
   }, [load]);
 

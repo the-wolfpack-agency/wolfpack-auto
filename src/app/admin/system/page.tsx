@@ -91,7 +91,7 @@ export default function SystemHealthPage() {
 
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(fetchHealth, 15_000); // refresh every 15s
+    const interval = setInterval(fetchHealth, 60_000); // refresh every 60s (raised from 15s — Neon-quota fix 2026-05-19)
     return () => clearInterval(interval);
   }, [autoRefresh, fetchHealth]);
 

@@ -24,7 +24,7 @@ interface Props {
   initial: StatusPayload | null;
 }
 
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 120_000; // 2 min (raised from 30s — Neon-quota fix 2026-05-19)
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
