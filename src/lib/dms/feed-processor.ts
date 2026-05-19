@@ -9,9 +9,68 @@
 
 import { query } from "@/lib/db";
 import { cacheInvalidate } from "@/lib/cache";
+import { generateBackground } from "@/lib/background-generator";
 import { normalizeVehicle } from "./normalizer";
 import { validateVIN } from "./vin-decoder";
 import type { DMSProvider, DMSVehicleRecord, DMSFeedResult, DMSFeedError } from "./types";
+
+/**
+ * Pull the canonical "primary photo" URL from a normalised vehicle's photo set.
+ *
+ * Vehicle photos can arrive in a handful of shapes:
+ *   - normalised by the DMS pipeline: [{ url, alt, sort_order, ... }, ...]
+ *   - JSON-string column read from Postgres: '[{"url":"..."}, ...]' or '[...]'
+ *   - legacy string-only array: ["https://...", ...]
+ *   - single string URL.
+ *
+ * Returns null when no usable URL is present.
+ */
+function primaryPhotoUrl(photos: unknown): string | null {
+  if (!photos) return null;
+
+  // Postgres JSONB column read back as a raw JSON string.
+  if (typeof photos === "string") {
+    const trimmed = photos.trim();
+    if (trimmed.length === 0) return null;
+    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+      try {
+        return primaryPhotoUrl(JSON.parse(trimmed));
+      } catch {
+        return trimmed;
+      }
+    }
+    return trimmed;
+  }
+
+  if (Array.isArray(photos)) {
+    for (const entry of photos) {
+      if (typeof entry === "string" && entry.trim().length > 0) {
+        return entry;
+      }
+      if (
+        entry &&
+        typeof entry === "object" &&
+        "url" in (entry as Record<string, unknown>) &&
+        typeof (entry as Record<string, unknown>).url === "string" &&
+        ((entry as Record<string, string>).url as string).trim().length > 0
+      ) {
+        return (entry as Record<string, string>).url;
+      }
+    }
+    return null;
+  }
+
+  if (
+    photos &&
+    typeof photos === "object" &&
+    "url" in (photos as Record<string, unknown>) &&
+    typeof (photos as Record<string, unknown>).url === "string"
+  ) {
+    return (photos as Record<string, string>).url || null;
+  }
+
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Feed processing
@@ -96,10 +155,19 @@ export async function processFeed(
     // ------------------------------------------------------------------
 
     try {
-      const existing = await query<{ id: string }>(
-        `SELECT id FROM vehicles WHERE dealer_id = $1 AND vin = $2`,
+      const existing = await query<{ id: string; photos: unknown }>(
+        `SELECT id, photos FROM vehicles WHERE dealer_id = $1 AND vin = $2`,
         [dealerId, vin],
       );
+
+      // Capture state required for the background-enqueue decision.
+      const wasExisting = existing.rows.length > 0;
+      const previousPrimaryPhoto = wasExisting
+        ? primaryPhotoUrl(existing.rows[0]?.photos)
+        : null;
+      const nextPrimaryPhoto = primaryPhotoUrl(vehicle.photos);
+      const vehicleIdForJob =
+        (wasExisting ? existing.rows[0]?.id : null) ?? null;
 
       if (existing.rows.length > 0) {
         // Update existing vehicle
@@ -207,6 +275,33 @@ export async function processFeed(
           ],
         );
         added++;
+      }
+
+      // ----------------------------------------------------------------
+      // Auto-enqueue a fal.ai background-generation job when:
+      //   - This is a brand-new vehicle ingest with at least one photo, OR
+      //   - The primary photo URL changed since last ingest.
+      // The call is fire-and-forget so any failure here cannot sink the
+      // ingest. Idempotency is enforced inside generateBackground().
+      // ----------------------------------------------------------------
+      if (nextPrimaryPhoto) {
+        const photoChanged =
+          !wasExisting || nextPrimaryPhoto !== previousPrimaryPhoto;
+        if (photoChanged) {
+          void generateBackground({
+            dealer_id: dealerId,
+            vehicle_id: vehicleIdForJob,
+            vin,
+            source_photo_url: nextPrimaryPhoto,
+          }).catch((err) => {
+            // Last-resort guard — generateBackground swallows its own errors,
+            // but this keeps the promise chain explicit.
+            console.error(
+              `[dms.feed-processor] background enqueue failed for ${vin}:`,
+              err,
+            );
+          });
+        }
       }
     } catch (err) {
       errors.push({

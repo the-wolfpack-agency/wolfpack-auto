@@ -13,18 +13,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AuditRequestForm from "@/components/audits/AuditRequestForm";
 import SampleAuditEmbed from "./SampleAuditEmbed";
+import { getDealerBrandedTitle } from "@/lib/page-title";
 
-export const metadata: Metadata = {
-  title: "Free F&I Penetration Audit — Wolfpack Auto",
-  description:
-    "Free 4-page PDF audit of your dealership's F&I performance. Upload three months of funded deals; we return a manager-by-manager scorecard, product penetration heatmap, and ranked opportunities. No call required.",
-  openGraph: {
-    title: "Free F&I Penetration Audit",
+export async function generateMetadata(): Promise<Metadata> {
+  const title = await getDealerBrandedTitle("Free F&I Penetration Audit");
+  return {
+    title,
     description:
-      "4-page PDF audit. Upload three months of funded deals. No call required.",
-    type: "website",
-  },
-};
+      "Free 4-page PDF audit of your dealership's F&I performance. Upload three months of funded deals; we return a manager-by-manager scorecard, product penetration heatmap, and ranked opportunities. No call required.",
+    openGraph: {
+      title: "Free F&I Penetration Audit",
+      description:
+        "4-page PDF audit. Upload three months of funded deals. No call required.",
+      type: "website",
+    },
+  };
+}
 
 const BULLETS = [
   {

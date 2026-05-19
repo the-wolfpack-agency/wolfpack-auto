@@ -669,3 +669,92 @@ export function validateCustomBackgroundInput(input: {
 
   return { valid: errors.length === 0, errors };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Auto-enqueue for DMS ingest                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Enqueue a background-generation job for a vehicle photo.
+ *
+ * Idempotent: skipped when the source_photo_url already has a queued or
+ * completed job for the same vehicle. Designed to be called fire-and-forget
+ * from DMS ingest pipelines so failures here never sink the ingest.
+ *
+ * Behaviour:
+ *  - If DATABASE_URL is unset (shadow mode) -> log + return.
+ *  - If FAL_API_KEY / FAL_KEY is unset      -> log + return without inserting.
+ *  - If the same source photo URL is already queued / processing / completed
+ *    for this vehicle, skip.
+ *  - Otherwise insert a row in background_jobs with status 'queued'.
+ *
+ * Returns the new job id, "skipped" when no-op, or null on error.
+ */
+export async function generateBackground(input: {
+  dealer_id: string;
+  vehicle_id: string | null;
+  vin: string;
+  source_photo_url: string;
+}): Promise<string | "skipped" | null> {
+  const { dealer_id, vehicle_id, vin, source_photo_url } = input;
+
+  // No source photo -> nothing to do.
+  if (!source_photo_url || source_photo_url.trim().length === 0) {
+    return "skipped";
+  }
+
+  // No DB -> nothing to persist.
+  if (!process.env.DATABASE_URL) {
+    console.log(
+      `[background] DATABASE_URL not set; skipping background queue for ${vin}`,
+    );
+    return "skipped";
+  }
+
+  // Respect missing fal.ai credentials -> log + skip silently.
+  const hasFal = !!(process.env.FAL_API_KEY ?? process.env.FAL_KEY);
+  if (!hasFal) {
+    console.log(
+      `[background] FAL_API_KEY not set; skipping background queue for ${vin}`,
+    );
+    return "skipped";
+  }
+
+  try {
+    const { query } = await import("@/lib/db");
+
+    // De-dupe: if any active / completed job for the same vehicle already
+    // references this exact source photo, skip — prevents infinite-loop
+    // re-queue on idempotent DMS feeds.
+    if (vehicle_id) {
+      const existing = await query<{ id: string }>(
+        `SELECT id FROM background_jobs
+          WHERE dealer_id = $1
+            AND vehicle_id = $2::uuid
+            AND source_photo_url = $3
+            AND status IN ('queued', 'removing_bg', 'compositing',
+                           'optimizing', 'uploading', 'completed')
+          LIMIT 1`,
+        [dealer_id, vehicle_id, source_photo_url],
+      );
+      if (existing.rows.length > 0) {
+        return "skipped";
+      }
+    }
+
+    const { rows } = await query<{ id: string }>(
+      `INSERT INTO background_jobs
+         (dealer_id, vehicle_id, vin, source_photo_url, status, ai_provider)
+       VALUES ($1, $2::uuid, $3, $4, 'queued', 'fal')
+       RETURNING id`,
+      [dealer_id, vehicle_id, vin, source_photo_url],
+    );
+    return rows[0]?.id ?? null;
+  } catch (err) {
+    console.error(
+      `[background] Failed to enqueue background job for ${vin}:`,
+      err,
+    );
+    return null;
+  }
+}

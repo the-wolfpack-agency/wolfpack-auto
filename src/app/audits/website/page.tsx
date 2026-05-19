@@ -14,18 +14,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import WebsiteAuditRequestForm from "@/components/audits/WebsiteAuditRequestForm";
 import SampleWebsiteAuditEmbed from "./SampleWebsiteAuditEmbed";
+import { getDealerBrandedTitle } from "@/lib/page-title";
 
-export const metadata: Metadata = {
-  title: "Free Website Audit - Wolfpack Auto",
-  description:
-    "Free 4-page PDF audit of your dealership's customer-facing website. We scan your homepage and inventory pages, score performance and conversion, and return a ranked list of actions. No call required.",
-  openGraph: {
-    title: "Free Dealership Website Audit",
+export async function generateMetadata(): Promise<Metadata> {
+  const title = await getDealerBrandedTitle("Free Website Audit");
+  return {
+    title,
     description:
-      "4-page PDF audit. We scan your site. You get a ranked list of actions.",
-    type: "website",
-  },
-};
+      "Free 4-page PDF audit of your dealership's customer-facing website. We scan your homepage and inventory pages, score performance and conversion, and return a ranked list of actions. No call required.",
+    openGraph: {
+      title: "Free Dealership Website Audit",
+      description:
+        "4-page PDF audit. We scan your site. You get a ranked list of actions.",
+      type: "website",
+    },
+  };
+}
 
 const BULLETS = [
   {

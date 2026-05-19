@@ -19,21 +19,25 @@ import {
   COMPARISON_ROWS,
   FAQ_ENTRIES,
 } from "@/lib/marketing/pricing-data";
+import { getDealerBrandedTitle } from "@/lib/page-title";
 
 export const dynamic = "force-static";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description:
-    "Honest pricing for a modern dealer management system. Three plans (Starter, Growth, Enterprise) starting at $499 per rooftop per month. No DMS lock-in, no setup fees on Starter, full data export on cancellation.",
-  alternates: { canonical: "/pricing" },
-  openGraph: {
-    title: "Pricing | Wolfpack Auto",
+export async function generateMetadata(): Promise<Metadata> {
+  const title = await getDealerBrandedTitle("Pricing");
+  return {
+    title,
     description:
-      "Honest pricing for a modern dealer management system. No DMS lock-in, no setup fees on Starter, full data export on cancellation.",
-    type: "website",
-  },
-};
+      "Honest pricing for a modern dealer management system. Three plans (Starter, Growth, Enterprise) starting at $499 per rooftop per month. No DMS lock-in, no setup fees on Starter, full data export on cancellation.",
+    alternates: { canonical: "/pricing" },
+    openGraph: {
+      title,
+      description:
+        "Honest pricing for a modern dealer management system. No DMS lock-in, no setup fees on Starter, full data export on cancellation.",
+      type: "website",
+    },
+  };
+}
 
 function ComparisonCell({ value }: { value: string | boolean }) {
   if (value === true) {

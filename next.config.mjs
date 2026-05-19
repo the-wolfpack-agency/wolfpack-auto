@@ -42,6 +42,17 @@ const nextConfig = {
        *  now land on the right page. */
       { source: "/login", destination: "/admin/login", permanent: false },
       { source: "/signin", destination: "/admin/login", permanent: false },
+
+      /* Client-deployment polish: three intuitive paths previously 404'd.
+       *  - /admin/dashboard was a holdover from an older nav; the real
+       *    admin home is /admin.
+       *  - /dealers (index) only resolves under /dealers/[slug] for a
+       *    specific tenant; the marketing equivalent is /pricing.
+       *  - /audits has sub-paths (/audits/fi-penetration, /audits/website)
+       *    but no index — point visitors at the F&I audit landing page. */
+      { source: "/admin/dashboard", destination: "/admin", permanent: false },
+      { source: "/dealers", destination: "/pricing", permanent: false },
+      { source: "/audits", destination: "/audits/fi-penetration", permanent: false },
     ];
   },
 
