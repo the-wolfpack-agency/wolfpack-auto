@@ -260,6 +260,34 @@ function applyHeaders(
     response.headers.set(key, value);
   }
 
+  // Frame protection — owned HERE (not next.config) so it can vary per-request.
+  // The admin heatmap embeds public pages as a same-origin iframe ONLY under
+  // ?__heatmap_bg=1; that request gets SAMEORIGIN / frame-ancestors 'self'.
+  // Every other request stays DENY / frame-ancestors 'none', so third-party
+  // clickjacking is still fully blocked. We do this in middleware because
+  // Next.js `headers()` query-condition rules are ignored at Vercel's edge.
+  const isHeatmapPreview =
+    request?.nextUrl?.searchParams.get("__heatmap_bg") === "1";
+  response.headers.set("X-Frame-Options", isHeatmapPreview ? "SAMEORIGIN" : "DENY");
+  // SECURITY_HEADERS (applied above) already sets the CSP with
+  // `frame-ancestors 'none'`. For preview, REWRITE that directive to 'self' in
+  // place — appending a second value would leave 'none' as the intersection and
+  // still block framing. Non-preview keeps 'none' untouched.
+  if (isHeatmapPreview) {
+    const csp = response.headers.get("Content-Security-Policy");
+    if (csp && /frame-ancestors/.test(csp)) {
+      response.headers.set(
+        "Content-Security-Policy",
+        csp.replace(/frame-ancestors[^;]*/, "frame-ancestors 'self'"),
+      );
+    } else if (csp) {
+      response.headers.set(
+        "Content-Security-Policy",
+        `${csp}; frame-ancestors 'self'`,
+      );
+    }
+  }
+
   // Strip server identification
   response.headers.delete("X-Powered-By");
   response.headers.delete("Server");
