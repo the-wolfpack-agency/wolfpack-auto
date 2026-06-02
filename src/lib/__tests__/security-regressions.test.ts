@@ -686,7 +686,6 @@ describe("PEN-004: Security headers configured", () => {
   const requiredHeaders = [
     { name: "Strict-Transport-Security", pattern: /includeSubDomains/ },
     { name: "X-Content-Type-Options", pattern: /nosniff/ },
-    { name: "X-Frame-Options", pattern: /DENY/ },
     { name: "Referrer-Policy", pattern: /strict-origin-when-cross-origin/ },
     { name: "Content-Security-Policy", pattern: /default-src/ },
     { name: "X-XSS-Protection", pattern: /1;\s*mode=block/ },
@@ -702,6 +701,21 @@ describe("PEN-004: Security headers configured", () => {
       expect(src).toMatch(pattern);
     });
   }
+
+  // X-Frame-Options is owned by middleware (NOT next.config) because it varies
+  // per-request: DENY by default, SAMEORIGIN only for the heatmap preview
+  // (?__heatmap_bg=1). next.config query-condition header rules are ignored at
+  // Vercel's edge, so the per-request decision must live in middleware.
+  it("X-Frame-Options header is configured (in middleware, default DENY)", () => {
+    const { readFileSync } = require("fs");
+    const { join } = require("path");
+    const src = readFileSync(join(__dirname, "../../middleware.ts"), "utf-8");
+    expect(src).toContain("X-Frame-Options");
+    expect(src).toMatch(/DENY/);
+    // Preview exception must be SAME-ORIGIN only — never loosened to a wildcard.
+    expect(src).toMatch(/SAMEORIGIN/);
+    expect(src).not.toMatch(/X-Frame-Options['"\s,:]+\*/);
+  });
 
   it("security-headers.ts module exports all required headers", () => {
     const { readFileSync } = require("fs");

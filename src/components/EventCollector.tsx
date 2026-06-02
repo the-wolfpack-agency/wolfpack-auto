@@ -187,6 +187,14 @@ function getOrCreateFingerprint(): string {
 const FLUSH_INTERVAL_MS = 30_000;
 const FLUSH_THRESHOLD = 100;
 
+/* Fast-flush for clicks: heatmap_click events schedule a flush 3s after
+ * the last click (debounced). High-volume events (heatmap_move, page_view,
+ * heartbeat) are NOT affected — they still use the 30s timer.
+ * This means a clicked dot appears within ~3s instead of up to 30s,
+ * without materially increasing write volume (a burst of clicks → one POST). */
+const CLICK_FLUSH_DELAY_MS = 3_000;
+let clickFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
 /** Categorize a numeric value into a privacy-safe range bucket. */
 function categorizeValue(val: string): string {
   const n = parseFloat(val.replace(/[^0-9.]/g, ""));
@@ -266,7 +274,26 @@ function enqueueEvent(event: AnalyticsEvent): void {
   eventBuffer.push(event);
 
   if (eventBuffer.length >= FLUSH_THRESHOLD) {
+    // Threshold reached — flush immediately and cancel any pending timers.
+    if (clickFlushTimer) {
+      clearTimeout(clickFlushTimer);
+      clickFlushTimer = null;
+    }
     flushEvents();
+  } else if (event.event_type === "heatmap_click") {
+    // Click fast-flush: debounce to CLICK_FLUSH_DELAY_MS after the last click.
+    // If the main timer would fire sooner, keep it (don't cancel).
+    if (clickFlushTimer) {
+      clearTimeout(clickFlushTimer);
+    }
+    clickFlushTimer = setTimeout(() => {
+      clickFlushTimer = null;
+      flushEvents();
+    }, CLICK_FLUSH_DELAY_MS);
+    // Also start the regular timer if not already running.
+    if (!flushTimer) {
+      flushTimer = setTimeout(flushEvents, FLUSH_INTERVAL_MS);
+    }
   } else if (!flushTimer) {
     flushTimer = setTimeout(flushEvents, FLUSH_INTERVAL_MS);
   }
@@ -276,6 +303,10 @@ function flushEvents(): void {
   if (flushTimer) {
     clearTimeout(flushTimer);
     flushTimer = null;
+  }
+  if (clickFlushTimer) {
+    clearTimeout(clickFlushTimer);
+    clickFlushTimer = null;
   }
 
   if (eventBuffer.length === 0) return;
@@ -316,22 +347,34 @@ function isHeatmapPreview(): boolean {
   return new URLSearchParams(window.location.search).get("__heatmap_bg") === "1";
 }
 
+/**
+ * Thin wrapper — handles preview-mode guard (no hooks in preview branch).
+ * In preview mode renders children directly with ZERO tracking.
+ * In normal mode delegates to EventCollectorInner which owns all hooks/effects.
+ * This split is required by the Rules of Hooks: hooks must never appear after
+ * a conditional return inside the same component.
+ */
 export default function EventCollector({
   children,
 }: {
   children: ReactNode;
 }) {
-  // -------------------------------------------------------------------------
-  // PREVIEW MODE GUARD — short-circuit all tracking when the page is embedded
-  // as the heatmap background iframe (?__heatmap_bg=1).  The check runs at
-  // the very top of the component so NO useEffect / listener / enqueueEvent
-  // call is ever reached in preview mode.  The module-level eventBuffer and
-  // flushTimer are also left untouched (no flush, no beacon, no fetch).
-  // -------------------------------------------------------------------------
   if (isHeatmapPreview()) {
+    // Preview mode: render children directly, no tracking, no hooks.
     return <>{children}</>;
   }
+  return <EventCollectorInner>{children}</EventCollectorInner>;
+}
 
+/**
+ * Inner component that contains ALL hooks/effects. Only mounted in non-preview
+ * mode, so the Rules of Hooks are satisfied.
+ */
+function EventCollectorInner({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const sessionId = useRef("");
   const fingerprint = useRef("");
   const pageEnteredAt = useRef(Date.now());
@@ -2437,21 +2480,68 @@ export default function EventCollector({
     const ANON_MOVE_INTERVAL_MS = 2000;
     let lastMoveEmit = 0;
 
+    /** Build a short, privacy-safe CSS-ish element selector for the clicked
+     *  target. Uses tagName + (#id OR .firstClass OR [data-track=val]) +
+     *  :nth-of-type(n) for disambiguation.
+     *  ABSOLUTELY NO text content, NO href, NO input value, NO PII.
+     *  Examples: "button#search-cta", "a.nav-link:nth-of-type(2)", "div[data-track=hero]" */
+    function buildAnonClickEl(target: EventTarget | null): string {
+      try {
+        if (!(target instanceof Element)) return "";
+        const el = target.closest("a, button, input, select, textarea, [data-track], [role]") ?? target;
+        if (!(el instanceof Element)) return "";
+        const tag = el.tagName.toLowerCase();
+        let qualifier = "";
+        if (el.id) {
+          qualifier = `#${el.id}`;
+        } else {
+          const dt = (el as HTMLElement).dataset?.track;
+          if (dt) {
+            qualifier = `[data-track=${dt}]`;
+          } else if (el.classList.length > 0) {
+            qualifier = `.${el.classList[0]}`;
+          }
+        }
+        // nth-of-type only when no unique qualifier
+        let nth = "";
+        if (!el.id && el.parentElement) {
+          const siblings = Array.from(el.parentElement.children).filter(
+            (c) => c.tagName === el.tagName,
+          );
+          if (siblings.length > 1) {
+            nth = `:nth-of-type(${siblings.indexOf(el) + 1})`;
+          }
+        }
+        return `${tag}${qualifier}${nth}`;
+      } catch {
+        return "";
+      }
+    }
+
     /** Build a minimal anonymous event directly — intentionally does NOT
      *  call buildEvent() because buildEvent() injects the real session_id
      *  and user_fingerprint from refs. Constructing the object here
      *  ensures those fields are always "anon" regardless of future
-     *  refactors to buildEvent. */
+     *  refactors to buildEvent.
+     *
+     *  For heatmap_click, `el` is the non-PII element descriptor.
+     *  heatmap_move does NOT include el (move volume is high; el adds no value). */
     function anonEvent(
       event_type: "heatmap_click" | "heatmap_move",
       action: "click" | "move",
       pageX: number,
       pageY: number,
+      clickTarget?: EventTarget | null,
     ): AnalyticsEvent {
       const scrollW = document.documentElement.scrollWidth || 1;
       const scrollH = document.documentElement.scrollHeight || 1;
       const xp = Math.min(1, Math.max(0, pageX / scrollW));
       const yp = Math.min(1, Math.max(0, pageY / scrollH));
+      const meta: Record<string, unknown> = { xp, yp, vw: window.innerWidth, src: "anon_heatmap" };
+      if (event_type === "heatmap_click" && clickTarget !== undefined) {
+        const el = buildAnonClickEl(clickTarget);
+        if (el) meta.el = el;
+      }
       return {
         event_type,
         action,
@@ -2459,15 +2549,13 @@ export default function EventCollector({
         session_id: "anon",
         user_fingerprint: "anon",
         timestamp: new Date().toISOString(),
-        // metadata: ONLY normalized coords + viewport width.
-        // NEVER add text, href, tagName, id, or any identifier.
-        metadata: { xp, yp, vw: window.innerWidth, src: "anon_heatmap" },
+        metadata: meta,
       };
     }
 
     function handleAnonClick(e: MouseEvent) {
       try {
-        enqueueEvent(anonEvent("heatmap_click", "click", e.pageX, e.pageY));
+        enqueueEvent(anonEvent("heatmap_click", "click", e.pageX, e.pageY, e.target));
       } catch {
         // analytics must never crash the app
       }

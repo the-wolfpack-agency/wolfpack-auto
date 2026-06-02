@@ -44,7 +44,8 @@
     "verify": "bash scripts/verify.sh",
     "test:e2e:smoke": "playwright test --config=playwright.verify.config.ts",
     "generate:sample-fi-audit": "tsx scripts/generate-sample-fi-audit.ts",
-    "generate:sample-website-audit": "tsx scripts/generate-sample-website-audit.ts"
+    "generate:sample-website-audit": "tsx scripts/generate-sample-website-audit.ts",
+    "verify:heatmap-elements": "node scripts/verify-heatmap-elements.mjs"
   },
   "overrides": {
     "postcss": "^8.5.10",
