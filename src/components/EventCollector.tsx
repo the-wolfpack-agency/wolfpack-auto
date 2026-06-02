@@ -204,8 +204,14 @@ function categorizeValue(val: string): string {
 let eventBuffer: AnalyticsEvent[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** Event types that are always tracked regardless of consent level. */
-const ESSENTIAL_EVENT_TYPES = new Set(["page_view"]);
+/** Event types that are always tracked regardless of consent level.
+ *
+ * heatmap_click / heatmap_move carry ZERO identity (session_id and
+ * user_fingerprint are hard-coded "anon", metadata has NO text/href/PII).
+ * They are cookieless aggregate-only signals — legitimate-interest
+ * essential analytics, like Plausible/Fathom. Adding them here means
+ * enqueueEvent will pass them through without a consent check. */
+const ESSENTIAL_EVENT_TYPES = new Set(["page_view", "heatmap_click", "heatmap_move"]);
 
 /** Check if analytics consent is granted (cookie or localStorage). */
 function hasAnalyticsConsent(): boolean {
@@ -2385,6 +2391,94 @@ export default function EventCollector({
       for (const timer of hesitationTimers.values()) clearTimeout(timer);
     };
   }, [buildEvent]);
+
+  // ================================================================
+  // ANONYMOUS HEATMAP — cookieless, aggregate-only, no identity/PII
+  // ================================================================
+  //
+  // This layer fires on ALL pages (public + admin) without consent because
+  // it carries zero identity: session_id and user_fingerprint are the
+  // literal string "anon", metadata contains only normalized page-relative
+  // coordinates (0..1) and viewport width — no element text, no href, no
+  // real session/fingerprint, no cookie reads.
+  //
+  // Legal basis: legitimate-interest essential analytics (same posture as
+  // cookieless Plausible / Fathom). The events bypass the consent gate via
+  // ESSENTIAL_EVENT_TYPES so DO NOT add any identity to this handler.
+  //
+  // Move throttle: at most 1 sample per 2 000 ms (mirrors EMIT_INTERVAL_MS
+  // of the consent-gated cursor_heatmap above). Skipped on touch devices
+  // to avoid flooding from scroll-triggered mousemove emulation.
+  // Heavy throttle is intentional: see the FLUSH_INTERVAL_MS comment about
+  // the 2026-05-19 Neon data-transfer quota incident.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const ANON_MOVE_INTERVAL_MS = 2000;
+    let lastMoveEmit = 0;
+
+    /** Build a minimal anonymous event directly — intentionally does NOT
+     *  call buildEvent() because buildEvent() injects the real session_id
+     *  and user_fingerprint from refs. Constructing the object here
+     *  ensures those fields are always "anon" regardless of future
+     *  refactors to buildEvent. */
+    function anonEvent(
+      event_type: "heatmap_click" | "heatmap_move",
+      action: "click" | "move",
+      pageX: number,
+      pageY: number,
+    ): AnalyticsEvent {
+      const scrollW = document.documentElement.scrollWidth || 1;
+      const scrollH = document.documentElement.scrollHeight || 1;
+      const xp = Math.min(1, Math.max(0, pageX / scrollW));
+      const yp = Math.min(1, Math.max(0, pageY / scrollH));
+      return {
+        event_type,
+        action,
+        page: window.location.pathname,
+        session_id: "anon",
+        user_fingerprint: "anon",
+        timestamp: new Date().toISOString(),
+        // metadata: ONLY normalized coords + viewport width.
+        // NEVER add text, href, tagName, id, or any identifier.
+        metadata: { xp, yp, vw: window.innerWidth, src: "anon_heatmap" },
+      };
+    }
+
+    function handleAnonClick(e: MouseEvent) {
+      try {
+        enqueueEvent(anonEvent("heatmap_click", "click", e.pageX, e.pageY));
+      } catch {
+        // analytics must never crash the app
+      }
+    }
+
+    function handleAnonMove(e: MouseEvent) {
+      try {
+        const now = Date.now();
+        if (now - lastMoveEmit < ANON_MOVE_INTERVAL_MS) return;
+        lastMoveEmit = now;
+        enqueueEvent(anonEvent("heatmap_move", "move", e.pageX, e.pageY));
+      } catch {
+        // analytics must never crash the app
+      }
+    }
+
+    document.addEventListener("click", handleAnonClick, { passive: true });
+
+    // Touch devices skip mousemove — no meaningful cursor data on touch.
+    const isTouch = "ontouchstart" in window;
+    if (!isTouch) {
+      document.addEventListener("mousemove", handleAnonMove, { passive: true });
+    }
+
+    return () => {
+      document.removeEventListener("click", handleAnonClick);
+      if (!isTouch) {
+        document.removeEventListener("mousemove", handleAnonMove);
+      }
+    };
+  }, []); // no deps — must not re-register on buildEvent identity change
 
   // --- Flush on page unload ---
   useEffect(() => {

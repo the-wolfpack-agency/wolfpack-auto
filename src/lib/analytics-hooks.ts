@@ -29,12 +29,12 @@ async function persistEvent(
       `INSERT INTO analytics_events (event_type, action, page, session_id, user_fingerprint, metadata, timestamp)
        VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
       [
-        event.split(".")[0],      // module (e.g. "deal", "service")
-        event,                     // full event name (e.g. "deal.created")
-        dealer_id,                 // use page column for dealer_id
-        "server",                  // server-side event
-        "server",                  // user_fingerprint (NOT NULL in schema)
-        JSON.stringify({ dealer_id, ...metadata }),
+        event.split(".")[0],                          // module (e.g. "deal", "service")
+        event,                                         // full event name (e.g. "deal.created")
+        String(metadata.page ?? "(server)"),           // real page path, never the dealer UUID
+        "server",                                      // server-side event
+        "server",                                      // user_fingerprint (NOT NULL in schema)
+        JSON.stringify({ dealer_id, ...metadata }),    // dealer_id lives here, not in page column
       ],
     );
   } catch (err) {

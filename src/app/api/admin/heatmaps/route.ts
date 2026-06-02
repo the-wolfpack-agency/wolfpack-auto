@@ -23,6 +23,7 @@ import {
   getTopPages,
   type HeatmapType,
   type HeatmapPoint,
+  type MovementPoint,
   type ScrollBand,
   type AttentionZone,
 } from "@/lib/heatmap";
@@ -48,13 +49,66 @@ function dealerFilterClause(paramIdx: number): string {
   return `(metadata->>'dealer_id' = $${paramIdx} OR (metadata->>'dealer_id' IS NULL AND $${paramIdx} = '${CANONICAL_DEALER_ID}'))`;
 }
 
+/** Bucket size for normalized (0..1) coordinates. ~0.02 = 50 buckets per axis. */
+const NORM_BUCKET = 0.02;
+
+function normBucket(v: number): number {
+  return Math.round(Math.floor(v / NORM_BUCKET) * NORM_BUCKET * 1000) / 1000;
+}
+
+/**
+ * Load click heatmap points.
+ *
+ * Primary path: event_type='heatmap_click' with normalized xp/yp in metadata
+ * (produced by the anonymous heatmap collector). Points are bucketed at ~0.02
+ * resolution and returned with xp/yp coordinates (0..1).
+ *
+ * Fallback: when no heatmap_click rows exist for the window, falls back to
+ * legacy event_type='click' with absolute metadata.x/.y. Those are returned
+ * with x/y set; xp/yp omitted so the render layer can branch on presence.
+ */
 async function loadClickPoints(
   page: string,
   dealerId: string,
   since: string,
-): Promise<HeatmapPoint[]> {
+): Promise<{ points: HeatmapPoint[]; source: "anon" | "legacy" | "empty" }> {
   const { query } = await import("@/lib/db");
-  const result = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
+
+  /* ── Attempt 1: normalized anonymous heatmap_click events ── */
+  const anonResult = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
+    `SELECT ROUND(FLOOR((metadata->>'xp')::numeric / $4) * $4, 3) AS xp_bucket,
+            ROUND(FLOOR((metadata->>'yp')::numeric / $4) * $4, 3) AS yp_bucket,
+            COUNT(*)::int AS count
+       FROM analytics_events
+      WHERE event_type = 'heatmap_click'
+        AND page = $1
+        AND ${dealerFilterClause(2)}
+        AND timestamp >= $3
+        AND metadata ? 'xp' AND metadata ? 'yp'
+        AND (metadata->>'xp')::numeric BETWEEN 0 AND 1
+        AND (metadata->>'yp')::numeric BETWEEN 0 AND 1
+      GROUP BY xp_bucket, yp_bucket
+      ORDER BY count DESC
+      LIMIT 500`,
+    [page, dealerId, since, NORM_BUCKET],
+  );
+
+  if (anonResult.rows.length > 0) {
+    const raw = anonResult.rows.map((r: Record<string, unknown>) => ({
+      xp: Number(r.xp_bucket),
+      yp: Number(r.yp_bucket),
+      x: 0,
+      y: 0,
+      count: Number(r.count),
+      intensity: 0,
+    }));
+    const maxCount = Math.max(...raw.map((p) => p.count), 1);
+    for (const p of raw) p.intensity = p.count / maxCount;
+    return { points: raw, source: "anon" };
+  }
+
+  /* ── Fallback: legacy event_type='click' with absolute px coords ── */
+  const legacyResult = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
     `SELECT metadata->>'x' AS x,
             metadata->>'y' AS y,
             COUNT(*)::int AS count
@@ -69,7 +123,8 @@ async function loadClickPoints(
       LIMIT 500`,
     [page, dealerId, since],
   );
-  const points = result.rows
+
+  const points = legacyResult.rows
     .map((r: Record<string, unknown>) => ({
       x: Number(r.x),
       y: Number(r.y),
@@ -77,10 +132,53 @@ async function loadClickPoints(
       intensity: 0,
     }))
     .filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
-  if (points.length === 0) return [];
+
+  if (points.length === 0) return { points: [], source: "empty" };
+
   const maxCount = Math.max(...points.map((p) => p.count), 1);
   for (const p of points) p.intensity = p.count / maxCount;
-  return points;
+  return { points, source: "legacy" };
+}
+
+/**
+ * Load movement heatmap points from event_type='heatmap_move'.
+ * Same bucketing as clicks (NORM_BUCKET ~0.02). Returns [] when no data.
+ */
+async function loadMovementPoints(
+  page: string,
+  dealerId: string,
+  since: string,
+): Promise<MovementPoint[]> {
+  const { query } = await import("@/lib/db");
+  const result = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
+    `SELECT ROUND(FLOOR((metadata->>'xp')::numeric / $4) * $4, 3) AS xp_bucket,
+            ROUND(FLOOR((metadata->>'yp')::numeric / $4) * $4, 3) AS yp_bucket,
+            COUNT(*)::int AS count
+       FROM analytics_events
+      WHERE event_type = 'heatmap_move'
+        AND page = $1
+        AND ${dealerFilterClause(2)}
+        AND timestamp >= $3
+        AND metadata ? 'xp' AND metadata ? 'yp'
+        AND (metadata->>'xp')::numeric BETWEEN 0 AND 1
+        AND (metadata->>'yp')::numeric BETWEEN 0 AND 1
+      GROUP BY xp_bucket, yp_bucket
+      ORDER BY count DESC
+      LIMIT 500`,
+    [page, dealerId, since, NORM_BUCKET],
+  );
+
+  if (result.rows.length === 0) return [];
+
+  const raw = result.rows.map((r: Record<string, unknown>) => ({
+    xp: Number(r.xp_bucket),
+    yp: Number(r.yp_bucket),
+    count: Number(r.count),
+    intensity: 0,
+  }));
+  const maxCount = Math.max(...raw.map((p) => p.count), 1);
+  for (const p of raw) p.intensity = p.count / maxCount;
+  return raw;
 }
 
 async function loadScrollBands(
@@ -298,13 +396,18 @@ export async function GET(request: NextRequest) {
     ]);
 
     if (type === "click") {
-      const points = await loadClickPoints(page, dealerId, since);
+      const [{ points, source }, movementPoints] = await Promise.all([
+        loadClickPoints(page, dealerId, since),
+        loadMovementPoints(page, dealerId, since),
+      ]);
       const totalEvents = points.reduce((s, p) => s + p.count, 0);
       trackHeatmap("heatmap.viewed", dealerId, {
         page,
         type,
         days,
         point_count: points.length,
+        movement_count: movementPoints.length,
+        click_source: source,
       });
       return NextResponse.json({
         type: "click",
@@ -312,6 +415,7 @@ export async function GET(request: NextRequest) {
         totalEvents,
         dateRange: { start: since, end: new Date().toISOString() },
         points,
+        movementPoints,
         stats,
         topPages,
         noData: points.length === 0,

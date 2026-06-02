@@ -16,8 +16,20 @@ export type HeatmapType = "click" | "scroll" | "attention";
 export interface HeatmapPoint {
   x: number;
   y: number;
+  /** Normalized x position 0..1 (from anonymous heatmap events). */
+  xp?: number;
+  /** Normalized y position 0..1 (from anonymous heatmap events). */
+  yp?: number;
   intensity: number; // 0-1 normalized
   count: number;
+}
+
+/** Normalized movement point from heatmap_move events (0..1 coords). */
+export interface MovementPoint {
+  xp: number;
+  yp: number;
+  count: number;
+  intensity: number; // 0-1 normalized
 }
 
 export interface ScrollBand {
@@ -263,7 +275,14 @@ export function calculateHeatmapDiff(
 /* -------------------------------------------------------------------------- */
 
 /**
- * Return top pages ranked by traffic for heatmap page selection.
+ * Return top pages ranked by interaction volume for heatmap page selection.
+ * Interaction volume = total heatmap_click + click events (not raw pageviews),
+ * so the page with the most real pointer activity comes first.
+ *
+ * Exclusion rules:
+ *  - page must start with "/" (strips bare dealer-UUID pollution)
+ *  - page must not look like a UUID path (belt-and-suspenders for legacy events)
+ *
  * Always returns real data; when DATABASE_URL is missing or the query
  * yields nothing, returns []. Synthetic top-pages would be misleading
  * to the dealer — empty is the honest answer.
@@ -279,32 +298,41 @@ export async function getTopPages(
   }
 
   const { query } = await import("@/lib/db");
-  /* Only return rows whose `page` column looks like a real URL path —
-     events with bare UUIDs / dealer-ids in the page column (a legacy
-     ingest bug) would otherwise pollute the dropdown.
-     Ordering rationale: the dealer cares about visitor-facing
-     heatmaps first (public storefront → revenue), with the home
-     page on top because it's the most valuable single surface.
-     Admin pages are internal tooling; they show up after public
-     pages even if their pageview count is higher (dev traffic
-     skews admin-page views). Within each tier, sort by pageviews. */
+  /* Rank by interaction volume (heatmap_click + legacy click events) so
+     the highest-activity page is first, not just the most-visited.
+     Pages without interactions but with pageviews still appear after,
+     ranked by pageview count (LEFT JOIN keeps them in). */
   const result = await query(
-    `SELECT page AS url,
-            COUNT(*) AS pageviews,
-            COUNT(DISTINCT user_fingerprint) AS "uniqueVisitors"
-       FROM analytics_events
-      WHERE metadata->>'dealer_id' = $1
-        AND timestamp > NOW() - INTERVAL '30 days'
-        AND page LIKE '/%'
-        AND page !~ '^/[0-9a-f]{8}-[0-9a-f]{4}-'
-      GROUP BY page
-      ORDER BY
-        CASE
-          WHEN page = '/' THEN 0
-          WHEN page LIKE '/admin/%' OR page = '/admin' THEN 2
-          ELSE 1
-        END,
-        pageviews DESC
+    `WITH interactions AS (
+       SELECT page, COUNT(*) AS interaction_count
+         FROM analytics_events
+        WHERE event_type IN ('heatmap_click', 'click')
+          AND metadata->>'dealer_id' = $1
+          AND timestamp > NOW() - INTERVAL '30 days'
+          AND page IS NOT NULL
+          AND page LIKE '/%'
+          AND page !~ '^/[0-9a-f]{8}-[0-9a-f]{4}-'
+        GROUP BY page
+     ),
+     pageviews AS (
+       SELECT page,
+              COUNT(*) AS pv,
+              COUNT(DISTINCT user_fingerprint) AS uv
+         FROM analytics_events
+        WHERE metadata->>'dealer_id' = $1
+          AND timestamp > NOW() - INTERVAL '30 days'
+          AND page IS NOT NULL
+          AND page LIKE '/%'
+          AND page !~ '^/[0-9a-f]{8}-[0-9a-f]{4}-'
+        GROUP BY page
+     )
+     SELECT p.page AS url,
+            p.pv AS pageviews,
+            p.uv AS "uniqueVisitors",
+            COALESCE(i.interaction_count, 0) AS interactions
+       FROM pageviews p
+       LEFT JOIN interactions i ON i.page = p.page
+      ORDER BY interactions DESC, p.pv DESC
       LIMIT $2`,
     [dealerId, limit],
   );

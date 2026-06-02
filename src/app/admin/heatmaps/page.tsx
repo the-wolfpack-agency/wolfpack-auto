@@ -9,8 +9,18 @@ import { useCallback, useEffect, useState } from "react";
 interface HeatmapPoint {
   x: number;
   y: number;
+  /** Normalized position 0..1 from anonymous heatmap events. */
+  xp?: number;
+  yp?: number;
   intensity: number;
   count: number;
+}
+
+interface MovementPoint {
+  xp: number;
+  yp: number;
+  count: number;
+  intensity: number;
 }
 
 interface ScrollBand {
@@ -72,6 +82,7 @@ export default function HeatmapsPage() {
   const [pageAutoSelected, setPageAutoSelected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [points, setPoints] = useState<HeatmapPoint[]>([]);
+  const [movementPoints, setMovementPoints] = useState<MovementPoint[]>([]);
   const [scrollBands, setScrollBands] = useState<ScrollBand[]>([]);
   const [attentionZones, setAttentionZones] = useState<AttentionZone[]>([]);
   const [topPages, setTopPages] = useState<TopPage[]>([]);
@@ -85,6 +96,7 @@ export default function HeatmapsPage() {
       .then((r) => r.json())
       .then((data) => {
         setPoints(data.points ?? []);
+        setMovementPoints(data.movementPoints ?? []);
         setScrollBands(data.scrollBands ?? []);
         setAttentionZones(data.attentionZones ?? []);
         setTopPages(data.topPages ?? []);
@@ -92,16 +104,17 @@ export default function HeatmapsPage() {
         setNoData(Boolean(data.noData));
         setNoDataReason(data.noDataReason ?? null);
 
-        /* Auto-pick the first option from topPages on first load if
-           the default has no data — but topPages is now ordered by
-           the server with / first, then other public pages, then
-           admin. So the user lands on the most valuable visitor-
-           facing surface (the home page) before falling through to
-           anything else. We do this ONCE per session; manual
-           selections are never overridden. */
+        /* Auto-pick the first topPages entry that has real interaction
+           data when the current page (default "/") returns noData.
+           topPages is now ranked by interaction volume desc, so the
+           first entry with a different URL is the best candidate.
+           We do this ONCE per session; manual selections are never
+           overridden. */
         if (!pageAutoSelected && data.noData && Array.isArray(data.topPages) && data.topPages.length > 0) {
-          const best = data.topPages[0]?.url;
-          if (best && best !== page) {
+          const best = (data.topPages as TopPage[]).find(
+            (p) => p.url !== page && p.url.startsWith("/"),
+          )?.url;
+          if (best) {
             setPage(best);
             setPageAutoSelected(true);
           }
@@ -311,24 +324,52 @@ export default function HeatmapsPage() {
                       <div className="flex-1 h-40 bg-gray-100 rounded" />
                     </div>
                   </div>
-                  {/* Heatmap overlay */}
-                  {points.map((point, i) => (
+                  {/* Movement overlay — rendered beneath click dots */}
+                  {movementPoints.map((mp, i) => (
                     <div
-                      key={i}
-                      className="absolute rounded-full"
+                      key={`mv-${i}`}
+                      className="absolute rounded-full pointer-events-none"
                       style={{
-                        left: `${(point.x / 800) * 100}%`,
-                        top: `${(point.y / 1400) * 100}%`,
-                        width: Math.max(30, point.intensity * 80),
-                        height: Math.max(30, point.intensity * 80),
-                        backgroundColor: intensityColor(point.intensity),
+                        left: `${mp.xp * 100}%`,
+                        top: `${mp.yp * 100}%`,
+                        width: Math.max(20, mp.intensity * 60),
+                        height: Math.max(20, mp.intensity * 60),
+                        backgroundColor: `rgba(139, 92, 246, ${0.15 + mp.intensity * 0.25})`,
                         transform: "translate(-50%, -50%)",
-                        filter: `blur(${Math.max(2, point.intensity * 6)}px)`,
-                        boxShadow: `0 0 ${Math.max(8, point.intensity * 20)}px ${intensityColor(point.intensity)}`,
+                        filter: `blur(${Math.max(4, mp.intensity * 10)}px)`,
                       }}
-                      title={`${point.count} clicks`}
+                      title={`${mp.count} movements`}
                     />
                   ))}
+                  {/* Click heatmap overlay — normalized coords when available */}
+                  {points.map((point, i) => {
+                    /* Prefer normalized xp/yp from anon events; fall back to
+                       absolute px coords divided by a 800×1400 reference frame
+                       for legacy events. */
+                    const leftPct = point.xp !== undefined
+                      ? `${point.xp * 100}%`
+                      : `${(point.x / 800) * 100}%`;
+                    const topPct = point.yp !== undefined
+                      ? `${point.yp * 100}%`
+                      : `${(point.y / 1400) * 100}%`;
+                    return (
+                      <div
+                        key={i}
+                        className="absolute rounded-full"
+                        style={{
+                          left: leftPct,
+                          top: topPct,
+                          width: Math.max(30, point.intensity * 80),
+                          height: Math.max(30, point.intensity * 80),
+                          backgroundColor: intensityColor(point.intensity),
+                          transform: "translate(-50%, -50%)",
+                          filter: `blur(${Math.max(2, point.intensity * 6)}px)`,
+                          boxShadow: `0 0 ${Math.max(8, point.intensity * 20)}px ${intensityColor(point.intensity)}`,
+                        }}
+                        title={`${point.count} clicks`}
+                      />
+                    );
+                  })}
                 </div>
                 {/* Legend */}
                 <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
@@ -358,41 +399,49 @@ export default function HeatmapsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Current ({days} days)</p>
                     <div className="relative bg-gray-50 rounded-lg" style={{ height: 300 }}>
-                      {points.map((point, i) => (
-                        <div
-                          key={i}
-                          className="absolute rounded-full"
-                          style={{
-                            left: `${(point.x / 800) * 100}%`,
-                            top: `${(point.y / 1400) * 100}%`,
-                            width: Math.max(12, point.intensity * 40),
-                            height: Math.max(12, point.intensity * 40),
-                            backgroundColor: intensityColor(point.intensity),
-                            transform: "translate(-50%, -50%)",
-                            filter: `blur(${Math.max(3, point.intensity * 8)}px)`,
-                          }}
-                        />
-                      ))}
+                      {points.map((point, i) => {
+                        const lp = point.xp !== undefined ? `${point.xp * 100}%` : `${(point.x / 800) * 100}%`;
+                        const tp = point.yp !== undefined ? `${point.yp * 100}%` : `${(point.y / 1400) * 100}%`;
+                        return (
+                          <div
+                            key={i}
+                            className="absolute rounded-full"
+                            style={{
+                              left: lp,
+                              top: tp,
+                              width: Math.max(12, point.intensity * 40),
+                              height: Math.max(12, point.intensity * 40),
+                              backgroundColor: intensityColor(point.intensity),
+                              transform: "translate(-50%, -50%)",
+                              filter: `blur(${Math.max(3, point.intensity * 8)}px)`,
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Previous ({compareDays} days)</p>
                     <div className="relative bg-gray-50 rounded-lg" style={{ height: 300 }}>
-                      {comparePoints.map((point, i) => (
-                        <div
-                          key={i}
-                          className="absolute rounded-full"
-                          style={{
-                            left: `${(point.x / 800) * 100}%`,
-                            top: `${(point.y / 1400) * 100}%`,
-                            width: Math.max(12, point.intensity * 40),
-                            height: Math.max(12, point.intensity * 40),
-                            backgroundColor: intensityColor(point.intensity),
-                            transform: "translate(-50%, -50%)",
-                            filter: `blur(${Math.max(3, point.intensity * 8)}px)`,
-                          }}
-                        />
-                      ))}
+                      {comparePoints.map((point, i) => {
+                        const lp = point.xp !== undefined ? `${point.xp * 100}%` : `${(point.x / 800) * 100}%`;
+                        const tp = point.yp !== undefined ? `${point.yp * 100}%` : `${(point.y / 1400) * 100}%`;
+                        return (
+                          <div
+                            key={i}
+                            className="absolute rounded-full"
+                            style={{
+                              left: lp,
+                              top: tp,
+                              width: Math.max(12, point.intensity * 40),
+                              height: Math.max(12, point.intensity * 40),
+                              backgroundColor: intensityColor(point.intensity),
+                              transform: "translate(-50%, -50%)",
+                              filter: `blur(${Math.max(3, point.intensity * 8)}px)`,
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

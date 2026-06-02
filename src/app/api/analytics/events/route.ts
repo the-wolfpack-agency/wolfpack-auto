@@ -214,6 +214,23 @@ export async function POST(request: NextRequest) {
       if (!meta.dealer_id) {
         meta.dealer_id = resolvedDealerId;
       }
+      // Sanitise anon heatmap coords: clamp xp/yp to [0,1] and discard
+      // non-finite values so malformed payloads never crash persistence.
+      if (
+        e.event_type === "heatmap_click" ||
+        e.event_type === "heatmap_move"
+      ) {
+        if (typeof meta.xp === "number" && isFinite(meta.xp)) {
+          meta.xp = Math.max(0, Math.min(1, meta.xp));
+        } else {
+          delete meta.xp;
+        }
+        if (typeof meta.yp === "number" && isFinite(meta.yp)) {
+          meta.yp = Math.max(0, Math.min(1, meta.yp));
+        } else {
+          delete meta.yp;
+        }
+      }
       return { ...e, metadata: meta };
     });
 
