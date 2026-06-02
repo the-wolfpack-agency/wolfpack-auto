@@ -76,6 +76,20 @@ describe("HeatmapsPage — isSafeToFrame guard (source-level)", () => {
     expect(PAGE_SOURCE).toContain("setIframeError");
   });
 
+  it("iframe loading state is tracked", () => {
+    expect(PAGE_SOURCE).toContain("iframeLoading");
+    expect(PAGE_SOURCE).toContain("setIframeLoading");
+  });
+
+  it("hottest-elements list has data-testid", () => {
+    expect(PAGE_SOURCE).toContain('data-testid="hottest-elements-list"');
+  });
+
+  it("dot titles include el selector in source", () => {
+    expect(PAGE_SOURCE).toContain("dotTitle");
+    expect(PAGE_SOURCE).toContain("point.el");
+  });
+
   it("new Live view caption contains no em dashes", () => {
     // Only assert the caption string we added — pre-existing strings are out of scope.
     expect(PAGE_SOURCE).toContain("Live view of");
@@ -89,14 +103,19 @@ describe("HeatmapsPage — isSafeToFrame guard (source-level)", () => {
 /* Render helpers                                                               */
 /* -------------------------------------------------------------------------- */
 
-/** Minimal HeatmapPoint with normalized coords. */
+/** Minimal HeatmapPoint with normalized coords and el label. */
 const SAMPLE_POINTS = [
-  { x: 0, y: 0, xp: 0.25, yp: 0.4, intensity: 0.9, count: 12 },
-  { x: 0, y: 0, xp: 0.6, yp: 0.7, intensity: 0.5, count: 4 },
+  { x: 0, y: 0, xp: 0.25, yp: 0.4, intensity: 0.9, count: 12, el: "button#search-cta" },
+  { x: 0, y: 0, xp: 0.6, yp: 0.7, intensity: 0.5, count: 4, el: "a.nav-link:nth-of-type(2)" },
 ];
 
 const SAMPLE_MOVEMENT = [
   { xp: 0.3, yp: 0.5, count: 8, intensity: 0.6 },
+];
+
+const SAMPLE_HOTTEST_ELEMENTS = [
+  { el: "button#search-cta", count: 12 },
+  { el: "a.nav-link:nth-of-type(2)", count: 4 },
 ];
 
 /**
@@ -114,7 +133,8 @@ function mockFetch(overrides: Record<string, unknown> = {}): jest.Mock {
       scrollBands: [],
       attentionZones: [],
       topPages: [{ url: "/", pageviews: 100, uniqueVisitors: 80 }],
-      stats: { totalClicks: 16, avgScrollDepth: 62, hottestElement: "CTA button" },
+      stats: { totalClicks: 16, avgScrollDepth: 62, hottestElement: "button#search-cta" },
+      hottestElements: SAMPLE_HOTTEST_ELEMENTS,
       noData: false,
       noDataReason: null,
       ...overrides,
@@ -302,8 +322,8 @@ describe("HeatmapsPage — real-page iframe background (render)", () => {
     expect(banner).not.toBeNull();
   });
 
-  /* ── 6. Stats cards rendered ── */
-  test("renders three stat cards (Total Clicks, Avg Scroll Depth, Hottest Element)", async () => {
+  /* ── 6. Stats cards rendered with real values ── */
+  test("renders three stat cards and Hottest Element card shows the el value", async () => {
     global.fetch = mockFetch({
       topPages: [{ url: "/", pageviews: 100, uniqueVisitors: 80 }],
       noData: false,
@@ -315,5 +335,73 @@ describe("HeatmapsPage — real-page iframe background (render)", () => {
     expect(text).toContain("Total Clicks");
     expect(text).toContain("Avg Scroll Depth");
     expect(text).toContain("Hottest Element");
+    // Hottest Element card must display the actual element name, not blank.
+    expect(text).toContain("button#search-cta");
+    // Total Clicks card must show the real count, not 0.
+    expect(text).toContain("16");
+  });
+
+  /* ── 7. Dot titles contain el + count ── */
+  test("click dots have title containing el and count", async () => {
+    global.fetch = mockFetch({
+      topPages: [{ url: "/", pageviews: 100, uniqueVisitors: 80 }],
+      noData: false,
+    });
+    root = mount(container);
+    await settle();
+
+    const canvas = container.querySelector('[data-testid="heatmap-canvas"]');
+    const dots = Array.from(
+      canvas?.querySelectorAll("div.absolute.rounded-full") ?? [],
+    ) as HTMLElement[];
+
+    // At least one dot must have a title with the el selector.
+    const dotWithEl = dots.find((d) =>
+      d.getAttribute("title")?.includes("button#search-cta"),
+    );
+    expect(dotWithEl).not.toBeUndefined();
+    expect(dotWithEl?.getAttribute("title")).toContain("12 clicks");
+
+    const dotWithEl2 = dots.find((d) =>
+      d.getAttribute("title")?.includes("a.nav-link:nth-of-type(2)"),
+    );
+    expect(dotWithEl2).not.toBeUndefined();
+    expect(dotWithEl2?.getAttribute("title")).toContain("4 clicks");
+  });
+
+  /* ── 8. Hottest elements ranked list renders ── */
+  test("hottest-elements list renders with ranked el entries", async () => {
+    global.fetch = mockFetch({
+      topPages: [{ url: "/", pageviews: 100, uniqueVisitors: 80 }],
+      noData: false,
+    });
+    root = mount(container);
+    await settle();
+
+    const list = container.querySelector('[data-testid="hottest-elements-list"]');
+    expect(list).not.toBeNull();
+
+    const text = list?.textContent ?? "";
+    expect(text).toContain("button#search-cta");
+    expect(text).toContain("a.nav-link:nth-of-type(2)");
+    expect(text).toContain("12 clicks");
+    expect(text).toContain("4 clicks");
+  });
+
+  /* ── 9. iframe has src with __heatmap_bg=1 for "/" ── */
+  test("iframe src contains __heatmap_bg=1 when page is '/'", async () => {
+    global.fetch = mockFetch({
+      topPages: [{ url: "/", pageviews: 100, uniqueVisitors: 80 }],
+      noData: false,
+    });
+    root = mount(container);
+    await settle();
+
+    const iframe = container.querySelector(
+      'iframe[data-testid="heatmap-real-page-iframe"]',
+    ) as HTMLIFrameElement | null;
+
+    expect(iframe).not.toBeNull();
+    expect(iframe?.src).toContain("__heatmap_bg=1");
   });
 });

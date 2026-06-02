@@ -124,40 +124,141 @@ describe("GET /api/admin/heatmaps — real-data path", () => {
     process.env.DATABASE_URL = "postgres://test";
   });
 
-  test("click: aggregates real click events and normalizes intensity", async () => {
-    /* Order of mockQuery calls: getTopPages is mocked separately; then
-       loadStats fires three queries (clicks, scroll, hottest), then
-       loadClickPoints fires one. We answer them in that order. */
+  test("click: totalClicks and hottestElement come from heatmap_click events", async () => {
+    /* Query order (Promise.all fires concurrently — mocks resolve in
+       registration order):
+         Promise.all([getTopPages, loadStats, loadHottestElements]):
+           loadStats[0]: anon heatmap_click count  → {total:12}
+           loadStats[1]: avg scroll depth           → {avg_depth:55}
+           loadStats[2]: anon hottest el            → {label:"button#search-cta"}
+           loadHottestElements[0]: top-5 el list   → [{el:"button#search-cta",count:8},…]
+         Promise.all([loadClickPoints, loadMovementPoints]):
+           loadClickPoints[0]: anon bucket query   → 2 rows (with modal_el)
+           loadMovementPoints[0]: move query       → []
+       Total: 6 mockQuery calls. */
     mockGetTopPages.mockResolvedValueOnce([
       { url: "/", pageviews: 100, uniqueVisitors: 50 },
     ]);
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 12 }] }) // total clicks
-      .mockResolvedValueOnce({ rows: [{ avg_depth: 55 }] }) // avg scroll
-      .mockResolvedValueOnce({ rows: [{ label: "Add to cart", clicks: 8 }] }) // hottest
+      .mockResolvedValueOnce({ rows: [{ total: 12 }] })                          // anon click count
+      .mockResolvedValueOnce({ rows: [{ avg_depth: 55 }] })                      // avg scroll
+      .mockResolvedValueOnce({ rows: [{ label: "button#search-cta", clicks: 8 }] }) // anon hottest el
+      .mockResolvedValueOnce({                                                   // hottestElements top-5
+        rows: [
+          { el: "button#search-cta", count: 8 },
+          { el: "a.nav-link", count: 3 },
+        ],
+      })
+      .mockResolvedValueOnce({                                                   // loadClickPoints anon bucket
+        rows: [
+          { xp_bucket: "0.125", yp_bucket: "0.143", count: 8, modal_el: "button#search-cta" },
+          { xp_bucket: "0.375", yp_bucket: "0.286", count: 4, modal_el: "a.nav-link" },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });                                      // heatmap_move
+    const res = await GET(req("?type=click&days=7&page=/"));
+    const body = await res.json();
+    expect(body.noData).toBe(false);
+    expect(body.stats.totalClicks).toBe(12);
+    expect(body.stats.hottestElement).toBe("button#search-cta");
+    expect(body.points).toHaveLength(2);
+    expect(body.points[0].intensity).toBe(1);    // 8/8
+    expect(body.points[1].intensity).toBe(0.5);  // 4/8
+    expect(body.points[0].el).toBe("button#search-cta");
+    expect(body.points[1].el).toBe("a.nav-link");
+    expect(body.totalEvents).toBe(12);
+    expect(body.topPages).toHaveLength(1);
+  });
+
+  test("click: hottestElements ranked list present and ordered", async () => {
+    mockGetTopPages.mockResolvedValueOnce([]);
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ total: 15 }] })
+      .mockResolvedValueOnce({ rows: [{ avg_depth: 40 }] })
+      .mockResolvedValueOnce({ rows: [{ label: "button#cta", clicks: 10 }] })
       .mockResolvedValueOnce({
         rows: [
-          { x: "100", y: "200", count: 8 },
-          { x: "300", y: "400", count: 4 },
+          { el: "button#cta", count: 10 },
+          { el: "a.nav-link:nth-of-type(2)", count: 5 },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          { xp_bucket: "0.2", yp_bucket: "0.3", count: 10, modal_el: "button#cta" },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+    const res = await GET(req("?type=click&days=7&page=/"));
+    const body = await res.json();
+    expect(Array.isArray(body.hottestElements)).toBe(true);
+    expect(body.hottestElements.length).toBe(2);
+    expect(body.hottestElements[0].el).toBe("button#cta");
+    expect(body.hottestElements[0].count).toBe(10);
+    expect(body.hottestElements[1].el).toBe("a.nav-link:nth-of-type(2)");
+  });
+
+  test("click: totalClicks falls back to legacy 'click' when heatmap_click returns 0", async () => {
+    /* Promise.all([loadStats, loadHottestElements]) fires both concurrently.
+       loadStats fires its 3 queries simultaneously via internal Promise.all;
+       loadHottestElements fires its 1 query at the same time.
+       Mock queue order:
+         [0] loadStats anon count → {total:0}  (triggers legacy fallback)
+         [1] loadStats avg scroll → {avg_depth:0}
+         [2] loadStats anon hottest el → []
+         [3] loadHottestElements top-el query → []
+       After outer Promise.all resolves, loadStats runs its legacy fallback:
+         [4] loadStats legacy click count → {total:5}
+         [5] loadStats legacy hottest el → {label:"a.buy-now"}
+       Second Promise.all([loadClickPoints, loadMovementPoints]):
+         [6] loadClickPoints anon → []
+         [7] loadMovementPoints → []
+       loadClickPoints legacy fallback (sequential, after [6] resolves empty):
+         [8] legacy click rows */
+    mockGetTopPages.mockResolvedValueOnce([]);
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ total: 0 }] })                       // [0] anon count = 0
+      .mockResolvedValueOnce({ rows: [{ avg_depth: 0 }] })                   // [1] scroll
+      .mockResolvedValueOnce({ rows: [] })                                    // [2] anon hottest el
+      .mockResolvedValueOnce({ rows: [] })                                    // [3] loadHottestElements
+      .mockResolvedValueOnce({ rows: [{ total: 5 }] })                       // [4] legacy click count
+      .mockResolvedValueOnce({ rows: [{ label: "a.buy-now", clicks: 3 }] }) // [5] legacy hottest
+      .mockResolvedValueOnce({ rows: [] })                                    // [6] loadClickPoints anon → empty
+      .mockResolvedValueOnce({ rows: [] })                                    // [7] loadMovementPoints
+      .mockResolvedValueOnce({                                                // [8] legacy click fallback
+        rows: [
+          { x: "400", y: "200", count: 3 },
+          { x: "600", y: "500", count: 2 },
         ],
       });
     const res = await GET(req("?type=click&days=7&page=/"));
     const body = await res.json();
-    expect(body.noData).toBe(false);
+    expect(body.stats.totalClicks).toBe(5);
+    expect(body.stats.hottestElement).toBe("a.buy-now");
     expect(body.points).toHaveLength(2);
-    expect(body.points[0].intensity).toBe(1); // 8/8
-    expect(body.points[1].intensity).toBe(0.5); // 4/8
-    expect(body.totalEvents).toBe(12);
-    expect(body.stats.hottestElement).toBe("Add to cart");
-    expect(body.topPages).toHaveLength(1);
+    // Legacy points have x/y, not xp/yp
+    expect(body.points[0].xp).toBeUndefined();
+    expect(body.points[0].x).toBe(400);
   });
 
   test("scroll: builds bands using at-least-this-deep semantics", async () => {
+    /* Promise.all([loadStats, loadHottestElements]) concurrent order:
+         [0] loadStats anon count → 0 (triggers legacy fallback)
+         [1] loadStats avg scroll → {avg_depth:60}
+         [2] loadStats anon hottest el → []
+         [3] loadHottestElements → []
+       After outer Promise.all, loadStats legacy fallback:
+         [4] legacy click count → 0
+         [5] legacy hottest → []
+       Then loadScrollBands:
+         [6] scroll bands data */
     mockGetTopPages.mockResolvedValueOnce([]);
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ total: 10 }] })
-      .mockResolvedValueOnce({ rows: [{ avg_depth: 60 }] })
-      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ total: 0 }] })        // [0] anon count (triggers fallback)
+      .mockResolvedValueOnce({ rows: [{ avg_depth: 60 }] })   // [1] avg scroll
+      .mockResolvedValueOnce({ rows: [] })                     // [2] anon hottest el
+      .mockResolvedValueOnce({ rows: [] })                     // [3] loadHottestElements
+      .mockResolvedValueOnce({ rows: [] })                     // [4] legacy click count
+      .mockResolvedValueOnce({ rows: [] })                     // [5] legacy hottest
       .mockResolvedValueOnce({
         /* 10 sessions: 4 hit 100, 3 hit 75, 2 hit 50, 1 hit 25 */
         rows: [

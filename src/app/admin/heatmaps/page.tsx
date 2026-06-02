@@ -14,6 +14,13 @@ interface HeatmapPoint {
   yp?: number;
   intensity: number;
   count: number;
+  /** Most common CSS selector in this xy bucket (non-PII). */
+  el?: string;
+}
+
+interface HottestElement {
+  el: string;
+  count: number;
 }
 
 interface MovementPoint {
@@ -139,20 +146,25 @@ export default function HeatmapsPage() {
   const [stats, setStats] = useState<HeatmapStats | null>(null);
   const [noData, setNoData] = useState(false);
   const [noDataReason, setNoDataReason] = useState<string | null>(null);
+  const [hottestElements, setHottestElements] = useState<HottestElement[]>([]);
 
   /** Whether the iframe for the current page has errored (→ show wireframe). */
   const [iframeError, setIframeError] = useState(false);
+  /** Whether the iframe is still loading (show a subtle indicator). */
+  const [iframeLoading, setIframeLoading] = useState(false);
   /** Ref so the error handler doesn't close over stale state across page changes. */
   const iframeErrorRef = useRef(false);
 
-  // Reset iframe error when the page selection changes.
+  // Reset iframe error + loading state when the page selection changes.
   useEffect(() => {
     iframeErrorRef.current = false;
     setIframeError(false);
+    if (isSafeToFrame(page)) setIframeLoading(true);
   }, [page]);
 
   const fetchData = useCallback(() => {
     setLoading(true);
+    if (isSafeToFrame(page)) setIframeLoading(true);
     fetch(`/api/admin/heatmaps?page=${encodeURIComponent(page)}&type=${type}&days=${days}`)
       .then((r) => r.json())
       .then((data) => {
@@ -162,6 +174,7 @@ export default function HeatmapsPage() {
         setAttentionZones(data.attentionZones ?? []);
         setTopPages(data.topPages ?? []);
         setStats(data.stats ?? null);
+        setHottestElements(data.hottestElements ?? []);
         setNoData(Boolean(data.noData));
         setNoDataReason(data.noDataReason ?? null);
 
@@ -395,6 +408,19 @@ export default function HeatmapsPage() {
                           className="absolute inset-0 rounded-lg overflow-hidden ring-1 ring-gray-200 shadow-inner"
                           aria-hidden="true"
                         />
+                        {/* Loading shimmer — shown while the iframe is fetching. */}
+                        {iframeLoading && (
+                          <div
+                            data-testid="heatmap-iframe-loading"
+                            className="absolute inset-0 z-5 flex items-center justify-center bg-gray-50/80 rounded-lg"
+                            aria-label="Loading page preview"
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400" />
+                              <span className="text-xs text-gray-400">Loading preview</span>
+                            </div>
+                          </div>
+                        )}
                         {/* Scaling wrapper: renders the iframe at IFRAME_CONTENT_WIDTH
                             then scale-transforms it to fit the container width.
                             We use a ResizeObserver-free CSS trick: set the iframe
@@ -407,6 +433,7 @@ export default function HeatmapsPage() {
                             left: 0,
                             width: "100%",
                             height: "100%",
+                            zIndex: 0,
                             overflow: "hidden",
                           }}
                         >
@@ -417,9 +444,11 @@ export default function HeatmapsPage() {
                             sandbox="allow-scripts allow-same-origin"
                             loading="lazy"
                             scrolling="no"
+                            onLoad={() => setIframeLoading(false)}
                             onError={() => {
                               iframeErrorRef.current = true;
                               setIframeError(true);
+                              setIframeLoading(false);
                             }}
                             style={{
                               pointerEvents: "none",
@@ -443,6 +472,7 @@ export default function HeatmapsPage() {
                         {/* Caption bar */}
                         <div
                           className="absolute bottom-0 left-0 right-0 px-3 py-1.5 text-xs text-gray-400 bg-white/70 backdrop-blur-sm border-t border-gray-100 rounded-b-lg"
+                          style={{ zIndex: 15 }}
                           aria-label={`Live view of ${page}`}
                         >
                           Live view of{" "}
@@ -454,7 +484,7 @@ export default function HeatmapsPage() {
                       <HeatmapWireframe />
                     )}
 
-                    {/* ── Movement overlay (below click dots) ── */}
+                    {/* ── Movement overlay (below click dots, z-10) ── */}
                     {movementPoints.map((mp, i) => (
                       <div
                         key={`mv-${i}`}
@@ -473,7 +503,7 @@ export default function HeatmapsPage() {
                       />
                     ))}
 
-                    {/* ── Click heatmap dots (normalized coords or legacy px) ── */}
+                    {/* ── Click heatmap dots (normalized coords or legacy px, z-20) ── */}
                     {points.map((point, i) => {
                       const leftPct = point.xp !== undefined
                         ? `${point.xp * 100}%`
@@ -481,10 +511,13 @@ export default function HeatmapsPage() {
                       const topPct = point.yp !== undefined
                         ? `${point.yp * 100}%`
                         : `${(point.y / 1400) * 100}%`;
+                      const dotTitle = point.el
+                        ? `${point.el} — ${point.count} click${point.count === 1 ? "" : "s"}`
+                        : `${point.count} click${point.count === 1 ? "" : "s"}`;
                       return (
                         <div
                           key={i}
-                          className="absolute rounded-full"
+                          className="absolute rounded-full cursor-default"
                           style={{
                             left: leftPct,
                             top: topPct,
@@ -496,7 +529,8 @@ export default function HeatmapsPage() {
                             boxShadow: `0 0 ${Math.max(8, point.intensity * 20)}px ${intensityColor(point.intensity)}`,
                             zIndex: 20,
                           }}
-                          title={`${point.count} clicks`}
+                          title={dotTitle}
+                          aria-label={dotTitle}
                         />
                       );
                     })}
@@ -513,6 +547,46 @@ export default function HeatmapsPage() {
                   </div>
                   <span>High</span>
                 </div>
+
+                {/* Hottest elements ranked list */}
+                {hottestElements.length > 0 && (
+                  <div
+                    className="mt-5 border-t border-gray-100 pt-4"
+                    data-testid="hottest-elements-list"
+                  >
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                      Hottest elements
+                    </h4>
+                    <ol className="space-y-1.5">
+                      {hottestElements.map((item, idx) => (
+                        <li
+                          key={item.el}
+                          className="flex items-center gap-3 text-sm"
+                        >
+                          <span
+                            className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold text-white flex-shrink-0"
+                            style={{
+                              backgroundColor: intensityColor(
+                                1 - idx / Math.max(hottestElements.length - 1, 1),
+                              ),
+                            }}
+                          >
+                            {idx + 1}
+                          </span>
+                          <span
+                            className="font-mono text-gray-800 flex-1 truncate"
+                            title={item.el}
+                          >
+                            {item.el}
+                          </span>
+                          <span className="text-gray-500 flex-shrink-0">
+                            {item.count.toLocaleString()} click{item.count === 1 ? "" : "s"}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
 

@@ -23,6 +23,7 @@ import {
   getTopPages,
   type HeatmapType,
   type HeatmapPoint,
+  type HottestElement,
   type MovementPoint,
   type ScrollBand,
   type AttentionZone,
@@ -75,20 +76,44 @@ async function loadClickPoints(
   const { query } = await import("@/lib/db");
 
   /* ── Attempt 1: normalized anonymous heatmap_click events ── */
+  /* Pick the modal el per bucket using a subquery that ranks el by
+     frequency and returns only the top-ranked one per (xp,yp) bucket. */
   const anonResult = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
-    `SELECT ROUND(FLOOR((metadata->>'xp')::numeric / $4) * $4, 3) AS xp_bucket,
-            ROUND(FLOOR((metadata->>'yp')::numeric / $4) * $4, 3) AS yp_bucket,
-            COUNT(*)::int AS count
-       FROM analytics_events
-      WHERE event_type = 'heatmap_click'
-        AND page = $1
-        AND ${dealerFilterClause(2)}
-        AND timestamp >= $3
-        AND metadata ? 'xp' AND metadata ? 'yp'
-        AND (metadata->>'xp')::numeric BETWEEN 0 AND 1
-        AND (metadata->>'yp')::numeric BETWEEN 0 AND 1
-      GROUP BY xp_bucket, yp_bucket
-      ORDER BY count DESC
+    `WITH bucketed AS (
+       SELECT ROUND(FLOOR((metadata->>'xp')::numeric / $4) * $4, 3) AS xp_bucket,
+              ROUND(FLOOR((metadata->>'yp')::numeric / $4) * $4, 3) AS yp_bucket,
+              COALESCE(NULLIF(metadata->>'el', ''), NULL) AS el
+         FROM analytics_events
+        WHERE event_type = 'heatmap_click'
+          AND page = $1
+          AND ${dealerFilterClause(2)}
+          AND timestamp >= $3
+          AND metadata ? 'xp' AND metadata ? 'yp'
+          AND (metadata->>'xp')::numeric BETWEEN 0 AND 1
+          AND (metadata->>'yp')::numeric BETWEEN 0 AND 1
+     ),
+     counts AS (
+       SELECT xp_bucket, yp_bucket, COUNT(*)::int AS total_count
+         FROM bucketed
+        GROUP BY xp_bucket, yp_bucket
+     ),
+     el_ranked AS (
+       SELECT xp_bucket, yp_bucket, el,
+              ROW_NUMBER() OVER (
+                PARTITION BY xp_bucket, yp_bucket
+                ORDER BY COUNT(*) DESC, el ASC
+              ) AS rn
+         FROM bucketed
+        WHERE el IS NOT NULL
+        GROUP BY xp_bucket, yp_bucket, el
+     )
+     SELECT c.xp_bucket, c.yp_bucket, c.total_count AS count,
+            e.el AS modal_el
+       FROM counts c
+       LEFT JOIN el_ranked e ON e.xp_bucket = c.xp_bucket
+                             AND e.yp_bucket = c.yp_bucket
+                             AND e.rn = 1
+      ORDER BY c.total_count DESC
       LIMIT 500`,
     [page, dealerId, since, NORM_BUCKET],
   );
@@ -101,6 +126,7 @@ async function loadClickPoints(
       y: 0,
       count: Number(r.count),
       intensity: 0,
+      el: r.modal_el ? String(r.modal_el) : undefined,
     }));
     const maxCount = Math.max(...raw.map((p) => p.count), 1);
     for (const p of raw) p.intensity = p.count / maxCount;
@@ -292,11 +318,12 @@ async function loadStats(
   since: string,
 ): Promise<Stats> {
   const { query } = await import("@/lib/db");
-  const [clicksRow, scrollRow, hottestRow] = await Promise.all([
+  const [anonClicksRow, scrollRow, anonHottestRow] = await Promise.all([
+    /* Primary: count heatmap_click events (the anon collector path). */
     query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
       `SELECT COUNT(*)::int AS total
          FROM analytics_events
-        WHERE event_type = 'click'
+        WHERE event_type = 'heatmap_click'
           AND page = $1
           AND ${dealerFilterClause(2)}
           AND timestamp >= $3`,
@@ -316,26 +343,93 @@ async function loadStats(
          ) sub`,
       [page, dealerId, since],
     ),
+    /* Primary: hottest element from heatmap_click metadata.el. */
     query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
-      `SELECT COALESCE(metadata->>'text', metadata->>'tag', 'unknown') AS label,
+      `SELECT COALESCE(NULLIF(metadata->>'el', ''), 'unknown') AS label,
               COUNT(*)::int AS clicks
          FROM analytics_events
-        WHERE event_type = 'click'
+        WHERE event_type = 'heatmap_click'
           AND page = $1
           AND ${dealerFilterClause(2)}
           AND timestamp >= $3
+          AND metadata ? 'el'
+          AND NULLIF(metadata->>'el', '') IS NOT NULL
         GROUP BY label
         ORDER BY clicks DESC
         LIMIT 1`,
       [page, dealerId, since],
     ),
   ]);
-  const totalClicks = Number(clicksRow.rows[0]?.total ?? 0);
+
+  let totalClicks = Number(anonClicksRow.rows[0]?.total ?? 0);
+  let hottestElement = String(anonHottestRow.rows[0]?.label ?? "");
+
+  /* Fallback: when no heatmap_click events exist, try legacy 'click'. */
+  if (totalClicks === 0) {
+    const [legacyClicksRow, legacyHottestRow] = await Promise.all([
+      query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
+        `SELECT COUNT(*)::int AS total
+           FROM analytics_events
+          WHERE event_type = 'click'
+            AND page = $1
+            AND ${dealerFilterClause(2)}
+            AND timestamp >= $3`,
+        [page, dealerId, since],
+      ),
+      query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
+        `SELECT COALESCE(metadata->>'text', metadata->>'tag', 'unknown') AS label,
+                COUNT(*)::int AS clicks
+           FROM analytics_events
+          WHERE event_type = 'click'
+            AND page = $1
+            AND ${dealerFilterClause(2)}
+            AND timestamp >= $3
+          GROUP BY label
+          ORDER BY clicks DESC
+          LIMIT 1`,
+        [page, dealerId, since],
+      ),
+    ]);
+    totalClicks = Number(legacyClicksRow.rows[0]?.total ?? 0);
+    hottestElement = String(legacyHottestRow.rows[0]?.label ?? "");
+  }
+
   const avgScrollDepth = Math.round(
     Number(scrollRow.rows[0]?.avg_depth ?? 0),
   );
-  const hottestElement = String(hottestRow.rows[0]?.label ?? "");
   return { totalClicks, avgScrollDepth, hottestElement };
+}
+
+/**
+ * Load the top N elements by click count for the hottest-elements ranked list.
+ * Uses heatmap_click metadata.el; falls back to [] when no data exists.
+ */
+async function loadHottestElements(
+  page: string,
+  dealerId: string,
+  since: string,
+  limit = 5,
+): Promise<HottestElement[]> {
+  const { query } = await import("@/lib/db");
+  const result = await query( /* audit-safe: A4 reason="diagnostic-canonical-dealer-fallback" */
+    `SELECT COALESCE(NULLIF(metadata->>'el', ''), 'unknown') AS el,
+            COUNT(*)::int AS count
+       FROM analytics_events
+      WHERE event_type = 'heatmap_click'
+        AND page = $1
+        AND ${dealerFilterClause(2)}
+        AND timestamp >= $3
+        AND metadata ? 'el'
+        AND NULLIF(metadata->>'el', '') IS NOT NULL
+      GROUP BY el
+      ORDER BY count DESC
+      LIMIT $4`,
+    [page, dealerId, since, limit],
+  );
+  return result.rows.map((r: Record<string, unknown>) => ({
+    el: String(r.el),
+    count: Number(r.count),
+  }));
 }
 
 export async function GET(request: NextRequest) {
@@ -383,6 +477,7 @@ export async function GET(request: NextRequest) {
       scrollBands: [],
       attentionZones: [],
       stats: EMPTY_STATS,
+      hottestElements: [],
       topPages: [],
       noData: true,
       noDataReason: "database_unavailable",
@@ -390,9 +485,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [topPages, stats] = await Promise.all([
+    const [topPages, stats, hottestElements] = await Promise.all([
       getTopPages(dealerId, 7),
       loadStats(page, dealerId, since),
+      loadHottestElements(page, dealerId, since),
     ]);
 
     if (type === "click") {
@@ -417,6 +513,7 @@ export async function GET(request: NextRequest) {
         points,
         movementPoints,
         stats,
+        hottestElements,
         topPages,
         noData: points.length === 0,
         ...(points.length === 0
@@ -444,6 +541,7 @@ export async function GET(request: NextRequest) {
         dateRange: { start: since, end: new Date().toISOString() },
         scrollBands: bands,
         stats: { ...stats, avgScrollDepth: avgDepth },
+        hottestElements,
         topPages,
         noData: totalVisitors === 0,
         ...(totalVisitors === 0
@@ -468,6 +566,7 @@ export async function GET(request: NextRequest) {
       dateRange: { start: since, end: new Date().toISOString() },
       attentionZones: zones,
       stats,
+      hottestElements,
       topPages,
       noData: zones.length === 0,
       ...(zones.length === 0
@@ -486,6 +585,7 @@ export async function GET(request: NextRequest) {
         scrollBands: [],
         attentionZones: [],
         stats: EMPTY_STATS,
+        hottestElements: [],
         topPages: [],
         noData: true,
         noDataReason: "query_failed",

@@ -22,6 +22,14 @@ export interface HeatmapPoint {
   yp?: number;
   intensity: number; // 0-1 normalized
   count: number;
+  /** Most common CSS selector in this xy bucket (non-PII, from metadata.el). */
+  el?: string;
+}
+
+/** Aggregated element click count for the hottest-elements ranked list. */
+export interface HottestElement {
+  el: string;
+  count: number;
 }
 
 /** Normalized movement point from heatmap_move events (0..1 coords). */
