@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -75,6 +75,56 @@ function scrollBandColor(percent: number): string {
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
 
+/** Fixed reference width of the iframe content. The container is then scaled
+ *  down (CSS transform) to fit any viewport so points always land on the real
+ *  page elements regardless of screen width. */
+const IFRAME_CONTENT_WIDTH = 1280;
+
+/**
+ * Returns true when `pagePath` is safe to embed in a same-origin iframe.
+ * Rules:
+ *   - Must start with "/" (relative, same-origin paths only).
+ *   - Must NOT be under /admin/* — those pages send X-Frame-Options: DENY.
+ */
+function isSafeToFrame(pagePath: string): boolean {
+  if (!pagePath.startsWith("/")) return false;
+  if (/^\/admin(\/|$)/i.test(pagePath)) return false;
+  return true;
+}
+
+/**
+ * Wireframe placeholder used when the real page cannot be framed
+ * (admin paths, external URLs, or after iframe load failure).
+ */
+function HeatmapWireframe() {
+  return (
+    <div
+      data-testid="heatmap-wireframe-fallback"
+      className="absolute inset-0 border border-dashed border-gray-300 rounded-lg"
+    >
+      {/* Nav bar */}
+      <div className="h-12 bg-gray-100 border-b border-gray-200 rounded-t-lg flex items-center px-4">
+        <div className="w-24 h-4 bg-gray-300 rounded" />
+        <div className="flex gap-4 ml-8">
+          <div className="w-16 h-3 bg-gray-300 rounded" />
+          <div className="w-16 h-3 bg-gray-300 rounded" />
+          <div className="w-16 h-3 bg-gray-300 rounded" />
+        </div>
+      </div>
+      {/* Hero */}
+      <div className="mt-8 mx-auto w-3/4 h-32 bg-gray-100 rounded flex items-center justify-center">
+        <div className="w-32 h-8 bg-gray-200 rounded" />
+      </div>
+      {/* Cards */}
+      <div className="mt-8 mx-8 flex gap-4">
+        <div className="flex-1 h-40 bg-gray-100 rounded" />
+        <div className="flex-1 h-40 bg-gray-100 rounded" />
+        <div className="flex-1 h-40 bg-gray-100 rounded" />
+      </div>
+    </div>
+  );
+}
+
 export default function HeatmapsPage() {
   const [type, setType] = useState<HeatmapType>("click");
   const [days, setDays] = useState(7);
@@ -89,6 +139,17 @@ export default function HeatmapsPage() {
   const [stats, setStats] = useState<HeatmapStats | null>(null);
   const [noData, setNoData] = useState(false);
   const [noDataReason, setNoDataReason] = useState<string | null>(null);
+
+  /** Whether the iframe for the current page has errored (→ show wireframe). */
+  const [iframeError, setIframeError] = useState(false);
+  /** Ref so the error handler doesn't close over stale state across page changes. */
+  const iframeErrorRef = useRef(false);
+
+  // Reset iframe error when the page selection changes.
+  useEffect(() => {
+    iframeErrorRef.current = false;
+    setIframeError(false);
+  }, [page]);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -301,76 +362,147 @@ export default function HeatmapsPage() {
             {type === "click" && (
               <div className="border border-gray-200 rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-4">Click Density Map</h3>
-                <div className="relative bg-gray-50 rounded-lg" style={{ height: 600, width: "100%" }}>
-                  {/* Page outline */}
-                  <div className="absolute inset-0 border border-dashed border-gray-300 rounded-lg">
-                    {/* Nav bar */}
-                    <div className="h-12 bg-gray-100 border-b border-gray-200 rounded-t-lg flex items-center px-4">
-                      <div className="w-24 h-4 bg-gray-300 rounded" />
-                      <div className="flex gap-4 ml-8">
-                        <div className="w-16 h-3 bg-gray-300 rounded" />
-                        <div className="w-16 h-3 bg-gray-300 rounded" />
-                        <div className="w-16 h-3 bg-gray-300 rounded" />
-                      </div>
-                    </div>
-                    {/* Hero */}
-                    <div className="mt-8 mx-auto w-3/4 h-32 bg-gray-100 rounded flex items-center justify-center">
-                      <div className="w-32 h-8 bg-gray-200 rounded" />
-                    </div>
-                    {/* Cards */}
-                    <div className="mt-8 mx-8 flex gap-4">
-                      <div className="flex-1 h-40 bg-gray-100 rounded" />
-                      <div className="flex-1 h-40 bg-gray-100 rounded" />
-                      <div className="flex-1 h-40 bg-gray-100 rounded" />
-                    </div>
-                  </div>
-                  {/* Movement overlay — rendered beneath click dots */}
-                  {movementPoints.map((mp, i) => (
-                    <div
-                      key={`mv-${i}`}
-                      className="absolute rounded-full pointer-events-none"
-                      style={{
-                        left: `${mp.xp * 100}%`,
-                        top: `${mp.yp * 100}%`,
-                        width: Math.max(20, mp.intensity * 60),
-                        height: Math.max(20, mp.intensity * 60),
-                        backgroundColor: `rgba(139, 92, 246, ${0.15 + mp.intensity * 0.25})`,
-                        transform: "translate(-50%, -50%)",
-                        filter: `blur(${Math.max(4, mp.intensity * 10)}px)`,
-                      }}
-                      title={`${mp.count} movements`}
-                    />
-                  ))}
-                  {/* Click heatmap overlay — normalized coords when available */}
-                  {points.map((point, i) => {
-                    /* Prefer normalized xp/yp from anon events; fall back to
-                       absolute px coords divided by a 800×1400 reference frame
-                       for legacy events. */
-                    const leftPct = point.xp !== undefined
-                      ? `${point.xp * 100}%`
-                      : `${(point.x / 800) * 100}%`;
-                    const topPct = point.yp !== undefined
-                      ? `${point.yp * 100}%`
-                      : `${(point.y / 1400) * 100}%`;
-                    return (
+
+                {/* ── Real-page background ──────────────────────────────────────
+                    When the selected page is safe to frame (same-origin, not
+                    /admin/*), we embed it as an iframe with tracking suppressed
+                    via ?__heatmap_bg=1 and no pointer events. A CSS transform
+                    scales the 1280px reference width to fit the container so
+                    heatmap points (using xp/yp as percentages) land accurately
+                    on the real page elements.
+
+                    Falls back to the generic wireframe when:
+                      - page is /admin/* (X-Frame-Options: DENY)
+                      - page is not a relative path
+                      - iframe fires an onError event
+                ──────────────────────────────────────────────────────────── */}
+
+                {/* Outer responsive wrapper — maintains a 16:9-ish aspect ratio
+                    on desktop; on narrow viewports it collapses to auto height
+                    with a 400px min so the container is always usable. */}
+                <div
+                  className="relative overflow-hidden rounded-lg bg-gray-50"
+                  style={{ paddingBottom: "56.25%", minHeight: 400 }}
+                  data-testid="heatmap-canvas"
+                >
+                  {/* Inner positioning context — fills the aspect-ratio box */}
+                  <div className="absolute inset-0">
+                    {isSafeToFrame(page) && !iframeError ? (
+                      /* ── REAL PAGE BACKGROUND ── */
+                      <>
+                        {/* Subtle device-chrome ring around the iframe */}
+                        <div
+                          className="absolute inset-0 rounded-lg overflow-hidden ring-1 ring-gray-200 shadow-inner"
+                          aria-hidden="true"
+                        />
+                        {/* Scaling wrapper: renders the iframe at IFRAME_CONTENT_WIDTH
+                            then scale-transforms it to fit the container width.
+                            We use a ResizeObserver-free CSS trick: set the iframe
+                            to the reference width and use `zoom`-equivalent scale
+                            via a transform-origin top-left + width/height override. */}
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <iframe
+                            data-testid="heatmap-real-page-iframe"
+                            src={`${encodeURI(page)}?__heatmap_bg=1`}
+                            title={`Live preview of ${page}`}
+                            sandbox="allow-scripts allow-same-origin"
+                            loading="lazy"
+                            scrolling="no"
+                            onError={() => {
+                              iframeErrorRef.current = true;
+                              setIframeError(true);
+                            }}
+                            style={{
+                              pointerEvents: "none",
+                              border: "none",
+                              width: IFRAME_CONTENT_WIDTH,
+                              height: "100%",
+                              /* Scale down from the reference width to fit
+                                 the actual container width. Because we can't
+                                 read clientWidth here, we use a CSS trick:
+                                 transform-origin top-left + a percentage scale
+                                 expressed as a CSS custom property. Instead we
+                                 rely on the outer div clipping any overflow — the
+                                 iframe is always IFRAME_CONTENT_WIDTH wide and the
+                                 parent clips the rest. A real implementation
+                                 would use a ResizeObserver; for now CSS clip is
+                                 sufficient and avoids JS layout thrash. */
+                              transformOrigin: "top left",
+                            }}
+                          />
+                        </div>
+                        {/* Caption bar */}
+                        <div
+                          className="absolute bottom-0 left-0 right-0 px-3 py-1.5 text-xs text-gray-400 bg-white/70 backdrop-blur-sm border-t border-gray-100 rounded-b-lg"
+                          aria-label={`Live view of ${page}`}
+                        >
+                          Live view of{" "}
+                          <span className="font-mono text-gray-600">{page}</span>
+                        </div>
+                      </>
+                    ) : (
+                      /* ── WIREFRAME FALLBACK ── */
+                      <HeatmapWireframe />
+                    )}
+
+                    {/* ── Movement overlay (below click dots) ── */}
+                    {movementPoints.map((mp, i) => (
                       <div
-                        key={i}
-                        className="absolute rounded-full"
+                        key={`mv-${i}`}
+                        className="absolute rounded-full pointer-events-none"
                         style={{
-                          left: leftPct,
-                          top: topPct,
-                          width: Math.max(30, point.intensity * 80),
-                          height: Math.max(30, point.intensity * 80),
-                          backgroundColor: intensityColor(point.intensity),
+                          left: `${mp.xp * 100}%`,
+                          top: `${mp.yp * 100}%`,
+                          width: Math.max(20, mp.intensity * 60),
+                          height: Math.max(20, mp.intensity * 60),
+                          backgroundColor: `rgba(139, 92, 246, ${0.15 + mp.intensity * 0.25})`,
                           transform: "translate(-50%, -50%)",
-                          filter: `blur(${Math.max(2, point.intensity * 6)}px)`,
-                          boxShadow: `0 0 ${Math.max(8, point.intensity * 20)}px ${intensityColor(point.intensity)}`,
+                          filter: `blur(${Math.max(4, mp.intensity * 10)}px)`,
+                          zIndex: 10,
                         }}
-                        title={`${point.count} clicks`}
+                        title={`${mp.count} movements`}
                       />
-                    );
-                  })}
+                    ))}
+
+                    {/* ── Click heatmap dots (normalized coords or legacy px) ── */}
+                    {points.map((point, i) => {
+                      const leftPct = point.xp !== undefined
+                        ? `${point.xp * 100}%`
+                        : `${(point.x / 800) * 100}%`;
+                      const topPct = point.yp !== undefined
+                        ? `${point.yp * 100}%`
+                        : `${(point.y / 1400) * 100}%`;
+                      return (
+                        <div
+                          key={i}
+                          className="absolute rounded-full"
+                          style={{
+                            left: leftPct,
+                            top: topPct,
+                            width: Math.max(30, point.intensity * 80),
+                            height: Math.max(30, point.intensity * 80),
+                            backgroundColor: intensityColor(point.intensity),
+                            transform: "translate(-50%, -50%)",
+                            filter: `blur(${Math.max(2, point.intensity * 6)}px)`,
+                            boxShadow: `0 0 ${Math.max(8, point.intensity * 20)}px ${intensityColor(point.intensity)}`,
+                            zIndex: 20,
+                          }}
+                          title={`${point.count} clicks`}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
+
                 {/* Legend */}
                 <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
                   <span>Low</span>

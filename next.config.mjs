@@ -58,8 +58,16 @@ const nextConfig = {
 
   async headers() {
     return [
+      // -----------------------------------------------------------------------
+      // RULE 1 — Global secure default (applied when __heatmap_bg is ABSENT).
+      // X-Frame-Options: DENY + frame-ancestors 'none' prevent clickjacking
+      // from any third-party origin. The `missing` condition guarantees this
+      // rule does NOT apply when the preview param is present, making the two
+      // rules mutually exclusive (one has the param, the other is missing it).
+      // -----------------------------------------------------------------------
       {
         source: "/(.*)",
+        missing: [{ type: "query", key: "__heatmap_bg" }],
         headers: [
           {
             key: "Strict-Transport-Security",
@@ -97,6 +105,62 @@ const nextConfig = {
               "connect-src 'self' https://plausible.io https://*.plausible.io https://api.stripe.com https://*.ingest.us.sentry.io https://*.ingest.sentry.io",
               "frame-src https://www.google.com",
               "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "upgrade-insecure-requests",
+            ].join("; "),
+          },
+        ],
+      },
+      // -----------------------------------------------------------------------
+      // RULE 2 — Heatmap preview mode (applied ONLY when __heatmap_bg=1).
+      // X-Frame-Options: SAMEORIGIN + frame-ancestors 'self' allow embedding
+      // ONLY from the same origin (the admin heatmap page). Third-party
+      // clickjacking is still blocked — we have not loosened to '*' or a
+      // specific external host. All other security directives are identical
+      // to Rule 1. Mutual exclusion: this rule requires the param; Rule 1
+      // requires it to be absent, so both can never match the same request.
+      // -----------------------------------------------------------------------
+      {
+        source: "/(.*)",
+        has: [{ type: "query", key: "__heatmap_bg", value: "1" }],
+        headers: [
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value:
+              "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https://*.r2.cloudflarestorage.com https://images.unsplash.com",
+              "font-src 'self'",
+              "connect-src 'self' https://plausible.io https://*.plausible.io https://api.stripe.com https://*.ingest.us.sentry.io https://*.ingest.sentry.io",
+              "frame-src https://www.google.com",
+              "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self'",
               "upgrade-insecure-requests",

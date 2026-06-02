@@ -458,3 +458,130 @@ test.describe("heatmap: DEFAULT-PAGE — auto-selects page with data or shows ho
     }
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* CASE 5 — REAL-PAGE IFRAME BACKGROUND                                        */
+/*                                                                              */
+/* Guards:                                                                      */
+/*   - DATABASE_URL must be set (same gate as POPULATE).                        */
+/*   - SMOKE_TEST_EMAIL + SMOKE_TEST_PASSWORD must be set for admin auth.       */
+/*                                                                              */
+/* Asserts:                                                                     */
+/*   a) An iframe with src matching /?__heatmap_bg=1 is present in the DOM     */
+/*      behind the heatmap point layer.                                         */
+/*   b) While the heatmap is open, NO analytics events are emitted from the    */
+/*      embedded preview iframe — all POST /api/analytics/events requests that  */
+/*      arrive must originate from the outer admin page shell, not the iframe.  */
+/* -------------------------------------------------------------------------- */
+
+test.describe("heatmap: REAL-PAGE-IFRAME — live page rendered as heatmap background", () => {
+  test.skip(
+    !process.env.DATABASE_URL,
+    "Requires DATABASE_URL — cannot validate iframe-backed heatmap without it",
+  );
+
+  test(
+    "iframe with ?__heatmap_bg=1 is present behind points; preview fires zero analytics events",
+    async ({ page }) => {
+      const target = resolveSmokeTarget();
+      const didLogin = await signInIfPossible(page, target);
+      if (!didLogin) {
+        test.skip(true, "No SMOKE_TEST_EMAIL/PASSWORD — cannot reach admin heatmap");
+        return;
+      }
+
+      /* ── Track any analytics event POSTs that arrive while the page is open ── */
+      const analyticsPostsFromPreview: string[] = [];
+
+      // Intercept all POST /api/analytics/events requests and record those
+      // that originate from inside an iframe (the heatmap preview). The
+      // referrer on requests from the same-origin iframe will include the
+      // page path without __heatmap_bg when Playwright captures the request
+      // through the outer page's network layer, but the initiator frame
+      // will differ. We use a conservative approach: count ALL analytics
+      // POSTs that arrive during the heatmap viewing window. Under
+      // ?__heatmap_bg=1 the EventCollector must not fire, so zero POSTs
+      // is the invariant.
+      const allAnalyticsPosts: string[] = [];
+      await page.route("**" + EVENTS_PATH, async (route, req) => {
+        if (req.method() === "POST") {
+          allAnalyticsPosts.push(req.url());
+
+          // The referer header of a request from inside the iframe preview
+          // will contain ?__heatmap_bg=1.  Flag those specifically.
+          const referer = req.headers()["referer"] ?? "";
+          if (referer.includes("__heatmap_bg=1")) {
+            analyticsPostsFromPreview.push(req.url());
+          }
+        }
+        await route.continue();
+      });
+
+      /* ── Navigate to admin heatmaps ── */
+      const response = await page.goto(ADMIN_HEATMAPS, {
+        waitUntil: "domcontentloaded",
+      });
+
+      expect(
+        response?.status(),
+        "/admin/heatmaps must return HTTP 200",
+      ).toBe(200);
+
+      // Wait for the loading spinner to clear.
+      await page.waitForFunction(
+        () => document.querySelector('[class*="animate-spin"]') === null,
+        { timeout: 12_000 },
+      ).catch(() => {});
+
+      /* ── Allow the preview iframe to settle (lazy-load) ── */
+      await page.waitForTimeout(3_000);
+
+      /* ── Assert (a): iframe with ?__heatmap_bg=1 is present ── */
+      // The iframe is only rendered when the selected page is safe to frame
+      // (not /admin/*, not an external URL).  If the auto-selected page is
+      // /admin/* or has no data, skip the iframe assertion gracefully.
+      const selectedPage = await page
+        .locator("select")
+        .first()
+        .inputValue()
+        .catch(() => "/admin/heatmaps");
+
+      const isAdminPage = /^\/admin(\/|$)/i.test(selectedPage);
+
+      if (!isAdminPage) {
+        const iframe = page.locator(
+          'iframe[data-testid="heatmap-real-page-iframe"]',
+        );
+        const iframeCount = await iframe.count();
+        expect(
+          iframeCount,
+          `Expected heatmap iframe for page "${selectedPage}" — found 0. ` +
+          "Check that the page is not /admin/* and that isSafeToFrame returns true.",
+        ).toBeGreaterThanOrEqual(1);
+
+        // Verify the src contains the bg param.
+        if (iframeCount > 0) {
+          const src = await iframe.first().getAttribute("src");
+          expect(
+            src,
+            "iframe src must include ?__heatmap_bg=1",
+          ).toMatch(/__heatmap_bg=1/);
+        }
+      }
+
+      /* ── Assert (b): NO analytics events originate from the preview ── */
+      // Wait a further 2 s to catch any delayed beacons from the iframe.
+      await page.waitForTimeout(2_000);
+
+      expect(
+        analyticsPostsFromPreview,
+        "The heatmap preview iframe must fire zero POST /api/analytics/events requests. " +
+        `Found ${analyticsPostsFromPreview.length} request(s) with ?__heatmap_bg=1 referer: ` +
+        analyticsPostsFromPreview.join(", "),
+      ).toHaveLength(0);
+
+      // Unroute to clean up.
+      await page.unroute("**" + EVENTS_PATH);
+    },
+  );
+});

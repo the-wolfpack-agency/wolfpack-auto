@@ -81,6 +81,16 @@ export default function CookieConsent() {
   });
 
   useEffect(() => {
+    // Never show the consent banner inside the heatmap preview iframe — it
+    // clutters the background render and is irrelevant (tracking is suppressed
+    // entirely by EventCollector when __heatmap_bg=1).
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("__heatmap_bg") === "1"
+    ) {
+      return;
+    }
+
     const status = getConsentStatus();
     if (!status) {
       setVisible(true);

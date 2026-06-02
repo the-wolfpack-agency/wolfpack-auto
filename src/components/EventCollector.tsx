@@ -307,11 +307,31 @@ function flushEvents(): void {
 /*  Provider component                                                 */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Returns true when the page is embedded as a heatmap preview background.
+ * Evaluated once per render — SSR-safe (defaults to false on server).
+ */
+function isHeatmapPreview(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("__heatmap_bg") === "1";
+}
+
 export default function EventCollector({
   children,
 }: {
   children: ReactNode;
 }) {
+  // -------------------------------------------------------------------------
+  // PREVIEW MODE GUARD — short-circuit all tracking when the page is embedded
+  // as the heatmap background iframe (?__heatmap_bg=1).  The check runs at
+  // the very top of the component so NO useEffect / listener / enqueueEvent
+  // call is ever reached in preview mode.  The module-level eventBuffer and
+  // flushTimer are also left untouched (no flush, no beacon, no fetch).
+  // -------------------------------------------------------------------------
+  if (isHeatmapPreview()) {
+    return <>{children}</>;
+  }
+
   const sessionId = useRef("");
   const fingerprint = useRef("");
   const pageEnteredAt = useRef(Date.now());
