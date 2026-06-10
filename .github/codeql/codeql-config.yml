@@ -1,10 +1,16 @@
 name: "Wolfpack Auto CodeQL config"
 
-# Reusable sanitizer/sink model pack so CodeQL recognizes our
-# repo-local sanitizeForLog() as a log-injection sanitizer and
-# stops re-flagging already-sanitized console.* call sites.
-packs:
-  - ./.github/codeql/wolfpack-auto-models
+# NOTE on log-injection false positives:
+# Our console.* call sites route user-controlled values through
+# sanitizeForLog() (src/lib/log-sanitize.ts), which strips CR/LF/TAB +
+# C0 control characters. CodeQL does not credit this helper
+# interprocedurally, and JavaScript data-extensions cannot model a
+# sanitizer (the JS extensible predicates are only source/sink/summary/
+# type — there is no sanitizer/neutral model for JS). A prior attempt to
+# register sanitizeForLog via a `sanitizerModel` pack was therefore a
+# silent no-op and has been removed. Confirmed false positives on
+# already-sanitized sinks are dismissed on the code-scanning dashboard
+# with reason "false positive" per GitHub guidance.
 
 queries:
   - uses: security-extended

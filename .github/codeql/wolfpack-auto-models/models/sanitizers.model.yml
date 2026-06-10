@@ -1,9 +1,0 @@
-extensions:
-  # Register sanitizeForLog as a sanitizer for log-injection.
-  # The function strips CR/LF/TAB and C0 control characters and truncates,
-  # which neutralizes the log-injection vectors CodeQL is concerned with.
-  - addsTo:
-      pack: codeql/javascript-all
-      extensible: sanitizerModel
-    data:
-      - ["src/lib/log-sanitize.ts", "Module[log-sanitize].Member[sanitizeForLog].ReturnValue", "log-injection"]
