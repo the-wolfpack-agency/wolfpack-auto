@@ -20,10 +20,10 @@ on:
         required: false
         default: 'Manual pipeline trigger'
 
+# Least-privilege at the top level; only the SRE auto-fix job writes, and
+# it is scoped below. (No SARIF upload or PR creation in this workflow.)
 permissions:
-  contents: write
-  pull-requests: write
-  security-events: write
+  contents: read
   actions: read
 
 concurrency:
@@ -60,6 +60,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: "SRE Agent: Auto-Fix"
+    permissions:
+      contents: write  # commits + pushes auto-fixes back to the branch
     # Stays inline: needs caller GITHUB_TOKEN to commit + push back to main.
     # Reusable workflows can't easily propagate that without granting wider
     # secrets:inherit which we don't want.

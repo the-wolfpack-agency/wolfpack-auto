@@ -12,14 +12,16 @@ on:
         required: false
         default: "http://localhost:3000"
 
+# Least-privilege at the top level; the job self-commits generated tests.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   sdet-coverage:
     runs-on: ubuntu-latest
     name: SDET - Detect and Generate Missing Route Tests
+    permissions:
+      contents: write  # auto-commits generated Playwright tests
 
     steps:
       - name: Checkout repository

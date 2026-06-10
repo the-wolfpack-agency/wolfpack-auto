@@ -21,10 +21,9 @@ on:
   push:
     branches: [main]
 
+# Least-privilege at the top level; jobs that need write are scoped below.
 permissions:
   contents: read
-  security-events: write
-  issues: write
 
 concurrency:
   group: security-audit-${{ github.ref }}
@@ -32,6 +31,10 @@ concurrency:
 
 jobs:
   audit:
+    permissions:
+      contents: read
+      security-events: write  # SARIF upload in the reusable suite
+      issues: write           # files findings as issues
     uses: the-wolfpack-agency/AgenticQA-core/.github/workflows/full-audit-suite.yml@main
     with:
       severity: 'high'

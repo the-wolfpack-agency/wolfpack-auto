@@ -13,14 +13,17 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
 
+# Least-privilege at the top level; the merge job is scoped below.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   dependabot-auto-merge:
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # enable auto-merge of the PR
+      pull-requests: write   # approve + mark auto-merge
     steps:
       - name: Fetch Dependabot metadata
         id: meta
