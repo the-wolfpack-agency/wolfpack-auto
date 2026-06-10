@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 10
     name: "Code Linting"
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
         with:
           node-version: "22"
@@ -66,7 +66,7 @@ jobs:
     # Reusable workflows can't easily propagate that without granting wider
     # secrets:inherit which we don't want.
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -130,7 +130,7 @@ jobs:
     env:
       DATABASE_URL: 'postgres://wolfpack:wolfpack@localhost:5432/wolfpack_schema_check'
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
         with:
           node-version: "22"
@@ -177,7 +177,7 @@ jobs:
       # this override is scoped to the Phase 1 Tests job only.
       DEMO_MODE: 'true'
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
         with:
           node-version: "22"
@@ -261,7 +261,7 @@ jobs:
     name: "Phase 1: Security & Accessibility"
     # Already calls agenticqa-core CLI directly - don't re-wrap.
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
         with:
           fetch-depth: 0  # history-exposure audit walks full git log
 
@@ -294,7 +294,7 @@ jobs:
       NEXTAUTH_URL: 'http://localhost:3000'
       NEXTAUTH_SECRET: 'ci-test-secret-not-real'
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
         with:
           node-version: "22"
@@ -351,7 +351,7 @@ jobs:
     timeout-minutes: 15
     name: "Phase 1: Shadow Mode Verification"
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
         with:
           node-version: "22"
@@ -469,7 +469,7 @@ jobs:
     # (.next bundle size, npm audit, src/ console.log hygiene, process.env
     # cataloging).  Generic version would lose those signals.
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
         with:
           node-version: "22"
@@ -510,7 +510,7 @@ jobs:
     timeout-minutes: 5
     name: "Pipeline Health Verification"
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
       - name: Infinite loop check
         run: |
           REPAIR_COUNT=$(git log --oneline -10 | grep -c "auto-fix\|workflow repair" || true)
