@@ -13,6 +13,7 @@ import {
   getRequestIp,
 } from "@/lib/operator-auth";
 import { logStaffAction } from "@/lib/wolfpack-staff-audit";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 
 const INVITE_TTL_DAYS = 7;
 
@@ -206,7 +207,7 @@ async function sendStaffInviteEmail(
   try {
     const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
     if (!RESEND_API_KEY) {
-      console.log(`[operator/invites] (no Resend key) invite for ${email} as ${role} — accept at ${acceptUrl}`);
+      console.log(`[operator/invites] (no Resend key) invite for ${sanitizeForLog(email)} as ${sanitizeForLog(role)} — accept at ${sanitizeForLog(acceptUrl)}`);
       return;
     }
     const { Resend } = await import("resend");

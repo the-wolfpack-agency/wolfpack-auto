@@ -20,6 +20,7 @@
  */
 
 import { query } from "@/lib/db";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 import { auditLog } from "@/lib/audit-log";
 import { trackPrequal } from "@/lib/analytics-hooks";
 import { writeEventsToSecondaryStores } from "@/lib/triple-write";
@@ -396,8 +397,8 @@ async function sendLenderEmail(opts: {
   const client = getResendClient();
   if (!client) {
     console.log(
-      `[prequal/lender-routing] No RESEND_API_KEY -- skipping live send to ${opts.to}. ` +
-        `Subject="${opts.subject}", body=${opts.text.length} chars.`,
+      `[prequal/lender-routing] No RESEND_API_KEY -- skipping live send to ${sanitizeForLog(opts.to)}. ` +
+        `Subject="${sanitizeForLog(opts.subject)}", body=${opts.text.length} chars.`,
     );
     return { ok: false, reason: "resend_not_configured" };
   }

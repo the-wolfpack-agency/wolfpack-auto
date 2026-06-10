@@ -19,6 +19,8 @@
  *  - DB: custom_backgrounds, vehicle_background_assignments, background_jobs
  */
 
+import { sanitizeForLog } from "@/lib/log-sanitize";
+
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
@@ -706,7 +708,7 @@ export async function generateBackground(input: {
   // No DB -> nothing to persist.
   if (!process.env.DATABASE_URL) {
     console.log(
-      `[background] DATABASE_URL not set; skipping background queue for ${vin}`,
+      `[background] DATABASE_URL not set; skipping background queue for ${sanitizeForLog(vin)}`,
     );
     return "skipped";
   }
@@ -715,7 +717,7 @@ export async function generateBackground(input: {
   const hasFal = !!(process.env.FAL_API_KEY ?? process.env.FAL_KEY);
   if (!hasFal) {
     console.log(
-      `[background] FAL_API_KEY not set; skipping background queue for ${vin}`,
+      `[background] FAL_API_KEY not set; skipping background queue for ${sanitizeForLog(vin)}`,
     );
     return "skipped";
   }
@@ -752,7 +754,8 @@ export async function generateBackground(input: {
     return rows[0]?.id ?? null;
   } catch (err) {
     console.error(
-      `[background] Failed to enqueue background job for ${vin}:`,
+      "[background] Failed to enqueue background job for %s:",
+      sanitizeForLog(vin),
       err,
     );
     return null;

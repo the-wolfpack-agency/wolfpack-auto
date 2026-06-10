@@ -8,6 +8,7 @@
  */
 
 import { query } from "@/lib/db";
+import { sanitizeForLog } from "@/lib/log-sanitize";
 import { cacheInvalidate } from "@/lib/cache";
 import { generateBackground } from "@/lib/background-generator";
 import { normalizeVehicle } from "./normalizer";
@@ -297,7 +298,8 @@ export async function processFeed(
             // Last-resort guard — generateBackground swallows its own errors,
             // but this keeps the promise chain explicit.
             console.error(
-              `[dms.feed-processor] background enqueue failed for ${vin}:`,
+              "[dms.feed-processor] background enqueue failed for %s:",
+              sanitizeForLog(vin),
               err,
             );
           });
