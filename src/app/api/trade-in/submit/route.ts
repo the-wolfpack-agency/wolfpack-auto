@@ -10,11 +10,18 @@ const submitSchema = z.object({
   first_name: z.string().min(1, "First name is required").max(100),
   last_name: z.string().min(1, "Last name is required").max(100),
   email: z.string().email("Invalid email address").max(255),
+  // Optional field: the form sends "" when left blank, so normalize blank /
+  // whitespace to null BEFORE the regex runs. The regex then only validates an
+  // actually-entered number; a missing phone is accepted (no more 422).
   phone: z
-    .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number")
-    .nullable()
-    .optional()
+    .preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+      z
+        .string()
+        .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number")
+        .nullable()
+        .optional(),
+    )
     .default(null),
 });
 
