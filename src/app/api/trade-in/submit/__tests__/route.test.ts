@@ -55,8 +55,20 @@ describe("POST /api/trade-in/submit — optional phone", () => {
     expect((await submit({ ...base, phone: "+15551234567" })).status).toBe(200);
   });
 
-  it("still REJECTS a non-empty malformed phone (422)", async () => {
-    expect((await submit({ ...base, phone: "abc" })).status).toBe(422);
+  it("accepts a formatted US phone like (555) 123-4567", async () => {
+    expect((await submit({ ...base, phone: "(555) 123-4567" })).status).toBe(200);
+  });
+
+  it("accepts a +1 number with spaces and dashes", async () => {
+    expect((await submit({ ...base, phone: "+1 555-123-4567" })).status).toBe(200);
+  });
+
+  it("treats no-digit garbage as blank on this optional field (no 422)", async () => {
+    expect((await submit({ ...base, phone: "abc" })).status).toBe(200);
+  });
+
+  it("still REJECTS an over-long number (>15 digits) as 422", async () => {
+    expect((await submit({ ...base, phone: "1234567890123456789" })).status).toBe(422);
   });
 
   it("still REJECTS when a required field is missing (422)", async () => {

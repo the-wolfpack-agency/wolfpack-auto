@@ -10,12 +10,18 @@ const submitSchema = z.object({
   first_name: z.string().min(1, "First name is required").max(100),
   last_name: z.string().min(1, "Last name is required").max(100),
   email: z.string().email("Invalid email address").max(255),
-  // Optional field: the form sends "" when left blank, so normalize blank /
-  // whitespace to null BEFORE the regex runs. The regex then only validates an
-  // actually-entered number; a missing phone is accepted (no more 422).
+  // Optional + format-tolerant: accept common human formats like "(555)
+  // 123-4567" or "+1 555-123-4567" by stripping to digits (preserving a leading
+  // +) before validating; blank / no-digit input becomes null (no phone, no
+  // 422). A real number is still validated and stored in normalized form.
   phone: z
     .preprocess(
-      (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+      (v) => {
+        if (typeof v !== "string") return v;
+        const digits = v.replace(/\D/g, "");
+        if (digits === "") return null;
+        return (v.trim().startsWith("+") ? "+" : "") + digits;
+      },
       z
         .string()
         .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number")
