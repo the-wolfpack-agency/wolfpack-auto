@@ -140,27 +140,27 @@ export default function DigitalRetailPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Vehicle Price</label>
-            <input type="number" value={price} onChange={(e) => setPrice(+e.target.value)}
+            <input type="number" min={0}value={price} onChange={(e) => setPrice(+e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Down Payment</label>
-            <input type="number" value={down} onChange={(e) => setDown(+e.target.value)}
+            <input type="number" min={0}value={down} onChange={(e) => setDown(+e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Trade-In Value</label>
-            <input type="number" value={tradeVal} onChange={(e) => setTradeVal(+e.target.value)}
+            <input type="number" min={0}value={tradeVal} onChange={(e) => setTradeVal(+e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Trade Payoff</label>
-            <input type="number" value={tradePayoff} onChange={(e) => setTradePayoff(+e.target.value)}
+            <input type="number" min={0}value={tradePayoff} onChange={(e) => setTradePayoff(+e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">APR (%)</label>
-            <input type="number" step="0.1" value={apr} onChange={(e) => setApr(+e.target.value)}
+            <input type="number" min={0}step="0.1" value={apr} onChange={(e) => setApr(+e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           </div>
           <div>
@@ -174,13 +174,13 @@ export default function DigitalRetailPage() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">Tax Rate (%)</label>
-            <input type="number" step="0.1" value={taxRate} onChange={(e) => setTaxRate(+e.target.value)}
+            <input type="number" min={0}step="0.1" value={taxRate} onChange={(e) => setTaxRate(+e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
           </div>
           {calcType === "lease" && (
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Residual (%)</label>
-              <input type="number" step="1" value={residualPct} onChange={(e) => setResidualPct(+e.target.value)}
+              <input type="number" min={0}step="1" value={residualPct} onChange={(e) => setResidualPct(+e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
             </div>
           )}
