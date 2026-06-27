@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -137,8 +138,7 @@ export default function DeskingPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/desking");
-      const data = await res.json();
+      const data = await fetchJson<{ deals?: DeskingDeal[] }>("/api/admin/desking");
       setDeals(data.deals ?? []);
     } catch {
       setError("Failed to load desking deals.");

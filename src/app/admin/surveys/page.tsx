@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -44,8 +45,7 @@ export default function SurveysPage() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/surveys")
-      .then((r) => r.json())
+    fetchJson<{ surveys?: Survey[] }>("/api/admin/surveys")
       .then((data) => setSurveys(data.surveys ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));

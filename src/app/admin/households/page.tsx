@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -122,8 +124,7 @@ export default function HouseholdsPage() {
 
   const fetchHouseholds = useCallback(() => {
     setLoading(true);
-    fetch("/api/admin/households")
-      .then((r) => r.json())
+    fetchJson<{ households?: HouseholdSummary[]; stats?: HouseholdStats | null }>("/api/admin/households")
       .then((data) => {
         setHouseholds(data.households ?? []);
         setStats(data.stats ?? null);
@@ -138,8 +139,7 @@ export default function HouseholdsPage() {
 
   const handleDetect = () => {
     setDetecting(true);
-    fetch("/api/admin/households", { method: "POST" })
-      .then((r) => r.json())
+    fetchJson("/api/admin/households", { method: "POST" })
       .then(() => {
         fetchHouseholds();
       })
@@ -155,8 +155,7 @@ export default function HouseholdsPage() {
     }
     setExpanded(id);
     setDetailLoading(true);
-    fetch(`/api/admin/households?householdId=${id}`)
-      .then((r) => r.json())
+    fetchJson<{ household?: HouseholdDetail | null }>(`/api/admin/households?householdId=${id}`)
       .then((data) => setDetail(data.household ?? null))
       .catch(() => setDetail(null))
       .finally(() => setDetailLoading(false));

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -72,8 +73,7 @@ export default function AccountingExportPage() {
 
   useEffect(() => {
     setLoadingAccounts(true);
-    fetch("/api/admin/accounting/chart-of-accounts")
-      .then((r) => r.json())
+    fetchJson<{ accounts?: Account[] }>("/api/admin/accounting/chart-of-accounts")
       .then((data) => setAccounts(data.accounts ?? []))
       .catch(() => {})
       .finally(() => setLoadingAccounts(false));

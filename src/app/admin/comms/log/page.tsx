@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -64,8 +65,7 @@ export default function MessageLogPage() {
       if (filterChannel) params.set("channel", filterChannel);
       if (filterStatus) params.set("status", filterStatus);
       const qs = params.toString() ? `?${params.toString()}` : "";
-      const res = await fetch(`/api/admin/comms/log${qs}`);
-      const data = await res.json();
+      const data = await fetchJson<{ messages?: MessageLogEntry[] }>(`/api/admin/comms/log${qs}`);
       setMessages(data.messages ?? []);
     } catch {
       setError("Failed to load message log.");

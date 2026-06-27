@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -65,8 +66,7 @@ export default function TemplatesPage() {
     setError("");
     try {
       const params = filterChannel ? `?channel=${filterChannel}` : "";
-      const res = await fetch(`/api/admin/comms/templates${params}`);
-      const data = await res.json();
+      const data = await fetchJson<{ templates?: MessageTemplate[] }>(`/api/admin/comms/templates${params}`);
       setTemplates(data.templates ?? []);
     } catch {
       setError("Failed to load templates.");

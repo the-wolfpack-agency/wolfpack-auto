@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -68,8 +70,12 @@ export default function ErrorMonitorPage() {
 
   useEffect(() => {
     const dismissed = loadResolvedSet();
-    fetch("/api/admin/error-monitor")
-      .then((r) => r.json())
+    fetchJson<{
+      errors?: ErrorAggregate[];
+      total_errors_24h?: number;
+      total_errors_7d?: number;
+      resolved_7d?: number;
+    }>("/api/admin/error-monitor")
       .then((data) => {
         const all: ErrorAggregate[] = data.errors ?? [];
         setErrors(all.filter((e) => !dismissed.has(e.fingerprint)));

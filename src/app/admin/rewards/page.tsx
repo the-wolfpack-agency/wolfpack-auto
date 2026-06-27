@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -95,8 +96,7 @@ export default function RewardsPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/rewards");
-      const json: RewardsData = await res.json();
+      const json = await fetchJson<RewardsData>("/api/admin/rewards");
       setData(json);
     } catch {
       setError("Failed to load rewards data.");

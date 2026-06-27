@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -47,8 +49,7 @@ export default function LeadIngestionPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/lead-ingestion")
-      .then((r) => r.json())
+    fetchJson<{ feeds?: Feed[]; recent_leads?: IngestedLead[]; stats?: Stats | null }>("/api/admin/lead-ingestion")
       .then((data) => {
         setFeeds(data.feeds ?? []);
         setRecentLeads(data.recent_leads ?? []);

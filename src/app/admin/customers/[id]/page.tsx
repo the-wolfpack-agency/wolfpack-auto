@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -127,8 +128,7 @@ export default function Customer360Page() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/customers/${customerId}`);
-      const data = await res.json();
+      const data = await fetchJson<{ customer?: Customer360 | null }>(`/api/admin/customers/${customerId}`);
       setCustomer(data.customer ?? null);
     } catch {
       setError("Failed to load customer data.");

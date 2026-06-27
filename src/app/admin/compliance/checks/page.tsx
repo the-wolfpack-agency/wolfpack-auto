@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -119,8 +120,7 @@ export default function ComplianceChecksPage() {
       const params = new URLSearchParams();
       if (filterType) params.set("check_type", filterType);
       if (filterResult) params.set("result", filterResult);
-      const res = await fetch(`/api/admin/compliance/checks?${params}`);
-      const data = await res.json();
+      const data = await fetchJson<{ checks?: ComplianceCheck[] }>(`/api/admin/compliance/checks?${params}`);
       setChecks(data.checks ?? []);
     } catch {
       setChecks([]);

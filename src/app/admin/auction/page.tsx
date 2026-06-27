@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 type Tab = "opportunities" | "benchmarks";
 
@@ -62,8 +63,7 @@ export default function AuctionAdminPage() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fetch("/api/admin/auction/opportunities")
-      .then((r) => r.json())
+    fetchJson<{ opportunities?: Opportunity[] }>("/api/admin/auction/opportunities")
       .then((d) => { if (alive) { setOpps(d.opportunities ?? []); setLoading(false); }})
       .catch((e) => { if (alive) { setErr(String(e)); setLoading(false); }});
     return () => { alive = false; };

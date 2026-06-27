@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -74,8 +75,7 @@ export default function SystemHealthPage() {
 
   const fetchHealth = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/system/health");
-      const json = await res.json();
+      const json = await fetchJson<HealthData>("/api/admin/system/health");
       setData(json);
       setError(null);
     } catch (err) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -55,8 +56,7 @@ export default function CustomerListPage() {
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
       const qs = params.toString() ? `?${params.toString()}` : "";
-      const res = await fetch(`/api/admin/customers${qs}`);
-      const data = await res.json();
+      const data = await fetchJson<{ customers?: CustomerListItem[] }>(`/api/admin/customers${qs}`);
       setCustomers(data.customers ?? []);
     } catch {
       setError("Failed to load customers.");

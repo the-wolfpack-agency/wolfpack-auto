@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -42,8 +43,7 @@ export default function UserTestingPage() {
   const [description, setDescription] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/user-testing")
-      .then((r) => r.json())
+    fetchJson<{ tests?: UserTest[] }>("/api/admin/user-testing")
       .then((data) => setTests(data.tests ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));

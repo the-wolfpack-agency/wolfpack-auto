@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -30,8 +31,7 @@ export default function SurveyResponsesPage() {
 
   useEffect(() => {
     if (!surveyId) return;
-    fetch(`/api/admin/surveys/${surveyId}/responses`)
-      .then((r) => r.json())
+    fetchJson<{ responses?: EnrichedResponse[] }>(`/api/admin/surveys/${surveyId}/responses`)
       .then((data) => setResponses(data.responses ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));

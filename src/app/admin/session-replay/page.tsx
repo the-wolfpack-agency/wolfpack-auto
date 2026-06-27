@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -54,8 +55,7 @@ export default function SessionReplayPage() {
   const [eventsLoading, setEventsLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/session-replay")
-      .then((r) => r.json())
+    fetchJson<{ sessions?: ReplaySession[] }>("/api/admin/session-replay")
       .then((data) => setSessions(data.sessions ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -65,8 +65,7 @@ export default function SessionReplayPage() {
     setSelected(sessionId);
     setEventsLoading(true);
     try {
-      const res = await fetch(`/api/admin/session-replay?sessionId=${sessionId}`);
-      const data = await res.json();
+      const data = await fetchJson<{ events?: ReplayEvent[] }>(`/api/admin/session-replay?sessionId=${sessionId}`);
       setEvents(data.events ?? []);
     } catch {
       setEvents([]);

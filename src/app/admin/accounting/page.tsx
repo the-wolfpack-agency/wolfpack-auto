@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -137,8 +138,7 @@ export default function AccountingDashboard() {
     setAccountsLoading(true);
     setAccountsError("");
     try {
-      const res = await fetch("/api/admin/accounting/chart");
-      const data = await res.json();
+      const data = await fetchJson<{ accounts?: Account[] }>("/api/admin/accounting/chart");
       setAccounts(data.accounts ?? []);
     } catch {
       setAccountsError("Failed to load chart of accounts.");
@@ -151,8 +151,7 @@ export default function AccountingDashboard() {
     setEntriesLoading(true);
     setEntriesError("");
     try {
-      const res = await fetch("/api/admin/accounting/journal");
-      const data = await res.json();
+      const data = await fetchJson<{ entries?: JournalEntry[] }>("/api/admin/accounting/journal");
       setEntries(data.entries ?? []);
     } catch {
       setEntriesError("Failed to load journal entries.");
@@ -252,10 +251,9 @@ export default function AccountingDashboard() {
     setStatementsError("");
     setStatement(null);
     try {
-      const res = await fetch(
+      const data = await fetchJson<{ statement?: FinancialStatement | null }>(
         `/api/admin/accounting/statements?type=${type}`
       );
-      const data = await res.json();
       setStatement(data.statement ?? null);
     } catch {
       setStatementsError("Failed to generate statement.");

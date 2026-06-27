@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 type Tab = "visible" | "reservations" | "swaps";
 
 interface PoolInventory {
@@ -46,12 +48,10 @@ export default function InventoryPoolPage() {
   const [groupId, setGroupId] = useState("");
 
   useEffect(() => {
-    fetch("/api/admin/inventory-pool/visible")
-      .then((r) => r.json())
+    fetchJson<{ inventory?: PoolInventory[] }>("/api/admin/inventory-pool/visible")
       .then((d) => setInventory(d.inventory ?? []))
       .catch(() => {});
-    fetch("/api/admin/inventory-pool/reserve")
-      .then((r) => r.json())
+    fetchJson<{ incoming?: ReservationRow[]; outgoing?: ReservationRow[] }>("/api/admin/inventory-pool/reserve")
       .then((d) => {
         setIncoming(d.incoming ?? []);
         setOutgoing(d.outgoing ?? []);
@@ -61,8 +61,7 @@ export default function InventoryPoolPage() {
 
   async function loadSwaps() {
     if (!groupId) return;
-    const res = await fetch(`/api/admin/inventory-pool/swaps?dealer_group_id=${groupId}`);
-    const data = await res.json();
+    const data = await fetchJson<{ swaps?: SwapRow[] }>(`/api/admin/inventory-pool/swaps?dealer_group_id=${groupId}`);
     setSwaps(data.swaps ?? []);
   }
 

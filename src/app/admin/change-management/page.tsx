@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -242,8 +243,7 @@ export default function ChangeManagementPage() {
       // Analytics: {event_type: "change_recorded", metadata: {category: formCategory, impact: formImpact, status: "proposed"}}
 
       // Refresh
-      const listRes = await fetch("/api/admin/change-management");
-      const listData = (await listRes.json()) as { changes: ChangeRecord[] };
+      const listData = await fetchJson<{ changes: ChangeRecord[] }>("/api/admin/change-management");
       setChanges(listData.changes ?? []);
 
       // Reset

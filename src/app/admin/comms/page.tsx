@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -143,8 +144,7 @@ export default function CommsPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/admin/comms");
-      const data = await res.json();
+      const data = await fetchJson<{ announcements?: Announcement[] }>("/api/admin/comms");
       setAnnouncements(data.announcements ?? []);
     } catch {
       setError("Failed to load announcements.");

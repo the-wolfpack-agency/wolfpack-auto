@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -230,8 +232,7 @@ export default function LendersPage() {
       }
 
       // Refresh
-      const listRes = await fetch("/api/admin/lenders");
-      const listData = (await listRes.json()) as { lenders: Lender[] };
+      const listData = await fetchJson<{ lenders: Lender[] }>("/api/admin/lenders");
       setLenders(listData.lenders ?? []);
 
       // Reset form

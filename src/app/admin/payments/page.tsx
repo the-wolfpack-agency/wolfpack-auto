@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -139,8 +141,7 @@ export default function PaymentsDashboard() {
 
   const loadConfig = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/payments");
-      const data = await res.json();
+      const data = await fetchJson<{ config?: StripeConfig | null }>("/api/admin/payments");
       setStripeConfig(data.config ?? null);
     } catch {
       /* Stripe config is non-critical */
@@ -151,8 +152,7 @@ export default function PaymentsDashboard() {
     setTxLoading(true);
     setTxError("");
     try {
-      const res = await fetch("/api/admin/payments");
-      const data = await res.json();
+      const data = await fetchJson<{ transactions?: Transaction[] }>("/api/admin/payments");
       setTransactions(data.transactions ?? []);
     } catch {
       setTxError("Failed to load transactions.");
@@ -164,8 +164,7 @@ export default function PaymentsDashboard() {
   const loadReconciliation = useCallback(async () => {
     setReconLoading(true);
     try {
-      const res = await fetch("/api/admin/payments/reconciliation");
-      const data = await res.json();
+      const data = await fetchJson<{ reconciliation?: Reconciliation | null }>("/api/admin/payments/reconciliation");
       setRecon(data.reconciliation ?? null);
     } catch {
       /* Reconciliation is non-critical */

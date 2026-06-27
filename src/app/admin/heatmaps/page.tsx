@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -165,8 +167,17 @@ export default function HeatmapsPage() {
   const fetchData = useCallback(() => {
     setLoading(true);
     if (isSafeToFrame(page)) setIframeLoading(true);
-    fetch(`/api/admin/heatmaps?page=${encodeURIComponent(page)}&type=${type}&days=${days}`)
-      .then((r) => r.json())
+    fetchJson<{
+      points?: HeatmapPoint[];
+      movementPoints?: MovementPoint[];
+      scrollBands?: ScrollBand[];
+      attentionZones?: AttentionZone[];
+      topPages?: TopPage[];
+      stats?: HeatmapStats | null;
+      hottestElements?: HottestElement[];
+      noData?: boolean;
+      noDataReason?: string | null;
+    }>(`/api/admin/heatmaps?page=${encodeURIComponent(page)}&type=${type}&days=${days}`)
       .then((data) => {
         setPoints(data.points ?? []);
         setMovementPoints(data.movementPoints ?? []);
@@ -210,8 +221,10 @@ export default function HeatmapsPage() {
 
   const fetchCompareData = useCallback(() => {
     if (!compareMode) return;
-    fetch(`/api/admin/heatmaps?page=${encodeURIComponent(page)}&type=click&days=${compareDays}&compare=true&compareDays=${days}`)
-      .then((r) => r.json())
+    fetchJson<{
+      points?: HeatmapPoint[];
+      diff?: { increased: HeatmapPoint[]; decreased: HeatmapPoint[]; netChangePercent: number } | null;
+    }>(`/api/admin/heatmaps?page=${encodeURIComponent(page)}&type=click&days=${compareDays}&compare=true&compareDays=${days}`)
       .then((data) => {
         setComparePoints(data.points ?? []);
         setDiffPoints(data.diff ?? null);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -192,8 +193,7 @@ export default function CreditPage() {
       setLastReport(data.report ?? null);
 
       // Refresh list
-      const listRes = await fetch("/api/admin/credit/history");
-      const listData = (await listRes.json()) as { pulls: CreditPull[] };
+      const listData = await fetchJson<{ pulls: CreditPull[] }>("/api/admin/credit/history");
       setPulls(listData.pulls ?? []);
 
       // Reset form partially (keep consent)

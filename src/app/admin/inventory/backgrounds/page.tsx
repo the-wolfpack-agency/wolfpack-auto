@@ -17,6 +17,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
@@ -148,20 +150,23 @@ export default function BackgroundStudioPage() {
   // Fetch data on mount
   useEffect(() => {
     // Load presets + system + custom backgrounds
-    fetch("/api/admin/vehicles/backgrounds")
-      .then((r) => r.json())
+    fetchJson<{
+      presets?: BackgroundPreset[];
+      system?: (CustomBg | SystemBgMeta)[];
+      system_meta?: (CustomBg | SystemBgMeta)[];
+      custom?: CustomBg[];
+    }>("/api/admin/vehicles/backgrounds")
       .then((d) => {
         setPresets(d.presets ?? []);
         // System backgrounds from DB or fallback metadata
-        const sys = (d.system?.length > 0 ? d.system : d.system_meta) ?? [];
+        const sys = ((d.system?.length ?? 0) > 0 ? d.system : d.system_meta) ?? [];
         setSystemBgs(sys);
         setCustomBgs(d.custom ?? []);
       })
       .catch(() => {});
 
     // Check AI availability
-    fetch("/api/admin/vehicles/backgrounds/remove-bg")
-      .then((r) => r.json())
+    fetchJson<{ available?: boolean }>("/api/admin/vehicles/backgrounds/remove-bg")
       .then((d) => setAiAvailable(d.available ?? false))
       .catch(() => {});
   }, []);
@@ -169,8 +174,7 @@ export default function BackgroundStudioPage() {
   // Fetch insights when tab switches
   useEffect(() => {
     if (tab !== "performance") return;
-    fetch("/api/admin/vehicles/backgrounds/insights")
-      .then((r) => r.json())
+    fetchJson<{ insights?: InsightRow[] }>("/api/admin/vehicles/backgrounds/insights")
       .then((d) => setInsights(d.insights ?? []))
       .catch(() => {});
   }, [tab]);

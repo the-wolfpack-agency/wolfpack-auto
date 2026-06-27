@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
 /* -------------------------------------------------------------------------- */
@@ -111,8 +113,7 @@ export default function FloorPlanPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/floor-plan");
-      const data = await res.json();
+      const data = await fetchJson<{ lines?: FloorPlanLine[]; stats?: FloorPlanStats }>("/api/admin/floor-plan");
       setLines(data.lines ?? []);
       setStats(data.stats ?? null);
     } catch {

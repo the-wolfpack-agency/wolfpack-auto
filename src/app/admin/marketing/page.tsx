@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
 /* -------------------------------------------------------------------------- */
@@ -257,8 +259,7 @@ export default function MarketingPage() {
       // Analytics: {event_type: "campaign_created", metadata: {budget: body.budget, channels: body.channels, goal: body.goal}}
 
       // Refresh list
-      const listRes = await fetch("/api/admin/marketing");
-      const listData = (await listRes.json()) as { campaigns: Campaign[] };
+      const listData = await fetchJson<{ campaigns: Campaign[] }>("/api/admin/marketing");
       setCampaigns(listData.campaigns ?? []);
 
       // Reset form

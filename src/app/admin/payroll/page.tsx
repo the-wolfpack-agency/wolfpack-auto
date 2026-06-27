@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -198,8 +200,7 @@ export default function PayrollDashboard() {
 
   const loadProvider = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/payroll");
-      const data = await res.json();
+      const data = await fetchJson<{ provider?: PayrollProvider | null }>("/api/admin/payroll");
       setProvider(data.provider ?? null);
     } catch {
       /* non-critical */
@@ -210,8 +211,7 @@ export default function PayrollDashboard() {
     setEmpLoading(true);
     setEmpError("");
     try {
-      const res = await fetch("/api/admin/payroll");
-      const data = await res.json();
+      const data = await fetchJson<{ employees?: Employee[] }>("/api/admin/payroll");
       setEmployees(data.employees ?? []);
     } catch {
       setEmpError("Failed to load employees.");
@@ -224,8 +224,7 @@ export default function PayrollDashboard() {
     setTimeLoading(true);
     setTimeError("");
     try {
-      const res = await fetch("/api/admin/payroll");
-      const data = await res.json();
+      const data = await fetchJson<{ entries?: TimeEntry[] }>("/api/admin/payroll");
       setTimeEntries(data.entries ?? []);
     } catch {
       setTimeError("Failed to load time entries.");
@@ -238,8 +237,7 @@ export default function PayrollDashboard() {
     setCommLoading(true);
     setCommError("");
     try {
-      const res = await fetch("/api/admin/payroll/commissions");
-      const data = await res.json();
+      const data = await fetchJson<{ commissions?: CommissionEntry[] }>("/api/admin/payroll/commissions");
       setCommissions(data.commissions ?? []);
     } catch {
       setCommError("Failed to load commissions.");
@@ -251,8 +249,7 @@ export default function PayrollDashboard() {
   const loadPaySummary = useCallback(async () => {
     setSummaryLoading(true);
     try {
-      const res = await fetch("/api/admin/payroll");
-      const data = await res.json();
+      const data = await fetchJson<{ summary?: PayPeriodSummary | null }>("/api/admin/payroll");
       setPaySummary(data.summary ?? null);
     } catch {
       /* non-critical */

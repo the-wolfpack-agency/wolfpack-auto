@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -62,8 +63,7 @@ export default function CommissionsPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/accounting/commissions?pay_period=${encodeURIComponent(payPeriod)}`);
-      const data = await res.json();
+      const data = await fetchJson<{ commissions?: CommissionEntry[] }>(`/api/admin/accounting/commissions?pay_period=${encodeURIComponent(payPeriod)}`);
       setCommissions(data.commissions ?? []);
     } catch {
       setError("Failed to load commissions.");

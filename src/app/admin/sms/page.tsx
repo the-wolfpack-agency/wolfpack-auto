@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
@@ -42,8 +43,7 @@ export default function SMSPage() {
   const [configured, setConfigured] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/sms")
-      .then((r) => r.json())
+    fetchJson<{ conversations?: Conversation[]; config?: { configured?: boolean } }>("/api/admin/sms")
       .then((data) => {
         setConversations(data.conversations ?? []);
         setConfigured(data.config?.configured ?? false);
@@ -55,8 +55,7 @@ export default function SMSPage() {
   const selectConversation = useCallback(async (conv: Conversation) => {
     setSelected(conv);
     try {
-      const res = await fetch(`/api/admin/sms?lead_id=${conv.lead_id}`);
-      const data = await res.json();
+      const data = await fetchJson<{ messages?: Message[] }>(`/api/admin/sms?lead_id=${conv.lead_id}`);
       setMessages(data.messages ?? []);
     } catch {
       setMessages([]);
@@ -80,8 +79,7 @@ export default function SMSPage() {
       setComposeBody("");
       // Reload messages
       if (selected) {
-        const res = await fetch(`/api/admin/sms?lead_id=${selected.lead_id}`);
-        const data = await res.json();
+        const data = await fetchJson<{ messages?: Message[] }>(`/api/admin/sms?lead_id=${selected.lead_id}`);
         setMessages(data.messages ?? []);
       }
     } catch {

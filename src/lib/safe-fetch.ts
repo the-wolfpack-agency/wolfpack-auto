@@ -83,3 +83,42 @@ export async function safeFetch(
 
   throw new NetworkError(url, lastError);
 }
+
+/** A non-2xx HTTP response. Carries the status + (best-effort) body for the UI. */
+export class HttpError extends Error {
+  constructor(
+    public readonly url: string,
+    public readonly status: number,
+    public readonly body?: string,
+  ) {
+    super(`Request to ${url} failed with HTTP ${status}`);
+    this.name = "HttpError";
+  }
+}
+
+/**
+ * Fetch + parse JSON, THROWING `HttpError` on a non-2xx response.
+ *
+ * This is the fix for the silent-blank-page class: `safeFetch` (and raw fetch)
+ * return a 4xx/5xx Response, and callers that immediately `await res.json()` then
+ * parse the error body AS DATA — so a 401/500 renders an empty list instead of an
+ * error. Routing reads/writes through `fetchJson` makes a non-ok response throw,
+ * which the caller's existing `try/catch` already handles (setError, etc.). Use it
+ * for every client fetch that consumes JSON.
+ */
+export async function fetchJson<T = unknown>(
+  url: string,
+  options: SafeFetchOptions = {},
+): Promise<T> {
+  const res = await safeFetch(url, options);
+  if (!res.ok) {
+    let body: string | undefined;
+    try {
+      body = await res.text();
+    } catch {
+      /* body is best-effort context only */
+    }
+    throw new HttpError(url, res.status, body);
+  }
+  return (await res.json()) as T;
+}

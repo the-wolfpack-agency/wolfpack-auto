@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { fetchJson } from "@/lib/safe-fetch";
+
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -52,8 +54,7 @@ export default function ERatingPage() {
   const [comparing, setComparing] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/erating")
-      .then((r) => r.json())
+    fetchJson<{ summary?: ProductSummary[] }>("/api/admin/erating")
       .then((data) => setSummary(data.summary ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -63,12 +64,11 @@ export default function ERatingPage() {
     if (!vin.trim()) return;
     setComparing(true);
     try {
-      const res = await fetch("/api/admin/erating", {
+      const data = await fetchJson<{ comparisons?: Comparison[] }>("/api/admin/erating", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vin, compare: true }),
       });
-      const data = await res.json();
       setComparisons(data.comparisons ?? []);
     } catch {
       // swallow

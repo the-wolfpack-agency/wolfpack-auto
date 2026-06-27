@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                       */
@@ -204,8 +205,7 @@ export default function CompetitivePage() {
       // Analytics: {event_type: "competitive_intel_logged", metadata: {category: formCategory, source: formSource, competitor_name: body.competitor_name}}
 
       // Refresh
-      const listRes = await fetch("/api/admin/competitive");
-      const listData = (await listRes.json()) as { competitors: Competitor[] };
+      const listData = await fetchJson<{ competitors: Competitor[] }>("/api/admin/competitive");
       setCompetitors(listData.competitors ?? []);
 
       // Reset form
