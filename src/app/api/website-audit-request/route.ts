@@ -23,6 +23,7 @@ import { z } from "zod";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { auditLog } from "@/lib/audit-log";
 import { trackWebsiteAudit } from "@/lib/analytics-hooks";
+import { fetchJson } from "@/lib/safe-fetch";
 
 export const dynamic = "force-dynamic";
 
@@ -94,12 +95,11 @@ async function verifyHcaptcha(token: string | undefined): Promise<boolean> {
   }
   if (!token) return false;
   try {
-    const res = await fetch("https://hcaptcha.com/siteverify", {
+    const data = await fetchJson<{ success?: boolean }>("https://hcaptcha.com/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ secret, response: token }).toString(),
     });
-    const data = (await res.json()) as { success?: boolean };
     return Boolean(data.success);
   } catch (err) {
     console.error("[website-audit] hCaptcha verification error:", err);

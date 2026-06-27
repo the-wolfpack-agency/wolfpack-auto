@@ -3,6 +3,7 @@
 import { useState, Suspense, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { fetchJson } from "@/lib/safe-fetch";
 
 export default function AdminLoginPage() {
   return (
@@ -66,8 +67,7 @@ function LoginForm() {
       if (result.ok) {
         // Check whether the session requires MFA verification.
         // We do this by fetching the session and inspecting mfaVerified.
-        const sessionRes = await fetch("/api/auth/session");
-        const session = await sessionRes.json() as { mfaVerified?: boolean; user?: { id?: string } } | null;
+        const session = await fetchJson<{ mfaVerified?: boolean; user?: { id?: string } } | null>("/api/auth/session");
 
         if (session?.mfaVerified === false && session?.user?.id) {
           // MFA pending — show TOTP step

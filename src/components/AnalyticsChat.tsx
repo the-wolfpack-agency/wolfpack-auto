@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -44,13 +45,14 @@ export default function AnalyticsChat() {
       setLoading(true);
 
       try {
-        const res = await fetch("/api/admin/analytics/query", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: q }),
-        });
-
-        const data = await res.json();
+        const data = await fetchJson<{ answer?: string; data?: unknown; type?: "text" | "table" | "number" }>(
+          "/api/admin/analytics/query",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: q }),
+          },
+        );
 
         setMessages((prev) => [
           ...prev,

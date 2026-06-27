@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -213,12 +214,10 @@ export default function TasksPage() {
     setLoading(true);
     setError("");
     try {
-      const [tasksRes, recsRes] = await Promise.all([
-        fetch("/api/admin/tasks?type=tasks"),
-        fetch("/api/admin/tasks?type=recognitions"),
+      const [tasksData, recsData] = await Promise.all([
+        fetchJson<{ tasks?: Task[] }>("/api/admin/tasks?type=tasks"),
+        fetchJson<{ tasks?: Task[] }>("/api/admin/tasks?type=recognitions"),
       ]);
-      const tasksData = await tasksRes.json();
-      const recsData = await recsRes.json();
       setTasks(tasksData.tasks ?? []);
       setRecognitions(recsData.tasks ?? []);
     } catch {

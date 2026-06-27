@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -75,12 +76,10 @@ export default function ReviewManagementPage() {
       if (filterResponded) params.set("responded", filterResponded);
       const qs = params.toString() ? `?${params.toString()}` : "";
 
-      const [revRes, tplRes] = await Promise.all([
-        fetch(`/api/admin/reviews${qs}`),
-        fetch("/api/admin/reviews/templates"),
+      const [revData, tplData] = await Promise.all([
+        fetchJson<{ reviews?: Review[] }>(`/api/admin/reviews${qs}`),
+        fetchJson<{ templates?: ResponseTemplate[] }>("/api/admin/reviews/templates"),
       ]);
-      const revData = await revRes.json();
-      const tplData = await tplRes.json();
       setReviews(revData.reviews ?? []);
       setTemplates(tplData.templates ?? []);
     } catch {

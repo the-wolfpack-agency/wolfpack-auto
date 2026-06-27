@@ -5,6 +5,7 @@ import { trackComms, trackSecurity } from "@/lib/analytics-hooks";
 import { getDealerId } from "@/lib/get-dealer-id";
 import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
 import { sanitizeForLog } from "@/lib/log-sanitize";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* POST /api/admin/comms/send                                                  */
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
       // Email via Resend
       if (body.channel === "email" && process.env.RESEND_API_KEY) {
         try {
-          const res = await fetch("https://api.resend.com/emails", {
+          const data = await fetchJson<{ id?: string }>("https://api.resend.com/emails", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
@@ -113,7 +114,6 @@ export async function POST(request: NextRequest) {
               text: messageBody,
             }),
           });
-          const data = await res.json();
           externalId = data.id ?? null;
         } catch (sendErr) {
           console.error("[comms/send] Resend error:", sendErr);
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
             To: body.recipient,
             Body: messageBody,
           });
-          const res = await fetch(
+          const data = await fetchJson<{ sid?: string }>(
             `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
             {
               method: "POST",
@@ -141,7 +141,6 @@ export async function POST(request: NextRequest) {
               body: params.toString(),
             },
           );
-          const data = await res.json();
           externalId = data.sid ?? null;
         } catch (sendErr) {
           console.error("[comms/send] Twilio error:", sendErr);

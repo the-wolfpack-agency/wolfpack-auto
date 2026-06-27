@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -74,15 +75,13 @@ export default function SequencesPage() {
     setLoading(true);
     setError("");
     try {
-      const [seqRes, tplRes] = await Promise.all([
-        fetch("/api/admin/comms/sequences"),
-        fetch("/api/admin/comms/templates"),
+      const [seqData, tplData] = await Promise.all([
+        fetchJson<{ sequences?: FollowUpSequence[] }>("/api/admin/comms/sequences"),
+        fetchJson<{ templates?: { id: string; name: string; channel: "email" | "sms" }[] }>("/api/admin/comms/templates"),
       ]);
-      const seqData = await seqRes.json();
-      const tplData = await tplRes.json();
       setSequences(seqData.sequences ?? []);
       setTemplates(
-        (tplData.templates ?? []).map((t: { id: string; name: string; channel: string }) => ({
+        (tplData.templates ?? []).map((t) => ({
           id: t.id,
           name: t.name,
           channel: t.channel,

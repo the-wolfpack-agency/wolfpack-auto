@@ -5,6 +5,7 @@ import ChatBubble from "./ChatBubble";
 import ChatMessage, { type ChatMessageData } from "./ChatMessage";
 import TypingIndicator from "./TypingIndicator";
 import { useAnalytics } from "./EventCollector";
+import { fetchJson } from "@/lib/safe-fetch";
 
 const STORAGE_KEY = "wolfpack_chat_messages";
 const STORAGE_OPEN_KEY = "wolfpack_chat_open";
@@ -194,7 +195,7 @@ export default function ChatWidget() {
           content: m.content,
         }));
 
-        const res = await fetch("/api/chat", {
+        const data = await fetchJson<{ response?: string; suggested_actions?: string[] }>("/api/chat", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -205,8 +206,6 @@ export default function ChatWidget() {
             history,
           }),
         });
-
-        const data = await res.json();
 
         const assistantMsg: ChatMessageData = {
           id: `assistant-${Date.now()}`,
