@@ -305,7 +305,12 @@ export const authOptions: NextAuthOptions = {
             id: "demo-user",
             email: "demo@wolfpackauto.com",
             name: "Demo Admin",
-            dealer_id: "demo-dealer",
+            // Point the demo session at the seeded tenant so the gated demo shows
+            // real seeded data. getDealerId() returns a session dealer_id verbatim
+            // (only unset/"default" falls back to the UUID), so "demo-dealer" here
+            // would scope queries to an empty tenant. Match the seeded DEALER_ID.
+            dealer_id:
+              process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001",
             role: "admin" as const,
             mfa_required: false,
           };

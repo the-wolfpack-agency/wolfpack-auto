@@ -139,16 +139,19 @@ export async function middleware(request: NextRequest) {
   const isLogin = pathname === "/admin/login";
   const isAuthApi = pathname.startsWith("/api/auth");
 
-  // Auth check for admin routes.
-  // Controlled by DEMO_MODE env var — set to "true" only for public demos.
-  // Production deployments must NOT set DEMO_MODE=true.
-  const isDemoMode = process.env.DEMO_MODE === "true";
+  // This gate is ALWAYS on. DEMO_MODE never disables it — it only enables the
+  // demo *credential* in src/lib/auth.ts, so a demo viewer still logs in
+  // (demo@wolfpackauto.com / demo) and gets a real session. A previous
+  // `!isDemoMode &&` escape here left the whole admin panel + dealer data
+  // (incl. lead PII) served unauthenticated on the public deploy
+  // (platform-scan critical, 2026-06).
+  //
   // Health endpoints are public — load balancers, canary probes, and monitoring
   // need unauthenticated access. The deep health endpoint self-protects with
   // CANARY_SECRET so infrastructure details stay private.
   const isHealthRoute = pathname.startsWith("/api/health");
 
-  if (!isDemoMode && isAdminRoute(pathname) && !isLogin && !isAuthApi && !isHealthRoute) {
+  if (isAdminRoute(pathname) && !isLogin && !isAuthApi && !isHealthRoute) {
     const secret = process.env.NEXTAUTH_SECRET || (() => {
       if (process.env.NODE_ENV === "production") {
         throw new Error(

@@ -33,20 +33,12 @@ export interface AuthResult {
 export async function requireAuth(
   request?: NextRequest,
 ): Promise<AuthResult | NextResponse> {
-  // In DEMO_MODE, return a synthetic admin user so API routes work without login.
-  // DEMO_MODE should NEVER be set in production with real customer data.
-  if (process.env.DEMO_MODE === "true") {
-    return {
-      user: {
-        id: "demo-user",
-        email: "demo@wolfpackauto.com",
-        name: "Demo Admin",
-        dealer_id: process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001",
-        role: "admin",
-      },
-    };
-  }
-
+  // DEMO_MODE must NEVER bypass authentication. It only enables the demo
+  // *credential* (demo@wolfpackauto.com / demo) in src/lib/auth.ts — the user
+  // still has to log in and receives a real session. A previous DEMO_MODE bypass
+  // here returned a synthetic admin with no login, which left the deployed admin
+  // panel + all dealer data (incl. lead PII) served unauthenticated on a public
+  // URL (platform-scan critical, 2026-06). Authentication is always enforced.
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
