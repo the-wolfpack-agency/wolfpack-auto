@@ -78,8 +78,12 @@ interface DeepHealthResponse {
 function authorizeCanary(request: NextRequest): boolean {
   const secret = process.env.CANARY_SECRET;
   if (!secret) {
-    // If no secret configured, allow in development/demo only
-    return process.env.NODE_ENV === "development" || process.env.DEMO_MODE === "true";
+    // If no secret is configured, allow in LOCAL DEVELOPMENT only. DEMO_MODE is
+    // deliberately NOT a bypass here: the public demo runs with DEMO_MODE=true,
+    // and deep health exposes infra detail (table counts, circuit-breaker state,
+    // latencies) that should not be world-readable. A demo/prod deploy must set
+    // CANARY_SECRET to use this endpoint.
+    return process.env.NODE_ENV === "development";
   }
   return request.headers.get("x-canary-secret") === secret;
 }
