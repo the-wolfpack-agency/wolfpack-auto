@@ -1,0 +1,73 @@
+# Semgrep SAST -> OGIAM platform-scan findings pipeline.
+#
+# Flow:
+#   1. semgrep --config=auto scans the repo and emits SARIF (the OASIS standard
+#      every mainstream SAST tool speaks). continue-on-error so findings never
+#      block the build: triage happens in the OGIAM review UI, not here.
+#   2. We POST the SARIF to OGIAM's tool-agnostic ingest endpoint
+#      (/api/admin/platform-scans/ingest/sarif). The endpoint parses SARIF once
+#      and lands every result as a ScanFinding in the SAME store as the HTTP
+#      probe + browser runner: dedup, auto-resolve on re-scan, Brain ingest,
+#      analytics, audit. No tool-specific glue lives here.
+#
+# Secrets (set in repo settings, inherited; absent on fork PRs):
+#   INSTINCT_INGEST_URL  base URL of the OGIAM deployment (no trailing slash)
+#   CRON_SECRET          bearer token the ingest endpoint accepts on the CI path
+#
+# The post step is guarded so it skips gracefully when secrets are absent (e.g.
+# fork PRs), keeping the scan green without leaking the ingest target.
+
+name: Semgrep SAST
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    # Job-level env so the post step's `if:` can read the secrets' presence.
+    # (A step's own `env:` block is not visible to that step's `if:` guard.)
+    env:
+      INSTINCT_INGEST_URL: ${{ secrets.INSTINCT_INGEST_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      # Findings must never block the build: continue-on-error keeps the job
+      # green even when Semgrep exits non-zero on detected issues.
+      - name: Run Semgrep (SARIF)
+        continue-on-error: true
+        run: >-
+          semgrep
+          --config=auto
+          --sarif
+          --output=semgrep.sarif
+          --severity=ERROR
+          --severity=WARNING
+          .
+
+      # Skip cleanly when the ingest secrets are unavailable (fork PRs, forks of
+      # the repo). env-level guard avoids referencing secrets in a way that fails
+      # for contributors without access.
+      - name: Post SARIF to OGIAM platform-scan ingest
+        if: ${{ env.INSTINCT_INGEST_URL != '' && env.CRON_SECRET != '' }}
+        run: |
+          curl -sf -X POST \
+            "$INSTINCT_INGEST_URL/api/admin/platform-scans/ingest/sarif" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            --data "$(jq -n --arg p "wolfpack-auto" --slurpfile s semgrep.sarif '{platform:$p, sarif:$s[0]}')"
