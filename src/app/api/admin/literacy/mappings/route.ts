@@ -27,6 +27,11 @@ export async function GET(request: NextRequest) {
   const auth = await requireWolfpackStaff(request);
   if (!isWolfpackStaff(auth)) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json({ mappings: [] }, { status: 200 });
+  }
+
   const url = request.nextUrl;
   const source_concept_id = url.searchParams.get("source_concept_id") ?? undefined;
   const target_concept_id = url.searchParams.get("target_concept_id") ?? undefined;
@@ -54,6 +59,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = await requireWolfpackStaff(request, "operator");
   if (!isWolfpackStaff(auth)) return auth;
+
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
 
   let body: Partial<CreateMappingInput>;
   try {

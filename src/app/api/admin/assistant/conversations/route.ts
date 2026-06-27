@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (!isAuthenticated(auth)) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json({ conversations: [], count: 0 }, { status: 200 });
+  }
+
   const url = request.nextUrl;
   const userIdFilter = url.searchParams.get("user_id") ?? undefined;
   const limitParam = url.searchParams.get("limit");

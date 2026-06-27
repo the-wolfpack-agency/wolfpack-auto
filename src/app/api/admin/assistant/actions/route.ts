@@ -28,6 +28,14 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (!isAuthenticated(auth)) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { actions: [], count: 0, role: null, vertical: null },
+      { status: 200 },
+    );
+  }
+
   const url = request.nextUrl;
   const category = (url.searchParams.get("category") ?? undefined) as
     | AssistantCategory

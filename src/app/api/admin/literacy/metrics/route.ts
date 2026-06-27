@@ -27,6 +27,11 @@ export async function GET(request: NextRequest) {
   const auth = await requireWolfpackStaff(request);
   if (!isWolfpackStaff(auth)) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json({ metrics: [] }, { status: 200 });
+  }
+
   const url = request.nextUrl;
   const concept_id = url.searchParams.get("concept_id") ?? undefined;
   const good_direction = (url.searchParams.get("good_direction") ?? undefined) as
@@ -48,6 +53,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = await requireWolfpackStaff(request, "operator");
   if (!isWolfpackStaff(auth)) return auth;
+
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
 
   let body: Partial<CreateMetricInput>;
   try {

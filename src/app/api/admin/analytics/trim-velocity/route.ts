@@ -20,6 +20,21 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      {
+        rows: [],
+        totalRows: 0,
+        fastest: null,
+        slowest: null,
+        headline: null,
+        isEmpty: true,
+      },
+      { status: 200 },
+    );
+  }
+
   const dealerId = getDealerId(auth);
   const { searchParams } = new URL(request.url);
 

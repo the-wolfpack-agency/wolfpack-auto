@@ -35,6 +35,19 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (!isAuthenticated(auth)) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      {
+        dealer_id: null,
+        adapters: [],
+        count: 0,
+        available_providers: [],
+      },
+      { status: 200 },
+    );
+  }
+
   const requestedDealerId = request.nextUrl.searchParams.get("dealer_id");
 
   // Cross-dealer path: only Wolfpack staff may name an arbitrary dealer.

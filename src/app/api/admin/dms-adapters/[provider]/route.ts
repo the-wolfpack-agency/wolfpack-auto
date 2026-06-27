@@ -78,6 +78,14 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const auth = await requireDealerAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -107,6 +115,14 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
 
   const auth = await requireDealerAdmin(request);
   if (auth instanceof NextResponse) return auth;
+
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
 
   let body: unknown;
   try {
@@ -146,6 +162,14 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
 
   const auth = await requireDealerAdmin(request);
   if (auth instanceof NextResponse) return auth;
+
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
 
   const hard = request.nextUrl.searchParams.get("hard") === "true";
 

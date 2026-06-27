@@ -33,6 +33,14 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
   const auth = await requireAuth(req);
   if (!isAuthenticated(auth)) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
+
   const { id } = await ctx.params;
   if (!id || !isUuid(id)) {
     return NextResponse.json({ error: "Invalid credential id" }, { status: 400 });
@@ -90,6 +98,14 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 export async function DELETE(req: NextRequest, ctx: RouteContext) {
   const auth = await requireAuth(req);
   if (!isAuthenticated(auth)) return auth;
+
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
 
   const { id } = await ctx.params;
   if (!id || !isUuid(id)) {

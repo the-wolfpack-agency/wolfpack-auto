@@ -29,6 +29,10 @@ export async function GET(
 ) {
   const auth = await requireWolfpackStaff(request);
   if (!isWolfpackStaff(auth)) return auth;
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   const params = await Promise.resolve(context.params);
   if (!UUID.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -51,6 +55,13 @@ export async function PATCH(
 ) {
   const auth = await requireWolfpackStaff(request, "operator");
   if (!isWolfpackStaff(auth)) return auth;
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
   const params = await Promise.resolve(context.params);
   if (!UUID.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });
@@ -99,6 +110,13 @@ export async function DELETE(
 ) {
   const auth = await requireWolfpackStaff(request, "admin");
   if (!isWolfpackStaff(auth)) return auth;
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): degrade gracefully instead of crashing.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
   const params = await Promise.resolve(context.params);
   if (!UUID.test(params.id)) {
     return NextResponse.json({ error: "Invalid id" }, { status: 400 });

@@ -18,6 +18,15 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   const auth = await requireAuth(req);
   if (!isAuthenticated(auth)) return auth;
 
+  if (!process.env.DATABASE_URL) {
+    // Shadow mode (no database): no credential/cache store to read, so the
+    // external provider cannot be reached. Degrade gracefully.
+    return NextResponse.json(
+      { error: "service_unavailable", shadow: true },
+      { status: 503 },
+    );
+  }
+
   const { vin } = await ctx.params;
   if (!vin) {
     return NextResponse.json({ error: "VIN is required" }, { status: 400 });
