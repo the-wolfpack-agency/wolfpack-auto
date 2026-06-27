@@ -264,13 +264,13 @@ export default function FloorPlanPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Principal ($) *</label>
-              <input type="number" step="0.01" value={formPrincipal} onChange={(e) => setFormPrincipal(e.target.value)} required
+              <input type="number" step="0.01" min="0" value={formPrincipal} onChange={(e) => setFormPrincipal(e.target.value)} required
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 placeholder="24500.00" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Daily Rate *</label>
-              <input type="number" step="0.000001" value={formRate} onChange={(e) => setFormRate(e.target.value)} required
+              <input type="number" step="0.000001" min="0" max="1" value={formRate} onChange={(e) => setFormRate(e.target.value)} required
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 placeholder="0.000164" />
             </div>

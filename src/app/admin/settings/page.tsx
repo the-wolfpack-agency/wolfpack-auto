@@ -5,13 +5,12 @@ import type { Dealer, DealerHours } from "@/types/dealer";
 import LogoUploader from "@/components/LogoUploader";
 import BrandingForm from "@/components/BrandingForm";
 import SettingsForm from "@/components/SettingsForm";
+import { getServerDealerId } from "@/lib/server-dealer";
 
 export const metadata: Metadata = {
   title: "Settings",
   description: "Manage dealership settings, branding, and SEO.",
 };
-
-const DEALER_ID = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 const DAYS: DealerHours["day"][] = [
   "monday",
@@ -25,9 +24,10 @@ const DAYS: DealerHours["day"][] = [
 
 async function getDealer(): Promise<Dealer | null> {
   try {
+    const dealerId = await getServerDealerId();
     const result = await query(
       `SELECT * FROM dealers WHERE id = $1 LIMIT 1`,
-      [DEALER_ID],
+      [dealerId],
     );
     return (result.rows as any[])[0] ?? null;
   } catch {

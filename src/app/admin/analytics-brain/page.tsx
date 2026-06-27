@@ -8,6 +8,7 @@ import {
   type BehavioralInsight,
 } from "@/lib/analytics-engine";
 import { getCalibrationHistory, type CalibrationResult } from "@/lib/prediction-calibrator";
+import { getServerDealerId } from "@/lib/server-dealer";
 
 export const metadata: Metadata = {
   title: "Analytics Brain | Admin",
@@ -69,7 +70,7 @@ export default async function AnalyticsBrainPage() {
   await hydrateBufferFromDb();
 
   // Fetch latest model calibration
-  const dealerId = process.env.DEALER_ID ?? "demo-dealer";
+  const dealerId = await getServerDealerId();
   let latestCalibration: CalibrationResult | null = null;
   try {
     const history = await getCalibrationHistory(dealerId, 1);

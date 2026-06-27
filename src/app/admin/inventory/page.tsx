@@ -6,13 +6,12 @@ import { MarketStatusDot, type Recommendation } from "@/components/admin/MarketS
 import { placeholderVehicles } from "@/lib/placeholder-data";
 import { InventoryActions } from "@/components/admin/InventoryActions";
 import { InventorySearchInput } from "@/components/admin/InventorySearchInput";
+import { getServerDealerId } from "@/lib/server-dealer";
 
 export const metadata: Metadata = {
   title: "Inventory",
   description: "Manage your vehicle inventory.",
 };
-
-const DEALER_ID = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
 
 interface InventoryVehicle {
   id: string;
@@ -62,8 +61,9 @@ async function getInventory(params: {
   const page = Math.max(1, parseInt(params.page ?? "1", 10));
   const offset = (page - 1) * PAGE_SIZE;
 
+  const dealerId = await getServerDealerId();
   const conditions: string[] = ["v.dealer_id = $1"];
-  const queryParams: unknown[] = [DEALER_ID];
+  const queryParams: unknown[] = [dealerId];
   let idx = 2;
 
   if (params.status && ["available", "pending", "sold", "in_transit"].includes(params.status)) {

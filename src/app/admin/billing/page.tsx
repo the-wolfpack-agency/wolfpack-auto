@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { pool } from "@/lib/db";
+import { getServerDealerId } from "@/lib/server-dealer";
 
 export const metadata: Metadata = {
   title: "Billing | Admin Portal",
@@ -22,8 +23,7 @@ interface BillingData {
 // ---------------------------------------------------------------------------
 
 async function getBillingData(): Promise<BillingData> {
-  const dealerId =
-    process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
+  const dealerId = await getServerDealerId();
 
   try {
     const { rows } = await pool.query(
@@ -190,12 +190,12 @@ export default async function BillingPage() {
 // Client component for analytics tracking
 // ---------------------------------------------------------------------------
 
-function BillingPageTracker() {
+async function BillingPageTracker() {
   // Server component -- fire tracking on render.
   // trackSystem is imported at the module level to avoid dynamic import issues.
   try {
     const { trackSystem } = require("@/lib/analytics-hooks");
-    const dealerId = process.env.DEALER_ID ?? "00000000-0000-4000-a000-000000000001";
+    const dealerId = await getServerDealerId();
     trackSystem("system.analytics_queried", dealerId, { module: "billing" });
   } catch {
     // Analytics should never block rendering
