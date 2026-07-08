@@ -112,7 +112,7 @@ function makeFastFlushPipeline(beaconSpy: jest.Mock, fetchSpy: jest.Mock) {
     if (eventBuffer.length === 0) return;
     const batch = [...eventBuffer];
     eventBuffer = [];
-    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
       beaconSpy(
         "/api/analytics/events",
         new Blob([JSON.stringify({ events: batch })], { type: "application/json" }),
@@ -619,3 +619,9 @@ describe("EventCollector — normal mode capture (regression)", () => {
     expect(beaconSpy).toHaveBeenCalledTimes(1);
   });
 });
+
+// Treat this test file as a module so its top-level helper declarations stay
+// file-scoped instead of leaking into the global script scope, where they
+// collided with identically-named helpers in sibling test files (tsc
+// TS2393/TS2451).
+export {};
