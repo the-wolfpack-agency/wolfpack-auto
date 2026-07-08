@@ -11008,6 +11008,28 @@
         }
       }
     },
+    "/api/cron/prune-analytics": {
+      "get": {
+        "summary": "List prune-analytics",
+        "tags": [
+          "cron"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/api/cron/recall-refresh": {
       "get": {
         "summary": "List recall-refresh",

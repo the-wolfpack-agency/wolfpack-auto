@@ -730,9 +730,14 @@ describe("3-step validation: only name, email, phone are required", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("DB pool size configuration", () => {
-  it("pool max is >= 10 for production workloads", () => {
-    const poolMax = 12; // mirrors db.ts poolConfig.max
-    expect(poolMax).toBeGreaterThanOrEqual(10);
+  it("pool max is >= 8 for production workloads", () => {
+    // db.ts poolConfig.max was deliberately lowered 12 -> 8 in the
+    // 2026-05-12 Neon cold-start incident fix (commit 32da9eb): a smaller
+    // pool spends less time queued behind dead connections during Neon
+    // free-tier compute auto-suspend cold starts. Do not bump it back up
+    // without a corresponding Neon connection-quota change.
+    const poolMax = 8; // mirrors db.ts poolConfig.max
+    expect(poolMax).toBeGreaterThanOrEqual(8);
   });
 
   it("idle timeout is set (not infinite)", () => {
@@ -753,7 +758,11 @@ describe("DB pool size configuration", () => {
     expect(statementTimeout).toBeLessThanOrEqual(60_000);
   });
 
-  it("db.ts source has pool max >= 10", async () => {
+  it("db.ts source has pool max >= 8", async () => {
+    // Intentionally 8 (not 10+): see the 2026-05-12 Neon cold-start incident
+    // fix (commit 32da9eb) documented in db.ts. The lower bound guards against
+    // an accidental drop to a starvation-prone pool while preserving the
+    // deliberate Neon-quota reduction.
     const fs = await import("fs");
     const path = await import("path");
     const dbSource = fs.readFileSync(
@@ -762,7 +771,7 @@ describe("DB pool size configuration", () => {
     );
     const maxMatch = dbSource.match(/max:\s*(\d+)/);
     expect(maxMatch).not.toBeNull();
-    expect(parseInt(maxMatch![1], 10)).toBeGreaterThanOrEqual(10);
+    expect(parseInt(maxMatch![1], 10)).toBeGreaterThanOrEqual(8);
   });
 
   it("db.ts source has statement_timeout configured", async () => {

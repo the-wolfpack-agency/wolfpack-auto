@@ -1,9 +1,9 @@
 # Wolfpack Auto — API Reference
 
-> Auto-generated 2026-05-12 from `src/app/api/**/route.ts`.  
+> Auto-generated 2026-07-08 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 336
+**Total routes:** 337
 
 ## Contents
 
@@ -517,6 +517,7 @@
 | `GET` | `/api/cron/market-intel-refresh` | List market-intel-refresh | — | — |
 | `GET` | `/api/cron/predict-leads` | GET /api/cron/predict-leads — Vercel cron job endpoint | — | — |
 | `GET` | `/api/cron/process-sequences` | GET /api/cron/process-sequences — Vercel cron job endpoint | — | — |
+| `GET` | `/api/cron/prune-analytics` | List prune-analytics | — | — |
 | `GET` | `/api/cron/recall-refresh` | List recall-refresh | — | — |
 
 ## csp-report
