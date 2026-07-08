@@ -41,19 +41,10 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (!isAuthenticated(auth)) return auth;
 
-  if (!process.env.DATABASE_URL) {
-    // Shadow mode (no database): degrade gracefully instead of crashing.
-    return NextResponse.json(
-      {
-        tenant_id: null,
-        adapters: [],
-        count: 0,
-        available_providers: [],
-      },
-      { status: 200 },
-    );
-  }
-
+  // Authorization runs to completion regardless of shadow mode. Shadow mode
+  // (no DATABASE_URL) degrades only the database READ: the library layer
+  // returns an empty configured-adapter list, while the available-provider
+  // list and the resolved tenant id are still echoed truthfully.
   const requestedTenantId = request.nextUrl.searchParams.get("tenant_id");
 
   // Cross-tenant path: only Wolfpack staff may name an arbitrary tenant.
