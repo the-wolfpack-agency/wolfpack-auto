@@ -3,8 +3,9 @@
  *
  * Walks every src/app/api/admin/** /route.ts at test time and asserts that each
  * file either:
- *   (a) contains a call to requireAuth, requireRole, getServerSession, or
- *       requireAgencyAuth before the first non-error NextResponse.json(, OR
+ *   (a) contains a call to requireAuth, requireRole, requireAgencyAuth,
+ *       requireWolfpackStaff, or getServerSession before the first non-error
+ *       NextResponse.json(, OR
  *   (b) is listed in PUBLIC_ADMIN_ROUTES (intentionally unauthenticated).
  *
  * This is the permanent guardrail — every new admin route must be hardened or
@@ -19,10 +20,21 @@ const ROOT = path.resolve(__dirname, "../..");
 const ADMIN_API_DIR = path.join(ROOT, "src/app/api/admin");
 
 // Auth call patterns the scanner recognises as valid guards.
+//
+// `requireWolfpackStaff` is the operator-auth gate (src/lib/operator-auth.ts):
+// it calls getServerSession, returns 401 for anonymous/non-staff sessions and
+// 403 for insufficient staff role, and emits security.unauthorized_access_attempt.
+// It is strictly STRONGER than requireAuth — it admits only Wolfpack staff and
+// rejects every dealer session, including dealer "admin"/"owner". Agency-shared
+// admin surfaces (the literacy ontology, fi/website audit-run prospect lists)
+// are gated by it rather than requireAuth precisely because they are staff-only,
+// not per-dealer data. The scanner previously omitted it, which mis-flagged these
+// correctly-guarded routes as unauthenticated.
 const AUTH_PATTERNS = [
   /requireAuth\s*\(/,
   /requireRole\s*\(/,
   /requireAgencyAuth\s*\(/,
+  /requireWolfpackStaff\s*\(/,
   /getServerSession\s*\(/,
 ];
 
