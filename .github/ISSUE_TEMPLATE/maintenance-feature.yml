@@ -1,0 +1,76 @@
+name: "Maintenance: Feature request"
+description: Request a feature or enhancement for the maintenance-rails intake queue.
+title: "[feature] <short summary>"
+labels: ["maint-queue", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Structured feature intake for Wolfpack Auto. Every field here feeds the
+        maintenance-intake telemetry layer, so keep the area + priority accurate
+        — they drive triage and cycle-time learning.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence describing the requested change in plain dealership language.
+      placeholder: "Let service advisors bulk-close no-show appointments"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area / module
+      description: Which DOS module does this touch? Maps to the telemetry `category`.
+      options:
+        - inventory
+        - leads
+        - desking-fi
+        - service
+        - accounting-gl
+        - payroll
+        - analytics
+        - onboarding
+        - comms
+        - auth-security
+        - dms-ingest
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How much does this move the product toward the client?
+      options:
+        - p0-must-have (blocks go-live)
+        - p1-high (client-visible value)
+        - p2-medium (nice to have)
+        - p3-low (backlog)
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What can a dealer not do today, and why does it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Bullet the conditions that mean this is done (drives the E2E test).
+      placeholder: |
+        - Advisor can select multiple no-show rows and close them in one action
+        - An audit_log row is written per closure
+        - The action emits a service.appointment_no_show analytics event
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, related issues, dealer_id, anything else.
+    validations:
+      required: false

@@ -231,3 +231,95 @@ export async function getLearningInsights(dealerId: string): Promise<LearningIns
   if (dbInsights) return dbInsights;
   return generateShadowInsights();
 }
+
+/* ------------------------------------------------------------------ */
+/*  Maintenance-rails intake insights                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Derived insights over the maintenance-rails intake queue. Computed from the
+ * `maintenance.intake.*` events that `src/lib/maintenance/intake-telemetry.ts`
+ * writes into analytics_events — same pull-from-events contract as
+ * {@link getLearningInsights}. This is where the emitted cycle-time signal is
+ * consumed, closing the no-data-lost loop.
+ */
+export interface MaintenanceIntakeInsights {
+  /** Requests opened but not yet resolved (opened - resolved, floored at 0). */
+  open_requests: number;
+  /** Requests resolved in the window. */
+  resolved_requests: number;
+  /** Mean hours from open to resolve across resolved requests. */
+  avg_cycle_time_hours: number;
+  /** Opened-request counts split by request type. */
+  by_type: Record<IntakeRequestKind, number>;
+  /** Timestamp when these insights were computed. */
+  computed_at: string;
+}
+
+type IntakeRequestKind = "bug" | "feature";
+
+function generateShadowIntakeInsights(): MaintenanceIntakeInsights {
+  return {
+    open_requests: 3,
+    resolved_requests: 12,
+    avg_cycle_time_hours: 18.5,
+    by_type: { bug: 9, feature: 6 },
+    computed_at: new Date().toISOString(),
+  };
+}
+
+/**
+ * Compute maintenance-intake insights for a tenant (defaults to the agency
+ * pseudo-tenant used by the intake telemetry layer). Falls back to shadow data
+ * when the DB is unavailable; never throws.
+ */
+export async function getMaintenanceIntakeInsights(
+  dealerId = "wolfpack-maintenance",
+): Promise<MaintenanceIntakeInsights> {
+  if (!process.env.DATABASE_URL) return generateShadowIntakeInsights();
+
+  try {
+    const { query } = await import("@/lib/db");
+    const result = await query<{
+      opened: string;
+      resolved: string;
+      avg_cycle: string;
+      opened_bugs: string;
+      opened_features: string;
+    }>(
+      `SELECT
+         COUNT(*) FILTER (WHERE action = 'maintenance.intake.opened')   AS opened,
+         COUNT(*) FILTER (WHERE action = 'maintenance.intake.resolved') AS resolved,
+         COALESCE(
+           AVG((metadata->>'cycle_time_hours')::float)
+             FILTER (WHERE action = 'maintenance.intake.resolved'
+                     AND metadata ? 'cycle_time_hours'),
+           0
+         ) AS avg_cycle,
+         COUNT(*) FILTER (WHERE action = 'maintenance.intake.opened'
+                          AND metadata->>'request_type' = 'bug')     AS opened_bugs,
+         COUNT(*) FILTER (WHERE action = 'maintenance.intake.opened'
+                          AND metadata->>'request_type' = 'feature') AS opened_features
+       FROM analytics_events
+       WHERE event_type = 'maintenance' AND metadata->>'dealer_id' = $1`,
+      [dealerId],
+    );
+    const row = (result.rows as Record<string, string>[])[0];
+    const opened = parseInt(row?.opened ?? "0", 10);
+    const resolved = parseInt(row?.resolved ?? "0", 10);
+
+    return {
+      open_requests: Math.max(0, opened - resolved),
+      resolved_requests: resolved,
+      avg_cycle_time_hours: parseFloat(row?.avg_cycle ?? "0"),
+      by_type: {
+        bug: parseInt(row?.opened_bugs ?? "0", 10),
+        feature: parseInt(row?.opened_features ?? "0", 10),
+      },
+      computed_at: new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error("[learning-aggregator] maintenance intake computation failed:", err);
+    return generateShadowIntakeInsights();
+  }
+}

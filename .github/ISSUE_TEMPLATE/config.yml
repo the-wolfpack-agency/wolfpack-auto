@@ -1,0 +1,10 @@
+# Issue template chooser config for Wolfpack Auto.
+# Keeps free-form issues on but routes daily agency maintenance requests
+# into the structured maintenance-rails intake queue (maint-queue label),
+# so every request is captured with the fields the intake telemetry layer
+# (src/lib/maintenance/intake-telemetry.ts) expects.
+blank_issues_enabled: true
+contact_links:
+  - name: Runbooks (known failure modes)
+    url: https://github.com/the-wolfpack-agency/wolfpack-auto/blob/main/.ai/runbooks.md
+    about: Check the runbooks before filing — the fix may already be documented.
