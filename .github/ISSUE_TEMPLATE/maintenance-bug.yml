@@ -1,0 +1,77 @@
+name: "Maintenance: Bug report"
+description: File a bug for the daily maintenance-rails intake queue.
+title: "[bug] <short summary>"
+labels: ["maint-queue", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Structured bug intake for Wolfpack Auto. Every field here feeds the
+        maintenance-intake telemetry layer, so keep the area + severity
+        accurate — they drive triage and cycle-time learning.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One sentence describing the bug in plain dealership language.
+      placeholder: "Deal desking payment calculator shows the wrong monthly payment"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area / module
+      description: Which DOS module does this touch? Maps to the telemetry `category`.
+      options:
+        - inventory
+        - leads
+        - desking-fi
+        - service
+        - accounting-gl
+        - payroll
+        - analytics
+        - onboarding
+        - comms
+        - auth-security
+        - dms-ingest
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How badly is a dealer blocked right now?
+      options:
+        - sev1-critical (dealer down / data loss)
+        - sev2-high (core workflow broken, no workaround)
+        - sev3-medium (workaround exists)
+        - sev4-low (cosmetic / minor)
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, plus expected vs. actual.
+      placeholder: |
+        1. Go to /admin/deals/<id>
+        2. Set term to 72 months
+        3. Expected: payment updates. Actual: payment stays at 60-month value.
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Affected URL / route
+      description: Deployed URL or route where the bug shows (helps E2E repro).
+      placeholder: "https://auto.example.com/admin/deals/123"
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Console errors, screenshots, dealer_id, request ids, anything else.
+    validations:
+      required: false

@@ -857,6 +857,21 @@ export type TouchpointEvent =
   | "touchpoint.action_triggered"
   | "touchpoint.duplicate_suppressed";
 
+/**
+ * Maintenance-rails intake events (maintenance-rails intake+telemetry layer).
+ * Emitted by `src/lib/maintenance/intake-telemetry.ts` on every issue
+ * lifecycle transition for a `maint-queue` GitHub issue (bug or feature).
+ * Namespace is `maintenance.intake.*` so the module column resolves to
+ * `maintenance` and the learning system can compute intake cycle-time and
+ * backlog from analytics_events. Agency-internal telemetry: pass the
+ * agency-scoped pseudo-dealer_id ("wolfpack-maintenance") when no dealer
+ * tenancy applies.
+ */
+export type MaintenanceIntakeEvent =
+  | "maintenance.intake.opened"
+  | "maintenance.intake.triaged"
+  | "maintenance.intake.resolved";
+
 export type PlatformEvent =
   | DealEvent
   | ServiceEvent
@@ -929,7 +944,8 @@ export type PlatformEvent =
   | WebsiteAuditEvent
   | LiteracyEvent
   | AssistantEvent
-  | TouchpointEvent;
+  | TouchpointEvent
+  | MaintenanceIntakeEvent;
 
 /* ------------------------------------------------------------------ */
 /*  Core tracking helper (internal)                                     */
@@ -1831,4 +1847,22 @@ export function trackTouchpoint(
   meta: Record<string, string | number | boolean>,
 ): void {
   track(event, dealer_id, { module: "touchpoint", ...meta });
+}
+
+/**
+ * Track a maintenance-rails intake event. Emitted by
+ * `src/lib/maintenance/intake-telemetry.ts` on every `maint-queue` issue
+ * lifecycle transition (opened / triaged / resolved). The derived
+ * `cycle_time_hours` signal rides in the metadata on `resolved` so the
+ * learning aggregator can consume it from analytics_events.
+ *
+ * Agency-internal telemetry: pass the agency-scoped pseudo-dealer_id
+ * ("wolfpack-maintenance") when no dealer tenancy applies.
+ */
+export function trackMaintenanceIntake(
+  event: MaintenanceIntakeEvent,
+  dealer_id: string,
+  meta: Record<string, string | number | boolean>,
+): void {
+  track(event, dealer_id, { module: "maintenance_intake", ...meta });
 }
