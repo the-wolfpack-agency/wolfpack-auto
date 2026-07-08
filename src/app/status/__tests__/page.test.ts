@@ -68,8 +68,11 @@ describe("/status StatusBoard (client)", () => {
   it("polls /api/status on an interval", () => {
     expect(boardSrc).toContain("setInterval");
     expect(boardSrc).toContain("/api/status");
-    // 30 second poll cadence per spec.
-    expect(boardSrc).toMatch(/POLL_INTERVAL_MS\s*=\s*30_000/);
+    // 2 min poll cadence. Originally 30s, deliberately stretched to 120_000
+    // in the 2026-05-19 Neon data-transfer quota fix (commit c72c37d), which
+    // also introduced /api/cron/prune-analytics. Reverting to 30s would
+    // reintroduce the read-polling burn that fix resolved.
+    expect(boardSrc).toMatch(/POLL_INTERVAL_MS\s*=\s*120_000/);
   });
 
   it("renders the overall banner with data-overall attribute for E2E", () => {

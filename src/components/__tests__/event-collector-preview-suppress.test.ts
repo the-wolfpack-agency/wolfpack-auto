@@ -383,3 +383,9 @@ describe("EventCollector — normal mode (no preview param) tracking is active",
     expect(beaconSpy).toHaveBeenCalledTimes(1);
   });
 });
+
+// Treat this test file as a module so its top-level helper declarations stay
+// file-scoped instead of leaking into the global script scope, where they
+// collided with identically-named helpers in sibling test files (tsc
+// TS2393/TS2451).
+export {};

@@ -24,10 +24,8 @@ concurrency:
 
 jobs:
   verify:
+    name: Verify
     runs-on: ubuntu-latest
-    # TODO: flip to required = true once the 4 pre-existing ts-jest / tsc
-    # regressions are resolved (see commit message for details).
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6

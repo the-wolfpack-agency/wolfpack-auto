@@ -47,11 +47,26 @@ function makeReq(method: "PATCH" | "DELETE", id = ID, body?: unknown, qs = "") {
   });
 }
 
+// This route short-circuits to 503 in shadow mode (no DATABASE_URL). This
+// suite exercises the with-database path, so pin DATABASE_URL for every test
+// and restore the ambient value afterward so we neither depend on nor leak
+// process.env across sibling suites.
+const ORIGINAL_DATABASE_URL = process.env.DATABASE_URL;
+
 beforeEach(() => {
+  process.env.DATABASE_URL = "postgresql://test";
   mockRequireAuth.mockReset();
   mockRotate.mockReset();
   mockRevoke.mockReset();
   mockDelete.mockReset();
+});
+
+afterEach(() => {
+  if (ORIGINAL_DATABASE_URL === undefined) {
+    delete process.env.DATABASE_URL;
+  } else {
+    process.env.DATABASE_URL = ORIGINAL_DATABASE_URL;
+  }
 });
 
 describe("PATCH /api/admin/credentials/[id]", () => {

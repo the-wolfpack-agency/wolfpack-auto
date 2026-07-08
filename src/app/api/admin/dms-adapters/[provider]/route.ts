@@ -78,14 +78,9 @@ export async function POST(request: NextRequest, ctx: RouteContext) {
   const auth = await requireDealerAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  if (!process.env.DATABASE_URL) {
-    // Shadow mode (no database): degrade gracefully instead of crashing.
-    return NextResponse.json(
-      { error: "service_unavailable", shadow: true },
-      { status: 503 },
-    );
-  }
-
+  // Shadow mode (no DATABASE_URL) degrades only the persistence layer:
+  // `configureAdapter` returns a synthesized record and still fires its
+  // audit-log + analytics event, so the contract is preserved offline.
   let body: unknown;
   try {
     body = await request.json();
@@ -116,14 +111,9 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
   const auth = await requireDealerAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  if (!process.env.DATABASE_URL) {
-    // Shadow mode (no database): degrade gracefully instead of crashing.
-    return NextResponse.json(
-      { error: "service_unavailable", shadow: true },
-      { status: 503 },
-    );
-  }
-
+  // Shadow mode (no DATABASE_URL): `rotateAdapterCredentials` returns null
+  // (there is no persisted row to rotate), which the handler maps to a 404
+  // below — the same status a real empty DB would yield.
   let body: unknown;
   try {
     body = await request.json();
@@ -163,14 +153,8 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   const auth = await requireDealerAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  if (!process.env.DATABASE_URL) {
-    // Shadow mode (no database): degrade gracefully instead of crashing.
-    return NextResponse.json(
-      { error: "service_unavailable", shadow: true },
-      { status: 503 },
-    );
-  }
-
+  // Shadow mode (no DATABASE_URL): revoke/delete return null/false (no
+  // persisted row), which the handler maps to a 404 below.
   const hard = request.nextUrl.searchParams.get("hard") === "true";
 
   if (hard) {

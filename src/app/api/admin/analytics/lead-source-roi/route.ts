@@ -20,22 +20,10 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
   if (auth instanceof NextResponse) return auth;
 
-  if (!process.env.DATABASE_URL) {
-    // Shadow mode (no database): degrade gracefully instead of crashing.
-    return NextResponse.json(
-      {
-        rows: [],
-        totalRows: 0,
-        topByGross: null,
-        topByConversion: null,
-        headline: null,
-        isEmpty: true,
-        costNotConfigured: true,
-      },
-      { status: 200 },
-    );
-  }
-
+  // Shadow mode (no DATABASE_URL) is handled inside the analytics-engine
+  // library, which returns a representative demo dataset. The route stays
+  // uniform so authorization + analytics-event emission run identically
+  // online and offline.
   const dealerId = getDealerId(auth);
   const { searchParams } = new URL(request.url);
 

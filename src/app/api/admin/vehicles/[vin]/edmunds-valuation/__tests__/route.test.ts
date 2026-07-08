@@ -36,9 +36,24 @@ function req(url = `http://localhost/api/admin/vehicles/${VIN}/edmunds-valuation
   return new NextRequest(url, { method: "GET" });
 }
 
+// This route short-circuits to 503 in shadow mode (no DATABASE_URL). This
+// suite exercises the with-database path, so pin DATABASE_URL for every test
+// and restore the ambient value afterward so we neither depend on nor leak
+// process.env across sibling suites.
+const ORIGINAL_DATABASE_URL = process.env.DATABASE_URL;
+
 beforeEach(() => {
+  process.env.DATABASE_URL = "postgresql://test";
   mockRequireAuth.mockReset();
   mockGetValuation.mockReset();
+});
+
+afterEach(() => {
+  if (ORIGINAL_DATABASE_URL === undefined) {
+    delete process.env.DATABASE_URL;
+  } else {
+    process.env.DATABASE_URL = ORIGINAL_DATABASE_URL;
+  }
 });
 
 describe("GET /api/admin/vehicles/[vin]/edmunds-valuation", () => {
