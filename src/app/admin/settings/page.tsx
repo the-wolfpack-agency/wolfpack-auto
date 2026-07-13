@@ -5,6 +5,7 @@ import type { Dealer, DealerHours } from "@/types/dealer";
 import LogoUploader from "@/components/LogoUploader";
 import BrandingForm from "@/components/BrandingForm";
 import SettingsForm from "@/components/SettingsForm";
+import ModuleAccessManager from "@/components/ModuleAccessManager";
 import { getServerDealerId } from "@/lib/server-dealer";
 
 export const metadata: Metadata = {
@@ -284,6 +285,26 @@ export default async function SettingsPage() {
             </fieldset>
 
           </SettingsForm>
+        </section>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Module Access — scale this dealer's dashboard up or down          */}
+        {/* ---------------------------------------------------------------- */}
+        <section
+          aria-labelledby="module-access-heading"
+          className="overflow-hidden rounded-card border border-surface-border bg-white p-6 shadow-card"
+        >
+          <h2
+            id="module-access-heading"
+            className="mb-1 text-lg font-semibold text-gray-900"
+          >
+            Module Access
+          </h2>
+          <p className="mb-6 text-sm text-gray-500">
+            Choose which modules this dealer sees. Start a pilot with a few, then enable
+            more as they grow — changes apply immediately, no redeploy.
+          </p>
+          <ModuleAccessManager />
         </section>
 
         {/* ---------------------------------------------------------------- */}

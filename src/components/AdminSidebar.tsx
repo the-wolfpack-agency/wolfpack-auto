@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAnalytics } from "@/components/EventCollector";
+import { isModuleVisible, moduleKeyForHref, canSeeAllModules } from "@/lib/admin-modules";
 
 /* -------------------------------------------------------------------------- */
 /* Sub-item definitions (unchanged)                                           */
@@ -305,6 +306,10 @@ export default function AdminSidebar() {
     total: number;
     allDone: boolean;
   } | null>(null);
+  // Per-dealer enabled modules (null = all; the pilot's limited dashboard). Agency
+  // roles bypass gating; dealer roles (manager/staff/sub_dealer) see only enabled.
+  const [enabledModules, setEnabledModules] = useState<string[] | null>(null);
+  const [modulesLoaded, setModulesLoaded] = useState(false);
   const { track } = useAnalytics();
 
   // Auto-expand section containing the active page
@@ -386,6 +391,25 @@ export default function AdminSidebar() {
     return () => { cancelled = true; };
   }, []);
 
+  // Fetch the dealer's enabled-module allow-list (drives the pilot's limited nav).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/modules");
+        if (!res.ok || cancelled) return;
+        const json = await res.json();
+        if (cancelled) return;
+        setEnabledModules(Array.isArray(json.enabled) ? json.enabled : null);
+      } catch {
+        // Sidebar must never break — fall through to the full nav.
+      } finally {
+        if (!cancelled) setModulesLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const handleSwitchDealer = async (dealerId: string) => {
     try {
       const res = await fetch("/api/admin/switch-dealer", {
@@ -404,6 +428,23 @@ export default function AdminSidebar() {
 
   // Hide sidebar on the login page
   if (pathname === "/admin/login") return null;
+
+  // Filter the nav to the dealer's enabled modules. Agency roles see everything;
+  // dealer roles see only enabled + CORE. Before the allow-list loads, non-agency
+  // roles see only CORE so gated modules never flash in. Sections with no visible
+  // items are dropped entirely.
+  const role = session?.user?.role;
+  const effectiveEnabled = modulesLoaded
+    ? enabledModules
+    : canSeeAllModules(role)
+      ? null
+      : [];
+  const visibleSections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) =>
+      isModuleVisible(role, effectiveEnabled, moduleKeyForHref(item.href)),
+    ),
+  })).filter((section) => section.items.length > 0);
 
   const navContent = (
     <>
@@ -508,7 +549,7 @@ export default function AdminSidebar() {
         )}
 
         <ul className="space-y-1" role="list">
-          {NAV_SECTIONS.map((section) => {
+          {visibleSections.map((section) => {
             const isOpen = expandedSections.has(section.id);
             const sectionHasActive = section.items.some((item) => isItemActive(item.href, pathname));
             const SectionIcon = section.icon;
