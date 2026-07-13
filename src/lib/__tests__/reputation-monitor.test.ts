@@ -79,9 +79,15 @@ describe("detectSentimentShift", () => {
     const trends = detectSentimentShift(reviews, 30);
     expect(trends.length).toBeGreaterThan(0);
 
-    // Last trend should show improvement
-    const lastTrend = trends[trends.length - 1];
-    expect(lastTrend.trend).toBe("up");
+    // Sentiment improved from the oldest bucket (2-star) to the newest (5-star),
+    // and the detector flags the upward shift at the low->high boundary. We assert
+    // these invariants rather than trends[last].trend === "up": reviews are bucketed
+    // by CALENDAR week, so when the two recent 5-star reviews straddle a Sun/Mon
+    // boundary the final bucket compares 5-vs-5 and is (correctly) "stable" — the
+    // upward shift is still detected, just not necessarily in the last bucket. The
+    // old assertion flaked ~2 days out of 7 depending on today's weekday.
+    expect(trends[trends.length - 1].avgRating).toBeGreaterThan(trends[0].avgRating);
+    expect(trends.some((t) => t.trend === "up")).toBe(true);
   });
 
   it("returns empty for no reviews", () => {
