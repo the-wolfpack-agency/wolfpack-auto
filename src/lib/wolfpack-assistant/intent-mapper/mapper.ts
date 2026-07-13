@@ -14,12 +14,15 @@
  *      d. Combine into final confidence (confidence-scorer).
  *   3. Drop anything below MIN_MATCH_CONFIDENCE.
  *   4. Sort descending + slice to MAX_MATCHES.
- *   5. If top two are within AMBIGUITY_THRESHOLD: call llm-tiebreaker
- *      stub. Promote its choice to best_match, keep ambiguity flag true
- *      so the caller can still surface the alternatives.
+ *   5. If top two are within AMBIGUITY_THRESHOLD: call llm-tiebreaker.
+ *      Promote its choice to best_match, keep ambiguity flag true so the
+ *      caller can still surface the alternatives.
  *   6. Return MapperResult.
  *
- * Determinism: given identical inputs, identical output. No I/O.
+ * Determinism: steps 1-4 are pure. Step 5 is deterministic too UNLESS
+ * `AI_GATEWAY_API_KEY` is set, in which case the tie-breaker may consult
+ * the LLM to resolve near-ties (it falls back to the deterministic winner
+ * on any failure, so the output shape is always stable).
  */
 
 import { extractParameters, filterParametersForAction } from "./parameter-extractor";
@@ -128,7 +131,12 @@ export async function mapIntent(
       if (Math.abs(topConf - m.confidence) <= AMBIGUITY_THRESHOLD) band.push(m);
       else break;
     }
-    const resolved = await resolveTiebreak({ prompt, competing: band });
+    const resolved = await resolveTiebreak({
+      prompt,
+      competing: band,
+      dealerId: context.dealerId,
+      role: context.role,
+    });
     if (resolved) best = resolved;
   }
 

@@ -842,7 +842,16 @@ export type AssistantEvent =
   | "assistant.intent_matched"
   | "assistant.intent_ambiguous"
   | "assistant.intent_unmatched"
-  | "assistant.parameter_extracted";
+  | "assistant.parameter_extracted"
+  /**
+   * LLM tie-breaker events (2026-07-13 AI Gateway wiring). `_called` fires
+   * when a real Gateway call is dispatched to disambiguate near-tie
+   * candidates; `_resolved` fires once the tie is settled — carrying
+   * whether the LLM's choice was used or we fell back to the deterministic
+   * keyword result (timeout / error / injection / invalid choice).
+   */
+  | "assistant.intent_llm_tiebreak_called"
+  | "assistant.intent_llm_tiebreak_resolved";
 
 /**
  * Touchpoint lifecycle events (migration 081). Emitted by

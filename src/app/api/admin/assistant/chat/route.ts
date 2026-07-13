@@ -107,6 +107,12 @@ export async function POST(request: NextRequest) {
   const role = (auth.user.role ?? "admin") as AssistantRole;
   const dealerId = auth.user.dealer_id;
 
+  // `is_stub` reflects whether the LLM tie-breaker actually resolved this
+  // prompt. It's stub-behavior (deterministic keyword result) UNLESS the
+  // mapper's best_match came back marked `llm_proposed`. Computed below
+  // once the mapper has run.
+  let isStub = true;
+
   try {
     trackAssistant("assistant.chat_prompt_received", dealerId, {
       role,
@@ -172,6 +178,11 @@ export async function POST(request: NextRequest) {
     };
   }
 
+  // The tie-breaker marks its result `llm_proposed` only when the LLM
+  // actually resolved a near-tie; otherwise the result is deterministic
+  // (stub) behavior.
+  isStub = mapperResult.best_match?.source !== "llm_proposed";
+
   // Emit per-outcome analytics.
   try {
     if (mapperResult.matches.length === 0) {
@@ -208,7 +219,7 @@ export async function POST(request: NextRequest) {
       trackAssistant("assistant.action_proposed", dealerId, {
         slug: m.action_slug,
         confidence: m.confidence,
-        is_stub: true,
+        is_stub: isStub,
       });
     }
   } catch { /* analytics must never block */ }
@@ -270,7 +281,7 @@ export async function POST(request: NextRequest) {
       matched_count: mapperResult.matches.length,
       is_ambiguous: mapperResult.is_ambiguous,
       best_slug: mapperResult.best_match?.action_slug ?? null,
-      is_stub: true,
+      is_stub: isStub,
     },
     auth.user.id,
     dealerId,
@@ -286,7 +297,7 @@ export async function POST(request: NextRequest) {
   const response = {
     matched_actions: legacyMatched,
     mapper: mapperResult,
-    is_stub: true as const,
+    is_stub: isStub,
     message: responseMessage,
     conversation_id: conversationId ?? "no-db",
     vertical: tenantVertical,

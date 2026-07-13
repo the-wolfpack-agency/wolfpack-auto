@@ -236,8 +236,12 @@ export interface MatchedAction {
 
 export interface ChatStubResponse {
   matched_actions: MatchedAction[];
-  /** Always true for v1 — the LLM layer is year-one Q3-Q4 work. */
-  is_stub: true;
+  /**
+   * True for the deterministic path; false only when the LLM tie-breaker
+   * (AI Gateway) actually resolved a near-tie for this prompt. When
+   * `AI_GATEWAY_API_KEY` is unset this is always true (transparent no-op).
+   */
+  is_stub: boolean;
   message: string;
 }
 
