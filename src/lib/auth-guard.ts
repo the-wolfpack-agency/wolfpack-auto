@@ -12,7 +12,7 @@ export interface AuthenticatedUser {
   email: string;
   name: string;
   dealer_id: string;
-  role: "owner" | "admin" | "manager" | "staff";
+  role: "owner" | "admin" | "manager" | "staff" | "sub_dealer";
 }
 
 export interface AuthResult {

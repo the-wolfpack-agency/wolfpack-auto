@@ -214,6 +214,7 @@ export type SystemEvent =
   | "system.integration_updated"
   | "system.notifications_updated"
   | "system.settings_updated"
+  | "system.modules_updated"
   | "system.task_created"
   | "system.openapi_fetched"
   | "team.user_created"

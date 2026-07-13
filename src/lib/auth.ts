@@ -25,7 +25,7 @@ declare module "next-auth" {
       email: string;
       name: string;
       dealer_id: string;
-      role: "owner" | "admin" | "manager" | "staff" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
+      role: "owner" | "admin" | "manager" | "staff" | "sub_dealer" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
     };
     /** True when the session JWT was created after MFA was verified. */
     mfaVerified?: boolean;
@@ -42,7 +42,7 @@ declare module "next-auth" {
     email: string;
     name: string;
     dealer_id: string;
-    role: "owner" | "admin" | "manager" | "staff" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
+    role: "owner" | "admin" | "manager" | "staff" | "sub_dealer" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
     /** Set when MFA is required before issuing a full session. */
     mfa_required?: boolean;
     /** Set by the wolfpack-staff provider so the JWT callback can tag the session. */
@@ -60,7 +60,7 @@ declare module "next-auth/jwt" {
     email: string;
     name: string;
     dealer_id: string;
-    role: "owner" | "admin" | "manager" | "staff" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
+    role: "owner" | "admin" | "manager" | "staff" | "sub_dealer" | "wolfpack_admin" | "wolfpack_operator" | "wolfpack_viewer";
     lastActivity: number;
     /**
      * When true the user authenticated with password but has NOT yet
@@ -281,7 +281,7 @@ export const authOptions: NextAuthOptions = {
             email: mfaUser.email,
             name: mfaUser.name,
             dealer_id: mfaUser.dealer_id,
-            role: mfaUser.role as "admin" | "manager" | "staff",
+            role: mfaUser.role as "admin" | "manager" | "staff" | "sub_dealer",
             // Signal to the JWT callback that MFA has been verified
             mfa_required: false,
           };
@@ -384,7 +384,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           dealer_id: user.dealer_id,
-          role: user.role as "admin" | "manager" | "staff",
+          role: user.role as "admin" | "manager" | "staff" | "sub_dealer",
           mfa_required: user.mfa_enabled,
           kind: "dealer",
         };

@@ -1,9 +1,9 @@
 # Wolfpack Auto — API Reference
 
-> Auto-generated 2026-07-08 from `src/app/api/**/route.ts`.  
+> Auto-generated 2026-07-13 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 337
+**Total routes:** 338
 
 ## Contents
 
@@ -318,6 +318,8 @@
 | `POST` | `/api/admin/mfa/setup` | Create setup | Bearer | — |
 | `GET` | `/api/admin/mfa/status` | List status | Bearer | — |
 | `POST` | `/api/admin/mfa/verify` | Create verify | — | — |
+| `GET` | `/api/admin/modules` | GET /api/admin/modules — the current dealer's enabled-module allow-list + the | Bearer | — |
+| `PUT` | `/api/admin/modules` | GET /api/admin/modules — the current dealer's enabled-module allow-list + the | Bearer | — |
 | `GET` | `/api/admin/notifications/push` | GET /api/admin/notifications/push | Bearer | — |
 | `POST` | `/api/admin/notifications/push` | GET /api/admin/notifications/push | Bearer | — |
 | `GET` | `/api/admin/oem` | List oem | Bearer | — |
