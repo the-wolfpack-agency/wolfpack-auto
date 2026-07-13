@@ -164,6 +164,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/admin/accounting", label: "Accounting", icon: AccountingIcon },
       { href: "/admin/payments", label: "Payments", icon: AccountingIcon },
       { href: "/admin/payroll", label: "Payroll", icon: AccountingIcon },
+      { href: "/admin/labor-insights", label: "Labor Insights", icon: AccountingIcon },
       { href: "/admin/reinsurance", label: "Reinsurance", icon: ReinsuranceIcon },
     ],
   },

@@ -4937,6 +4937,33 @@
         ]
       }
     },
+    "/api/admin/labor-insights": {
+      "get": {
+        "summary": "List labor-insights",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/admin/lead-ingestion": {
       "get": {
         "summary": "List lead-ingestion",

@@ -109,6 +109,7 @@ const RAW_MODULES: ReadonlyArray<readonly [string, string, string]> = [
   ["finance", "/admin/accounting", "Accounting"],
   ["finance", "/admin/payments", "Payments"],
   ["finance", "/admin/payroll", "Payroll"],
+  ["finance", "/admin/labor-insights", "Labor Insights"],
   ["finance", "/admin/reinsurance", "Reinsurance"],
   // Service
   ["service", "/admin/service", "Service & Parts"],

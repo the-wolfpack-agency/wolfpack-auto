@@ -216,6 +216,8 @@ export type SystemEvent =
   | "system.settings_updated"
   | "system.modules_updated"
   | "system.task_created"
+  | "system.labor_insight_generated"
+  | "system.labor_insight_viewed"
   | "system.openapi_fetched"
   | "team.user_created"
   | "team.user_invited"
