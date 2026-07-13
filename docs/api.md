@@ -3,7 +3,7 @@
 > Auto-generated 2026-07-13 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
-**Total routes:** 338
+**Total routes:** 339
 
 ## Contents
 
@@ -243,6 +243,7 @@
 | `GET` | `/api/admin/knowledge/ingest` | Knowledge Store Ingestion Endpoint | Bearer | — |
 | `POST` | `/api/admin/knowledge/ingest` | Knowledge Store Ingestion Endpoint | Bearer | — |
 | `POST` | `/api/admin/knowledge/query` | Knowledge Store Query Endpoint | Bearer | — |
+| `GET` | `/api/admin/labor-insights` | List labor-insights | Bearer | — |
 | `GET` | `/api/admin/lead-ingestion` | List lead-ingestion | Bearer | — |
 | `POST` | `/api/admin/lead-ingestion` | Create lead-ingestion | Bearer | — |
 | `GET` | `/api/admin/lead-sources` | List lead-sources | Bearer | — |
