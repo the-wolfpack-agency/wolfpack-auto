@@ -143,11 +143,25 @@ export async function POST(request: NextRequest) {
     // ciphertext with a random IV per call, so `WHERE email = $1` against a
     // plaintext address matches nothing once PII_ENCRYPTION_KEY is set — every
     // duplicate sailed through, silently, and only in prod. See hashPII.
+    //
+    // LEGACY FALLBACK. Rows written before the key existed store PLAINTEXT and
+    // have no hash. Matching plaintext against a plaintext column is correct —
+    // the original bug was matching plaintext against CIPHERTEXT, which is a
+    // different thing. It cannot recur here: any row whose email is encrypted
+    // was written with a hash, so it never reaches the IS NULL branch. Drop this
+    // branch once every row is backfilled (npm run backfill:lead-hashes, which
+    // must run with the real PII_ENCRYPTION_KEY or it writes hashes the app can
+    // never match).
     const normalizedEmail = normalizeEmail(lead.email);
     const emailHash = hashPII(normalizedEmail);
     const existingLead = await query<{ id: string }>(
-      `SELECT id FROM leads WHERE email_hash = $1 AND dealer_id = $2 AND created_at > NOW() - INTERVAL '30 days' AND deleted_at IS NULL LIMIT 1`,
-      [emailHash, lead.dealer_id],
+      `SELECT id FROM leads
+        WHERE dealer_id = $2
+          AND created_at > NOW() - INTERVAL '30 days'
+          AND deleted_at IS NULL
+          AND (email_hash = $1 OR (email_hash IS NULL AND email = $3))
+        LIMIT 1`,
+      [emailHash, lead.dealer_id, normalizedEmail],
     );
     if (existingLead.rows.length > 0) {
       trackLead("lead.duplicate_detected", lead.dealer_id, {
