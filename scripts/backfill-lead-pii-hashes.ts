@@ -33,6 +33,8 @@ import { fileURLToPath } from "url";
 import pg from "pg";
 import { decryptPII, hashPII } from "../src/lib/crypto";
 import { normalizeEmail, normalizePhone } from "../src/lib/leads/intake";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { checkHashAgreement } = require("./lib/hash-agreement.cjs");
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -69,6 +71,8 @@ const DRY_RUN = process.argv.includes("--dry-run");
  * --allow-unkeyed deliberately.
  */
 const ALLOW_UNKEYED = process.argv.includes("--allow-unkeyed");
+/** Opt out of the app-agreement preflight when there is no reference row yet. */
+const ALLOW_UNVERIFIED = process.argv.includes("--allow-unverified");
 if (!process.env.PII_ENCRYPTION_KEY && !ALLOW_UNKEYED) {
   console.error(
     "ERROR: PII_ENCRYPTION_KEY is not set. Hashes written now would be plain\n" +
@@ -89,11 +93,71 @@ interface LeadRow {
   phone: string | null;
 }
 
+/**
+ * Prove this process hashes the way the APP hashes, using a row the app wrote.
+ *
+ * Env vars are NOT evidence: `vercel env pull` handed back an empty
+ * PII_ENCRYPTION_KEY while the deployment had a real one, and the resulting
+ * backfill wrote 446 unmatchable hashes without a single error. Only a row the
+ * app itself hashed can settle it.
+ */
+async function preflightHashAgreement(): Promise<void> {
+  const { rows } = await pool.query<{ id: string; email: string; email_hash: string }>(
+    `SELECT id::text AS id, email, email_hash
+       FROM leads
+      WHERE email_hash IS NOT NULL AND email IS NOT NULL
+      LIMIT 5`,
+  );
+
+  const result = checkHashAgreement({
+    referenceRows: rows,
+    decrypt: decryptPII,
+    hash: hashPII,
+    normalize: normalizeEmail,
+  });
+
+  if (result.ok) {
+    console.log(`[backfill] preflight OK — hashes agree with the app (${result.checked} row(s) checked)`);
+    return;
+  }
+
+  if (result.reason === "mismatch") {
+    console.error(
+      "[backfill] ABORT: this process computes a DIFFERENT hash than the app.\n" +
+        `  Reference row ${result.id} was hashed by the app, and recomputing it here\n` +
+        "  does not match. Your PII_ENCRYPTION_KEY differs from the deployment's.\n" +
+        "  Writing now would produce hashes the app can never match — dedup and CCPA\n" +
+        "  erasure would silently stop matching every row touched.",
+    );
+    process.exit(1);
+  }
+
+  // no_reference
+  if (ALLOW_UNVERIFIED) {
+    console.warn(
+      "[backfill] WARNING: no app-written hash to verify against; proceeding on --allow-unverified.",
+    );
+    return;
+  }
+  console.error(
+    "[backfill] ABORT: cannot verify key agreement — no row has an app-written\n" +
+      "  email_hash to compare against, so there is no evidence this process hashes\n" +
+      "  the way the app does. Writing blind is what produced 446 unmatchable hashes.\n" +
+      "  Fix: let the app write ONE lead (its insert sets email_hash), then re-run.\n" +
+      "  Or pass --allow-unverified if you accept the risk deliberately.",
+  );
+  process.exit(1);
+}
+
 async function main(): Promise<void> {
   console.log(`[backfill] ${DRY_RUN ? "DRY RUN — no writes" : "LIVE"}`);
   console.log(
     `[backfill] PII_ENCRYPTION_KEY ${process.env.PII_ENCRYPTION_KEY ? "IS set (HMAC)" : "NOT set (plain SHA-256)"}`,
   );
+
+  // Runs for dry-run too: a dry run that cannot prove agreement is not a
+  // rehearsal of anything, and its reassuring output is exactly what misled me.
+  await preflightHashAgreement();
 
   const { rows } = await pool.query<LeadRow>(
     `SELECT id::text AS id, email, phone
