@@ -96,15 +96,28 @@ export async function deleteCustomerData(
       // Match on match_col (the blind index for `leads`, plain email elsewhere),
       // but always anonymize email_col. Anonymizing the hash too would leave the
       // encrypted address in place, which is the opposite of erasure.
-      const matchValue =
-        match_col === "email_hash" ? hashPII(normalizedEmail) : normalizedEmail;
+      //
+      // For `leads`, also match legacy rows: those predate the key, store
+      // PLAINTEXT, and have no hash. Missing them means an erasure request
+      // silently leaves the person's address in the table while reporting
+      // success — the exact failure this whole change exists to remove.
+      // Plaintext-vs-plaintext is safe; an encrypted row always has a hash and
+      // never reaches the IS NULL branch.
+      const usesHash = match_col !== email_col;
+      const matchValue = usesHash ? hashPII(normalizedEmail) : normalizedEmail;
+      const where = usesHash
+        ? `(${match_col} = $1 OR (${match_col} IS NULL AND ${email_col} = $3)) AND dealer_id = $2`
+        : `${match_col} = $1 AND dealer_id = $2`;
+      const params = usesHash
+        ? [matchValue, dealerId, normalizedEmail]
+        : [matchValue, dealerId];
       const result = await query(
         `UPDATE ${table}
          SET ${email_col} = 'deleted-' || id,
-             ${match_col === email_col ? "" : `${match_col} = NULL,`}
+             ${usesHash ? `${match_col} = NULL,` : ""}
              updated_at = NOW()
-         WHERE ${match_col} = $1 AND dealer_id = $2`,
-        [matchValue, dealerId],
+         WHERE ${where}`,
+        params,
       );
       if ((result.rowCount ?? 0) > 0) {
         deletedCategories.push(label);

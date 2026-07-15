@@ -55,6 +55,32 @@ if (!DATABASE_URL) {
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
+/**
+ * FAIL CLOSED when the key is missing.
+ *
+ * This is not hypothetical. Running this against production without the key
+ * wrote 446 plain-SHA-256 hashes that the app — which HAS the key and computes
+ * HMAC — can never match, silently breaking dedup for every one of those rows.
+ * `vercel env pull` returned PII_ENCRYPTION_KEY="" even though the runtime has
+ * a real value, so "the dry run said plain SHA-256" is NOT sufficient evidence
+ * that plaintext hashing is correct here.
+ *
+ * If PII encryption is genuinely disabled in the target environment, pass
+ * --allow-unkeyed deliberately.
+ */
+const ALLOW_UNKEYED = process.argv.includes("--allow-unkeyed");
+if (!process.env.PII_ENCRYPTION_KEY && !ALLOW_UNKEYED) {
+  console.error(
+    "ERROR: PII_ENCRYPTION_KEY is not set. Hashes written now would be plain\n" +
+      "SHA-256 and would NOT match an app that has the key (it computes HMAC).\n" +
+      "Note: `vercel env pull` can return an EMPTY value for this variable even\n" +
+      "when the deployment has a real one — check the runtime, not the pull.\n" +
+      "Re-run with the real key, or pass --allow-unkeyed if encryption really is\n" +
+      "disabled for this environment.",
+  );
+  process.exit(1);
+}
+
 const pool = new pg.Pool({ connectionString: DATABASE_URL, max: 4 });
 
 interface LeadRow {

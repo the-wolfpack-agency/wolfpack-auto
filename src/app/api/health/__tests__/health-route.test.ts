@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+export {}; // module marker: keeps top-level test consts out of global scope
 /**
  * Contract tests for GET /api/health.
  *
