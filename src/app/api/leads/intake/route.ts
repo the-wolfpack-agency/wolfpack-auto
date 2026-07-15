@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { decryptPII, hashPII } from "@/lib/crypto";
 import { verifyWebhookSignature } from "@/lib/webhook-verify";
 import { trackLead, trackLeadIngestion } from "@/lib/analytics-hooks";
 import { auditLog } from "@/lib/audit-log";
@@ -350,7 +351,16 @@ export async function POST(request: NextRequest) {
           LIMIT 500`,
         [auth.source.dealer_id],
       );
-      return res.rows;
+      // Decrypt before handing to findDuplicate. This column is mixed-state:
+      // /api/leads writes AES-GCM ciphertext, this route writes plaintext, and
+      // comparing an incoming plaintext address against a stored ciphertext
+      // never matches. decryptPII returns non-ciphertext unchanged, so this is
+      // correct for rows written by either path.
+      return res.rows.map((r) => ({
+        ...r,
+        email: typeof r.email === "string" ? decryptPII(r.email) : r.email,
+        phone: typeof r.phone === "string" ? decryptPII(r.phone) : r.phone,
+      }));
     } catch {
       return [];
     }
@@ -363,11 +373,17 @@ export async function POST(request: NextRequest) {
       return { id: lead.id, created_at: lead.created_at };
     }
     const { query } = await import("@/lib/db");
+    // Write the blind index alongside the row so /api/leads dedup and CCPA
+    // erasure can find leads that arrived through this route. `lead.email` is
+    // already normalized by the intake core; hash exactly that.
+    const emailHash = hashPII(lead.email);
+    const phoneHash = lead.phone ? hashPII(lead.phone) : null;
     const res = await query<{ id: string; created_at: string }>(
       `INSERT INTO leads
          (dealer_id, first_name, last_name, email, phone,
+          email_hash, phone_hash,
           vehicle_interest, source, status, created_at, updated_at)
-       VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, 'new', NOW(), NOW())
+       VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, 'new', NOW(), NOW())
        RETURNING id::text AS id, created_at::text AS created_at`,
       [
         lead.dealer_id,
@@ -375,6 +391,8 @@ export async function POST(request: NextRequest) {
         lead.last_name,
         lead.email,
         lead.phone,
+        emailHash,
+        phoneHash,
         lead.vehicle_interest,
         lead.source_type === "manual" ? "walk_in" : "third_party",
       ],
