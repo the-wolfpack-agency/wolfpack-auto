@@ -11,6 +11,7 @@ import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import pg from "pg";
+import { splitStatements } from "./lib/split-sql.cjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = resolve(__dirname, "../src/db/migrations");
@@ -86,11 +87,11 @@ async function runMigration(num) {
   console.log(`\n--- Running ${file} ---`);
 
   // Split on semicolons and run each statement individually
-  // (some statements may fail independently, e.g. IF NOT EXISTS)
-  const statements = sql
-    .split(";")
-    .map(s => s.trim())
-    .filter(s => s && !s.startsWith("--"));
+  // (some statements may fail independently, e.g. IF NOT EXISTS).
+  // See scripts/lib/split-sql.cjs — the previous inline filter dropped any
+  // chunk starting with "--", which silently discarded the FIRST statement of
+  // every migration that opens with a header comment.
+  const statements = splitStatements(sql);
 
   let success = 0;
   let skipped = 0;
