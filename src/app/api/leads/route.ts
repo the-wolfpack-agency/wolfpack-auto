@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { encryptPII } from "@/lib/crypto";
+import { encryptPII, hashPII } from "@/lib/crypto";
+import { normalizeEmail, normalizePhone } from "@/lib/leads/intake";
 import { auditLog } from "@/lib/audit-log";
 import { scoreLeadIntent, extractEmailDomain } from "@/lib/lead-scorer";
 import { checkIdempotency, recordIdempotency, idempotencyKey } from "@/lib/idempotency";
@@ -138,10 +139,15 @@ export async function POST(request: NextRequest) {
 
     const { query } = await getDb();
 
-    // Check for duplicate (same email, same dealer, last 30 days)
+    // Dedup on the blind index, NOT on `email`. The email column holds AES-GCM
+    // ciphertext with a random IV per call, so `WHERE email = $1` against a
+    // plaintext address matches nothing once PII_ENCRYPTION_KEY is set — every
+    // duplicate sailed through, silently, and only in prod. See hashPII.
+    const normalizedEmail = normalizeEmail(lead.email);
+    const emailHash = hashPII(normalizedEmail);
     const existingLead = await query<{ id: string }>(
-      `SELECT id FROM leads WHERE email = $1 AND dealer_id = $2 AND created_at > NOW() - INTERVAL '30 days' AND deleted_at IS NULL LIMIT 1`,
-      [lead.email.toLowerCase(), lead.dealer_id],
+      `SELECT id FROM leads WHERE email_hash = $1 AND dealer_id = $2 AND created_at > NOW() - INTERVAL '30 days' AND deleted_at IS NULL LIMIT 1`,
+      [emailHash, lead.dealer_id],
     );
     if (existingLead.rows.length > 0) {
       trackLead("lead.duplicate_detected", lead.dealer_id, {
@@ -154,23 +160,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Encrypt PII fields before storage
-    const encryptedEmail = encryptPII(lead.email.toLowerCase());
+    // Encrypt PII fields before storage. The hashes are derived from the
+    // NORMALIZED plaintext (never the ciphertext) so both write paths and the
+    // erasure path agree on the same value.
+    const encryptedEmail = encryptPII(normalizedEmail);
+    const normalizedPhone = normalizePhone(lead.phone);
     const encryptedPhone = lead.phone?.trim()
       ? encryptPII(lead.phone.trim())
       : null;
+    const phoneHash = normalizedPhone ? hashPII(normalizedPhone) : null;
 
     // Insert into PostgreSQL with parameterised query
     const result = await query<{ id: string; created_at: string }>(
       `INSERT INTO leads (
         dealer_id, first_name, last_name, email, phone,
+        email_hash, phone_hash,
         vehicle_id, vehicle_interest, source, status, notes,
         utm_source, utm_medium, utm_campaign, referrer_url,
         created_at, updated_at
       ) VALUES (
         $1, $2, $3, $4, $5,
-        $6, $7, $8, 'new', $9,
-        $10, $11, $12, $13,
+        $6, $7,
+        $8, $9, $10, 'new', $11,
+        $12, $13, $14, $15,
         NOW(), NOW()
       ) RETURNING id, created_at`,
       [
@@ -179,6 +191,8 @@ export async function POST(request: NextRequest) {
         lead.last_name,
         encryptedEmail,
         encryptedPhone,
+        emailHash,
+        phoneHash,
         lead.vehicle_id,
         lead.vehicle_interest,
         lead.source,

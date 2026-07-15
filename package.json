@@ -34,6 +34,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:reset": "psql $DATABASE_URL -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' && npm run db:migrate && npm run db:seed",
     "verify:rls": "tsx scripts/verify-rls.ts",
+    "backfill:lead-hashes": "tsx scripts/backfill-lead-pii-hashes.ts",
     "audit:deps": "bash scripts/audit-deps.sh",
     "test:migrations": "bash scripts/test-migrations.sh",
     "test:fast": "playwright test --project=chromium tests/e2e/onboarding-flow.spec.ts tests/e2e/lead-flow-e2e.spec.ts tests/e2e/admin-api-200.spec.ts tests/e2e/security-hardening.spec.ts tests/smoke.spec.ts",

@@ -20,7 +20,7 @@ import type {
 /* Normalization                                                              */
 /* -------------------------------------------------------------------------- */
 
-function normalizePhone(raw: string | null | undefined): string | null {
+export function normalizePhone(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 7) return null;
@@ -30,7 +30,7 @@ function normalizePhone(raw: string | null | undefined): string | null {
   return compact;
 }
 
-function normalizeEmail(raw: string): string {
+export function normalizeEmail(raw: string): string {
   return raw.trim().toLowerCase();
 }
 

@@ -9,7 +9,7 @@
  */
 
 import { query } from "@/lib/db";
-import { decryptPII } from "@/lib/crypto";
+import { decryptPII, hashPII } from "@/lib/crypto";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -26,14 +26,26 @@ export interface DataDeletionRequest {
   processed_by?: string;
 }
 
-/** Tables that store customer PII keyed by email. */
+/**
+ * Tables that store customer PII keyed by email.
+ *
+ * `match_col` is what we match the requester's address against; `email_col` is
+ * what we anonymize. They differ for `leads`, whose email column holds AES-GCM
+ * ciphertext with a random IV per call. Matching a plaintext address against
+ * that column finds nothing, so erasure silently anonymized ZERO rows while
+ * still reporting status='completed' — a right-to-be-forgotten request that
+ * quietly did nothing. `leads` therefore matches on the deterministic blind
+ * index (migration 087) and anonymizes the encrypted column.
+ *
+ * The other tables store plaintext email, so match_col == email_col.
+ */
 const CUSTOMER_TABLES = [
-  { table: "leads", email_col: "email", label: "leads" },
-  { table: "credit_pulls", email_col: "customer_email", label: "credit_pulls" },
-  { table: "message_log", email_col: "recipient_email", label: "message_log" },
-  { table: "reviews", email_col: "customer_email", label: "reviews" },
-  { table: "deal_worksheets", email_col: "customer_email", label: "deal_worksheets" },
-  { table: "customers", email_col: "email", label: "customers" },
+  { table: "leads", email_col: "email", match_col: "email_hash", label: "leads" },
+  { table: "credit_pulls", email_col: "customer_email", match_col: "customer_email", label: "credit_pulls" },
+  { table: "message_log", email_col: "recipient_email", match_col: "recipient_email", label: "message_log" },
+  { table: "reviews", email_col: "customer_email", match_col: "customer_email", label: "reviews" },
+  { table: "deal_worksheets", email_col: "customer_email", match_col: "customer_email", label: "deal_worksheets" },
+  { table: "customers", email_col: "email", match_col: "email", label: "customers" },
 ] as const;
 
 /* -------------------------------------------------------------------------- */
@@ -79,14 +91,20 @@ export async function deleteCustomerData(
   );
 
   // Anonymize each table
-  for (const { table, email_col, label } of CUSTOMER_TABLES) {
+  for (const { table, email_col, match_col, label } of CUSTOMER_TABLES) {
     try {
+      // Match on match_col (the blind index for `leads`, plain email elsewhere),
+      // but always anonymize email_col. Anonymizing the hash too would leave the
+      // encrypted address in place, which is the opposite of erasure.
+      const matchValue =
+        match_col === "email_hash" ? hashPII(normalizedEmail) : normalizedEmail;
       const result = await query(
         `UPDATE ${table}
          SET ${email_col} = 'deleted-' || id,
+             ${match_col === email_col ? "" : `${match_col} = NULL,`}
              updated_at = NOW()
-         WHERE ${email_col} = $1 AND dealer_id = $2`,
-        [normalizedEmail, dealerId],
+         WHERE ${match_col} = $1 AND dealer_id = $2`,
+        [matchValue, dealerId],
       );
       if ((result.rowCount ?? 0) > 0) {
         deletedCategories.push(label);

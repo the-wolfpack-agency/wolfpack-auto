@@ -9,7 +9,13 @@
  * Output format: base64( IV[12] || ciphertext || authTag[16] )
  */
 
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+} from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12; // GCM recommended IV length
@@ -57,6 +63,36 @@ export function encryptPII(plaintext: string): string {
   // Pack as: IV || ciphertext || authTag
   const packed = Buffer.concat([iv, encrypted, authTag]);
   return packed.toString("base64");
+}
+
+/**
+ * Deterministic blind index for equality lookups on an encrypted column.
+ *
+ * WHY THIS EXISTS: `encryptPII` uses a random IV per call, so encrypting the
+ * same email twice yields different ciphertext. Any `WHERE email = $1` lookup
+ * against an encrypted column therefore matches nothing, always. That is not a
+ * theoretical concern — it silently broke lead dedup and CCPA erasure, and it
+ * was invisible in dev because `getKey()` returns null without
+ * PII_ENCRYPTION_KEY and `encryptPII` degrades to an identity function.
+ *
+ * `hashPII` is stable for the same input, so it can be indexed and matched with
+ * `=`. Store it beside the ciphertext; match on the hash, display the plaintext.
+ *
+ * Keyed with HMAC-SHA256 when PII_ENCRYPTION_KEY is set, so the index is not a
+ * plain rainbow-table-able digest of an email address. Falls back to unkeyed
+ * SHA-256 when no key is configured, purely so local dev stays deterministic.
+ * Hashes are environment-specific either way: rotating the key invalidates
+ * every stored hash and requires a re-hash backfill.
+ *
+ * Callers MUST pass an ALREADY-NORMALIZED value (see `normalizeEmail` /
+ * `normalizePhone` in `src/lib/leads/intake.ts`) — this function hashes exactly
+ * the bytes it is given and does no normalization of its own.
+ */
+export function hashPII(normalized: string): string {
+  const key = getKey();
+  return key
+    ? createHmac("sha256", key).update(normalized, "utf8").digest("hex")
+    : createHash("sha256").update(normalized, "utf8").digest("hex");
 }
 
 /**
