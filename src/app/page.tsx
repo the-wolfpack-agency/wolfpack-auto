@@ -129,23 +129,29 @@ export default async function HomePage() {
       {/* Personalized resume bar - only renders with real session history */}
       <AnnouncementBar />
 
-      {/* Hero */}
-      <section
-        aria-labelledby="hero-heading"
-        className="relative overflow-hidden bg-surface-muted"
-      >
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:items-center lg:gap-12 lg:px-8 lg:py-28">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-400">
+      {/* Hero: full-bleed photographic background with overlaid copy (V_01) */}
+      <section aria-labelledby="hero-heading" className="relative isolate overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1920&h=1200&fit=crop&auto=format&q=70"
+          alt="Scenic open road"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          loading="eager"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-950/90 via-brand-950/70 to-brand-950/30" />
+
+        <div className="mx-auto max-w-7xl px-4 pb-28 pt-20 sm:px-6 sm:pb-32 sm:pt-24 lg:px-8 lg:pb-40 lg:pt-32">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
               {dealer.name}
             </p>
             <h1
               id="hero-heading"
-              className="mt-4 text-4xl font-semibold tracking-tight text-brand-950 sm:text-5xl lg:text-6xl"
+              className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl"
             >
               {dealer.tagline}
             </h1>
-            <p className="mt-5 max-w-md text-lg text-brand-500">
+            <p className="mt-5 max-w-md text-lg text-white/80">
               Transparent pricing. 7-day money-back guarantee. Pre-approved in
               minutes.
             </p>
@@ -153,7 +159,7 @@ export default async function HomePage() {
               <a
                 href="/inventory"
                 data-track="hero_browse_inventory"
-                className="inline-flex items-center gap-2 rounded-full bg-brand-950 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-950 transition-colors hover:bg-brand-100"
               >
                 Browse Inventory
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -163,26 +169,16 @@ export default async function HomePage() {
               <a
                 href="/financing"
                 data-track="hero_get_prequalified"
-                className="inline-flex items-center gap-2 rounded-full border border-brand-300 px-6 py-3 text-sm font-semibold text-brand-950 transition-colors hover:border-brand-950"
+                className="inline-flex items-center gap-2 rounded-full border border-white/50 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 Get Pre-Qualified
               </a>
             </div>
           </div>
-
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1000&h=750&fit=crop&auto=format"
-              alt="Featured vehicle"
-              className="aspect-[4/3] w-full rounded-card object-cover shadow-card-hover"
-              loading="eager"
-            />
-          </div>
         </div>
 
-        {/* Search bar */}
-        <div className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+        {/* Search bar overlapping the hero bottom */}
+        <div className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
           <form
             action="/inventory"
             method="GET"
