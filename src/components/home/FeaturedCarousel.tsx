@@ -4,11 +4,11 @@ import { useRef } from "react";
 import type { FeaturedVehicle } from "@/lib/data";
 
 /**
- * Featured-vehicle carousel. Horizontal scroll-snap track with prev/next
- * controls (arrows are progressive enhancement - the track scrolls/swipes
- * natively without JS). Cards preserve the contract the homepage E2E asserts:
- * an `a[href^="/inventory/<vin>"]` with an <h3> title, a `$` price, "miles",
- * and "View Details".
+ * Featured-vehicle carousel (V_01). White cards with an outlined "New Arrival"
+ * badge, the car image, title, "MILES · BODY" meta, a divider, then price + a
+ * black "Details" button. White circular carousel controls below. Card keeps
+ * the E2E contract: an `a[href^="/inventory/<vin>"]` with an <h3> title, a `$`
+ * price, "miles", and "Details".
  */
 export default function FeaturedCarousel({
   vehicles,
@@ -20,8 +20,7 @@ export default function FeaturedCarousel({
   const scrollBy = (dir: 1 | -1) => {
     const el = trackRef.current;
     if (!el) return;
-    const amount = Math.min(el.clientWidth * 0.9, 360);
-    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.9, 420), behavior: "smooth" });
   };
 
   return (
@@ -35,41 +34,41 @@ export default function FeaturedCarousel({
             key={v.vin}
             href={`/inventory/${v.vin}`}
             data-track="featured_vehicle_click"
-            className="group w-[85%] shrink-0 snap-start overflow-hidden rounded-card border border-surface-border bg-white shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover sm:w-[45%] lg:w-[31%]"
+            className="group flex w-[85%] shrink-0 snap-start flex-col rounded-card bg-white p-5 shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover sm:w-[45%] lg:w-[31%]"
           >
-            <div className={`relative h-52 bg-gradient-to-br ${v.gradient}`}>
+            <div className="relative flex h-48 items-center justify-center overflow-hidden">
+              <span className="absolute left-0 top-0 rounded-full border border-brand-950/25 bg-white px-3 py-1 text-xs font-semibold text-brand-950">
+                {v.tag}
+              </span>
               {v.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={v.photo}
                   alt={`${v.year} ${v.make} ${v.model}`}
-                  className="h-full w-full object-cover"
+                  className="max-h-full w-full object-contain"
                   loading="lazy"
                 />
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg width="64" height="64" className="h-16 w-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                  </svg>
-                </div>
+                <svg className="h-16 w-28 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M3 13l2-5a2 2 0 011.9-1.4h10.2A2 2 0 0119 8l2 5m-18 0h18m-18 0v4a1 1 0 001 1h1a1 1 0 001-1v-1h12v1a1 1 0 001 1h1a1 1 0 001-1v-4M6.5 16.5h.01M17.5 16.5h.01" />
+                </svg>
               )}
-              <span className="absolute left-4 top-4 rounded-full border border-brand-200 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-950 backdrop-blur-sm">
-                {v.tag}
-              </span>
             </div>
-            <div className="p-5">
-              <h3 className="text-base font-semibold text-brand-950">
-                {v.year} {v.make} {v.model}
-              </h3>
-              <p className="mt-1 text-xs uppercase tracking-wide text-brand-400">
-                {v.mileage.toLocaleString()} miles
-              </p>
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-xl font-bold text-brand-950">
+
+            <h3 className="mt-4 text-xl font-bold leading-tight text-brand-950">
+              {v.year} {v.make} {v.model}
+            </h3>
+            <p className="mt-2 text-xs font-medium uppercase tracking-wide text-brand-400">
+              {v.mileage.toLocaleString()} miles{v.bodyStyle ? ` · ${v.bodyStyle}` : ""}
+            </p>
+
+            <div className="mt-4 border-t border-surface-border pt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-2xl font-bold text-brand-950">
                   ${v.price.toLocaleString()}
                 </p>
-                <span className="inline-flex items-center gap-1 rounded-full border border-surface-border px-3 py-1.5 text-xs font-semibold text-brand-700 transition-colors group-hover:border-brand-950 group-hover:text-brand-950">
-                  View Details
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-950 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors group-hover:bg-brand-800">
+                  Details
                   <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -80,16 +79,15 @@ export default function FeaturedCarousel({
         ))}
       </div>
 
-      {/* Carousel controls */}
-      <div className="mt-6 flex justify-center gap-3">
+      <div className="mt-8 flex justify-center gap-4">
         <button
           type="button"
           onClick={() => scrollBy(-1)}
           data-track="featured_prev"
           aria-label="Previous vehicles"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-surface-border text-brand-700 transition-colors hover:border-brand-950 hover:text-brand-950"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-950 shadow-card transition-transform hover:scale-105"
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -98,9 +96,9 @@ export default function FeaturedCarousel({
           onClick={() => scrollBy(1)}
           data-track="featured_next"
           aria-label="Next vehicles"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-surface-border text-brand-700 transition-colors hover:border-brand-950 hover:text-brand-950"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-950 shadow-card transition-transform hover:scale-105"
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>

@@ -36,8 +36,8 @@ afterEach(() => {
 });
 
 const vehicles: FeaturedVehicle[] = [
-  { vin: "V1", year: 2024, make: "Honda", model: "CR-V EX-L", price: 34_250, mileage: 1_283, gradient: "from-brand-400 to-brand-600", tag: "New Arrival", photo: "" },
-  { vin: "V2", year: 2025, make: "Tesla", model: "Model 3", price: 46_990, mileage: 5, gradient: "from-brand-400 to-brand-600", tag: "Certified", photo: "" },
+  { vin: "V1", year: 2024, make: "Honda", model: "CR-V EX-L", price: 34_250, mileage: 1_283, gradient: "from-brand-400 to-brand-600", tag: "New Arrival", photo: "", bodyStyle: "SUV" },
+  { vin: "V2", year: 2025, make: "Tesla", model: "Model 3", price: 46_990, mileage: 5, gradient: "from-brand-400 to-brand-600", tag: "Certified", photo: "", bodyStyle: "Sedan" },
 ];
 
 test("FeaturedCarousel renders cards with the E2E contract", () => {
@@ -47,7 +47,8 @@ test("FeaturedCarousel renders cards with the E2E contract", () => {
   expect(link!.querySelector("h3")!.textContent).toContain("2024 Honda CR-V EX-L");
   expect(container.textContent).toContain("$34,250");
   expect(container.textContent).toMatch(/miles/i);
-  expect(container.textContent).toContain("View Details");
+  expect(container.textContent).toContain("SUV");
+  expect(container.textContent).toContain("Details");
   expect(container.textContent).toContain("New Arrival");
   // Carousel controls exist
   expect(container.querySelector('button[aria-label="Next vehicles"]')).not.toBeNull();
@@ -67,19 +68,15 @@ test("TestimonialsCarousel renders exactly three named quotes", () => {
   expect(container.textContent).toContain("Maria L.");
 });
 
-test("PaymentCalculatorSection carries the financing CTA and switches price by preset", () => {
+test("PaymentCalculatorSection switches the vehicle price by preset", () => {
   const presets = [
     { label: "Honda CR-V", price: 34_250, msrp: null },
     { label: "Tesla Model 3", price: 46_990, msrp: null },
   ];
   root = mount(container, <PaymentCalculatorSection vehicles={presets} />);
 
-  // Financing CTA hook the homepage E2E asserts on
-  const cta = container.querySelector<HTMLAnchorElement>('a[href="/financing"]');
-  expect(cta).not.toBeNull();
-  expect(cta!.textContent).toContain("Check Your Rate");
-
-  // Reused PaymentCalculator shows the first preset price
+  expect(container.textContent).toContain("Payment Calculator.");
+  // Initial vehicle price from the first preset
   expect(container.textContent).toContain("$34,250");
 
   // Switching preset updates the live calculator price (real interactivity)

@@ -921,6 +921,7 @@ export const placeholderFeaturedVehicles = placeholderVehicles
     gradient: v.gradient,
     tag: v.tag ?? v.condition,
     photo: v.photo,
+    bodyStyle: v.bodyStyle,
   }));
 
 // ---------------------------------------------------------------------------
