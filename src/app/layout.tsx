@@ -134,7 +134,7 @@ export default async function RootLayout({
                 aria-label={`${dealer.name} home`}
                 className="absolute left-1/2 -translate-x-1/2"
               >
-                <SiteLogo name={dealer.name} logoUrl={dealer.logo_url} />
+                <SiteLogo name={dealer.name} />
               </a>
 
               {/* Right: phone + Browse Cars */}
