@@ -83,15 +83,18 @@ const SHOP_FEATURES = [
   },
 ];
 
+// Browse-by-Type imagery uses the designer's own V_01 car cutouts. The file
+// exported 7 of the 8 (no convertible), so Convertibles uses a stock white
+// convertible until the designer supplies that cutout.
 const CATEGORIES = [
-  { label: "Sedans", photo: "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop&auto=format", count: "45 Available" },
-  { label: "SUVs", photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&auto=format", count: "120 Available" },
-  { label: "Trucks", photo: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=400&h=300&fit=crop&auto=format", count: "67 Available" },
-  { label: "Coupes", photo: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop&auto=format", count: "42 Available" },
-  { label: "Electric", photo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop&auto=format", count: "33 Available" },
-  { label: "Vans", photo: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop&auto=format", count: "94 Available" },
-  { label: "Convertibles", photo: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&h=300&fit=crop&auto=format", count: "22 Available" },
-  { label: "Wagons", photo: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=300&fit=crop&auto=format", count: "52 Available" },
+  { label: "Sedans", photo: "/images/types/sedan.png", count: "45 Available" },
+  { label: "SUVs", photo: "/images/types/suv.png", count: "120 Available" },
+  { label: "Trucks", photo: "/images/types/truck.png", count: "67 Available" },
+  { label: "Coupes", photo: "/images/types/coupe.png", count: "42 Available" },
+  { label: "Electric", photo: "/images/types/electric.png", count: "33 Available" },
+  { label: "Vans", photo: "/images/types/van.png", count: "94 Available" },
+  { label: "Convertibles", photo: "", count: "22 Available" },
+  { label: "Wagons", photo: "/images/types/wagon.png", count: "52 Available" },
 ];
 
 const WHY = [
@@ -133,8 +136,8 @@ export default async function HomePage() {
       <section aria-labelledby="hero-heading" className="relative isolate overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=1920&h=1200&fit=crop&auto=format&q=70"
-          alt="Scenic open road"
+          src="/images/hero.jpg"
+          alt="Vehicle on a mountain road"
           className="absolute inset-0 -z-10 h-full w-full object-cover"
           loading="eager"
         />
@@ -292,14 +295,20 @@ export default async function HomePage() {
                   data-track="browse_category_click"
                   className="group flex flex-col items-center rounded-2xl bg-surface-muted p-4 text-center transition-colors hover:bg-surface-subtle"
                 >
-                  <div className="flex h-20 w-full items-center justify-center overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={cat.photo}
-                      alt={`Browse ${cat.label}`}
-                      className="h-full w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading={idx < 4 ? undefined : "lazy"}
-                    />
+                  <div className="flex h-24 w-full items-center justify-center overflow-hidden px-2">
+                    {cat.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={cat.photo}
+                        alt={`Browse ${cat.label}`}
+                        className="max-h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                        loading={idx < 4 ? undefined : "lazy"}
+                      />
+                    ) : (
+                      <svg className="h-12 w-20 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13l2-5a2 2 0 011.9-1.4h10.2A2 2 0 0119 8l2 5m-18 0h18m-18 0v4a1 1 0 001 1h1a1 1 0 001-1v-1h12v1a1 1 0 001 1h1a1 1 0 001-1v-4M6.5 16.5h.01M17.5 16.5h.01" />
+                      </svg>
+                    )}
                   </div>
                   <span className="mt-3 inline-block rounded-full bg-brand-950 px-4 py-1.5 text-xs font-semibold text-white">
                     {cat.label}
