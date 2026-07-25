@@ -9,41 +9,48 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Monochrome editorial system (V_01 redesign). The dealer's own logo
+        // supplies brand color; the UI stays neutral so it works for any brand.
+        // Token NAMES are unchanged (brand / accent / surface) so every existing
+        // `brand-*` / `accent-*` usage across the app recolors with zero markup
+        // churn. `brand` is a near-black ink scale; `accent` mirrors it so any
+        // legacy orange CTA renders as a strong dark action, not a stray hue.
         brand: {
-          50: "#f0f7ff",
-          100: "#e0effe",
-          200: "#b9dffd",
-          300: "#7cc5fc",
-          400: "#36a8f8",
-          500: "#0c8de9",
-          600: "#0070c7",
-          700: "#0059a2",
-          800: "#054c85",
-          900: "#0a406f",
-          950: "#07294a",
+          50: "#f6f6f7",
+          100: "#ededee",
+          200: "#d8d8db",
+          300: "#b7b7bc",
+          400: "#8f8f96",
+          500: "#6b6b72",
+          600: "#2c2c30",
+          700: "#1d1d20",
+          800: "#161618",
+          900: "#0f0f11",
+          950: "#0a0a0b",
         },
         accent: {
-          50: "#fff7ed",
-          100: "#ffedd5",
-          200: "#fed7aa",
-          300: "#fdba74",
-          400: "#fb923c",
-          500: "#f97316",
-          600: "#ea580c",
-          700: "#c2410c",
-          800: "#9a3412",
-          900: "#7c2d12",
-          950: "#431407",
+          50: "#f6f6f7",
+          100: "#ededee",
+          200: "#d8d8db",
+          300: "#b7b7bc",
+          400: "#8f8f96",
+          500: "#2c2c30",
+          600: "#1d1d20",
+          700: "#161618",
+          800: "#0f0f11",
+          900: "#0a0a0b",
+          950: "#050506",
         },
         surface: {
           DEFAULT: "#ffffff",
-          muted: "#f8fafc",
-          subtle: "#f1f5f9",
-          border: "#e2e8f0",
+          muted: "#f6f6f7",
+          subtle: "#efeff1",
+          border: "#e4e4e7",
         },
       },
       fontFamily: {
         sans: [
+          "var(--font-inter)",
           "Inter",
           "system-ui",
           "-apple-system",
@@ -52,6 +59,7 @@ const config: Config = {
           "sans-serif",
         ],
         display: [
+          "var(--font-inter)",
           "Inter",
           "system-ui",
           "-apple-system",
@@ -69,7 +77,10 @@ const config: Config = {
         "sidebar-width": "18rem",
       },
       borderRadius: {
-        card: "0.75rem",
+        card: "1rem",
+      },
+      maxWidth: {
+        "8xl": "88rem",
       },
       boxShadow: {
         card: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",

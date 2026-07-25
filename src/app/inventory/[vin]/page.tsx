@@ -10,6 +10,7 @@ import CARSRuleDisclosures from "@/components/CARSRuleDisclosures";
 import EVTaxCreditBadge from "@/components/EVTaxCreditBadge";
 import EVRangeCalculator from "@/components/EVRangeCalculator";
 import ShoppersAlsoViewed from "@/components/ShoppersAlsoViewed";
+import RecentlyViewedTracker from "@/components/RecentlyViewedTracker";
 import { getDealerConfig } from "@/lib/dealer-config";
 
 export const dynamic = "force-dynamic";
@@ -84,6 +85,14 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
 
   return (
     <div className="bg-surface-muted min-h-screen">
+      {/* Record into recently-viewed session memory (powers the homepage resume bar) */}
+      <RecentlyViewedTracker
+        vin={v.vin}
+        year={v.year}
+        make={v.make}
+        model={v.model}
+        price={v.price}
+      />
       {/* JSON-LD structured data */}
       {/* audit-safe: A5 reason="JSON-LD object literal of server-derived vehicle fields; JSON.stringify-encoded into a script tag (standard SEO pattern)" */}
       <script

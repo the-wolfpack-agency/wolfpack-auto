@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import MobileMenu from "@/components/MobileMenu";
+
+// Self-hosted at build time (no runtime Google request → no CSP impact).
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 import ChatWidget from "@/components/ChatWidget";
 import Analytics from "@/components/Analytics";
 import EventCollector from "@/components/EventCollector";
@@ -35,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0c8de9",
+  themeColor: "#0a0a0b",
 };
 
 export default async function RootLayout({
@@ -47,11 +55,11 @@ export default async function RootLayout({
   const fullAddress = `${dealer.address}, ${dealer.city}, ${dealer.state} ${dealer.zip}`;
   const phoneHref = `tel:+1${dealer.phone.replace(/\D/g, "")}`;
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <head>
         <Analytics />
       </head>
-      <body className="min-h-screen bg-surface text-gray-900 antialiased">
+      <body className="min-h-screen bg-surface font-sans text-gray-900 antialiased">
         <DealerProvider config={dealer}>
         <EventCollector>
         {/* Skip navigation link for keyboard / screen reader users */}
@@ -93,25 +101,21 @@ export default async function RootLayout({
         </div>
 
         {/* Header */}
-        <header role="banner" className="sticky top-0 z-40 border-b border-surface-border bg-white/95 backdrop-blur-sm">
+        <header role="banner" className="sticky top-0 z-40 border-b border-surface-border bg-white/90 backdrop-blur-md">
           <nav
             aria-label="Primary navigation"
             className="mx-auto flex h-header-height max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
           >
-            {/* Logo */}
-            <a href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
-                <svg width="20" height="20" className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-              </div>
-              <span className="text-xl font-bold tracking-tight text-gray-900">
-                {dealer.name.split(" ").length >= 2 ? (
-                  <>{dealer.name.split(" ").slice(0, -1).join(" ")} <span className="text-brand-600">{dealer.name.split(" ").slice(-1)[0]}</span></>
-                ) : (
-                  <span className="text-brand-600">{dealer.name}</span>
-                )}
-              </span>
+            {/* Logo: monochrome wordmark; the dealer's own logo supplies brand color */}
+            <a href="/" className="flex items-center gap-2.5" aria-label={`${dealer.name} home`}>
+              {dealer.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={dealer.logo_url} alt={dealer.name} className="h-7 w-auto" />
+              ) : (
+                <span className="text-lg font-semibold uppercase tracking-[0.2em] text-brand-950">
+                  {dealer.name}
+                </span>
+              )}
             </a>
 
             {/* Desktop Nav */}
@@ -128,7 +132,7 @@ export default async function RootLayout({
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-surface-subtle hover:text-brand-600"
+                    className="rounded-full px-4 py-2 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50 hover:text-brand-950"
                   >
                     {link.label}
                   </a>
@@ -140,12 +144,19 @@ export default async function RootLayout({
             <div className="flex items-center gap-3">
               <a
                 href={phoneHref}
-                className="hidden items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-100 sm:flex"
+                className="hidden items-center gap-2 text-sm font-semibold text-brand-700 transition-colors hover:text-brand-950 lg:flex"
               >
                 <svg width="16" height="16" className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                 </svg>
                 {dealer.phone}
+              </a>
+              <a
+                href="/inventory"
+                data-track="header_browse_cars"
+                className="hidden rounded-full bg-brand-950 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800 sm:inline-flex"
+              >
+                Browse Cars
               </a>
 
               {/* Mobile menu — client component with open/close state */}
