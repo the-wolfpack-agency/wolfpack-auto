@@ -61,7 +61,7 @@ test.describe("Hero Search → Inventory Navigation", () => {
   test("hero make dropdown includes all 14 makes", async ({ page }) => {
     await page.goto("/");
     const options = await page.locator('select[name="make"] option').allTextContents();
-    const makes = options.filter((o) => o !== "Any Make");
+    const makes = options.filter((o) => o !== "Make");
     expect(makes.length).toBe(14);
     expect(makes).toContain("Toyota");
     expect(makes).toContain("Tesla");

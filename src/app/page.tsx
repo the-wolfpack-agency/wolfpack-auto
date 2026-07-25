@@ -92,7 +92,7 @@ const CATEGORIES = [
   { label: "Coupes", photo: "/images/types/coupe.png", count: "42 Available" },
   { label: "Electric", photo: "/images/types/electric.png", count: "33 Available" },
   { label: "Vans", photo: "/images/types/van.png", count: "94 Available" },
-  { label: "Convertibles", photo: "", count: "22 Available" },
+  { label: "Convertibles", photo: "/images/types/convertible.png", count: "22 Available" },
   { label: "Wagons", photo: "/images/types/wagon.png", count: "52 Available" },
 ];
 
@@ -203,7 +203,7 @@ export default async function HomePage() {
                   defaultValue=""
                   className="w-full appearance-none rounded-full border border-surface-border bg-white px-4 py-3 text-base text-brand-950 focus:border-brand-950 focus:outline-none focus:ring-1 focus:ring-brand-950"
                 >
-                  <option value="">Any Make</option>
+                  <option value="">Make</option>
                   {MAKES.map((m) => (
                     <option key={m}>{m}</option>
                   ))}
@@ -401,7 +401,7 @@ export default async function HomePage() {
       <PaymentCalculatorSection vehicles={calcVehicles} />
 
       {/* Testimonials */}
-      <section aria-labelledby="testimonials-heading" className="bg-white py-16 sm:py-24">
+      <section aria-labelledby="testimonials-heading" className="bg-surface-muted py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 id="testimonials-heading" className="text-4xl font-bold tracking-tight text-brand-950 sm:text-5xl">
@@ -471,22 +471,35 @@ export default async function HomePage() {
             </form>
           </div>
 
-          <div className="relative">
+          <div className="relative pt-20">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/types/suv.png"
+              src="/images/tradein-car.png"
               alt="Trade in your vehicle"
               className="w-full object-contain"
             />
-            <span className="absolute left-[6%] top-[42%] rounded-full border border-brand-950/20 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-card">
-              Market Priced
-            </span>
-            <span className="absolute left-1/2 top-[8%] -translate-x-1/2 rounded-full border border-brand-950/20 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-card">
-              150-Pt Inspection
-            </span>
-            <span className="absolute right-[4%] top-[26%] rounded-full border border-brand-950/20 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-card">
-              Carfax Verified
-            </span>
+            {/* Callouts with connector lines pointing at the car */}
+            <div className="absolute left-[24%] top-0 flex -translate-x-1/2 flex-col items-center">
+              <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
+                Market Priced
+              </span>
+              <span className="mt-1 h-14 w-px bg-brand-950/50" />
+              <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
+            </div>
+            <div className="absolute left-1/2 top-2 flex -translate-x-1/2 flex-col items-center">
+              <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
+                150-Pt Inspection
+              </span>
+              <span className="mt-1 h-20 w-px bg-brand-950/50" />
+              <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
+            </div>
+            <div className="absolute right-[16%] top-6 flex translate-x-1/2 flex-col items-center">
+              <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
+                Carfax Verified
+              </span>
+              <span className="mt-1 h-14 w-px bg-brand-950/50" />
+              <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
+            </div>
           </div>
         </div>
       </section>
