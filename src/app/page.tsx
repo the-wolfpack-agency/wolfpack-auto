@@ -131,8 +131,9 @@ export default async function HomePage() {
       {/* Personalized resume bar - only renders with real session history */}
       <AnnouncementBar />
 
-      {/* Hero: full-bleed photographic background with overlaid copy (V_01) */}
-      <section aria-labelledby="hero-heading" className="relative isolate overflow-hidden">
+      {/* Hero: full-bleed background that sits BEHIND the floating header nav.
+          Pulled up by the header height so the image shows behind it (V_01). */}
+      <section aria-labelledby="hero-heading" className="relative isolate -mt-[68px] overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/hero.jpg"
@@ -142,7 +143,7 @@ export default async function HomePage() {
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-950/90 via-brand-950/70 to-brand-950/30" />
 
-        <div className="mx-auto max-w-7xl px-4 pb-28 pt-20 sm:px-6 sm:pb-32 sm:pt-24 lg:px-8 lg:pb-40 lg:pt-32">
+        <div className="mx-auto max-w-7xl px-4 pb-28 pt-32 sm:px-6 sm:pb-32 sm:pt-36 lg:px-8 lg:pb-40 lg:pt-48">
           <div className="max-w-xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
               {dealer.name}
