@@ -149,7 +149,7 @@ export default async function HomePage() {
             </p>
             <h1
               id="hero-heading"
-              className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl"
+              className="mt-4 text-4xl font-bold tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl"
             >
               {dealer.tagline}
             </h1>
