@@ -84,14 +84,14 @@ const SHOP_FEATURES = [
 ];
 
 const CATEGORIES = [
-  { label: "Sedans", photo: "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop&auto=format", count: "120+" },
-  { label: "SUVs", photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&auto=format", count: "150+" },
-  { label: "Trucks", photo: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=400&h=300&fit=crop&auto=format", count: "85+" },
-  { label: "Coupes", photo: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop&auto=format", count: "40+" },
-  { label: "Electric", photo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop&auto=format", count: "45+" },
-  { label: "Vans", photo: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop&auto=format", count: "25+" },
-  { label: "Convertibles", photo: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&h=300&fit=crop&auto=format", count: "30+" },
-  { label: "Wagons", photo: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=300&fit=crop&auto=format", count: "15+" },
+  { label: "Sedans", photo: "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop&auto=format", count: "45 Available" },
+  { label: "SUVs", photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&auto=format", count: "120 Available" },
+  { label: "Trucks", photo: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=400&h=300&fit=crop&auto=format", count: "67 Available" },
+  { label: "Coupes", photo: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop&auto=format", count: "42 Available" },
+  { label: "Electric", photo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop&auto=format", count: "33 Available" },
+  { label: "Vans", photo: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop&auto=format", count: "94 Available" },
+  { label: "Convertibles", photo: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&h=300&fit=crop&auto=format", count: "22 Available" },
+  { label: "Wagons", photo: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=300&fit=crop&auto=format", count: "52 Available" },
 ];
 
 const WHY = [
@@ -276,41 +276,42 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Browse by Type */}
-      <section aria-labelledby="browse-heading" className="bg-brand-950 py-16 sm:py-24">
+      {/* Browse by Type (white panel with dark header strip, per V_01) */}
+      <section aria-labelledby="browse-heading" className="bg-surface-muted py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between">
-            <h2 id="browse-heading" className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-              Browse by Type.
-            </h2>
-            <a href="/inventory" className="hidden text-sm font-semibold text-brand-300 transition-colors hover:text-white sm:block">
-              View all inventory &rarr;
-            </a>
-          </div>
-          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {CATEGORIES.map((cat, idx) => (
-              <a
-                key={cat.label}
-                href={`/inventory?category=${encodeURIComponent(cat.label)}`}
-                data-track="browse_category_click"
-                className="group overflow-hidden rounded-card border border-brand-800 bg-brand-900 transition-all hover:-translate-y-1 hover:border-brand-600"
-              >
-                <div className="relative h-28 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={cat.photo}
-                    alt={`Browse ${cat.label}`}
-                    className="h-full w-full object-cover opacity-90 transition-transform duration-300 group-hover:scale-105"
-                    loading={idx < 4 ? undefined : "lazy"}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-950/80 to-transparent" />
-                </div>
-                <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm font-semibold text-white">{cat.label}</span>
-                  <span className="text-xs text-brand-400">{cat.count}</span>
-                </div>
+          <div className="overflow-hidden rounded-[2rem] bg-white shadow-card">
+            <div className="flex items-center justify-between bg-brand-950 px-6 py-5 sm:px-8">
+              <h2 id="browse-heading" className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+                Browse by Type
+              </h2>
+              <a href="/inventory" className="text-sm font-semibold text-white/90 transition-colors hover:text-white">
+                View All Inventory &rarr;
               </a>
-            ))}
+            </div>
+            <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-4 sm:gap-5 sm:p-8">
+              {CATEGORIES.map((cat, idx) => (
+                <a
+                  key={cat.label}
+                  href={`/inventory?category=${encodeURIComponent(cat.label)}`}
+                  data-track="browse_category_click"
+                  className="group flex flex-col items-center rounded-2xl bg-surface-muted p-4 text-center transition-colors hover:bg-surface-subtle"
+                >
+                  <div className="flex h-20 w-full items-center justify-center overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={cat.photo}
+                      alt={`Browse ${cat.label}`}
+                      className="h-full w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading={idx < 4 ? undefined : "lazy"}
+                    />
+                  </div>
+                  <span className="mt-3 inline-block rounded-full bg-brand-950 px-4 py-1.5 text-xs font-semibold text-white">
+                    {cat.label}
+                  </span>
+                  <p className="mt-2 text-xs text-brand-400">{cat.count}</p>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </section>

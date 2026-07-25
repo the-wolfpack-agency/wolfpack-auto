@@ -1,6 +1,6 @@
 # Wolfpack Auto — API Reference
 
-> Auto-generated 2026-07-13 from `src/app/api/**/route.ts`.  
+> Auto-generated 2026-07-25 from `src/app/api/**/route.ts`.  
 > Do not edit by hand — run `npm run openapi` to regenerate.
 
 **Total routes:** 339
