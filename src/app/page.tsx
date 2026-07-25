@@ -288,10 +288,17 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Browse by Type (white panel with dark header strip, per V_01) */}
-      <section aria-labelledby="browse-heading" className="bg-surface-muted py-16 sm:py-24">
+      {/* Browse by Type (white panel over a photographic background, per V_01) */}
+      <section aria-labelledby="browse-heading" className="relative isolate overflow-hidden py-16 sm:py-24">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/browse-bg.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-[2rem] bg-white shadow-card">
+          <div className="overflow-hidden rounded-[2rem] bg-white shadow-card-hover">
             <div className="flex items-center justify-between bg-brand-950 px-6 py-7 sm:px-10">
               <h2 id="browse-heading" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                 Browse by Type
