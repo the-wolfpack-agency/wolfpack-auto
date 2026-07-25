@@ -180,16 +180,22 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Search bar overlapping the hero bottom */}
-        <div className="relative z-10 mx-auto -mt-12 max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-          <form
-            action="/inventory"
-            method="GET"
-            role="search"
-            aria-label="Vehicle search"
-            className="rounded-card border border-surface-border bg-white p-4 shadow-card sm:p-5"
-          >
-            <div className="grid gap-3 sm:grid-cols-[1.2fr_1.5fr_auto_auto] sm:items-center">
+      </section>
+
+      {/* Search module: straddles the hero and Featured sections, per V_01 */}
+      <div className="relative z-20 mx-auto -mt-14 max-w-7xl px-4 sm:-mt-16 sm:px-6 lg:px-8">
+        <form
+          action="/inventory"
+          method="GET"
+          role="search"
+          aria-label="Vehicle search"
+          className="rounded-card border border-surface-border bg-white p-5 shadow-card-hover sm:p-6"
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
+            <span className="shrink-0 text-lg font-semibold tracking-tight text-brand-950">
+              Search by Make &amp; Model
+            </span>
+            <div className="grid flex-1 gap-3 sm:grid-cols-[1fr_1.3fr_auto_auto] sm:items-center">
               <div>
                 <label htmlFor="hero-make" className="sr-only">Make</label>
                 <select
@@ -236,9 +242,9 @@ export default async function HomePage() {
                 </svg>
               </button>
             </div>
-          </form>
-        </div>
-      </section>
+          </div>
+        </form>
+      </div>
 
       {/* Featured Vehicles */}
       <section aria-labelledby="featured-heading" className="bg-white py-16 sm:py-24">
