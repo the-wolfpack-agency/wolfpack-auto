@@ -273,13 +273,13 @@ export default async function HomePage() {
       <section aria-label="Dealer highlights" className="bg-brand-950">
         <div className="mx-auto flex max-w-7xl flex-col divide-y divide-brand-800 px-4 sm:flex-row sm:divide-x sm:divide-y-0 sm:px-6 lg:px-8">
           {TRUST_STATS.map((s) => (
-            <div key={s.label} className="flex flex-1 items-center gap-3 px-4 py-6">
-              <svg className="h-8 w-8 shrink-0 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <div key={s.label} className="flex flex-1 items-center gap-4 px-6 py-9">
+              <svg className="h-10 w-10 shrink-0 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={s.icon} />
               </svg>
               <div>
-                <p className="text-lg font-bold leading-none text-white">{s.value}</p>
-                <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-brand-400">
+                <p className="text-2xl font-bold leading-none text-white">{s.value}</p>
+                <p className="mt-1.5 text-xs font-medium uppercase tracking-wide text-brand-400">
                   {s.label}
                 </p>
               </div>
@@ -292,23 +292,23 @@ export default async function HomePage() {
       <section aria-labelledby="browse-heading" className="bg-surface-muted py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-[2rem] bg-white shadow-card">
-            <div className="flex items-center justify-between bg-brand-950 px-6 py-5 sm:px-8">
-              <h2 id="browse-heading" className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+            <div className="flex items-center justify-between bg-brand-950 px-6 py-7 sm:px-10">
+              <h2 id="browse-heading" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                 Browse by Type
               </h2>
-              <a href="/inventory" className="text-sm font-semibold text-white/90 transition-colors hover:text-white">
+              <a href="/inventory" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 transition-colors hover:text-white">
                 View All Inventory &rarr;
               </a>
             </div>
-            <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-4 sm:gap-5 sm:p-8">
+            <div className="grid grid-cols-2 gap-5 p-6 sm:grid-cols-4 sm:gap-6 sm:p-10">
               {CATEGORIES.map((cat, idx) => (
                 <a
                   key={cat.label}
                   href={`/inventory?category=${encodeURIComponent(cat.label)}`}
                   data-track="browse_category_click"
-                  className="group flex flex-col items-center rounded-2xl bg-surface-muted p-4 text-center transition-colors hover:bg-surface-subtle"
+                  className="group flex flex-col items-center rounded-2xl bg-surface-muted p-6 text-center transition-colors hover:bg-surface-subtle"
                 >
-                  <div className="flex h-24 w-full items-center justify-center overflow-hidden px-2">
+                  <div className="flex h-36 w-full items-center justify-center overflow-hidden px-2">
                     {cat.photo ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -318,15 +318,15 @@ export default async function HomePage() {
                         loading={idx < 4 ? undefined : "lazy"}
                       />
                     ) : (
-                      <svg className="h-12 w-20 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <svg className="h-20 w-32 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13l2-5a2 2 0 011.9-1.4h10.2A2 2 0 0119 8l2 5m-18 0h18m-18 0v4a1 1 0 001 1h1a1 1 0 001-1v-1h12v1a1 1 0 001 1h1a1 1 0 001-1v-4M6.5 16.5h.01M17.5 16.5h.01" />
                       </svg>
                     )}
                   </div>
-                  <span className="mt-3 inline-block rounded-full bg-brand-950 px-4 py-1.5 text-xs font-semibold text-white">
+                  <span className="mt-4 inline-block rounded-full bg-brand-950 px-5 py-2 text-sm font-semibold text-white">
                     {cat.label}
                   </span>
-                  <p className="mt-2 text-xs text-brand-400">{cat.count}</p>
+                  <p className="mt-2.5 text-sm text-brand-400">{cat.count}</p>
                 </a>
               ))}
             </div>
