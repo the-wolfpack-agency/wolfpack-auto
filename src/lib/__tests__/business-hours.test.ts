@@ -1,4 +1,7 @@
-import { normalizeBusinessHours } from "@/lib/dealer-config";
+import {
+  normalizeBusinessHours,
+  summarizeBusinessHours,
+} from "@/lib/dealer-config";
 import { DEFAULT_CONFIG } from "@/lib/dealer-config-shared";
 
 describe("normalizeBusinessHours", () => {
@@ -40,5 +43,32 @@ describe("normalizeBusinessHours", () => {
     expect(normalizeBusinessHours(null)).toEqual(DEFAULT_CONFIG.business_hours);
     expect(normalizeBusinessHours(42)).toEqual(DEFAULT_CONFIG.business_hours);
     expect(normalizeBusinessHours("not json")).toEqual(DEFAULT_CONFIG.business_hours);
+  });
+});
+
+describe("summarizeBusinessHours", () => {
+  it("collapses consecutive same-hours days into ranges (the prod banner)", () => {
+    const hours = {
+      Monday: "09:00 - 19:00",
+      Tuesday: "09:00 - 19:00",
+      Wednesday: "09:00 - 19:00",
+      Thursday: "09:00 - 19:00",
+      Friday: "09:00 - 19:00",
+      Saturday: "09:00 - 17:00",
+      Sunday: "12:00 - 17:00",
+    };
+    expect(summarizeBusinessHours(hours)).toBe(
+      "Mon-Fri: 09:00 - 19:00  ·  Sat: 09:00 - 17:00  ·  Sun: 12:00 - 17:00",
+    );
+  });
+
+  it("keeps single days ungrouped", () => {
+    expect(summarizeBusinessHours({ Monday: "9-5", Tuesday: "10-6" })).toBe(
+      "Mon: 9-5  ·  Tue: 10-6",
+    );
+  });
+
+  it("returns empty string for no hours", () => {
+    expect(summarizeBusinessHours({})).toBe("");
   });
 });

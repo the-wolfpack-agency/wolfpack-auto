@@ -68,6 +68,35 @@ export function normalizeBusinessHours(raw: unknown): Record<string, string> {
 }
 
 /**
+ * Compact one-line summary of business hours for the top banner: collapses
+ * consecutive days with identical hours into ranges, e.g.
+ * "Mon-Fri: 09:00 - 19:00  ·  Sat: 09:00 - 17:00  ·  Sun: 12:00 - 17:00".
+ */
+export function summarizeBusinessHours(hours: Record<string, string>): string {
+  const entries = Object.entries(hours);
+  if (!entries.length) return "";
+  const groups: { start: string; end: string; hrs: string }[] = [];
+  for (const [day, hrs] of entries) {
+    const last = groups[groups.length - 1];
+    if (last && last.hrs === hrs) last.end = day;
+    else groups.push({ start: day, end: day, hrs });
+  }
+  const WEEKDAYS = new Set([
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+  ]);
+  // Abbreviate full weekday names ("Monday" -> "Mon"); leave existing short or
+  // range labels ("Mon-Fri", "Sat") untouched.
+  const abbr = (d: string) => (WEEKDAYS.has(d) ? d.slice(0, 3) : d);
+  return groups
+    .map((g) =>
+      g.start === g.end
+        ? `${abbr(g.start)}: ${g.hrs}`
+        : `${abbr(g.start)}-${abbr(g.end)}: ${g.hrs}`,
+    )
+    .join("  ·  ");
+}
+
+/**
  * Load the dealer configuration.
  *
  * Resolution order:
