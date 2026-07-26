@@ -450,7 +450,7 @@ export default function AdminSidebar() {
   const navContent = (
     <>
       {/* Dealer branding */}
-      <div className="flex h-16 items-center gap-3 border-b border-gray-800 px-5">
+      <div className="flex h-16 items-center gap-3 border-b border-brand-900 px-5">
         <span
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white"
           aria-hidden="true"
@@ -464,7 +464,7 @@ export default function AdminSidebar() {
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
-          className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white lg:hidden"
+          className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-brand-400 hover:bg-brand-900 hover:text-white lg:hidden"
           aria-label="Close menu"
         >
           <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -475,36 +475,36 @@ export default function AdminSidebar() {
 
       {/* Dealer Switcher — agency-level users only */}
       {isAgencyUser && dealers.length > 0 && (
-        <div className="border-b border-gray-800 px-3 py-2">
+        <div className="border-b border-brand-900 px-3 py-2">
           <div className="relative">
             <button
               type="button"
               onClick={() => setSwitcherOpen(!switcherOpen)}
-              className="flex w-full items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+              className="flex w-full items-center justify-between rounded-lg bg-brand-900 px-3 py-2 text-sm text-brand-200 hover:bg-brand-800 transition-colors"
             >
               <span className="truncate">
                 {session?.user?.dealer_id
                   ? dealers.find((d) => d.id === session.user.dealer_id)?.name ?? session.user.dealer_id
                   : "Select Dealer"}
               </span>
-              <svg className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${switcherOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <svg className={`h-4 w-4 shrink-0 text-brand-400 transition-transform ${switcherOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
               </svg>
             </button>
             {switcherOpen && (
-              <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-700 bg-gray-800 py-1 shadow-lg">
+              <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-lg border border-brand-800 bg-brand-900 py-1 shadow-lg">
                 {dealers.map((dealer) => (
                   <button
                     key={dealer.id}
                     onClick={() => handleSwitchDealer(dealer.id)}
                     className={`block w-full px-3 py-2 text-left text-sm transition-colors ${
                       session?.user?.dealer_id === dealer.id
-                        ? "bg-gray-700 font-medium text-white"
-                        : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                        ? "bg-brand-800 font-medium text-white"
+                        : "text-brand-300 hover:bg-brand-800 hover:text-white"
                     }`}
                   >
                     {dealer.name}
-                    <span className="ml-2 text-xs text-gray-500">{dealer.slug}</span>
+                    <span className="ml-2 text-xs text-brand-500">{dealer.slug}</span>
                   </button>
                 ))}
               </div>
@@ -529,7 +529,7 @@ export default function AdminSidebar() {
             className={`mb-3 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
               pathname === "/admin/getting-started"
                 ? "bg-brand-600/20 text-brand-400"
-                : "bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white"
+                : "bg-brand-900 text-brand-200 hover:bg-brand-800 hover:text-white"
             }`}
           >
             <svg
@@ -564,7 +564,7 @@ export default function AdminSidebar() {
                   className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider transition-colors ${
                     sectionHasActive
                       ? "text-white"
-                      : "text-gray-500 hover:text-gray-300"
+                      : "text-brand-500 hover:text-brand-300"
                   }`}
                   aria-expanded={isOpen}
                   data-section={section.id}
@@ -589,7 +589,7 @@ export default function AdminSidebar() {
                     isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
                   }`}
                 >
-                  <ul className="mt-0.5 space-y-0.5 border-l border-gray-800 ml-5 pl-2" role="list">
+                  <ul className="mt-0.5 space-y-0.5 border-l border-brand-900 ml-5 pl-2" role="list">
                     {section.items.map(({ href, label, icon: Icon }) => {
                       const active = isItemActive(href, pathname);
                       const showChildren = shouldShowChildren(href, pathname);
@@ -602,11 +602,11 @@ export default function AdminSidebar() {
                             onClick={() => setMobileOpen(false)}
                             className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                               active
-                                ? "bg-gray-800 text-white"
-                                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                                ? "bg-brand-900 text-white"
+                                : "text-brand-300 hover:bg-brand-900 hover:text-white"
                             }`}
                           >
-                            <Icon className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-white" />
+                            <Icon className="h-4 w-4 shrink-0 text-brand-400 transition-colors group-hover:text-white" />
                             {label}
                           </a>
                           {/* Sub-navigation children */}
@@ -620,7 +620,7 @@ export default function AdminSidebar() {
                                     className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
                                       pathname === child.href
                                         ? "font-semibold text-brand-400"
-                                        : "text-gray-400 hover:text-gray-200"
+                                        : "text-brand-400 hover:text-brand-200"
                                     }`}
                                   >
                                     {child.label}
@@ -641,17 +641,17 @@ export default function AdminSidebar() {
       </nav>
 
       {/* User info + sign out */}
-      <div className="border-t border-gray-800 px-3 py-4 space-y-3">
+      <div className="border-t border-brand-900 px-3 py-4 space-y-3">
         {session?.user && (
           <div className="px-3 py-2">
             <p className="text-sm font-medium text-white truncate">
               {session.user.name}
             </p>
-            <p className="text-xs text-gray-400 truncate">
+            <p className="text-xs text-brand-400 truncate">
               {session.user.email}
             </p>
             {session.user.dealer_id && (
-              <p className="mt-0.5 text-xs text-gray-500 truncate">
+              <p className="mt-0.5 text-xs text-brand-500 truncate">
                 Dealer: {session.user.dealer_id}
               </p>
             )}
@@ -660,7 +660,7 @@ export default function AdminSidebar() {
 
         <a
           href="/"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-400 transition-colors hover:bg-brand-900 hover:text-white"
         >
           <ExternalLinkIcon className="h-5 w-5 shrink-0" />
           View Storefront
@@ -669,7 +669,7 @@ export default function AdminSidebar() {
         {session?.user && (
           <button
             onClick={() => signOut({ callbackUrl: "/admin/login" })}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-red-400"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-400 transition-colors hover:bg-brand-900 hover:text-red-400"
           >
             <SignOutIcon className="h-5 w-5 shrink-0" />
             Sign out
@@ -684,11 +684,11 @@ export default function AdminSidebar() {
       {/* ------------------------------------------------------------------ */}
       {/* Mobile: hamburger button (top bar) + slide-in drawer               */}
       {/* ------------------------------------------------------------------ */}
-      <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-gray-800 bg-gray-900 px-4 lg:hidden">
+      <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center gap-3 border-b border-brand-900 bg-brand-950 px-4 lg:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-brand-400 hover:bg-brand-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
           aria-label="Open menu"
           aria-expanded={mobileOpen}
         >
@@ -710,7 +710,7 @@ export default function AdminSidebar() {
 
       {/* Mobile drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-800 bg-gray-900 transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-brand-900 bg-brand-950 transition-transform duration-200 lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Admin navigation"
@@ -723,7 +723,7 @@ export default function AdminSidebar() {
       {/* ------------------------------------------------------------------ */}
       <aside
         aria-label="Admin navigation desktop"
-        className="hidden lg:flex lg:w-sidebar-width lg:flex-col lg:border-r lg:border-gray-800 lg:bg-gray-900"
+        className="hidden lg:flex lg:w-sidebar-width lg:flex-col lg:border-r lg:border-brand-900 lg:bg-brand-950"
       >
         {navContent}
       </aside>
