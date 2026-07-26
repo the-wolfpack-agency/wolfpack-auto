@@ -75,7 +75,7 @@ function intensityColor(intensity: number): string {
 
 function scrollBandColor(percent: number): string {
   if (percent >= 80) return "bg-green-100 border-green-300 text-green-800";
-  if (percent >= 60) return "bg-blue-100 border-blue-300 text-blue-800";
+  if (percent >= 60) return "bg-brand-100 border-brand-300 text-brand-900";
   if (percent >= 40) return "bg-yellow-100 border-yellow-300 text-yellow-800";
   return "bg-red-100 border-red-300 text-red-800";
 }
@@ -343,7 +343,7 @@ export default function HeatmapsPage() {
               onClick={() => setCompareMode(!compareMode)}
               className={`px-3 py-1.5 text-sm font-medium rounded-md border ${
                 compareMode
-                  ? "bg-blue-600 text-white border-blue-600"
+                  ? "bg-brand-700 text-white border-brand-700"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
               }`}
             >
@@ -554,7 +554,7 @@ export default function HeatmapsPage() {
                 <div className="flex items-center gap-4 mt-4 text-sm text-gray-500">
                   <span>Low</span>
                   <div className="flex gap-1">
-                    {["bg-blue-300", "bg-green-300", "bg-yellow-300", "bg-orange-300", "bg-red-400"].map((c) => (
+                    {["bg-brand-300", "bg-green-300", "bg-yellow-300", "bg-orange-300", "bg-red-400"].map((c) => (
                       <div key={c} className={`w-6 h-3 rounded ${c}`} />
                     ))}
                   </div>

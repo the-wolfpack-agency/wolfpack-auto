@@ -118,12 +118,12 @@ export default function TechUtilizationGrid() {
 
   return (
     <div className="space-y-6" data-testid="tu-root">
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p data-testid="tu-headline" className="text-sm font-medium text-blue-900">
+      <div className="rounded-lg border border-brand-200 bg-brand-50 p-4">
+        <p data-testid="tu-headline" className="text-sm font-medium text-brand-950">
           {data.headline}
         </p>
         {data.hoursAvailableFromConstant && (
-          <p className="mt-1 text-xs text-blue-700">
+          <p className="mt-1 text-xs text-brand-800">
             Hours available default to 40h/week per tech. Set up a tech schedule to refine.
           </p>
         )}

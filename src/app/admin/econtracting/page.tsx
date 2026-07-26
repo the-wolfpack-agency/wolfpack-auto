@@ -46,7 +46,7 @@ const STATUS_OPTIONS = [
 
 const STATUS_BADGE: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600 ring-gray-400/20",
-  sent: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  sent: "bg-brand-50 text-brand-800 ring-brand-700/20",
   partially_signed: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
   completed: "bg-green-50 text-green-700 ring-green-600/20",
   voided: "bg-red-50 text-red-700 ring-red-600/20",
@@ -81,7 +81,7 @@ const DOCUMENT_TYPES = [
 
 const DOC_STATUS_BADGE: Record<string, string> = {
   pending: "bg-gray-100 text-gray-500",
-  sent: "bg-blue-50 text-blue-600",
+  sent: "bg-brand-50 text-brand-700",
   signed: "bg-green-50 text-green-600",
   declined: "bg-red-50 text-red-600",
 };

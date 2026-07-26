@@ -39,7 +39,7 @@ const CATEGORIES = [
 ];
 
 const CATEGORY_BADGE: Record<string, string> = {
-  warranty: "bg-blue-50 text-blue-700",
+  warranty: "bg-brand-50 text-brand-800",
   insurance: "bg-green-50 text-green-700",
   protection: "bg-purple-50 text-purple-700",
   appearance: "bg-pink-50 text-pink-700",

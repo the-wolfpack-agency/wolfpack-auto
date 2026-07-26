@@ -96,7 +96,7 @@ export default function CohortAnalysisPage() {
         <select
           value={periodType}
           onChange={(e) => setPeriodType(e.target.value as "week" | "month")}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none"
+          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-600 focus:outline-none"
         >
           <option value="month">Monthly</option>
           <option value="week">Weekly</option>

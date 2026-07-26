@@ -36,7 +36,7 @@ function slugify(name: string): string {
 }
 
 const INPUT_CLASS =
-  "mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+  "mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20";
 
 const LABEL_CLASS = "block text-sm font-medium text-gray-700";
 
@@ -149,7 +149,7 @@ export default function NewDealerPage() {
               <p className="text-xs font-medium uppercase text-green-600">Public URL</p>
               <a
                 href={created.public_url}
-                className="text-sm font-medium text-blue-600 underline hover:text-blue-800"
+                className="text-sm font-medium text-brand-700 underline hover:text-brand-900"
               >
                 {created.public_url}
               </a>
@@ -158,7 +158,7 @@ export default function NewDealerPage() {
               <p className="text-xs font-medium uppercase text-green-600">Admin Link</p>
               <a
                 href={created.admin_url}
-                className="text-sm font-medium text-blue-600 underline hover:text-blue-800"
+                className="text-sm font-medium text-brand-700 underline hover:text-brand-900"
               >
                 {created.admin_url}
               </a>
@@ -218,7 +218,7 @@ export default function NewDealerPage() {
       <div className="mb-6">
         <a
           href="/admin/agency"
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="text-sm text-brand-700 hover:text-brand-900"
         >
           &larr; Back to Agency
         </a>
@@ -382,7 +382,7 @@ export default function NewDealerPage() {
                   onChange={(e) => setPrimaryColor(e.target.value)}
                   pattern="^#[0-9a-fA-F]{6}$"
                   maxLength={7}
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20"
                 />
               </div>
             </div>
@@ -404,13 +404,13 @@ export default function NewDealerPage() {
                   onChange={(e) => setSecondaryColor(e.target.value)}
                   pattern="^#[0-9a-fA-F]{6}$"
                   maxLength={7}
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20"
                 />
               </div>
             </div>
             <div className="sm:col-span-2">
               <label className={LABEL_CLASS}>Logo</label>
-              <div className="mt-2 flex cursor-pointer items-center gap-4 rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 transition-colors hover:border-blue-500 hover:text-blue-600">
+              <div className="mt-2 flex cursor-pointer items-center gap-4 rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 transition-colors hover:border-brand-600 hover:text-brand-700">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gray-100 text-xs text-gray-400">
                   ?
                 </div>
@@ -453,7 +453,7 @@ export default function NewDealerPage() {
                       type="checkbox"
                       checked={h.closed}
                       onChange={(e) => updateHour(i, "closed", e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                      className="h-4 w-4 rounded border-gray-300 text-brand-700"
                     />
                     Closed
                   </label>
@@ -468,7 +468,7 @@ export default function NewDealerPage() {
           <button
             type="submit"
             disabled={submitting || !name}
-            className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-lg bg-brand-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Creating..." : "Create Dealer"}
           </button>

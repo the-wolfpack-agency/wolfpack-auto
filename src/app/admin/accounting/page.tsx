@@ -80,7 +80,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 };
 
 const ACCOUNT_TYPE_COLORS: Record<string, string> = {
-  asset: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  asset: "bg-brand-50 text-brand-800 ring-brand-700/20",
   liability: "bg-red-50 text-red-700 ring-red-600/20",
   equity: "bg-purple-50 text-purple-700 ring-purple-600/20",
   revenue: "bg-green-50 text-green-700 ring-green-600/20",

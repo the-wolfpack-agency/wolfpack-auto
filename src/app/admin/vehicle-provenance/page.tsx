@@ -64,7 +64,7 @@ const EVENT_TYPE_LABELS: Record<ProvenanceEventType, string> = {
 };
 
 const EVENT_TYPE_BADGE: Record<ProvenanceEventType, string> = {
-  title_transfer: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  title_transfer: "bg-brand-50 text-brand-800 ring-brand-700/20",
   odometer_reading: "bg-gray-100 text-gray-700 ring-gray-400/20",
   service: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
   damage: "bg-red-50 text-red-700 ring-red-600/20",
@@ -186,13 +186,13 @@ export default function VehicleProvenancePage() {
           value={vinInput}
           onChange={(e) => setVinInput(e.target.value)}
           placeholder="Enter VIN (11–17 chars)"
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           aria-label="VIN"
           data-testid="vin-input"
         />
         <button
           type="submit"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-600"
           data-testid="vin-search-button"
         >
           Search

@@ -42,7 +42,7 @@ function formatDate(iso: string): string {
 
 const STATUS_STYLES: Record<Campaign["status"], string> = {
   active: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20",
-  completed: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20",
+  completed: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
   draft: "bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-400/20",
 };
 

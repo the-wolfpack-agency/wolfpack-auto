@@ -52,7 +52,7 @@ function formatDuration(seconds: number): string {
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600",
-  recording: "bg-blue-50 text-blue-700",
+  recording: "bg-brand-50 text-brand-800",
   complete: "bg-amber-50 text-amber-700",
   published: "bg-emerald-50 text-emerald-700",
 };
@@ -139,7 +139,7 @@ export default function WalkaroundsPage() {
               <span className="text-xs text-gray-500">Completeness:</span>
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-full rounded-full bg-blue-500"
+                  className="h-full rounded-full bg-brand-600"
                   style={{ width: `${wk.metadata.completeness}%` }}
                 />
               </div>

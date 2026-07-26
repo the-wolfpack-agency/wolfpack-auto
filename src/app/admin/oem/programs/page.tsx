@@ -14,7 +14,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 const TYPE_COLORS: Record<string, string> = {
   incentive: "bg-green-100 text-green-700",
-  certification: "bg-blue-100 text-blue-700",
+  certification: "bg-brand-100 text-brand-800",
   brand_standard: "bg-purple-100 text-purple-700",
   training: "bg-yellow-100 text-yellow-700",
   co_op_advertising: "bg-orange-100 text-orange-700",

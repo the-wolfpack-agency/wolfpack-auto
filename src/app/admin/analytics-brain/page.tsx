@@ -23,7 +23,7 @@ function tierColor(tier: string): string {
   switch (tier) {
     case "hot": return "bg-red-100 text-red-700 border-red-200";
     case "warm": return "bg-amber-100 text-amber-700 border-amber-200";
-    case "cool": return "bg-blue-100 text-blue-700 border-blue-200";
+    case "cool": return "bg-brand-100 text-brand-800 border-brand-200";
     case "cold": return "bg-gray-100 text-gray-600 border-gray-200";
     default: return "bg-gray-100 text-gray-600 border-gray-200";
   }
@@ -45,12 +45,12 @@ function categoryIcon(category: string): string {
 function categoryColor(category: string): string {
   switch (category) {
     case "conversion": return "border-l-emerald-500 bg-emerald-50/50";
-    case "engagement": return "border-l-blue-500 bg-blue-50/50";
+    case "engagement": return "border-l-brand-600 bg-brand-50/50";
     case "search": return "border-l-violet-500 bg-violet-50/50";
     case "ux_friction": return "border-l-red-500 bg-red-50/50";
     case "chat": return "border-l-amber-500 bg-amber-50/50";
     case "marketing": return "border-l-pink-500 bg-pink-50/50";
-    case "navigation": return "border-l-cyan-500 bg-cyan-50/50";
+    case "navigation": return "border-l-brand-600 bg-brand-50/50";
     default: return "border-l-gray-500 bg-gray-50/50";
   }
 }
@@ -186,7 +186,7 @@ export default async function AnalyticsBrainPage() {
 
       {/* Model Health — Prediction Calibration */}
       {latestCalibration && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-6">
+        <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Model Health</h2>
@@ -202,22 +202,22 @@ export default async function AnalyticsBrainPage() {
 
           {/* Metrics row */}
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+            <div className="rounded-lg border border-brand-200 bg-white p-3 text-center">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Accuracy</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">{(latestCalibration.accuracy * 100).toFixed(0)}%</p>
               <p className="text-xs text-gray-400">Correct predictions</p>
             </div>
-            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+            <div className="rounded-lg border border-brand-200 bg-white p-3 text-center">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Precision</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">{(latestCalibration.precision * 100).toFixed(0)}%</p>
               <p className="text-xs text-gray-400">Hot leads that bought</p>
             </div>
-            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+            <div className="rounded-lg border border-brand-200 bg-white p-3 text-center">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Recall</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">{(latestCalibration.recall * 100).toFixed(0)}%</p>
               <p className="text-xs text-gray-400">Buyers we identified</p>
             </div>
-            <div className="rounded-lg border border-indigo-200 bg-white p-3 text-center">
+            <div className="rounded-lg border border-brand-200 bg-white p-3 text-center">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">Sample Size</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">{latestCalibration.sample_size}</p>
               <p className="text-xs text-gray-400">Leads analyzed</p>
@@ -362,7 +362,7 @@ export default async function AnalyticsBrainPage() {
                   className={`rounded-xl border p-4 ${
                     t.tier === "hot" ? "border-red-200 bg-red-50/50" :
                     t.tier === "warm" ? "border-amber-200 bg-amber-50/50" :
-                    t.tier === "cool" ? "border-blue-200 bg-blue-50/50" :
+                    t.tier === "cool" ? "border-brand-200 bg-brand-50/50" :
                     "border-gray-200 bg-white"
                   }`}
                 >
@@ -385,7 +385,7 @@ export default async function AnalyticsBrainPage() {
                         className={`h-full rounded-full transition-all ${
                           t.temperature >= 80 ? "bg-red-500" :
                           t.temperature >= 50 ? "bg-amber-500" :
-                          t.temperature >= 25 ? "bg-blue-500" :
+                          t.temperature >= 25 ? "bg-brand-600" :
                           "bg-gray-400"
                         }`}
                         style={{ width: `${t.temperature}%` }}
@@ -476,7 +476,7 @@ export default async function AnalyticsBrainPage() {
 
       {/* Photo Engagement — clean card display */}
       {photoInsight && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-6">
+        <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-6">
           <h2 className="text-lg font-semibold text-gray-900">Photo Performance</h2>
           <p className="mt-1 text-sm text-gray-500">How much time visitors spend looking at your vehicle photos.</p>
           {Array.isArray(photoInsight.data.low_engagement) && (photoInsight.data.low_engagement as { vin: string; score: number; views: number }[]).length > 0 ? (
@@ -494,7 +494,7 @@ export default async function AnalyticsBrainPage() {
               </div>
             </div>
           ) : (
-            <p className="mt-2 text-sm text-blue-700">All vehicle photos are performing well.</p>
+            <p className="mt-2 text-sm text-brand-800">All vehicle photos are performing well.</p>
           )}
         </div>
       )}

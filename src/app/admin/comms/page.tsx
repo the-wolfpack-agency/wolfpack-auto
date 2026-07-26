@@ -30,7 +30,7 @@ const AUDIENCE_LABELS: Record<Announcement["audience"], string> = {
 };
 
 const AUDIENCE_BADGE: Record<Announcement["audience"], string> = {
-  all: "bg-blue-100 text-blue-700",
+  all: "bg-brand-100 text-brand-800",
   sales: "bg-purple-100 text-purple-700",
   service: "bg-orange-100 text-orange-700",
   management: "bg-gray-100 text-gray-700",

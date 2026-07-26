@@ -26,7 +26,7 @@ interface Task {
 
 const STATUS_BADGE: Record<Task["status"], string> = {
   pending: "bg-yellow-100 text-yellow-800 ring-yellow-500/30",
-  in_progress: "bg-blue-100 text-blue-800 ring-blue-500/30",
+  in_progress: "bg-brand-100 text-brand-900 ring-brand-600/30",
   completed: "bg-green-100 text-green-800 ring-green-500/30",
 };
 
@@ -143,7 +143,7 @@ function TaskCard({
             <button
               disabled={saving}
               onClick={() => handleStatusChange("in_progress")}
-              className="rounded-md bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-60"
+              className="rounded-md bg-brand-50 px-3 py-1 text-xs font-medium text-brand-800 hover:bg-brand-100 disabled:opacity-60"
             >
               Start
             </button>

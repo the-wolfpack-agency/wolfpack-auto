@@ -25,7 +25,7 @@ const ROLES = ["owner", "admin", "manager", "staff"] as const;
 
 const ROLE_BADGE: Record<string, string> = {
   owner: "bg-purple-100 text-purple-800",
-  admin: "bg-blue-100 text-blue-800",
+  admin: "bg-brand-100 text-brand-900",
   manager: "bg-green-100 text-green-800",
   staff: "bg-gray-100 text-gray-700",
 };
@@ -42,7 +42,7 @@ function formatDate(iso: string | null): string {
 }
 
 const INPUT_CLASS =
-  "block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+  "block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20";
 
 /* -------------------------------------------------------------------------- */
 /* Page                                                                       */
@@ -155,7 +155,7 @@ export default function TeamPage() {
         </div>
         <button
           onClick={() => setShowInvite(!showInvite)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
         >
           {showInvite ? "Cancel" : "Invite User"}
         </button>
@@ -227,7 +227,7 @@ export default function TeamPage() {
               <button
                 type="submit"
                 disabled={inviteSubmitting}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50 transition-colors"
               >
                 {inviteSubmitting ? "Sending..." : "Send Invite"}
               </button>

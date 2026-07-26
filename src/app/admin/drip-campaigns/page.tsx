@@ -150,7 +150,7 @@ export default function DripCampaignsPage() {
                 onClick={() =>
                   setExpandedId(expandedId === campaign.id ? null : campaign.id)
                 }
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-sm text-brand-700 hover:text-brand-800"
               >
                 {expandedId === campaign.id ? "Collapse" : "Details"}
               </button>
@@ -185,7 +185,7 @@ export default function DripCampaignsPage() {
                       key={step.stepNumber}
                       className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3"
                     >
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-800">
                         {step.stepNumber}
                       </span>
                       <div className="flex-1">

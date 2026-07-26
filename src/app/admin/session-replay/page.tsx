@@ -77,7 +77,7 @@ export default function SessionReplayPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
       </div>
     );
   }
@@ -90,7 +90,7 @@ export default function SessionReplayPage() {
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
         <button
           onClick={() => { setSelected(null); setEvents([]); }}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand-700 hover:underline"
         >
           &larr; Back to sessions
         </button>
@@ -119,7 +119,7 @@ export default function SessionReplayPage() {
           <div className="max-h-[600px] overflow-y-auto">
             {eventsLoading ? (
               <div className="flex h-32 items-center justify-center">
-                <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+                <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
               </div>
             ) : events.length === 0 ? (
               <p className="p-4 text-sm text-gray-500">No events recorded.</p>
@@ -169,7 +169,7 @@ export default function SessionReplayPage() {
             Watch how visitors interact with your site. All input values are masked for privacy.
           </p>
         </div>
-        <span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+        <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-medium text-brand-800">
           {sessions.length} sessions
         </span>
       </div>
@@ -215,7 +215,7 @@ export default function SessionReplayPage() {
                 <td className="px-4 py-3">
                   <button
                     onClick={() => viewSession(s.session_id)}
-                    className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                    className="rounded bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800"
                   >
                     View
                   </button>
@@ -253,7 +253,7 @@ function Stat({
 function typeColor(type: string): string {
   switch (type) {
     case "click":
-      return "bg-blue-50 text-blue-700";
+      return "bg-brand-50 text-brand-800";
     case "page_navigation":
       return "bg-purple-50 text-purple-700";
     case "input_change":

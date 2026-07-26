@@ -92,8 +92,8 @@ const STRIPE_STATUS_CONFIG: Record<
   },
   configured: {
     label: "Configured",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
-    dot: "bg-blue-500",
+    color: "bg-brand-50 text-brand-800 border-brand-200",
+    dot: "bg-brand-600",
   },
   not_configured: {
     label: "Not Configured",

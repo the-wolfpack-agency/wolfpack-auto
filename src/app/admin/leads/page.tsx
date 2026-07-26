@@ -42,7 +42,7 @@ const SORT_OPTIONS = [
 ];
 
 const STATUS_BADGE: Record<LeadStatus, string> = {
-  new: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  new: "bg-brand-50 text-brand-800 ring-brand-700/20",
   contacted: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
   qualified: "bg-green-50 text-green-700 ring-green-600/20",
   appointment_set: "bg-purple-50 text-purple-700 ring-purple-600/20",
@@ -64,7 +64,7 @@ const STATUS_LABEL: Record<LeadStatus, string> = {
 const TEMP_BADGE: Record<LeadTemperature, string> = {
   hot: "bg-red-50 text-red-700 ring-red-600/20",
   warm: "bg-orange-50 text-orange-700 ring-orange-600/20",
-  cool: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  cool: "bg-brand-50 text-brand-800 ring-brand-700/20",
   cold: "bg-gray-100 text-gray-500 ring-gray-400/20",
 };
 
@@ -337,7 +337,7 @@ export default function LeadsManagementPage() {
                   new Date().toDateString(),
             ).length
           }
-          color="text-blue-600"
+          color="text-brand-700"
         />
       </div>
 
@@ -881,7 +881,7 @@ function BuyWindowBadge({
     },
     "14d": {
       label: "14 days",
-      className: "bg-blue-100 text-blue-800 ring-blue-600/20",
+      className: "bg-brand-100 text-brand-900 ring-brand-700/20",
     },
     "30d+": {
       label: "30d+",

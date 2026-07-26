@@ -95,9 +95,9 @@ function ErrorState({ message }: { message: string }) {
 function NetworkStatsBar({ stats }: { stats: NetworkStats }) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      <div className="rounded-xl bg-indigo-50 p-4 text-center">
-        <p className="text-2xl font-bold text-indigo-700">{stats.total_dealers}</p>
-        <p className="text-xs text-indigo-600">Dealers in Network</p>
+      <div className="rounded-xl bg-brand-50 p-4 text-center">
+        <p className="text-2xl font-bold text-brand-800">{stats.total_dealers}</p>
+        <p className="text-xs text-brand-700">Dealers in Network</p>
       </div>
       <div className="rounded-xl bg-emerald-50 p-4 text-center">
         <p className="text-2xl font-bold text-emerald-700">{stats.total_vehicles.toLocaleString()}</p>
@@ -119,7 +119,7 @@ function InsightCard({ insight }: { insight: DealerInsight }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
-        <span className="inline-block rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+        <span className="inline-block rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-800">
           {insightTypeLabel(insight.type)}
         </span>
         <span
@@ -161,9 +161,9 @@ function InsightCard({ insight }: { insight: DealerInsight }) {
       </div>
 
       {/* Recommended action */}
-      <div className="mt-3 rounded-lg bg-blue-50 p-2.5">
-        <p className="text-xs font-medium text-blue-800">Recommended action</p>
-        <p className="text-xs text-blue-700">{insight.recommended_action}</p>
+      <div className="mt-3 rounded-lg bg-brand-50 p-2.5">
+        <p className="text-xs font-medium text-brand-900">Recommended action</p>
+        <p className="text-xs text-brand-800">{insight.recommended_action}</p>
       </div>
 
       <p className="mt-2 text-[10px] text-gray-400">
@@ -234,7 +234,7 @@ function PricingTool({
           value={make}
           onChange={(e) => setMake(e.target.value)}
           placeholder="Make"
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
           aria-label="Vehicle make"
         />
         <input
@@ -242,7 +242,7 @@ function PricingTool({
           value={model}
           onChange={(e) => setModel(e.target.value)}
           placeholder="Model"
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
           aria-label="Vehicle model"
         />
         <input
@@ -251,13 +251,13 @@ function PricingTool({
           onChange={(e) => setYear(parseInt(e.target.value, 10) || 2024)}
           min={1990}
           max={2030}
-          className="w-24 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          className="w-24 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
           aria-label="Vehicle year"
         />
         <button
           onClick={() => onSearch(make, model, year)}
           disabled={loading || !make || !model}
-          className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
         >
           {loading ? "Searching..." : "Search"}
         </button>

@@ -55,7 +55,7 @@ const RO_STATUSES = [
 ];
 
 const STATUS_BADGE: Record<string, string> = {
-  open: "bg-blue-100 text-blue-800",
+  open: "bg-brand-100 text-brand-900",
   in_progress: "bg-purple-100 text-purple-800",
   waiting_parts: "bg-orange-100 text-orange-800",
   waiting_approval: "bg-yellow-100 text-yellow-800",

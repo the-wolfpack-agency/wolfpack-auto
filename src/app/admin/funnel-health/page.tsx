@@ -99,13 +99,13 @@ function AlertBanner({ alerts }: { alerts: FunnelHealthMetrics["alerts"] }) {
       {infos.map((alert, i) => (
         <div
           key={i}
-          className="flex flex-col gap-1 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 sm:flex-row sm:items-start sm:gap-3"
+          className="flex flex-col gap-1 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 sm:flex-row sm:items-start sm:gap-3"
           role="status"
         >
-          <span className="shrink-0 text-sm font-bold uppercase tracking-wide text-blue-600">Info</span>
+          <span className="shrink-0 text-sm font-bold uppercase tracking-wide text-brand-700">Info</span>
           <div className="flex-1">
-            <p className="text-sm font-medium text-blue-800">{alert.message}</p>
-            <p className="mt-0.5 text-xs text-blue-600">{alert.action}</p>
+            <p className="text-sm font-medium text-brand-900">{alert.message}</p>
+            <p className="mt-0.5 text-xs text-brand-700">{alert.action}</p>
           </div>
         </div>
       ))}
@@ -170,8 +170,8 @@ function FunnelViz({ stages }: { stages: FunnelHealthMetrics["funnelStages"] }) 
   const total = Object.values(stages).reduce((a, b) => a + b, 0);
 
   const barColors: Record<string, string> = {
-    new: "bg-blue-400",
-    contacted: "bg-indigo-400",
+    new: "bg-brand-400",
+    contacted: "bg-brand-400",
     qualified: "bg-violet-400",
     appointment_set: "bg-purple-500",
     sold: "bg-green-500",

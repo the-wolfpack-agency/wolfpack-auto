@@ -18,12 +18,12 @@ export const metadata: Metadata = {
 function categoryColor(category: string): string {
   switch (category) {
     case "conversion": return "border-l-emerald-500 bg-emerald-50/50";
-    case "engagement": return "border-l-blue-500 bg-blue-50/50";
+    case "engagement": return "border-l-brand-600 bg-brand-50/50";
     case "search": return "border-l-violet-500 bg-violet-50/50";
     case "ux_friction": return "border-l-red-500 bg-red-50/50";
     case "chat": return "border-l-amber-500 bg-amber-50/50";
     case "marketing": return "border-l-pink-500 bg-pink-50/50";
-    case "navigation": return "border-l-cyan-500 bg-cyan-50/50";
+    case "navigation": return "border-l-brand-600 bg-brand-50/50";
     default: return "border-l-gray-500 bg-gray-50/50";
   }
 }

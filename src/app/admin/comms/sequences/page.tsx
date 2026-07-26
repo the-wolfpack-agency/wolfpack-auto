@@ -324,7 +324,7 @@ export default function SequencesPage() {
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         step.channel === "email"
-                          ? "bg-blue-100 text-blue-700"
+                          ? "bg-brand-100 text-brand-800"
                           : "bg-green-100 text-green-700"
                       }`}
                     >

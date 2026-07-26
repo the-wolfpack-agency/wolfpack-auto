@@ -46,7 +46,7 @@ interface ApiKey {
 
 const STATUS_BADGE: Record<string, string> = {
   active: "bg-green-100 text-green-800",
-  onboarding: "bg-blue-100 text-blue-800",
+  onboarding: "bg-brand-100 text-brand-900",
   suspended: "bg-red-100 text-red-800",
 };
 
@@ -174,7 +174,7 @@ export default function AgencyPage() {
         </div>
         <a
           href="/admin/agency/new-dealer"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -189,7 +189,7 @@ export default function AgencyPage() {
           <StatCard label="Total Dealers" value={overview.total_dealers} />
           <StatCard label="Active Dealers" value={overview.active_dealers} color="text-green-600" />
           <StatCard label="Total Leads (All Dealers)" value={overview.total_leads} />
-          <StatCard label="Revenue MTD" value={formatCurrency(overview.total_revenue_mtd)} color="text-blue-600" />
+          <StatCard label="Revenue MTD" value={formatCurrency(overview.total_revenue_mtd)} color="text-brand-700" />
         </div>
       )}
 
@@ -207,7 +207,7 @@ export default function AgencyPage() {
       {/* Dealer count badge */}
       <div className="mt-8 flex items-center gap-3">
         <h2 className="text-lg font-semibold text-gray-900">Dealer Network</h2>
-        <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+        <span className="inline-flex rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-900">
           {dealers.length} {dealers.length === 1 ? "dealer" : "dealers"}
         </span>
       </div>
@@ -236,7 +236,7 @@ export default function AgencyPage() {
                       href={`/dealers/${dealer.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                      className="text-sm font-medium text-brand-700 hover:text-brand-900"
                       title="Open public dealer page"
                     >
                       {dealer.name}
@@ -316,11 +316,11 @@ export default function AgencyPage() {
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
             placeholder="Key name (e.g. CRM Integration)"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-600 focus:ring-brand-600"
           />
           <button
             onClick={handleGenerateKey}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
           >
             Generate Key
           </button>

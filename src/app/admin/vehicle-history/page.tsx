@@ -76,7 +76,7 @@ const CATEGORY_ICON: Record<string, string> = {
 };
 
 const CATEGORY_COLOR: Record<string, string> = {
-  service: "text-blue-500",
+  service: "text-brand-600",
   sale: "text-purple-500",
   accident: "text-red-500",
   title: "text-gray-500",
@@ -717,7 +717,7 @@ export default function VehicleHistoryPage() {
                               entry.category === "accident"
                                 ? "bg-red-500"
                                 : entry.category === "service"
-                                  ? "bg-blue-500"
+                                  ? "bg-brand-600"
                                   : entry.category === "sale"
                                     ? "bg-purple-500"
                                     : entry.category === "recall"

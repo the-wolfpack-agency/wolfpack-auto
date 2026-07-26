@@ -98,7 +98,7 @@ export default function SystemHealthPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function SystemHealthPage() {
           </label>
           <button
             onClick={fetchHealth}
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
           >
             Refresh Now
           </button>
@@ -293,7 +293,7 @@ export default function SystemHealthPage() {
         <div className="rounded-lg border bg-white p-5 shadow-sm" data-testid="status-card-deployment">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Deployment</h3>
-            <span className="inline-block h-3 w-3 rounded-full bg-blue-500" />
+            <span className="inline-block h-3 w-3 rounded-full bg-brand-600" />
           </div>
           <div className="mt-3 space-y-2 text-sm">
             <div className="flex justify-between">

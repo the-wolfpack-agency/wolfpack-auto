@@ -53,7 +53,7 @@ const OUTCOME_LABELS: Record<string, string> = {
 };
 
 const OUTCOME_COLORS: Record<string, string> = {
-  appointment_set: "bg-blue-50 text-blue-700",
+  appointment_set: "bg-brand-50 text-brand-800",
   follow_up_needed: "bg-amber-50 text-amber-700",
   lost: "bg-red-50 text-red-700",
   information_only: "bg-gray-100 text-gray-600",
@@ -152,12 +152,12 @@ export default function CallIntelligencePage() {
           onChange={(e) => setTranscript(e.target.value)}
           placeholder="Paste call transcript here..."
           rows={4}
-          className="mt-3 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="mt-3 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
         />
         <button
           onClick={analyzeTranscript}
           disabled={analyzing || !transcript.trim()}
-          className="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="mt-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
         >
           {analyzing ? "Analyzing..." : "Analyze Transcript"}
         </button>
@@ -193,7 +193,7 @@ export default function CallIntelligencePage() {
                 onClick={() =>
                   setExpandedCall(expandedCall === call.callId ? null : call.callId)
                 }
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-sm text-brand-700 hover:text-brand-800"
               >
                 {expandedCall === call.callId ? "Collapse" : "Details"}
               </button>

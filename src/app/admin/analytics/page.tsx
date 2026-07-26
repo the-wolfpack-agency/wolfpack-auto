@@ -177,7 +177,7 @@ export default function AnalyticsDashboardPage() {
               return (
                 <div key={h.hour} className="flex-1 flex flex-col items-center gap-1">
                   <div
-                    className="w-full rounded-t bg-indigo-500 transition-all"
+                    className="w-full rounded-t bg-brand-600 transition-all"
                     style={{ height: `${heightPct}%` }}
                     title={`${h.hour}:00 — ${h.count} visits`}
                   />
@@ -210,7 +210,7 @@ export default function AnalyticsDashboardPage() {
           <div className="space-y-4">
             {(["desktop", "mobile", "tablet"] as const).map((device) => {
               const val = trafficEngagement.deviceSplit[device];
-              const colors = { desktop: "bg-blue-500", mobile: "bg-purple-500", tablet: "bg-orange-400" };
+              const colors = { desktop: "bg-brand-600", mobile: "bg-purple-500", tablet: "bg-orange-400" };
               return (
                 <div key={device}>
                   <div className="flex justify-between text-sm">
@@ -244,7 +244,7 @@ export default function AnalyticsDashboardPage() {
                     </span>
                     <span className="font-semibold text-gray-900">{v.views}</span>
                   </div>
-                  <Bar value={v.views} max={max} color="bg-cyan-500" />
+                  <Bar value={v.views} max={max} color="bg-brand-600" />
                 </div>
               );
             })}
@@ -454,7 +454,7 @@ export default function AnalyticsDashboardPage() {
             </div>
             <div className="h-16 w-px bg-surface-border" />
             <div className="flex-1 text-center">
-              <p className="text-3xl font-bold text-blue-600">{uxHealth.mobileVsDesktopConversion.desktop}%</p>
+              <p className="text-3xl font-bold text-brand-700">{uxHealth.mobileVsDesktopConversion.desktop}%</p>
               <p className="mt-1 text-sm font-medium text-gray-500">Desktop</p>
             </div>
           </div>
@@ -464,7 +464,7 @@ export default function AnalyticsDashboardPage() {
               style={{ width: `${uxHealth.mobileVsDesktopConversion.mobile}%` }}
             />
             <div
-              className="bg-blue-500 transition-all"
+              className="bg-brand-600 transition-all"
               style={{ width: `${uxHealth.mobileVsDesktopConversion.desktop}%` }}
             />
           </div>
@@ -573,7 +573,7 @@ function MetricCard({
     brand: "bg-brand-600",
     red: "bg-red-500",
     green: "bg-green-500",
-    blue: "bg-blue-500",
+    blue: "bg-brand-600",
   };
   return (
     <div className="rounded-card border border-surface-border bg-white p-5 shadow-card">

@@ -26,7 +26,7 @@ interface PropensityPrediction {
 const TIER_COLORS: Record<string, string> = {
   hot: "bg-red-50 text-red-700",
   warm: "bg-amber-50 text-amber-700",
-  cold: "bg-blue-50 text-blue-700",
+  cold: "bg-brand-50 text-brand-800",
 };
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -105,7 +105,7 @@ export default function PropensityPage() {
         <button
           onClick={trainModel}
           disabled={training}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
         >
           {training ? "Training..." : modelTrained ? "Retrain Model" : "Train Model"}
         </button>

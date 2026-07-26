@@ -41,7 +41,7 @@ function formatDate(iso: string): string {
 const CATEGORY_STYLES: Record<IntelCategory, string> = {
   pricing: "bg-purple-100 text-purple-700",
   campaign: "bg-orange-100 text-orange-700",
-  inventory: "bg-blue-100 text-blue-700",
+  inventory: "bg-brand-100 text-brand-800",
   promotion: "bg-emerald-100 text-emerald-700",
   staffing: "bg-gray-100 text-gray-600",
 };

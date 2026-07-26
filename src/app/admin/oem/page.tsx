@@ -24,7 +24,7 @@ function formatDate(iso: string | null) {
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    enrolled: "bg-blue-100 text-blue-700",
+    enrolled: "bg-brand-100 text-brand-800",
     in_progress: "bg-yellow-100 text-yellow-700",
     completed: "bg-green-100 text-green-700",
     expired: "bg-red-100 text-red-700",

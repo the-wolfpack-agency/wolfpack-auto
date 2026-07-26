@@ -37,7 +37,7 @@ const INTERACTION_TYPE_LABELS: Record<InteractionType, string> = {
 const INTERACTION_TYPE_BADGE: Record<InteractionType, string> = {
   test_drive: "bg-purple-50 text-purple-700 ring-purple-600/20",
   purchase: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  service: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  service: "bg-brand-50 text-brand-800 ring-brand-700/20",
   follow_up: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
   walk_in: "bg-gray-100 text-gray-600 ring-gray-400/20",
 };
@@ -51,7 +51,7 @@ const OUTCOME_LABELS: Record<Outcome, string> = {
 
 const OUTCOME_BADGE: Record<Outcome, string> = {
   purchased: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  returning: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  returning: "bg-brand-50 text-brand-800 ring-brand-700/20",
   lost: "bg-red-50 text-red-700 ring-red-600/20",
   follow_up_needed: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
 };

@@ -64,8 +64,8 @@ const STAGE_LABELS: Record<string, string> = {
 
 const STAGE_COLORS: Record<string, string> = {
   acquired: "border-gray-300 bg-gray-50",
-  in_transit: "border-blue-300 bg-blue-50",
-  arrived: "border-indigo-300 bg-indigo-50",
+  in_transit: "border-brand-300 bg-brand-50",
+  arrived: "border-brand-300 bg-brand-50",
   inspection: "border-purple-300 bg-purple-50",
   reconditioning: "border-amber-300 bg-amber-50",
   photos: "border-pink-300 bg-pink-50",

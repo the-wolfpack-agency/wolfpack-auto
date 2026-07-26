@@ -40,7 +40,7 @@ export default function SurveyResponsesPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
       </div>
     );
   }
@@ -48,7 +48,7 @@ export default function SurveyResponsesPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
       <div>
-        <a href="/admin/surveys" className="text-sm text-blue-600 hover:underline">
+        <a href="/admin/surveys" className="text-sm text-brand-700 hover:underline">
           &larr; Back to surveys
         </a>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">Survey Responses</h1>
@@ -73,7 +73,7 @@ export default function SurveyResponsesPage() {
                 {r.replay_url ? (
                   <a
                     href={r.replay_url}
-                    className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                    className="rounded bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800"
                   >
                     View Session
                   </a>

@@ -848,7 +848,7 @@ export default function BackgroundStudioPage() {
                       <td className="py-3 pr-4">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           row.background_type === "composite" ? "bg-purple-100 text-purple-700" :
-                          row.background_type === "custom" ? "bg-blue-100 text-blue-700" :
+                          row.background_type === "custom" ? "bg-brand-100 text-brand-800" :
                           "bg-gray-100 text-gray-700"
                         }`}>
                           {row.background_type}

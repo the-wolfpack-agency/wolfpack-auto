@@ -232,14 +232,14 @@ export default async function OemAnalyticsPage() {
           })()}
 
           {/* Network health */}
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+          <div className="rounded-xl border border-brand-200 bg-brand-50 p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-800">
               Network Health
             </p>
             <p className="mt-2 text-base font-bold text-gray-900">
               {stats.active_dealers}/{stats.total_dealers} active
             </p>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-brand-800">
               {pct(stats.active_dealers, stats.total_dealers)} dealer activation rate
             </p>
           </div>

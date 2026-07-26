@@ -176,11 +176,11 @@ export default function PlatformHealthPage() {
 
       {/* Recommendations */}
       {report.recommendations.length > 0 && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-          <h2 className="text-sm font-semibold text-blue-800">Automated Recommendations</h2>
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-5">
+          <h2 className="text-sm font-semibold text-brand-900">Automated Recommendations</h2>
           <ul className="mt-3 space-y-2">
             {report.recommendations.map((rec, i) => (
-              <li key={i} className="flex gap-2 text-sm text-blue-700">
+              <li key={i} className="flex gap-2 text-sm text-brand-800">
                 <span className="shrink-0 mt-0.5">→</span>
                 <span>{rec}</span>
               </li>

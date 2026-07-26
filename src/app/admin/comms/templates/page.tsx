@@ -24,7 +24,7 @@ interface MessageTemplate {
 /* -------------------------------------------------------------------------- */
 
 const CHANNEL_BADGE: Record<string, string> = {
-  email: "bg-blue-100 text-blue-700",
+  email: "bg-brand-100 text-brand-800",
   sms: "bg-green-100 text-green-700",
 };
 

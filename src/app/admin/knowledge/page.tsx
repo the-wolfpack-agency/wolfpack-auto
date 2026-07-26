@@ -308,7 +308,7 @@ export default function KnowledgeBasePage() {
               <div key={i} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="text-sm font-semibold text-gray-900">{r.title}</span>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                  <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-inset ring-brand-700/20">
                     {DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type}
                   </span>
                 </div>
@@ -375,7 +375,7 @@ export default function KnowledgeBasePage() {
                 <tr key={doc.document_id} className="border-b border-surface-border last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900 truncate max-w-[280px]">{doc.name}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                    <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-inset ring-brand-700/20">
                       {DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}
                     </span>
                   </td>

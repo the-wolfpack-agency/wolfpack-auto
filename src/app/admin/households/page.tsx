@@ -97,7 +97,7 @@ function priorityBadge(priority: string): string {
 }
 
 function roleBadge(role: string): string {
-  if (role === "primary") return "bg-blue-100 text-blue-800";
+  if (role === "primary") return "bg-brand-100 text-brand-900";
   if (role === "spouse") return "bg-purple-100 text-purple-800";
   if (role === "child") return "bg-green-100 text-green-800";
   return "bg-gray-100 text-gray-800";

@@ -344,9 +344,9 @@ export default function DeskingPage() {
               <p className="text-xs font-medium text-green-700">Front Gross</p>
               <p className="mt-0.5 text-2xl font-bold text-green-700">{usdWhole(frontGross)}</p>
             </div>
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-              <p className="text-xs font-medium text-blue-700">Back Gross</p>
-              <p className="mt-0.5 text-2xl font-bold text-blue-700">{usdWhole(backGross)}</p>
+            <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3">
+              <p className="text-xs font-medium text-brand-800">Back Gross</p>
+              <p className="mt-0.5 text-2xl font-bold text-brand-800">{usdWhole(backGross)}</p>
             </div>
             <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3">
               <p className="text-xs font-medium text-brand-700">Total Gross</p>
@@ -499,7 +499,7 @@ export default function DeskingPage() {
                     <td className="px-4 py-3 text-sm text-right text-green-600 hidden md:table-cell">
                       {usdWhole(deal.front_gross)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-right text-blue-600 hidden md:table-cell">
+                    <td className="px-4 py-3 text-sm text-right text-brand-700 hidden md:table-cell">
                       {usdWhole(deal.back_gross)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">

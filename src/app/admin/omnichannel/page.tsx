@@ -50,7 +50,7 @@ function formatDate(iso: string): string {
 }
 
 const CHANNEL_COLORS: Record<string, string> = {
-  online: "bg-blue-50 text-blue-700",
+  online: "bg-brand-50 text-brand-800",
   in_store: "bg-emerald-50 text-emerald-700",
   phone: "bg-purple-50 text-purple-700",
   email: "bg-amber-50 text-amber-700",
@@ -134,11 +134,11 @@ export default function OmnichannelPage() {
           value={searchId}
           onChange={(e) => setSearchId(e.target.value)}
           placeholder="Customer ID..."
-          className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
         />
         <button
           onClick={() => loadProfile()}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           Search
         </button>

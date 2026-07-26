@@ -60,7 +60,7 @@ async function getBillingData(): Promise<BillingData> {
 
 function statusColors(status: string | null): string {
   const map: Record<string, string> = {
-    trial: "bg-blue-100 text-blue-700",
+    trial: "bg-brand-100 text-brand-800",
     active: "bg-green-100 text-green-700",
     past_due: "bg-yellow-100 text-yellow-700",
     canceled: "bg-red-100 text-red-700",
@@ -123,7 +123,7 @@ export default async function BillingPage() {
       {/* Current plan card */}
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-2xl font-bold text-blue-700">
+          <span className="text-2xl font-bold text-brand-800">
             Current Plan: Professional
           </span>
           <span
@@ -149,7 +149,7 @@ export default async function BillingPage() {
         <div className="mt-6">
           <a
             href="mailto:billing@wolfpackauto.com?subject=Subscription%20Management"
-            className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="inline-flex items-center rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2"
           >
             Contact Us to Manage Your Subscription
           </a>

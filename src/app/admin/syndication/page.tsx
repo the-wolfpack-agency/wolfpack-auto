@@ -46,9 +46,9 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 const PLATFORM_COLORS: Record<string, string> = {
   autotrader: "bg-orange-50 text-orange-700 ring-orange-600/20",
-  cars_com: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  cars_com: "bg-brand-50 text-brand-800 ring-brand-700/20",
   cargurus: "bg-green-50 text-green-700 ring-green-600/20",
-  facebook_marketplace: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
+  facebook_marketplace: "bg-brand-50 text-brand-800 ring-brand-700/20",
   craigslist: "bg-purple-50 text-purple-700 ring-purple-600/20",
 };
 

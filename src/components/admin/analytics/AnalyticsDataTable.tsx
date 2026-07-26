@@ -92,7 +92,7 @@ export function AnalyticsDataTable<T>({
             <tr
               key={rowKey ? rowKey(row, idx) : idx}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={onRowClick ? "cursor-pointer hover:bg-blue-50" : ""}
+              className={onRowClick ? "cursor-pointer hover:bg-brand-50" : ""}
             >
               {columns.map((col) => (
                 <td

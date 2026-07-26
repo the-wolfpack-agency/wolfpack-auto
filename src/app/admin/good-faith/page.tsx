@@ -42,7 +42,7 @@ const GESTURE_TYPE_LABELS: Record<GestureType, string> = {
 };
 
 const GESTURE_TYPE_BADGE: Record<GestureType, string> = {
-  service_credit: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  service_credit: "bg-brand-50 text-brand-800 ring-brand-700/20",
   accessory: "bg-purple-50 text-purple-700 ring-purple-600/20",
   loaner: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
   discount: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
@@ -51,7 +51,7 @@ const GESTURE_TYPE_BADGE: Record<GestureType, string> = {
 
 const STATUS_BADGE: Record<GestureStatus, string> = {
   pending: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
-  approved: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  approved: "bg-brand-50 text-brand-800 ring-brand-700/20",
   claimed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
   denied: "bg-red-50 text-red-700 ring-red-600/20",
 };

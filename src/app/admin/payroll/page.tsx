@@ -120,14 +120,14 @@ const PAY_TYPE_LABELS: Record<string, string> = {
 };
 
 const PAY_TYPE_COLORS: Record<string, string> = {
-  salary: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  salary: "bg-brand-50 text-brand-800 ring-brand-700/20",
   hourly: "bg-purple-50 text-purple-700 ring-purple-600/20",
   commission: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
 };
 
 const TIME_STATUS_BADGE: Record<string, string> = {
   clocked_in: "bg-green-50 text-green-700 ring-green-600/20",
-  completed: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  completed: "bg-brand-50 text-brand-800 ring-brand-700/20",
   approved: "bg-brand-50 text-brand-700 ring-brand-600/20",
   adjusted: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
 };
@@ -149,8 +149,8 @@ const PROVIDER_CONFIG: Record<
   },
   adp: {
     label: "ADP",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
-    dot: "bg-blue-500",
+    color: "bg-brand-50 text-brand-800 border-brand-200",
+    dot: "bg-brand-600",
   },
   manual: {
     label: "Manual",

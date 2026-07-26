@@ -116,7 +116,7 @@ export default async function DealerDetailPage({ params }: PageProps) {
           <li>
             <Link
               href={`/admin/oem/programs?dealer=${encodeURIComponent(dealer.id)}`}
-              className="text-blue-600 hover:underline"
+              className="text-brand-700 hover:underline"
             >
               View programs this dealer is enrolled in →
             </Link>
@@ -124,7 +124,7 @@ export default async function DealerDetailPage({ params }: PageProps) {
           <li>
             <Link
               href={`/dealers/${encodeURIComponent(dealer.slug)}`}
-              className="text-blue-600 hover:underline"
+              className="text-brand-700 hover:underline"
               target="_blank"
               rel="noreferrer"
             >
@@ -137,7 +137,7 @@ export default async function DealerDetailPage({ params }: PageProps) {
       <div>
         <Link
           href="/admin/oem/dealers"
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand-700 hover:underline"
         >
           ← Back to dealer network
         </Link>

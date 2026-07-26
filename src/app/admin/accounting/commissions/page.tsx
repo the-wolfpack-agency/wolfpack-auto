@@ -36,7 +36,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_BADGE: Record<string, string> = {
-  salesperson: "bg-blue-100 text-blue-700",
+  salesperson: "bg-brand-100 text-brand-800",
   fi_manager: "bg-purple-100 text-purple-700",
   sales_manager: "bg-orange-100 text-orange-700",
 };

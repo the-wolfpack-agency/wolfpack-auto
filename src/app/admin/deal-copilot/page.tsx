@@ -389,7 +389,7 @@ export default function DealCopilotPage() {
               type="button"
               onClick={generate}
               disabled={busy || !session}
-              className="px-4 py-2 rounded bg-blue-600 text-white text-sm disabled:opacity-50"
+              className="px-4 py-2 rounded bg-brand-700 text-white text-sm disabled:opacity-50"
             >
               Generate suggestions
             </button>
@@ -510,7 +510,7 @@ function SuggestionCard({
 }) {
   const accepted = suggestion.accepted === true;
   const rejected = suggestion.accepted === false;
-  const accent = accepted ? "border-green-400" : rejected ? "border-gray-300" : "border-blue-300";
+  const accent = accepted ? "border-green-400" : rejected ? "border-gray-300" : "border-brand-300";
   return (
     <div
       data-testid={`suggestion-${suggestion.id}`}
