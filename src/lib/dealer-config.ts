@@ -14,7 +14,10 @@ import { DEFAULT_CONFIG } from "@/lib/dealer-config-shared";
 
 /** In-memory cache: { config, expiresAt } */
 let _cache: { config: DealerConfig; expiresAt: number } | null = null;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+// Short TTL so Settings changes (name, hours, branding) reflect on the public
+// site quickly instead of lagging by minutes, while still sparing the DB from a
+// query on every request.
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 
 /**
  * Normalize `business_hours` to the `Record<string, string>` shape every UI
