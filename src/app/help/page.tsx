@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getDealerConfig } from "@/lib/dealer-config";
+import { getDealerConfig, summarizeBusinessHours } from "@/lib/dealer-config";
 
 export async function generateMetadata(): Promise<Metadata> {
   const dealer = await getDealerConfig();
@@ -113,7 +113,35 @@ const faqCategories = [
   },
 ];
 
-export default async function HelpPage() {
+/** Flattened FAQ entry with its owning category, for search. */
+type FaqHit = { category: string; categoryId: string; q: string; a: string };
+
+const allFaqs: FaqHit[] = faqCategories.flatMap((cat) =>
+  cat.questions.map((item) => ({
+    category: cat.title,
+    categoryId: cat.id,
+    q: item.q,
+    a: item.a,
+  })),
+);
+
+function searchFaqs(query: string): FaqHit[] {
+  const needle = query.toLowerCase();
+  return allFaqs.filter(
+    (f) =>
+      f.q.toLowerCase().includes(needle) || f.a.toLowerCase().includes(needle),
+  );
+}
+
+export default async function HelpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const sp = await searchParams;
+  const query = (typeof sp.q === "string" ? sp.q : "").trim();
+  const results = query ? searchFaqs(query) : null;
+
   const dealer = await getDealerConfig();
   const phoneHref = `tel:+1${dealer.phone.replace(/\D/g, "")}`;
 
@@ -162,12 +190,14 @@ export default async function HelpPage() {
                 id="help-search"
                 name="q"
                 type="search"
+                defaultValue={query}
                 placeholder="Search for answers..."
                 className="w-full rounded-l-lg border-0 bg-white/10 py-3.5 pl-12 pr-4 text-base text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30"
               />
             </div>
             <button
               type="submit"
+              data-track="help_search_submit"
               className="rounded-r-lg bg-accent-500 px-6 py-3.5 text-base font-bold text-white transition-colors hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2 focus:ring-offset-brand-900"
             >
               Search
@@ -175,6 +205,79 @@ export default async function HelpPage() {
           </form>
         </div>
       </section>
+
+      {/* Search Results (only when a query is present) */}
+      {results !== null && (
+        <section
+          aria-labelledby="help-results-heading"
+          className="border-b border-surface-border bg-white py-12 sm:py-16"
+        >
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <h2
+              id="help-results-heading"
+              className="text-2xl font-bold tracking-tight text-gray-900"
+            >
+              {results.length > 0
+                ? `${results.length} result${results.length === 1 ? "" : "s"} for "${query}"`
+                : `No results for "${query}"`}
+            </h2>
+
+            {results.length > 0 ? (
+              <div className="mt-8 space-y-3">
+                {results.map((item, idx) => (
+                  <details
+                    key={idx}
+                    open
+                    className="group rounded-xl border border-surface-border bg-white shadow-sm transition-shadow hover:shadow-card"
+                  >
+                    <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 text-left text-sm font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
+                      <span>
+                        {item.q}
+                        <span className="ml-2 align-middle text-xs font-medium uppercase tracking-wide text-brand-500">
+                          {item.category}
+                        </span>
+                      </span>
+                      <svg
+                        className="h-5 w-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </summary>
+                    <div className="border-t border-surface-border px-6 py-5">
+                      <p className="text-sm leading-relaxed text-gray-600">{item.a}</p>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-6 rounded-xl border border-surface-border bg-surface-muted p-8 text-center">
+                <p className="text-gray-600">
+                  We could not find an answer matching your search. Browse the
+                  categories below, or reach out and our team will help directly.
+                </p>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <a
+                    href={phoneHref}
+                    className="rounded-lg bg-brand-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
+                  >
+                    Call {dealer.phone}
+                  </a>
+                  <a
+                    href="/contact"
+                    className="rounded-lg border border-surface-border px-5 py-2.5 text-sm font-semibold text-gray-900 transition-colors hover:bg-surface-muted"
+                  >
+                    Contact Us
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Quick Links */}
       <section className="bg-white py-12 sm:py-16">
@@ -302,7 +405,7 @@ export default async function HelpPage() {
                 {dealer.phone}
               </p>
               <p className="mt-2 text-xs text-gray-500">
-                {Object.entries(dealer.business_hours).map(([day, hrs]) => `${day}: ${hrs}`).join(" | ")}
+                {summarizeBusinessHours(dealer.business_hours)}
               </p>
             </a>
 
