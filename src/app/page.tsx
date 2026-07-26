@@ -479,22 +479,23 @@ export default async function HomePage() {
               alt="Trade in your vehicle"
               className="w-full object-contain"
             />
-            {/* Callouts with connector lines pointing at the car */}
-            <div className="absolute left-[24%] top-0 flex -translate-x-1/2 flex-col items-center">
+            {/* Callouts with connector lines pointing at the car (desktop only;
+                they would overlap on narrow mobile widths) */}
+            <div className="absolute left-[24%] top-0 hidden -translate-x-1/2 flex-col items-center sm:flex">
               <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
                 Market Priced
               </span>
               <span className="mt-1 h-14 w-px bg-brand-950/50" />
               <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
             </div>
-            <div className="absolute left-1/2 top-2 flex -translate-x-1/2 flex-col items-center">
+            <div className="absolute left-1/2 top-2 hidden -translate-x-1/2 flex-col items-center sm:flex">
               <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
                 150-Pt Inspection
               </span>
               <span className="mt-1 h-20 w-px bg-brand-950/50" />
               <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
             </div>
-            <div className="absolute right-[16%] top-6 flex translate-x-1/2 flex-col items-center">
+            <div className="absolute right-[16%] top-6 hidden translate-x-1/2 flex-col items-center sm:flex">
               <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
                 Carfax Verified
               </span>

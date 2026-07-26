@@ -90,7 +90,7 @@ export default function PaymentCalculatorSection({
             price tag.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
             {presets.map((v, i) => (
               <button
                 key={v.label}
@@ -98,7 +98,7 @@ export default function PaymentCalculatorSection({
                 onClick={() => setIdx(i)}
                 aria-pressed={i === idx}
                 data-track="calc_preset_select"
-                className={`flex w-32 flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-colors ${
+                className={`flex w-full flex-col items-center gap-2 rounded-2xl border p-4 text-center transition-colors sm:w-32 ${
                   i === idx
                     ? "border-white bg-white text-brand-950"
                     : "border-brand-700 bg-brand-900 text-brand-200 hover:border-brand-500"
@@ -113,7 +113,7 @@ export default function PaymentCalculatorSection({
             <a
               href="/inventory"
               data-track="calc_add_vehicle"
-              className="flex w-32 items-center justify-center rounded-2xl border border-brand-700 bg-brand-900 p-4 text-3xl font-light text-brand-400 transition-colors hover:border-brand-500 hover:text-white"
+              className="flex min-h-[96px] w-full items-center justify-center rounded-2xl border border-brand-700 bg-brand-900 p-4 text-3xl font-light text-brand-400 transition-colors hover:border-brand-500 hover:text-white sm:w-32"
               aria-label="Add a vehicle"
             >
               +
