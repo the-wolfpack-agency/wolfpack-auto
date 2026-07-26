@@ -108,9 +108,18 @@ export default async function RootLayout({
               aria-label="Primary navigation"
               className="relative flex h-14 items-center justify-between rounded-full border border-surface-border bg-white/95 px-3 shadow-card backdrop-blur-md sm:px-4"
             >
-              {/* Left: hamburger drawer + primary links */}
-              <div className="flex items-center gap-1">
+              {/* Left: hamburger + logo (in-flow/truncating on mobile) + links */}
+              <div className="flex min-w-0 items-center gap-2">
                 <MobileMenu />
+                {/* Logo: left-aligned and truncating on mobile so a long name
+                    never collides with the buttons; centered on desktop (V_01) */}
+                <a
+                  href="/"
+                  aria-label={`${dealer.name} home`}
+                  className="block min-w-0 truncate md:absolute md:left-1/2 md:max-w-[42%] md:-translate-x-1/2 lg:max-w-none"
+                >
+                  <SiteLogo name={dealer.name} />
+                </a>
                 <div className="hidden items-center gap-1 md:flex">
                   {[
                     { label: "Inventory", href: "/inventory" },
@@ -128,17 +137,8 @@ export default async function RootLayout({
                 </div>
               </div>
 
-              {/* Center: brand logo (image with wordmark fallback) */}
-              <a
-                href="/"
-                aria-label={`${dealer.name} home`}
-                className="absolute left-1/2 -translate-x-1/2"
-              >
-                <SiteLogo name={dealer.name} />
-              </a>
-
               {/* Right: phone + Browse Cars */}
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                 <a
                   href={phoneHref}
                   className="hidden items-center gap-2 text-sm font-semibold text-brand-700 transition-colors hover:text-brand-950 lg:flex"
