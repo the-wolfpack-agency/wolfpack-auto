@@ -223,6 +223,7 @@ export type SystemEvent =
   | "team.user_invited"
   | "team.user_updated"
   | "team.user_deactivated"
+  | "team.invite_rescinded"
   | "team.invite_accepted"
   | "team.password_reset"
   | "team.password_reset_requested"

@@ -72,6 +72,40 @@ test.describe("Team Invite API", () => {
     }
   });
 
+  test("rescinding a pending invite frees the email to be re-invited", async ({ request }) => {
+    const email = `rescind-${Date.now()}@example.com`;
+
+    // Create a pending invite (no password).
+    const created = await request.post("/api/admin/dealer-users", {
+      data: { name: "Rescind Me", email, role: "staff" },
+    });
+    // Unauthenticated in shadow mode: nothing to assert past "not 500".
+    if (created.status() !== 201) {
+      expect(created.status()).not.toBe(500);
+      return;
+    }
+    const userId = (await created.json()).user.id;
+
+    // Re-inviting the same email must be blocked while the row exists.
+    const dupe = await request.post("/api/admin/dealer-users", {
+      data: { name: "Rescind Me", email, role: "staff" },
+    });
+    expect(dupe.status()).toBe(409);
+
+    // Hard-rescind removes the pending row.
+    const rescinded = await request.delete(
+      `/api/admin/dealer-users/${userId}?hard=1`,
+    );
+    expect(rescinded.status()).toBe(200);
+    expect((await rescinded.json()).removed).toBe(true);
+
+    // The email is now free: the same address can be invited again.
+    const reinvited = await request.post("/api/admin/dealer-users", {
+      data: { name: "Rescind Me", email, role: "staff" },
+    });
+    expect(reinvited.status()).toBe(201);
+  });
+
   test("POST /api/admin/dealer-users rejects missing name", async ({ request }) => {
     const res = await request.post("/api/admin/dealer-users", {
       data: { email: "noname@example.com", role: "staff" },

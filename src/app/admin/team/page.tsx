@@ -166,6 +166,28 @@ export default function TeamPage() {
     }
   };
 
+  // A pending invite is a user who was invited but has never signed in.
+  const isPendingInvite = (user: DealerUser) =>
+    !user.is_active && user.last_login === null;
+
+  const rescindInvite = async (user: DealerUser) => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(`Rescind the invite for ${user.email}? This frees the email to be invited again.`)
+    ) {
+      return;
+    }
+    try {
+      // hard=1 removes the pending-invite row so the email is freed.
+      await fetch(`/api/admin/dealer-users/${user.id}?hard=1`, {
+        method: "DELETE",
+      });
+      fetchUsers();
+    } catch {
+      // swallow
+    }
+  };
+
   const updateRole = async (user: DealerUser, newRole: string) => {
     try {
       await fetch(`/api/admin/dealer-users/${user.id}`, {
@@ -354,23 +376,42 @@ export default function TeamPage() {
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                           user.is_active
                             ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            : isPendingInvite(user)
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {user.is_active ? "Active" : "Inactive"}
+                        {user.is_active
+                          ? "Active"
+                          : isPendingInvite(user)
+                            ? "Pending"
+                            : "Inactive"}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
-                      <button
-                        onClick={() => toggleActive(user)}
-                        className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                          user.is_active
-                            ? "bg-red-50 text-red-700 hover:bg-red-100"
-                            : "bg-green-50 text-green-700 hover:bg-green-100"
-                        }`}
-                      >
-                        {user.is_active ? "Deactivate" : "Activate"}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {isPendingInvite(user) ? (
+                          // Never-accepted invite: rescind removes the row and
+                          // frees the email so it can be invited again.
+                          <button
+                            onClick={() => rescindInvite(user)}
+                            className="rounded-md bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                          >
+                            Rescind invite
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => toggleActive(user)}
+                            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                              user.is_active
+                                ? "bg-red-50 text-red-700 hover:bg-red-100"
+                                : "bg-green-50 text-green-700 hover:bg-green-100"
+                            }`}
+                          >
+                            {user.is_active ? "Deactivate" : "Activate"}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
