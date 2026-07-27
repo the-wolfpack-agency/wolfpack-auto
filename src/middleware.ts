@@ -9,6 +9,7 @@ import {
   validateCSRFToken,
 } from "@/lib/csrf";
 import { API_VERSION, API_VERSION_HEADER } from "@/lib/api-version";
+import { shouldFunnelToOnboarding } from "@/lib/onboarding-gate";
 
 /**
  * Next.js Edge Middleware — runs on every request.
@@ -178,27 +179,15 @@ export async function middleware(request: NextRequest) {
       return applyHeaders(NextResponse.redirect(loginUrl), hostname, request);
     }
 
-    // Redirect authenticated users with incomplete onboarding to getting-started.
-    // Skip redirect for pages that are part of the onboarding flow itself,
-    // API routes, settings, and static assets.
-    const onboardingExemptPaths = [
-      "/admin/getting-started",
-      "/admin/onboarding",
-      "/admin/login",
-      "/admin/settings",
-    ];
-    const isExemptFromOnboarding =
-      pathname.startsWith("/api/") ||
-      pathname.startsWith("/_next") ||
-      onboardingExemptPaths.some((p) => pathname.startsWith(p));
-
-    if (!isExemptFromOnboarding) {
-      // Check the onboarding_complete cookie — set by the client after status fetch
-      const onboardingComplete = request.cookies.get("onboarding_complete")?.value;
-      if (onboardingComplete === "false") {
-        const gettingStartedUrl = new URL("/admin/getting-started", request.url);
-        return applyHeaders(NextResponse.redirect(gettingStartedUrl), hostname, request);
-      }
+    // Funnel a dealer with incomplete onboarding to Getting Started, but ONLY
+    // from the dashboard landing pages. Never trap the deep admin pages the
+    // onboarding checklist links to (team, vehicles, settings, analytics) —
+    // trapping /admin/team is exactly what blocked inviting a teammate.
+    // Set by the client (OnboardingBanner) after it fetches onboarding status.
+    const onboardingComplete = request.cookies.get("onboarding_complete")?.value;
+    if (shouldFunnelToOnboarding(pathname, onboardingComplete)) {
+      const gettingStartedUrl = new URL("/admin/getting-started", request.url);
+      return applyHeaders(NextResponse.redirect(gettingStartedUrl), hostname, request);
     }
 
     // Authenticated admin route — continue without tenant resolution
