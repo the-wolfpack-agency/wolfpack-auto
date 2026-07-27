@@ -148,7 +148,7 @@ export default async function HelpPage({
   return (
     <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-brand-800 via-brand-900 to-brand-950 py-16 sm:py-20">
+      <section className="bg-brand-950 py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <p className="text-sm font-semibold uppercase tracking-widest text-brand-300">
             Support Center

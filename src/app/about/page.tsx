@@ -26,7 +26,7 @@ export default async function AboutPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-800 via-brand-900 to-brand-950">
+      <section className="relative overflow-hidden bg-brand-950">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute -left-20 top-1/3 h-80 w-80 rounded-full bg-brand-400 blur-3xl" />
           <div className="absolute -right-20 bottom-1/3 h-80 w-80 rounded-full bg-accent-400 blur-3xl" />

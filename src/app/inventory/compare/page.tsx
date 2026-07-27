@@ -51,7 +51,7 @@ export default async function ComparePage({
     <CompareTracker vins={allVins}>
     <div className="bg-surface-muted min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-to-r from-brand-800 to-brand-950 py-10">
+      <div className="bg-brand-950 py-10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav aria-label="Breadcrumb" className="mb-3">
             <ol className="flex items-center gap-2 text-sm text-brand-300">
