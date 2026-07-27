@@ -472,13 +472,25 @@ export default async function HomePage() {
             </form>
           </div>
 
-          <div className="relative pt-20">
+          <div className="relative pt-0 sm:pt-20">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/tradein-car.png"
               alt="Trade in your vehicle"
               className="w-full object-contain"
             />
+            {/* Mobile: the connector-line callouts would overlap on narrow
+                widths, so show the same three trust points as a simple pill row. */}
+            <div className="mt-2 flex flex-wrap justify-center gap-2 sm:hidden">
+              {["Market Priced", "150-Pt Inspection", "Carfax Verified"].map((t) => (
+                <span
+                  key={t}
+                  className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
             {/* Callouts with connector lines pointing at the car (desktop only;
                 they would overlap on narrow mobile widths) */}
             <div className="absolute left-[24%] top-0 hidden -translate-x-1/2 flex-col items-center sm:flex">
