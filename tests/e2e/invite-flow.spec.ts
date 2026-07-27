@@ -30,14 +30,24 @@ test.describe("Team Invite API", () => {
         name: "Invited User",
         email: `invite-${Date.now()}@example.com`,
         role: "staff",
-        // No password — triggers invite flow
+        // No password: triggers invite flow
       },
     });
     expect(res.status()).not.toBe(500);
     if (res.status() === 201) {
       const body = await res.json();
       expect(body).toHaveProperty("user");
-      expect(body).toHaveProperty("message", "Invitation sent");
+      // The invite always reports its delivery outcome and returns a copyable
+      // accept link so onboarding works even when email delivery is unavailable.
+      expect(body).toHaveProperty("emailDelivered");
+      expect(typeof body.emailDelivered).toBe("boolean");
+      expect(body).toHaveProperty("acceptUrl");
+      expect(body.acceptUrl).toContain("/admin/accept-invite?token=");
+      // Message matches the delivery outcome.
+      const expected = body.emailDelivered
+        ? "Invitation sent"
+        : "Invite created, but the email could not be sent";
+      expect(body.message).toBe(expected);
       expect(body.user).toHaveProperty("email");
       expect(body.user).toHaveProperty("role", "staff");
       // Invited users are not active until they accept

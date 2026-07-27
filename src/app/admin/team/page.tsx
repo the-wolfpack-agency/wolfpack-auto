@@ -60,6 +60,22 @@ export default function TeamPage() {
   const [inviteSuccess, setInviteSuccess] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
+  // When email delivery is unavailable, the API returns the accept link so the
+  // admin can hand-deliver it instead of the UI falsely claiming an email went.
+  const [inviteDelivered, setInviteDelivered] = useState(true);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const copyInviteLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Clipboard blocked: the link is visible for manual copy anyway.
+    }
+  };
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -83,6 +99,8 @@ export default function TeamPage() {
     e.preventDefault();
     setInviteSubmitting(true);
     setInviteError(null);
+    setInviteSuccess(false);
+    setInviteLink(null);
 
     try {
       const res = await fetch("/api/admin/dealer-users", {
@@ -95,21 +113,38 @@ export default function TeamPage() {
         }),
       });
 
+      const data = await res.json().catch(() => ({}) as Record<string, unknown>);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setInviteError(data.error || `Failed to create user (${res.status})`);
+        setInviteError(
+          (data.error as string) || `Failed to create user (${res.status})`,
+        );
         return;
       }
 
-      // Success — reset form and refresh
+      // Success: reset form and refresh
       setInviteName("");
       setInviteEmail("");
       setInviteRole("admin");
       setInviteSuccess(true);
-      setTimeout(() => {
-        setInviteSuccess(false);
-        setShowInvite(false);
-      }, 3000);
+
+      // undefined emailDelivered (older API) => assume the email was sent.
+      const delivered = data.emailDelivered !== false;
+      setInviteDelivered(delivered);
+      setInviteLink(
+        !delivered && typeof data.acceptUrl === "string"
+          ? (data.acceptUrl as string)
+          : null,
+      );
+
+      // Only auto-dismiss when the email actually went out. When we're showing
+      // a copyable link, keep the panel open so the admin can grab it.
+      if (delivered) {
+        setTimeout(() => {
+          setInviteSuccess(false);
+          setShowInvite(false);
+        }, 3000);
+      }
       fetchUsers();
     } catch {
       setInviteError("Network error. Please try again.");
@@ -171,9 +206,36 @@ export default function TeamPage() {
               {inviteError}
             </div>
           )}
-          {inviteSuccess && (
+          {inviteSuccess && inviteDelivered && (
             <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-              Invitation sent! They'll receive an email to set up their account.
+              Invitation sent! They&apos;ll receive an email to set up their account.
+            </div>
+          )}
+          {inviteSuccess && !inviteDelivered && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <p className="font-medium">
+                User added, but the invite email couldn&apos;t be sent automatically.
+              </p>
+              <p className="mt-1 text-amber-700">
+                Share this one-time sign-up link with them to finish setup:
+              </p>
+              {inviteLink && (
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={inviteLink}
+                    onFocus={(e) => e.target.select()}
+                    className="min-w-0 flex-1 rounded-md border border-amber-300 bg-white px-2 py-1 font-mono text-xs text-gray-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={copyInviteLink}
+                    className="shrink-0 rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 transition-colors"
+                  >
+                    {linkCopied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

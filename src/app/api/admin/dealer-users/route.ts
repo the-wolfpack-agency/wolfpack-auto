@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
       trackSystem("team.user_invited", dealerId, { email, role: cleanRole });
     } catch { /* analytics never blocks */ }
 
-    // Fire invite email (non-blocking)
-    void sendTeamInvite({
+    // Attempt delivery and report the real outcome (never throws).
+    const invite = await sendTeamInvite({
       inviteeEmail: email,
       inviteeName: name,
       role: cleanRole,
@@ -128,7 +128,12 @@ export async function POST(request: NextRequest) {
           invite_pending: true,
           created_at: new Date().toISOString(),
         },
-        message: "Invitation sent",
+        emailDelivered: invite.delivered,
+        acceptUrl: invite.acceptUrl,
+        inviteReason: invite.reason,
+        message: invite.delivered
+          ? "Invitation sent"
+          : "Invite created, but the email could not be sent",
       },
       { status: 201 },
     );
@@ -190,6 +195,7 @@ export async function POST(request: NextRequest) {
     } catch { /* analytics never blocks */ }
 
     // Send invite email if no password was provided
+    let invite: Awaited<ReturnType<typeof sendTeamInvite>> | null = null;
     if (!password) {
       // Look up dealer name for the email
       let dealerName = "Your Dealership";
@@ -198,7 +204,8 @@ export async function POST(request: NextRequest) {
         dealerName = dealerResult.rows[0]?.name ?? dealerName;
       } catch { /* non-critical */ }
 
-      void sendTeamInvite({
+      // Await delivery and report the real outcome (never throws).
+      invite = await sendTeamInvite({
         inviteeEmail: email.toLowerCase(),
         inviteeName: name,
         role: cleanRole,
@@ -211,7 +218,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         user: result.rows[0],
-        message: password ? "User created" : "Invitation sent",
+        ...(invite
+          ? {
+              emailDelivered: invite.delivered,
+              acceptUrl: invite.acceptUrl,
+              inviteReason: invite.reason,
+            }
+          : {}),
+        message: password
+          ? "User created"
+          : invite?.delivered
+            ? "Invitation sent"
+            : "Invite created, but the email could not be sent",
       },
       { status: 201 },
     );

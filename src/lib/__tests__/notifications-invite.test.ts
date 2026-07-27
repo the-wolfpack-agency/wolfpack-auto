@@ -3,12 +3,15 @@
  *
  * Unit tests for sendTeamInvite in src/lib/notifications.ts.
  *
- * Verifies:
- *   - Correct subject and accept URL construction
- *   - Resend failure is caught, logged, and emits analytics — never throws
- *   - analytics event system.team_invite_sent is emitted on success
- *   - analytics event system.notification_send_failed is emitted on failure
- *   - Missing RESEND_API_KEY falls through gracefully (console log, no throw)
+ * Transport is Microsoft Graph app-only Mail.Send (the same M365 mechanism
+ * beyond-sku and Instinct use) — NOT Resend. Verifies:
+ *   - Correct subject, recipient, and accept-URL construction
+ *   - Returns { delivered, reason, acceptUrl } — never throws
+ *   - When Graph delivers: returns delivered=true and emits team_invite_sent
+ *   - When Graph is unconfigured: returns not_configured + the accept link,
+ *     does NOT emit a "sent" event, and never calls the transport
+ *   - When Graph errors: returns delivered=false with the reason and emits
+ *     notification_send_failed, still returning the copyable accept link
  *
  * Run: npx jest src/lib/__tests__/notifications-invite.test.ts
  */
@@ -21,26 +24,23 @@ export {}; // treat as ES module to prevent global-scope variable collisions
 /* Mocks                                                                      */
 /* -------------------------------------------------------------------------- */
 
-// Track Resend email sends
-const mockResendSend = jest.fn();
+// Microsoft Graph transport seam.
+const mockSendViaGraph = jest.fn();
+let mockGraphConfigured = true;
 
-jest.mock("resend", () => ({
-  Resend: jest.fn().mockImplementation(() => ({
-    emails: {
-      send: mockResendSend,
-    },
-  })),
+jest.mock("@/lib/mail/send-via-graph", () => ({
+  sendViaGraph: (...args: any[]) => mockSendViaGraph(...args),
+  isGraphMailConfigured: () => mockGraphConfigured,
 }));
 
-// Track analytics events
+// Track analytics events.
 const mockTrackSystem = jest.fn();
 
 jest.mock("@/lib/analytics-hooks", () => ({
   trackSystem: mockTrackSystem,
 }));
 
-// Console spies
-const consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
 /* -------------------------------------------------------------------------- */
@@ -58,77 +58,88 @@ const DEFAULT_PARAMS = {
   inviterId: "usr_bob",
 };
 
+const flush = () => new Promise((r) => setTimeout(r, 50));
+
 /* -------------------------------------------------------------------------- */
 /* Tests                                                                      */
 /* -------------------------------------------------------------------------- */
 
-describe("sendTeamInvite — Resend available", () => {
+describe("sendTeamInvite — Graph configured", () => {
   let sendTeamInvite: typeof import("../notifications").sendTeamInvite;
 
   beforeEach(async () => {
     jest.resetModules();
-    mockResendSend.mockReset();
+    mockSendViaGraph.mockReset();
     mockTrackSystem.mockReset();
-    consoleLogSpy.mockClear();
+    consoleWarnSpy.mockClear();
     consoleErrorSpy.mockClear();
+    mockGraphConfigured = true;
 
-    // Set env vars before importing the module
-    process.env.RESEND_API_KEY = "re_test_key";
     process.env.NEXT_PUBLIC_APP_URL = "https://app.wolfpackauto.com";
-
     ({ sendTeamInvite } = await import("../notifications"));
   });
 
   afterEach(() => {
-    delete process.env.RESEND_API_KEY;
     delete process.env.NEXT_PUBLIC_APP_URL;
-  });
-
-  it("sends email with correct subject containing dealer name", async () => {
-    mockResendSend.mockResolvedValueOnce({ error: null });
-
-    await sendTeamInvite(DEFAULT_PARAMS);
-    // Allow async fire-and-forget analytics to settle
-    await new Promise((r) => setImmediate(r));
-
-    expect(mockResendSend).toHaveBeenCalledTimes(1);
-    const callArgs = mockResendSend.mock.calls[0][0];
-    expect(callArgs.subject).toContain("Acme Motors");
-    expect(callArgs.to).toContain("jane@acme.example.com");
-  });
-
-  it("constructs accept URL with the token", async () => {
-    mockResendSend.mockResolvedValueOnce({ error: null });
-
-    await sendTeamInvite(DEFAULT_PARAMS);
-    await new Promise((r) => setImmediate(r));
-
-    const callArgs = mockResendSend.mock.calls[0][0];
-    expect(callArgs.html).toContain("/admin/accept-invite?token=abc123tok");
-    expect(callArgs.html).toContain("https://app.wolfpackauto.com");
-  });
-
-  it("uses VERCEL_URL when NEXT_PUBLIC_APP_URL is absent", async () => {
-    delete process.env.NEXT_PUBLIC_APP_URL;
-    process.env.VERCEL_URL = "myapp.vercel.app";
-
-    mockResendSend.mockResolvedValueOnce({ error: null });
-
-    await sendTeamInvite(DEFAULT_PARAMS);
-    await new Promise((r) => setImmediate(r));
-
-    const callArgs = mockResendSend.mock.calls[0][0];
-    expect(callArgs.html).toContain("https://myapp.vercel.app/admin/accept-invite");
-
+    delete process.env.NEXTAUTH_URL;
     delete process.env.VERCEL_URL;
   });
 
-  it("emits system.team_invite_sent on success", async () => {
-    mockResendSend.mockResolvedValueOnce({ error: null });
+  it("sends via Graph with correct subject and recipient", async () => {
+    mockSendViaGraph.mockResolvedValueOnce({ delivered: true, reason: "ok" });
+
+    const result = await sendTeamInvite(DEFAULT_PARAMS);
+
+    expect(mockSendViaGraph).toHaveBeenCalledTimes(1);
+    const callArgs = mockSendViaGraph.mock.calls[0][0];
+    expect(callArgs.subject).toContain("Acme Motors");
+    expect(callArgs.to).toBe("jane@acme.example.com");
+    expect(result.delivered).toBe(true);
+    expect(result.reason).toBe("ok");
+    expect(result.provider).toBe("graph");
+  });
+
+  it("constructs the accept URL with the token and base URL", async () => {
+    mockSendViaGraph.mockResolvedValueOnce({ delivered: true, reason: "ok" });
+
+    const result = await sendTeamInvite(DEFAULT_PARAMS);
+
+    expect(result.acceptUrl).toBe(
+      "https://app.wolfpackauto.com/admin/accept-invite?token=abc123tok",
+    );
+    const callArgs = mockSendViaGraph.mock.calls[0][0];
+    expect(callArgs.html).toContain("/admin/accept-invite?token=abc123tok");
+  });
+
+  it("falls back to NEXTAUTH_URL, then VERCEL_URL, for the base URL", async () => {
+    jest.resetModules();
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    process.env.NEXTAUTH_URL = "https://dealer.example.com";
+    ({ sendTeamInvite } = await import("../notifications"));
+    mockSendViaGraph.mockResolvedValueOnce({ delivered: true, reason: "ok" });
+
+    let result = await sendTeamInvite(DEFAULT_PARAMS);
+    expect(result.acceptUrl).toBe(
+      "https://dealer.example.com/admin/accept-invite?token=abc123tok",
+    );
+
+    jest.resetModules();
+    delete process.env.NEXTAUTH_URL;
+    process.env.VERCEL_URL = "myapp.vercel.app";
+    ({ sendTeamInvite } = await import("../notifications"));
+    mockSendViaGraph.mockResolvedValueOnce({ delivered: true, reason: "ok" });
+
+    result = await sendTeamInvite(DEFAULT_PARAMS);
+    expect(result.acceptUrl).toBe(
+      "https://myapp.vercel.app/admin/accept-invite?token=abc123tok",
+    );
+  });
+
+  it("emits system.team_invite_sent on delivery", async () => {
+    mockSendViaGraph.mockResolvedValueOnce({ delivered: true, reason: "ok" });
 
     await sendTeamInvite(DEFAULT_PARAMS);
-    // Analytics is async via dynamic import — flush the microtask queue
-    await new Promise((r) => setTimeout(r, 50));
+    await flush();
 
     expect(mockTrackSystem).toHaveBeenCalledWith(
       "system.team_invite_sent",
@@ -140,21 +151,28 @@ describe("sendTeamInvite — Resend available", () => {
     );
   });
 
-  it("does not throw on Resend SDK error", async () => {
-    mockResendSend.mockResolvedValueOnce({
-      error: new Error("API key invalid"),
+  it("returns the reason and accept link (never throws) when Graph errors", async () => {
+    mockSendViaGraph.mockResolvedValueOnce({
+      delivered: false,
+      reason: "scope_missing",
+      detail: "403 ...",
     });
 
-    await expect(sendTeamInvite(DEFAULT_PARAMS)).resolves.toBeUndefined();
+    const result = await sendTeamInvite(DEFAULT_PARAMS);
+
+    expect(result.delivered).toBe(false);
+    expect(result.reason).toBe("scope_missing");
+    expect(result.acceptUrl).toContain("/admin/accept-invite?token=abc123tok");
   });
 
-  it("emits system.notification_send_failed on Resend SDK error", async () => {
-    mockResendSend.mockResolvedValueOnce({
-      error: new Error("Rate limited"),
+  it("emits system.notification_send_failed on a Graph error", async () => {
+    mockSendViaGraph.mockResolvedValueOnce({
+      delivered: false,
+      reason: "scope_missing",
     });
 
     await sendTeamInvite(DEFAULT_PARAMS);
-    await new Promise((r) => setTimeout(r, 50));
+    await flush();
 
     expect(mockTrackSystem).toHaveBeenCalledWith(
       "system.notification_send_failed",
@@ -166,42 +184,42 @@ describe("sendTeamInvite — Resend available", () => {
     );
   });
 
-  it("does not throw when Resend rejects with a thrown error", async () => {
-    mockResendSend.mockRejectedValueOnce(new Error("Network timeout"));
-
-    await expect(sendTeamInvite(DEFAULT_PARAMS)).resolves.toBeUndefined();
-  });
-
-  it("emits system.notification_send_failed on thrown Resend error", async () => {
-    mockResendSend.mockRejectedValueOnce(new Error("Network timeout"));
+  it("does not emit team_invite_sent when delivery fails", async () => {
+    mockSendViaGraph.mockResolvedValueOnce({
+      delivered: false,
+      reason: "provider_error",
+    });
 
     await sendTeamInvite(DEFAULT_PARAMS);
-    await new Promise((r) => setTimeout(r, 50));
+    await flush();
 
-    expect(mockTrackSystem).toHaveBeenCalledWith(
-      "system.notification_send_failed",
-      "dlr_acme",
-      expect.objectContaining({
-        notification_type: "team_invite",
-        recipient: "jane@acme.example.com",
-        error: expect.stringContaining("Network timeout"),
-      }),
+    expect(mockTrackSystem).not.toHaveBeenCalledWith(
+      "system.team_invite_sent",
+      expect.anything(),
+      expect.anything(),
     );
+  });
+
+  it("does not throw if the transport itself throws", async () => {
+    mockSendViaGraph.mockRejectedValueOnce(new Error("boom"));
+
+    const result = await sendTeamInvite(DEFAULT_PARAMS);
+    expect(result.delivered).toBe(false);
+    expect(result.acceptUrl).toContain("/admin/accept-invite?token=abc123tok");
   });
 });
 
-describe("sendTeamInvite — no RESEND_API_KEY", () => {
+describe("sendTeamInvite — Graph NOT configured", () => {
   let sendTeamInvite: typeof import("../notifications").sendTeamInvite;
 
   beforeEach(async () => {
     jest.resetModules();
-    mockResendSend.mockReset();
+    mockSendViaGraph.mockReset();
     mockTrackSystem.mockReset();
-    consoleLogSpy.mockClear();
+    consoleWarnSpy.mockClear();
+    mockGraphConfigured = false;
 
-    delete process.env.RESEND_API_KEY;
     process.env.NEXT_PUBLIC_APP_URL = "https://app.wolfpackauto.com";
-
     ({ sendTeamInvite } = await import("../notifications"));
   });
 
@@ -209,30 +227,25 @@ describe("sendTeamInvite — no RESEND_API_KEY", () => {
     delete process.env.NEXT_PUBLIC_APP_URL;
   });
 
-  it("does not throw when RESEND_API_KEY is absent", async () => {
-    await expect(sendTeamInvite(DEFAULT_PARAMS)).resolves.toBeUndefined();
-  });
+  it("returns not_configured with the accept link, and never sends", async () => {
+    const result = await sendTeamInvite(DEFAULT_PARAMS);
 
-  it("does not call Resend when key is absent", async () => {
-    await sendTeamInvite(DEFAULT_PARAMS);
-    expect(mockResendSend).not.toHaveBeenCalled();
-  });
-
-  it("logs the email to console when key is absent", async () => {
-    await sendTeamInvite(DEFAULT_PARAMS);
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      expect.stringContaining("jane@acme.example.com"),
+    expect(result.delivered).toBe(false);
+    expect(result.reason).toBe("not_configured");
+    expect(result.acceptUrl).toBe(
+      "https://app.wolfpackauto.com/admin/accept-invite?token=abc123tok",
     );
+    expect(mockSendViaGraph).not.toHaveBeenCalled();
   });
 
-  it("still emits system.team_invite_sent even without Resend key", async () => {
+  it("does NOT emit team_invite_sent when nothing was sent", async () => {
     await sendTeamInvite(DEFAULT_PARAMS);
-    await new Promise((r) => setTimeout(r, 50));
+    await flush();
 
-    expect(mockTrackSystem).toHaveBeenCalledWith(
+    expect(mockTrackSystem).not.toHaveBeenCalledWith(
       "system.team_invite_sent",
-      "dlr_acme",
-      expect.objectContaining({ invited_email: "jane@acme.example.com" }),
+      expect.anything(),
+      expect.anything(),
     );
   });
 });
