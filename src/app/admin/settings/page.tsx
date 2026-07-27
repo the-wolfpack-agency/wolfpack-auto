@@ -301,8 +301,9 @@ export default async function SettingsPage() {
             Module Access
           </h2>
           <p className="mb-6 text-sm text-gray-500">
-            Choose which modules this dealer sees. Start a pilot with a few, then enable
-            more as they grow — changes apply immediately, no redeploy.
+            Choose which modules this dealer sees. Start with a few for a pilot,
+            then turn on more as the dealer grows. Changes apply immediately, with
+            no redeploy needed.
           </p>
           <ModuleAccessManager />
         </section>
