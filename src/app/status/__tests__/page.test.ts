@@ -1,5 +1,5 @@
 /**
- * Structural tests for /status — public uptime page.
+ * Structural tests for /status public uptime page.
  *
  * Uses the source-string pattern (matches src/app/admin/auction/__tests__).
  * This page renders dynamically + has a client poller; behavioral E2E
@@ -55,8 +55,8 @@ describe("/status page", () => {
 
   it("has no em dashes in the visible copy (project convention)", () => {
     // Em dash is U+2014. Search the whole source.
-    expect(pageSrc.includes("—")).toBe(false);
-    expect(boardSrc.includes("—")).toBe(false);
+    expect(pageSrc.includes("\u2014")).toBe(false); // no em dash
+    expect(boardSrc.includes("\u2014")).toBe(false); // no em dash
   });
 });
 
@@ -108,7 +108,7 @@ describe("/status StatusBoard (client)", () => {
     expect(boardSrc).toContain("sky-500");
   });
 
-  it("never lets the page render blank — falls back to a default payload", () => {
+  it("never lets the page render blank, falls back to a default payload", () => {
     // The board uses a `payload ?? { overall: 'operational', ... }` fallback.
     expect(boardSrc).toMatch(/payload\s*\?\?\s*\{/);
   });
