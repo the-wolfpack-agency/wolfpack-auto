@@ -267,7 +267,7 @@ export function genericCustomerConfirmationHTML(params: {
   return wrapInLayout({
     headerBg: "#1a1a2e",
     headerTitle: escapeHtml(dealerName),
-    brandInitial: dealerName,
+    brandName: dealerName,
     body: `
       <h2 style="margin:0 0 16px;font-size:18px;color:#1a1a2e;">We Received Your Inquiry</h2>
       <p style="margin:0 0 12px;font-size:15px;color:#333;line-height:1.6;">
@@ -377,18 +377,28 @@ function wrapInLayout(params: {
   headerTitle: string;
   body: string;
   footerText: string;
-  /** Dealer/brand name (or its initial) for the header monogram. Falls back to
-   *  the header title so the badge is never a hardcoded platform letter. */
-  brandInitial?: string;
-  /** Optional dealer logo URL; shown instead of the initial when present. */
+  /** Dealer/brand name shown as the header wordmark, so recipients see the
+   *  dealership, never a hardcoded platform name or a bare initial. */
+  brandName?: string;
+  /** Optional dealer logo URL; shown instead of the wordmark when present. */
   logoUrl?: string;
 }): string {
-  const { headerBg, headerTitle, body, footerText, brandInitial, logoUrl } = params;
-  const initial =
-    (brandInitial ?? headerTitle).trim().charAt(0).toUpperCase() || "•";
-  const badge = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="" height="44" style="height:44px;max-width:180px;margin:0 auto 12px;display:block;">`
-    : `<div style="width:48px;height:48px;margin:0 auto 12px;background:rgba(255,255,255,.15);border-radius:50%;line-height:48px;font-size:20px;color:#fff;">${escapeHtml(initial)}</div>`;
+  const { headerBg, headerTitle, body, footerText, brandName, logoUrl } = params;
+  const brandEsc = escapeHtml((brandName ?? "").trim());
+  // Brand identity: logo if we have one, otherwise the full dealer name.
+  const brandBlock = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="${brandEsc}" height="44" style="height:44px;max-width:220px;margin:0 auto 10px;display:block;">`
+    : brandEsc
+      ? `<div style="color:#fff;font-size:19px;font-weight:700;letter-spacing:.01em;margin:0 0 6px;">${brandEsc}</div>`
+      : "";
+  const hasBrand = brandBlock !== "";
+  // Email purpose line. Hidden when it would just repeat the brand name.
+  const titleBlock =
+    headerTitle && headerTitle !== brandEsc
+      ? `<div style="color:#fff;font-size:${hasBrand ? "14px" : "20px"};font-weight:${hasBrand ? "500" : "700"};${hasBrand ? "opacity:.9;" : ""}">${headerTitle}</div>`
+      : hasBrand
+        ? ""
+        : `<div style="color:#fff;font-size:20px;font-weight:700;">${headerTitle}</div>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -400,8 +410,7 @@ function wrapInLayout(params: {
 
         <!-- Header -->
         <tr><td style="background:${headerBg};padding:24px 32px;text-align:center;">
-          ${badge}
-          <div style="color:#fff;font-size:20px;font-weight:700;">${headerTitle}</div>
+          ${brandBlock}${titleBlock}
         </td></tr>
 
         <!-- Body -->
@@ -463,7 +472,7 @@ export function teamInviteHTML(params: {
   return wrapInLayout({
     headerBg: "#1a1a2e",
     headerTitle: "You're Invited",
-    brandInitial: dealerName,
+    brandName: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi${inviteeName ? ` ${escapeHtml(inviteeName)}` : ""},
@@ -504,7 +513,7 @@ export function passwordResetHTML(params: {
   return wrapInLayout({
     headerBg: "#1a1a2e",
     headerTitle: "Reset Your Password",
-    brandInitial: dealerName,
+    brandName: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi${name ? ` ${escapeHtml(name)}` : ""},
@@ -557,7 +566,7 @@ export function dealStatusUpdateHTML(params: {
   return wrapInLayout({
     headerBg: color,
     headerTitle: "Deal Update",
-    brandInitial: dealerName,
+    brandName: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi ${escapeHtml(customerName)},
@@ -611,7 +620,7 @@ export function serviceReminderHTML(params: {
   return wrapInLayout({
     headerBg: "#0070c7",
     headerTitle: "Service Reminder",
-    brandInitial: dealerName,
+    brandName: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi ${escapeHtml(customerName)},

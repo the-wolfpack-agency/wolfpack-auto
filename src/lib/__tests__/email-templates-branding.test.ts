@@ -1,10 +1,11 @@
 /**
  * Guards the shared email header/footer branding:
- *  - the header monogram is derived from the DEALER name, never a hardcoded "W"
+ *  - the header shows the DEALER's full name (or logo), never a hardcoded
+ *    "Wolfpack" and never a bare single letter
  *  - client-facing emails carry no em/en dashes (Nick's hard style rule)
  *
- * Regression: the invite email showed "W" (Wolfpack) to every dealer's
- * recipients regardless of brand.
+ * Regression: the invite email showed "W", then a lone initial, instead of
+ * the dealership name recipients expect.
  */
 import {
   teamInviteHTML,
@@ -21,21 +22,23 @@ const invite = (dealerName: string) =>
     acceptUrl: "https://example.com/admin/accept-invite?token=abc",
   });
 
-describe("email header monogram is brand-derived", () => {
-  it("uses the dealer's first initial, not a hardcoded W", () => {
+// The header wordmark div carries this distinctive style fragment.
+const wordmark = (name: string) =>
+  new RegExp(`margin:0 0 6px;">${name}</div>`);
+
+describe("email header shows the full dealer name", () => {
+  it("renders the dealer name as a wordmark, not an initial or 'W'", () => {
     const html = invite("Porsche Downtown");
-    // Badge renders the initial P for Porsche.
-    expect(html).toMatch(/;color:#fff;">P<\/div>/);
-    // The old hardcoded Wolfpack "W" badge must be gone.
-    expect(html).not.toMatch(/;color:#fff;">W<\/div>/);
+    expect(html).toMatch(wordmark("Porsche Downtown"));
+    // No lone-initial badge, and no hardcoded Wolfpack letter.
+    expect(html).not.toMatch(/;color:#fff;">[A-Z]<\/div>/);
+    expect(html).not.toMatch(/border-radius:50%[^>]*">W<\/div>/);
   });
 
-  it("is brand-agnostic across different dealer names", () => {
-    expect(invite("Zephyr Motors")).toMatch(/;color:#fff;">Z<\/div>/);
-    expect(invite("acme auto")).toMatch(/;color:#fff;">A<\/div>/);
-    // A dealer that genuinely starts with W still derives W from its NAME
-    // (correct), which is different from the old hardcoded badge.
-    expect(invite("Westside Cars")).toMatch(/;color:#fff;">W<\/div>/);
+  it("is brand-agnostic across dealer names", () => {
+    expect(invite("Zephyr Motors")).toMatch(wordmark("Zephyr Motors"));
+    expect(invite("OGIAM auto")).toMatch(wordmark("OGIAM auto"));
+    expect(invite("Westside Cars")).toMatch(wordmark("Westside Cars"));
   });
 
   it("applies to other client-facing emails too", () => {
@@ -44,14 +47,14 @@ describe("email header monogram is brand-derived", () => {
       dealerName: "Banfield Auto",
       type: "contact",
     } as Parameters<typeof genericCustomerConfirmationHTML>[0]);
-    expect(conf).toMatch(/;color:#fff;">B<\/div>/);
+    expect(conf).toMatch(wordmark("Banfield Auto"));
 
     const reset = passwordResetHTML({
       name: "Sam",
       resetUrl: "https://example.com/reset?t=1",
       dealerName: "Ocean Motors",
     } as Parameters<typeof passwordResetHTML>[0]);
-    expect(reset).toMatch(/;color:#fff;">O<\/div>/);
+    expect(reset).toMatch(wordmark("Ocean Motors"));
   });
 });
 
@@ -71,8 +74,8 @@ describe("client-facing emails have no em/en dashes", () => {
       } as Parameters<typeof passwordResetHTML>[0]),
     ];
     for (const html of htmls) {
-      expect(html).not.toContain("—"); // em dash
-      expect(html).not.toContain("–"); // en dash
+      expect(html).not.toContain("\u2014"); // em dash (0x2014)
+      expect(html).not.toContain("\u2013"); // en dash (0x2013)
     }
   });
 });
