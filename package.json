@@ -62,7 +62,7 @@
     "acme-client": "^5.4.0",
     "bcryptjs": "^3.0.3",
     "ioredis": "^5.4.1",
-    "next": "^15.5.18",
+    "next": "^15.5.22",
     "next-auth": "^4.24.13",
     "otpauth": "^9.5.0",
     "pdfkit": "^0.15.2",
