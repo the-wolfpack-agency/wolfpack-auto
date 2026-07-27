@@ -49,9 +49,14 @@ export default function FeaturedCarousel({
                   loading="lazy"
                 />
               ) : (
-                <svg className="h-16 w-28 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M3 13l2-5a2 2 0 011.9-1.4h10.2A2 2 0 0119 8l2 5m-18 0h18m-18 0v4a1 1 0 001 1h1a1 1 0 001-1v-1h12v1a1 1 0 001 1h1a1 1 0 001-1v-4M6.5 16.5h.01M17.5 16.5h.01" />
-                </svg>
+                <div className="flex flex-col items-center gap-2 text-brand-300">
+                  <svg className="h-12 w-20" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M3 13l2-5a2 2 0 011.9-1.4h10.2A2 2 0 0119 8l2 5m-18 0h18m-18 0v4a1 1 0 001 1h1a1 1 0 001-1v-1h12v1a1 1 0 001 1h1a1 1 0 001-1v-4M6.5 16.5h.01M17.5 16.5h.01" />
+                  </svg>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-brand-400">
+                    Image coming soon
+                  </span>
+                </div>
               )}
             </div>
 
