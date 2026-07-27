@@ -106,27 +106,35 @@ async function dispatchEmail(
   html: string,
   replyTo?: string,
 ): Promise<void> {
-  if (!_notifResendClient) {
-    console.log(
-      `[notifications] No RESEND_API_KEY — logging email:\n` +
-        `  To: ${sanitizeForLog(to)}\n` +
-        `  Subject: ${sanitizeForLog(subject)}\n` +
-        `  Body length: ${html.length} chars`,
+  // Prefer Microsoft Graph (the same M365 transport as team invites) so every
+  // notification uses one working mailbox instead of the misconfigured Resend
+  // sandbox. Fall back to Resend if a key is set, else log (dev/CI).
+  if (isGraphMailConfigured()) {
+    const graph = await sendViaGraph({ to, subject, text: "", html });
+    if (graph.delivered) return;
+    console.warn(
+      `[notifications] graph send failed (${graph.reason})${graph.detail ? ` ${graph.detail}` : ""}, falling back`,
     );
+  }
+
+  if (_notifResendClient) {
+    const { error } = await _notifResendClient.emails.send({
+      from: _notifResendFrom,
+      to: [to],
+      subject,
+      html,
+      ...(replyTo ? { replyTo } : {}),
+    });
+    if (error) console.error(`[notifications] Resend SDK error:`, error);
     return;
   }
 
-  const { error } = await _notifResendClient.emails.send({
-    from: _notifResendFrom,
-    to: [to],
-    subject,
-    html,
-    ...(replyTo ? { replyTo } : {}),
-  });
-
-  if (error) {
-    console.error(`[notifications] Resend SDK error:`, error);
-  }
+  console.log(
+    `[notifications] no mail transport configured, logging email:\n` +
+      `  To: ${sanitizeForLog(to)}\n` +
+      `  Subject: ${sanitizeForLog(subject)}\n` +
+      `  Body length: ${html.length} chars`,
+  );
 }
 
 /**
@@ -146,7 +154,7 @@ function broadcastEmail(
 }
 
 // ---------------------------------------------------------------------------
-// Public API — all functions are non-blocking (fire-and-forget safe)
+// Public API, all functions are non-blocking (fire-and-forget safe)
 // ---------------------------------------------------------------------------
 
 /**
@@ -179,7 +187,7 @@ export async function notifyNewLead(
 
     broadcastEmail(
       recipients,
-      `New Lead: ${lead.name} — ${lead.vehicle_interest ?? "General Inquiry"}`,
+      `New Lead: ${lead.name}, ${lead.vehicle_interest ?? "General Inquiry"}`,
       html,
       lead.email,
     );
@@ -241,7 +249,7 @@ export async function notifyContactFormSubmission(
 
     broadcastEmail(
       recipients,
-      `New Contact: ${contact.first_name} ${contact.last_name} — ${contact.subject}`,
+      `New Contact: ${contact.first_name} ${contact.last_name}, ${contact.subject}`,
       html,
       contact.email,
     );
@@ -268,8 +276,8 @@ export async function sendCustomerConfirmation(
     void dispatchEmail(
       customerEmail,
       type === "lead"
-        ? `Thanks for your inquiry — ${dealerName}`
-        : `We received your message — ${dealerName}`,
+        ? `Thanks for your inquiry, ${dealerName}`
+        : `We received your message, ${dealerName}`,
       html,
     ).catch((err) => {
       console.error("[notifications] sendCustomerConfirmation email failed:", err);
@@ -467,10 +475,14 @@ export async function sendPasswordReset(params: {
   dealerName: string;
 }): Promise<void> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-    const resetUrl = `${baseUrl}/admin/reset-password?token=${params.resetToken}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : process.env.NEXTAUTH_URL
+        ? process.env.NEXTAUTH_URL
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000";
+    const resetUrl = `${baseUrl.replace(/\/$/, "")}/admin/reset-password?token=${params.resetToken}`;
 
     const html = passwordResetHTML({
       name: params.name,
@@ -480,7 +492,7 @@ export async function sendPasswordReset(params: {
 
     void dispatchEmail(
       params.email,
-      `Reset your password — ${params.dealerName}`,
+      `Reset your password: ${params.dealerName}`,
       html,
     ).catch((err) => {
       console.error("[notifications] sendPasswordReset email failed:", err);
@@ -516,7 +528,7 @@ export async function notifyDealStatusChange(params: {
 
     void dispatchEmail(
       params.customerEmail,
-      `Your deal has been updated — ${params.dealerName}`,
+      `Your deal has been updated, ${params.dealerName}`,
       html,
     ).catch((err) => {
       console.error("[notifications] notifyDealStatusChange email failed:", err);
@@ -552,7 +564,7 @@ export async function sendServiceReminder(params: {
 
     void dispatchEmail(
       params.customerEmail,
-      `Service reminder: ${params.serviceType} — ${params.dealerName}`,
+      `Service reminder: ${params.serviceType}, ${params.dealerName}`,
       html,
     ).catch((err) => {
       console.error("[notifications] sendServiceReminder email failed:", err);

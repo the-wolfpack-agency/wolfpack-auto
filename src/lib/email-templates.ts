@@ -83,7 +83,7 @@ export function dealerLeadNotificationHTML(dealer: Dealer, lead: Lead): string {
 
         <!-- Footer -->
         <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #eee;text-align:center;font-size:11px;color:#aaa;">
-          ${escapeHtml(dealer.name)} &mdash; Wolfpack Auto Platform
+          ${escapeHtml(dealer.name)} · Wolfpack Auto Platform
         </td></tr>
 
       </table>
@@ -143,7 +143,7 @@ export function customerConfirmationHTML(dealer: Dealer, lead: Lead): string {
 
         <!-- Footer -->
         <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #eee;text-align:center;font-size:11px;color:#aaa;">
-          ${escapeHtml(dealer.name)} &mdash; Wolfpack Auto Platform
+          ${escapeHtml(dealer.name)} · Wolfpack Auto Platform
         </td></tr>
 
       </table>
@@ -267,6 +267,7 @@ export function genericCustomerConfirmationHTML(params: {
   return wrapInLayout({
     headerBg: "#1a1a2e",
     headerTitle: escapeHtml(dealerName),
+    brandInitial: dealerName,
     body: `
       <h2 style="margin:0 0 16px;font-size:18px;color:#1a1a2e;">We Received Your Inquiry</h2>
       <p style="margin:0 0 12px;font-size:15px;color:#333;line-height:1.6;">
@@ -288,7 +289,7 @@ export function genericCustomerConfirmationHTML(params: {
         You are receiving this email because you submitted a ${typeLabel} at ${escapeHtml(dealerName)}.
       </p>
     `,
-    footerText: `${escapeHtml(dealerName)} &mdash; Wolfpack Auto Platform`,
+    footerText: `${escapeHtml(dealerName)} · Wolfpack Auto Platform`,
   });
 }
 
@@ -376,8 +377,18 @@ function wrapInLayout(params: {
   headerTitle: string;
   body: string;
   footerText: string;
+  /** Dealer/brand name (or its initial) for the header monogram. Falls back to
+   *  the header title so the badge is never a hardcoded platform letter. */
+  brandInitial?: string;
+  /** Optional dealer logo URL; shown instead of the initial when present. */
+  logoUrl?: string;
 }): string {
-  const { headerBg, headerTitle, body, footerText } = params;
+  const { headerBg, headerTitle, body, footerText, brandInitial, logoUrl } = params;
+  const initial =
+    (brandInitial ?? headerTitle).trim().charAt(0).toUpperCase() || "•";
+  const badge = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="" height="44" style="height:44px;max-width:180px;margin:0 auto 12px;display:block;">`
+    : `<div style="width:48px;height:48px;margin:0 auto 12px;background:rgba(255,255,255,.15);border-radius:50%;line-height:48px;font-size:20px;color:#fff;">${escapeHtml(initial)}</div>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -389,7 +400,7 @@ function wrapInLayout(params: {
 
         <!-- Header -->
         <tr><td style="background:${headerBg};padding:24px 32px;text-align:center;">
-          <div style="width:48px;height:48px;margin:0 auto 12px;background:rgba(255,255,255,.15);border-radius:50%;line-height:48px;font-size:20px;color:#fff;">W</div>
+          ${badge}
           <div style="color:#fff;font-size:20px;font-weight:700;">${headerTitle}</div>
         </td></tr>
 
@@ -452,6 +463,7 @@ export function teamInviteHTML(params: {
   return wrapInLayout({
     headerBg: "#1a1a2e",
     headerTitle: "You're Invited",
+    brandInitial: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi${inviteeName ? ` ${escapeHtml(inviteeName)}` : ""},
@@ -474,7 +486,7 @@ export function teamInviteHTML(params: {
         ${escapeHtml(acceptUrl)}
       </p>
     `,
-    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+    footerText: `${escapeHtml(dealerName)} · Powered by Wolfpack Auto`,
   });
 }
 
@@ -492,6 +504,7 @@ export function passwordResetHTML(params: {
   return wrapInLayout({
     headerBg: "#1a1a2e",
     headerTitle: "Reset Your Password",
+    brandInitial: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi${name ? ` ${escapeHtml(name)}` : ""},
@@ -513,7 +526,7 @@ export function passwordResetHTML(params: {
         ${escapeHtml(resetUrl)}
       </p>
     `,
-    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+    footerText: `${escapeHtml(dealerName)} · Powered by Wolfpack Auto`,
   });
 }
 
@@ -544,6 +557,7 @@ export function dealStatusUpdateHTML(params: {
   return wrapInLayout({
     headerBg: color,
     headerTitle: "Deal Update",
+    brandInitial: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi ${escapeHtml(customerName)},
@@ -562,7 +576,7 @@ export function dealStatusUpdateHTML(params: {
         Questions? Call us at <a href="tel:${escapeHtml(dealerPhone)}" style="color:#0070c7;font-weight:600;">${escapeHtml(dealerPhone)}</a>
       </p>
     `,
-    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+    footerText: `${escapeHtml(dealerName)} · Powered by Wolfpack Auto`,
   });
 }
 
@@ -597,6 +611,7 @@ export function serviceReminderHTML(params: {
   return wrapInLayout({
     headerBg: "#0070c7",
     headerTitle: "Service Reminder",
+    brandInitial: dealerName,
     body: `
       <p style="margin:0 0 16px;font-size:15px;color:#333;">
         Hi ${escapeHtml(customerName)},
@@ -629,6 +644,6 @@ export function serviceReminderHTML(params: {
         <a href="tel:${escapeHtml(dealerPhone)}" style="color:#0070c7;font-weight:600;">${escapeHtml(dealerPhone)}</a>
       </p>
     `,
-    footerText: `${escapeHtml(dealerName)} — Powered by Wolfpack Auto`,
+    footerText: `${escapeHtml(dealerName)} · Powered by Wolfpack Auto`,
   });
 }
