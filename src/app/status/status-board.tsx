@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { pollWhileVisible } from "@/lib/poll-while-visible";
 import type {
   ComponentReport,
   ComponentStatus,
@@ -169,7 +170,7 @@ export default function StatusBoard({ initial }: Props) {
     if (!initial) {
       void refresh();
     }
-    const id = setInterval(refresh, POLL_INTERVAL_MS);
+    const id = pollWhileVisible(refresh, POLL_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);

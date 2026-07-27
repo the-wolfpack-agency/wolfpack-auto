@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { pollWhileVisible } from "@/lib/poll-while-visible";
 import type { EngagementAlert, AlertPriority } from "@/lib/engagement-alerts";
 
 /* -------------------------------------------------------------------------- */
@@ -86,7 +87,7 @@ export function HotLeadsWidget() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 120 * 1000); // 2 min (raised from 30s — Neon-quota fix 2026-05-19)
+    const interval = pollWhileVisible(load, 120 * 1000); // 2 min, only while tab is visible (Neon egress)
     return () => clearInterval(interval);
   }, [load]);
 
@@ -154,7 +155,7 @@ export function HotLeadsWidget() {
                 </div>
                 <p className="truncate text-xs text-gray-600">
                   {typeLabel(alert.type)}
-                  {alert.vehicle_interest ? ` — ${alert.vehicle_interest}` : ""}
+                  {alert.vehicle_interest ? ` · ${alert.vehicle_interest}` : ""}
                 </p>
               </div>
 

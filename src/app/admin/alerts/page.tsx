@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { pollWhileVisible } from "@/lib/poll-while-visible";
 import type {
   EngagementAlert,
   AlertPriority,
@@ -257,8 +258,8 @@ export default function EngagementAlertsPage() {
   useEffect(() => {
     loadAlerts();
 
-    // Polling every 2 minutes (raised from 30s — Neon-quota fix 2026-05-19)
-    const interval = setInterval(loadAlerts, 120 * 1000);
+    // Polling every 2 minutes, only while the tab is visible (Neon egress)
+    const interval = pollWhileVisible(loadAlerts, 120 * 1000);
     return () => clearInterval(interval);
   }, [loadAlerts]);
 
@@ -294,7 +295,7 @@ export default function EngagementAlertsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Engagement Alerts</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Real-time buying signals — who should you call right now?
+            Real-time buying signals: who should you call right now?
           </p>
           {lastRefreshed && (
             <p className="mt-0.5 text-xs text-gray-400">

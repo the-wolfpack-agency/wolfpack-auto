@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { pollWhileVisible } from "@/lib/poll-while-visible";
 import type { FunnelHealthMetrics } from "@/lib/funnel-health";
 
 /* -------------------------------------------------------------------------- */
@@ -8,7 +9,7 @@ import type { FunnelHealthMetrics } from "@/lib/funnel-health";
 /* -------------------------------------------------------------------------- */
 
 function formatHours(hours: number): string {
-  if (hours <= 0) return "—";
+  if (hours <= 0) return "-";
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);
   if (h === 0) return `${m}m`;
@@ -292,7 +293,7 @@ export default function FunnelHealthPage() {
     loadData();
 
     // Auto-refresh every 5 minutes
-    const interval = setInterval(loadData, 5 * 60 * 1000);
+    const interval = pollWhileVisible(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [loadData]);
 
@@ -309,7 +310,7 @@ export default function FunnelHealthPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Lead Funnel Health</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Real-time view of your lead pipeline — volume, response SLA, and conversion.
+            Real-time view of your lead pipeline: volume, response SLA, and conversion.
           </p>
           {lastRefreshed && (
             <p className="mt-0.5 text-xs text-gray-400">

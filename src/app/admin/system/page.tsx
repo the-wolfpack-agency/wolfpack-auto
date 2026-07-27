@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { pollWhileVisible } from "@/lib/poll-while-visible";
 import { fetchJson } from "@/lib/safe-fetch";
 
 /* -------------------------------------------------------------------------- */
@@ -91,7 +92,7 @@ export default function SystemHealthPage() {
 
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(fetchHealth, 60_000); // refresh every 60s (raised from 15s — Neon-quota fix 2026-05-19)
+    const interval = pollWhileVisible(fetchHealth, 60_000); // 60s, only while tab is visible (Neon egress)
     return () => clearInterval(interval);
   }, [autoRefresh, fetchHealth]);
 

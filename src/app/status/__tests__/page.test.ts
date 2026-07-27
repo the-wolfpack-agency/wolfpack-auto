@@ -66,7 +66,9 @@ describe("/status StatusBoard (client)", () => {
   });
 
   it("polls /api/status on an interval", () => {
-    expect(boardSrc).toContain("setInterval");
+    // Uses the visibility-aware poller so a backgrounded tab stops hitting
+    // the DB (Neon egress). Do not revert to a raw setInterval.
+    expect(boardSrc).toContain("pollWhileVisible");
     expect(boardSrc).toContain("/api/status");
     // 2 min poll cadence. Originally 30s, deliberately stretched to 120_000
     // in the 2026-05-19 Neon data-transfer quota fix (commit c72c37d), which
