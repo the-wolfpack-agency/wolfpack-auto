@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAnalytics } from "@/components/EventCollector";
+import { useDealerConfig } from "@/components/DealerProvider";
 import { isModuleVisible, moduleKeyForHref, canSeeAllModules } from "@/lib/admin-modules";
 
 /* -------------------------------------------------------------------------- */
@@ -238,7 +239,7 @@ const NAV_SECTIONS: NavSection[] = [
  * Build a set of nav hrefs that are PROPER PREFIXES of another nav href
  * (e.g. `/admin/inventory` is a prefix of `/admin/inventory/backgrounds`).
  * Such items must only match when pathname is the EXACT href OR a sub-
- * path that does NOT start with any longer-href sibling — otherwise
+ * path that does NOT start with any longer-href sibling, otherwise
  * both the parent (Inventory) and the child (Photo Backgrounds) light
  * up at once when the operator visits the child page.
  */
@@ -296,6 +297,11 @@ interface DealerOption {
 
 export default function AdminSidebar() {
   const { data: session } = useSession();
+  // Brand the admin shell with the configured dealer name (Settings), same
+  // source as the public site, instead of a hardcoded platform name.
+  const dealerConfig = useDealerConfig();
+  const brandName = dealerConfig.name;
+  const brandInitial = brandName.trim().charAt(0).toUpperCase() || "•";
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -385,7 +391,7 @@ export default function AdminSidebar() {
           allDone: json.completed === true,
         });
       } catch {
-        // Silently ignore — sidebar should never break
+        // Silently ignore, sidebar should never break
       }
     }
     fetchProgress();
@@ -403,7 +409,7 @@ export default function AdminSidebar() {
         if (cancelled) return;
         setEnabledModules(Array.isArray(json.enabled) ? json.enabled : null);
       } catch {
-        // Sidebar must never break — fall through to the full nav.
+        // Sidebar must never break, fall through to the full nav.
       } finally {
         if (!cancelled) setModulesLoaded(true);
       }
@@ -455,12 +461,12 @@ export default function AdminSidebar() {
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white"
           aria-hidden="true"
         >
-          W
+          {brandInitial}
         </span>
         <span className="text-base font-semibold text-white">
-          Wolfpack Auto
+          {brandName}
         </span>
-        {/* Close button — mobile only */}
+        {/* Close button, mobile only */}
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
@@ -473,7 +479,7 @@ export default function AdminSidebar() {
         </button>
       </div>
 
-      {/* Dealer Switcher — agency-level users only */}
+      {/* Dealer Switcher, agency-level users only */}
       {isAgencyUser && dealers.length > 0 && (
         <div className="border-b border-brand-900 px-3 py-2">
           <div className="relative">
@@ -513,9 +519,9 @@ export default function AdminSidebar() {
         </div>
       )}
 
-      {/* Navigation — grouped into collapsible sections */}
+      {/* Navigation, grouped into collapsible sections */}
       <nav aria-label="Admin navigation" className="flex-1 overflow-y-auto px-3 py-4">
-        {/* Getting Started — shown until all checklist items are complete */}
+        {/* Getting Started, shown until all checklist items are complete */}
         {gettingStartedProgress && !gettingStartedProgress.allDone && (
           <a
             href="/admin/getting-started"
@@ -583,7 +589,7 @@ export default function AdminSidebar() {
                   </svg>
                 </button>
 
-                {/* Section items — always in DOM for test compatibility, hidden via CSS */}
+                {/* Section items, always in DOM for test compatibility, hidden via CSS */}
                 <div
                   className={`overflow-hidden transition-all duration-200 ease-in-out ${
                     isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
@@ -696,7 +702,7 @@ export default function AdminSidebar() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span className="text-sm font-semibold text-white">Wolfpack Auto</span>
+        <span className="text-sm font-semibold text-white">{brandName}</span>
       </div>
 
       {/* Mobile backdrop */}

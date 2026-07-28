@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ShoppersAlsoViewed — collaborative filtering recommendation widget.
+ * ShoppersAlsoViewed, collaborative filtering recommendation widget.
  *
  * Fetches related vehicles from the lookalike engine API and displays
  * them as cards. Falls back gracefully if the API is unavailable.
@@ -51,7 +51,7 @@ export default function ShoppersAlsoViewed({ vin }: ShoppersAlsoViewedProps) {
           });
         }
       } catch {
-        // Silently fail — recommendations are non-critical
+        // Silently fail, recommendations are non-critical
       } finally {
         if (!cancelled) setLoaded(true);
       }
@@ -96,11 +96,11 @@ export default function ShoppersAlsoViewed({ vin }: ShoppersAlsoViewedProps) {
             }}
           >
             <div className="h-40 bg-gradient-to-br from-gray-100 to-gray-200">
-              <div className="flex h-full items-center justify-center">
+              <div className="flex h-full flex-col items-center justify-center gap-1.5 text-gray-400">
                 <svg
-                  width="48"
-                  height="48"
-                  className="h-12 w-12 text-gray-300"
+                  width="40"
+                  height="40"
+                  className="h-10 w-10 text-gray-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -113,6 +113,9 @@ export default function ShoppersAlsoViewed({ vin }: ShoppersAlsoViewedProps) {
                     d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
                   />
                 </svg>
+                <span className="text-xs font-semibold uppercase tracking-wide">
+                  Image coming soon
+                </span>
               </div>
             </div>
             <div className="p-4">
