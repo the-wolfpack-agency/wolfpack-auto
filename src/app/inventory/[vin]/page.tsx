@@ -363,10 +363,11 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <svg width="48" height="48" className="h-12 w-12 text-white/25" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <div className="flex h-full flex-col items-center justify-center gap-1.5 text-white/80">
+                      <svg width="40" height="40" className="h-10 w-10 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
                       </svg>
+                      <span className="text-xs font-semibold uppercase tracking-wide">Image coming soon</span>
                     </div>
                   )}
                 </div>
@@ -382,7 +383,7 @@ export default async function VehicleDetailPage({ params }: VDPParams) {
           </div>
         </section>
 
-        {/* Shoppers Also Viewed — collaborative filtering recommendations */}
+        {/* Shoppers Also Viewed: collaborative filtering recommendations */}
         <ShoppersAlsoViewed vin={vin} />
       </div>
     </div>

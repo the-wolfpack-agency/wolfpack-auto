@@ -132,7 +132,7 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "2.5L 4-Cylinder Hybrid",
     mpg: "41 city / 38 hwy",
     stockNumber: "WP24-0903",
-    photo: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
     thumbnail: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop&auto=format",
     tag: "New Arrival",
     features: [
@@ -170,7 +170,7 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "2.0L TwinPower Turbo 4-Cylinder",
     mpg: "25 city / 29 hwy",
     stockNumber: "WP23-0781",
-    photo: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
     thumbnail: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop&auto=format",
     tag: "Luxury",
     features: [
@@ -282,7 +282,7 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "1.6L Turbocharged Hybrid",
     mpg: "38 city / 38 hwy",
     stockNumber: "WP23-0655",
-    photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
     thumbnail: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&auto=format",
     features: [
       "Hyundai SmartSense",
@@ -735,7 +735,7 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "3.0L TwinPower Turbo 6-Cylinder",
     mpg: "21 city / 26 hwy",
     stockNumber: "WP23-0456",
-    photo: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
     thumbnail: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop&auto=format",
     tag: "Luxury",
     features: [
@@ -773,7 +773,7 @@ export const placeholderVehicles: PlaceholderVehicle[] = [
     engine: "2.5L 4-Cylinder Hybrid",
     mpg: "36 city / 35 hwy",
     stockNumber: "WP24-0678",
-    photo: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
     thumbnail: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop&auto=format",
     tag: "Hybrid",
     features: [
@@ -881,7 +881,7 @@ export const placeholderSimilarVehicles = [
     mileage: 856,
     gradient: "from-emerald-400 to-emerald-600",
     vin: "2T3P1RFV4RC000003",
-    photo: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
   },
   {
     year: 2023,
@@ -891,7 +891,7 @@ export const placeholderSimilarVehicles = [
     mileage: 10_240,
     gradient: "from-violet-400 to-violet-600",
     vin: "5NMJFDAE4PH000008",
-    photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
   },
   {
     year: 2024,
@@ -901,7 +901,7 @@ export const placeholderSimilarVehicles = [
     mileage: 2_150,
     gradient: "from-amber-400 to-amber-600",
     vin: "JM3KFBDM4R1000009",
-    photo: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop&auto=format",
+    photo: "", // no verified photo for this demo vehicle; falls back to placeholder
   },
 ];
 
