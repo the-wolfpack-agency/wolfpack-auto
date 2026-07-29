@@ -90,7 +90,7 @@ function formatDateTime(iso: string): string {
 }
 
 const CHANNEL_BADGE: Record<string, string> = {
-  email: "bg-blue-100 text-blue-700",
+  email: "bg-brand-100 text-brand-800",
   sms: "bg-green-100 text-green-700",
   phone: "bg-purple-100 text-purple-700",
   in_person: "bg-orange-100 text-orange-700",
@@ -98,12 +98,12 @@ const CHANNEL_BADGE: Record<string, string> = {
 
 const SERVICE_STATUS_BADGE: Record<string, string> = {
   completed: "bg-green-100 text-green-700",
-  scheduled: "bg-blue-100 text-blue-700",
+  scheduled: "bg-brand-100 text-brand-800",
   in_progress: "bg-yellow-100 text-yellow-700",
 };
 
 const TIMELINE_COLORS: Record<string, string> = {
-  lead: "bg-blue-500",
+  lead: "bg-brand-600",
   communication: "bg-purple-500",
   appointment: "bg-orange-500",
   purchase: "bg-green-500",

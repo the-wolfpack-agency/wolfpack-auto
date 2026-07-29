@@ -331,7 +331,7 @@ export default function ReportsPage() {
             <div className="grid grid-cols-4 gap-3">
               <ReportMetric label="Hot" value={analyticsData.leads.hot} color="text-red-600" />
               <ReportMetric label="Warm" value={analyticsData.leads.warm} color="text-orange-600" />
-              <ReportMetric label="Cool" value={analyticsData.leads.cool} color="text-blue-600" />
+              <ReportMetric label="Cool" value={analyticsData.leads.cool} color="text-brand-700" />
               <ReportMetric label="Cold" value={analyticsData.leads.cold} color="text-gray-500" />
             </div>
           </div>
@@ -416,7 +416,7 @@ export default function ReportsPage() {
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-100">
                         <div
-                          className="h-full rounded-full bg-indigo-500"
+                          className="h-full rounded-full bg-brand-600"
                           style={{ width: `${analyticsData.device_split[device]}%` }}
                         />
                       </div>

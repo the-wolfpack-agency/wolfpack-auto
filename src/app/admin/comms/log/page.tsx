@@ -26,7 +26,7 @@ interface MessageLogEntry {
 /* -------------------------------------------------------------------------- */
 
 const STATUS_BADGE: Record<string, string> = {
-  sent: "bg-blue-100 text-blue-700",
+  sent: "bg-brand-100 text-brand-800",
   delivered: "bg-green-100 text-green-700",
   opened: "bg-emerald-100 text-emerald-700",
   bounced: "bg-yellow-100 text-yellow-700",

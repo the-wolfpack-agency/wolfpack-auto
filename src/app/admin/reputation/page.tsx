@@ -59,9 +59,9 @@ function sourceIcon(source: string): string {
 
 function sourceColor(source: string): string {
   const colors: Record<string, string> = {
-    google: "bg-blue-100 text-blue-800",
+    google: "bg-brand-100 text-brand-900",
     yelp: "bg-red-100 text-red-800",
-    facebook: "bg-indigo-100 text-indigo-800",
+    facebook: "bg-brand-100 text-brand-900",
     dealerrater: "bg-green-100 text-green-800",
   };
   return colors[source] ?? "bg-gray-100 text-gray-800";
@@ -226,7 +226,7 @@ export default function ReputationPage() {
               </div>
               <p className="mt-2 text-sm text-gray-700">{review.text}</p>
               {!review.responded && (
-                <button className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800">
+                <button className="mt-2 text-xs font-medium text-brand-700 hover:text-brand-900">
                   Suggest Response
                 </button>
               )}

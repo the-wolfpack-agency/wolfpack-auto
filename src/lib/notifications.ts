@@ -11,6 +11,7 @@ import {
   serviceReminderHTML,
 } from "@/lib/email-templates";
 import { sanitizeForLog } from "@/lib/log-sanitize";
+import { sendViaGraph, isGraphMailConfigured } from "@/lib/mail/send-via-graph";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -105,27 +106,35 @@ async function dispatchEmail(
   html: string,
   replyTo?: string,
 ): Promise<void> {
-  if (!_notifResendClient) {
-    console.log(
-      `[notifications] No RESEND_API_KEY — logging email:\n` +
-        `  To: ${sanitizeForLog(to)}\n` +
-        `  Subject: ${sanitizeForLog(subject)}\n` +
-        `  Body length: ${html.length} chars`,
+  // Prefer Microsoft Graph (the same M365 transport as team invites) so every
+  // notification uses one working mailbox instead of the misconfigured Resend
+  // sandbox. Fall back to Resend if a key is set, else log (dev/CI).
+  if (isGraphMailConfigured()) {
+    const graph = await sendViaGraph({ to, subject, text: "", html });
+    if (graph.delivered) return;
+    console.warn(
+      `[notifications] graph send failed (${graph.reason})${graph.detail ? ` ${graph.detail}` : ""}, falling back`,
     );
+  }
+
+  if (_notifResendClient) {
+    const { error } = await _notifResendClient.emails.send({
+      from: _notifResendFrom,
+      to: [to],
+      subject,
+      html,
+      ...(replyTo ? { replyTo } : {}),
+    });
+    if (error) console.error(`[notifications] Resend SDK error:`, error);
     return;
   }
 
-  const { error } = await _notifResendClient.emails.send({
-    from: _notifResendFrom,
-    to: [to],
-    subject,
-    html,
-    ...(replyTo ? { replyTo } : {}),
-  });
-
-  if (error) {
-    console.error(`[notifications] Resend SDK error:`, error);
-  }
+  console.log(
+    `[notifications] no mail transport configured, logging email:\n` +
+      `  To: ${sanitizeForLog(to)}\n` +
+      `  Subject: ${sanitizeForLog(subject)}\n` +
+      `  Body length: ${html.length} chars`,
+  );
 }
 
 /**
@@ -145,7 +154,7 @@ function broadcastEmail(
 }
 
 // ---------------------------------------------------------------------------
-// Public API — all functions are non-blocking (fire-and-forget safe)
+// Public API, all functions are non-blocking (fire-and-forget safe)
 // ---------------------------------------------------------------------------
 
 /**
@@ -178,7 +187,7 @@ export async function notifyNewLead(
 
     broadcastEmail(
       recipients,
-      `New Lead: ${lead.name} — ${lead.vehicle_interest ?? "General Inquiry"}`,
+      `New Lead: ${lead.name}, ${lead.vehicle_interest ?? "General Inquiry"}`,
       html,
       lead.email,
     );
@@ -240,7 +249,7 @@ export async function notifyContactFormSubmission(
 
     broadcastEmail(
       recipients,
-      `New Contact: ${contact.first_name} ${contact.last_name} — ${contact.subject}`,
+      `New Contact: ${contact.first_name} ${contact.last_name}, ${contact.subject}`,
       html,
       contact.email,
     );
@@ -267,8 +276,8 @@ export async function sendCustomerConfirmation(
     void dispatchEmail(
       customerEmail,
       type === "lead"
-        ? `Thanks for your inquiry — ${dealerName}`
-        : `We received your message — ${dealerName}`,
+        ? `Thanks for your inquiry, ${dealerName}`
+        : `We received your message, ${dealerName}`,
       html,
     ).catch((err) => {
       console.error("[notifications] sendCustomerConfirmation email failed:", err);
@@ -317,11 +326,30 @@ export async function notifyInventoryAlert(
   }
 }
 
+export interface TeamInviteResult {
+  /** True only when Microsoft Graph accepted the message (HTTP 202). */
+  delivered: boolean;
+  /** Machine-readable outcome, mirrors GraphSendReason plus "not_configured". */
+  reason: string;
+  /** Always returned so the admin UI can hand-deliver the link when email
+   *  delivery is unavailable or degrades. */
+  acceptUrl: string;
+  /** Which provider attempted delivery, when one did. */
+  provider?: "graph";
+}
+
 /**
- * Send a team invite email to a new dealer user.
+ * Send a team invite email to a new dealer user via Microsoft Graph
+ * (app-only Mail.Send) - the same M365 transport beyond-sku and Instinct
+ * use, so there is no Resend/DNS dependency. NEVER throws: the dealer_users
+ * row has already been written by the caller, so a mail misconfig must not
+ * fail the request. Returns { delivered, reason, acceptUrl } so the caller
+ * and UI can surface a copyable accept link when delivery is unavailable
+ * instead of falsely claiming the email was sent.
+ *
  * Analytics events emitted:
- *   - system.team_invite_sent on success
- *   - system.notification_send_failed on Resend error (non-blocking)
+ *   - system.team_invite_sent on delivery
+ *   - system.notification_send_failed on a Graph error (non-blocking)
  */
 export async function sendTeamInvite(params: {
   inviteeEmail: string;
@@ -332,15 +360,17 @@ export async function sendTeamInvite(params: {
   inviteToken: string;
   dealerId?: string;
   inviterId?: string;
-}): Promise<void> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? process.env.NEXT_PUBLIC_APP_URL
+}): Promise<TeamInviteResult> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : process.env.NEXTAUTH_URL
+      ? process.env.NEXTAUTH_URL
       : process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000";
-    const acceptUrl = `${baseUrl}/admin/accept-invite?token=${params.inviteToken}`;
+  const acceptUrl = `${baseUrl.replace(/\/$/, "")}/admin/accept-invite?token=${params.inviteToken}`;
 
+  try {
     const html = teamInviteHTML({
       inviteeName: params.inviteeName,
       dealerName: params.dealerName,
@@ -348,38 +378,46 @@ export async function sendTeamInvite(params: {
       inviterName: params.inviterName,
       acceptUrl,
     });
-
     const subject = `You're invited to join ${params.dealerName} on Wolfpack Auto`;
+    const text =
+      `${params.inviterName} has invited you to join ${params.dealerName} on Wolfpack Auto ` +
+      `with ${params.role} access.\n\nSet up your account:\n${acceptUrl}`;
 
-    if (!_notifResendClient) {
-      console.log(
-        `[notifications] No RESEND_API_KEY — logging invite email:\n` +
-          `  To: ${sanitizeForLog(params.inviteeEmail)}\n` +
-          `  Subject: ${sanitizeForLog(subject)}\n` +
-          `  Accept URL: ${acceptUrl}`,
+    // No mailbox configured: skip the send and let the caller hand the admin
+    // the copyable accept link. Don't emit a "sent" event: nothing was sent.
+    if (!isGraphMailConfigured()) {
+      console.warn(
+        `[notifications] MS_MAIL_FROM unset, invite email skipped for ` +
+          `${sanitizeForLog(params.inviteeEmail)}; accept link returned to admin`,
       );
-      // Still emit the sent event — the DB row exists and the URL is constructable
-      void _emitInviteAnalytics("sent", params).catch(() => {});
-      return;
+      return { delivered: false, reason: "not_configured", acceptUrl };
     }
 
-    const { error } = await _notifResendClient.emails.send({
-      from: _notifResendFrom,
-      to: [params.inviteeEmail],
+    // Brand the From display name with the dealer so the invite reads right.
+    const graph = await sendViaGraph({
+      to: params.inviteeEmail,
       subject,
+      text,
       html,
+      fromName: params.dealerName || "Wolfpack Auto",
     });
 
-    if (error) {
-      console.error("[notifications] sendTeamInvite Resend error:", error);
-      void _emitNotificationFailedAnalytics(
-        params.inviteeEmail,
-        error instanceof Error ? error.message : String(error),
-        params.dealerId,
-      ).catch(() => {});
-    } else {
+    if (graph.delivered) {
       void _emitInviteAnalytics("sent", params).catch(() => {});
+      return { delivered: true, reason: "ok", acceptUrl, provider: "graph" };
     }
+
+    console.warn(
+      "[notifications] sendTeamInvite graph send failed:",
+      graph.reason,
+      graph.detail ?? "",
+    );
+    void _emitNotificationFailedAnalytics(
+      params.inviteeEmail,
+      `graph:${graph.reason}${graph.detail ? ` ${graph.detail}` : ""}`,
+      params.dealerId,
+    ).catch(() => {});
+    return { delivered: false, reason: graph.reason, acceptUrl, provider: "graph" };
   } catch (err) {
     console.error("[notifications] sendTeamInvite failed:", err);
     void _emitNotificationFailedAnalytics(
@@ -387,6 +425,7 @@ export async function sendTeamInvite(params: {
       err instanceof Error ? err.message : String(err),
       params.dealerId,
     ).catch(() => {});
+    return { delivered: false, reason: "provider_error", acceptUrl };
   }
 }
 
@@ -436,10 +475,14 @@ export async function sendPasswordReset(params: {
   dealerName: string;
 }): Promise<void> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-    const resetUrl = `${baseUrl}/admin/reset-password?token=${params.resetToken}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : process.env.NEXTAUTH_URL
+        ? process.env.NEXTAUTH_URL
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000";
+    const resetUrl = `${baseUrl.replace(/\/$/, "")}/admin/reset-password?token=${params.resetToken}`;
 
     const html = passwordResetHTML({
       name: params.name,
@@ -447,13 +490,15 @@ export async function sendPasswordReset(params: {
       dealerName: params.dealerName,
     });
 
-    void dispatchEmail(
+    // AWAIT the send. A fire-and-forget `void dispatchEmail(...)` was killed by
+    // Vercel freezing the serverless function right after the 200 response, so
+    // the reset email never actually went out (team invites work because that
+    // path already awaits). The outer catch keeps the caller enumeration-safe.
+    await dispatchEmail(
       params.email,
-      `Reset your password — ${params.dealerName}`,
+      `Reset your password: ${params.dealerName}`,
       html,
-    ).catch((err) => {
-      console.error("[notifications] sendPasswordReset email failed:", err);
-    });
+    );
   } catch (err) {
     console.error("[notifications] sendPasswordReset failed:", err);
   }
@@ -485,7 +530,7 @@ export async function notifyDealStatusChange(params: {
 
     void dispatchEmail(
       params.customerEmail,
-      `Your deal has been updated — ${params.dealerName}`,
+      `Your deal has been updated, ${params.dealerName}`,
       html,
     ).catch((err) => {
       console.error("[notifications] notifyDealStatusChange email failed:", err);
@@ -521,7 +566,7 @@ export async function sendServiceReminder(params: {
 
     void dispatchEmail(
       params.customerEmail,
-      `Service reminder: ${params.serviceType} — ${params.dealerName}`,
+      `Service reminder: ${params.serviceType}, ${params.dealerName}`,
       html,
     ).catch((err) => {
       console.error("[notifications] sendServiceReminder email failed:", err);

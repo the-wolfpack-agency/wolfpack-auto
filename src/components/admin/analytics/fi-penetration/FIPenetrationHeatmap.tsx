@@ -128,8 +128,8 @@ export default function FIPenetrationHeatmap() {
 
   return (
     <div className="space-y-6" data-testid="fi-pen-root">
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p data-testid="fi-pen-headline" className="text-sm font-medium text-blue-900">
+      <div className="rounded-lg border border-brand-200 bg-brand-50 p-4">
+        <p data-testid="fi-pen-headline" className="text-sm font-medium text-brand-950">
           {data.headline}
         </p>
       </div>

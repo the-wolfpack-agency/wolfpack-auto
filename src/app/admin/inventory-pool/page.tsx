@@ -111,15 +111,15 @@ export default function InventoryPoolPage() {
       <h1 className="text-2xl font-bold mb-4">Inventory Pool / Swap</h1>
       <div className="flex gap-2 mb-4">
         <button data-testid="pool-tab-visible" onClick={() => setTab("visible")}
-                className={`px-4 py-2 rounded ${tab === "visible" ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
+                className={`px-4 py-2 rounded ${tab === "visible" ? "bg-brand-700 text-white" : "bg-gray-200"}`}>
           Visible Inventory
         </button>
         <button data-testid="pool-tab-reservations" onClick={() => setTab("reservations")}
-                className={`px-4 py-2 rounded ${tab === "reservations" ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
+                className={`px-4 py-2 rounded ${tab === "reservations" ? "bg-brand-700 text-white" : "bg-gray-200"}`}>
           Reservations
         </button>
         <button data-testid="pool-tab-swaps" onClick={() => setTab("swaps")}
-                className={`px-4 py-2 rounded ${tab === "swaps" ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
+                className={`px-4 py-2 rounded ${tab === "swaps" ? "bg-brand-700 text-white" : "bg-gray-200"}`}>
           Swaps
         </button>
       </div>
@@ -201,7 +201,7 @@ export default function InventoryPoolPage() {
                     <td>{r.status}</td>
                     <td>
                       {r.status === "approved" && (
-                        <button data-testid={`fulfill-${r.id}`} onClick={() => actReservation(r.id, "fulfill")} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Mark fulfilled</button>
+                        <button data-testid={`fulfill-${r.id}`} onClick={() => actReservation(r.id, "fulfill")} className="px-2 py-1 bg-brand-700 text-white rounded text-xs">Mark fulfilled</button>
                       )}
                     </td>
                   </tr>
@@ -216,7 +216,7 @@ export default function InventoryPoolPage() {
         <section data-testid="pool-swaps-section">
           <div className="flex gap-2 mb-3">
             <input value={groupId} onChange={(e) => setGroupId(e.target.value)} placeholder="Dealer group ID" className="border p-2 rounded" data-testid="swap-group-id" />
-            <button onClick={loadSwaps} className="px-3 py-2 bg-blue-600 text-white rounded" data-testid="swap-load">Load swaps</button>
+            <button onClick={loadSwaps} className="px-3 py-2 bg-brand-700 text-white rounded" data-testid="swap-load">Load swaps</button>
           </div>
 
           {swaps.length === 0 ? (

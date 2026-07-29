@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AuthProvider from "@/components/AuthProvider";
 import AdminSidebar from "@/components/AdminSidebar";
+import AdminAuthWatcher from "@/components/admin/AdminAuthWatcher";
 
 export const metadata: Metadata = {
   title: {

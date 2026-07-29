@@ -94,7 +94,7 @@ export default function UserTestingPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function UserTestingPage() {
       <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
         <button
           onClick={() => setSelected(null)}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand-700 hover:underline"
         >
           &larr; Back to tests
         </button>
@@ -187,7 +187,7 @@ export default function UserTestingPage() {
               .map((task, i) => (
                 <li key={task.id} className="px-4 py-4">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-700">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-800">
                       {i + 1}
                     </span>
                     <div className="flex-1">
@@ -228,7 +228,7 @@ export default function UserTestingPage() {
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           {showCreate ? "Cancel" : "New Test"}
         </button>
@@ -244,7 +244,7 @@ export default function UserTestingPage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
               placeholder="e.g., Vehicle Search Usability"
             />
           </div>
@@ -253,7 +253,7 @@ export default function UserTestingPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
               rows={2}
               placeholder="What are you testing?"
             />
@@ -261,7 +261,7 @@ export default function UserTestingPage() {
           <button
             onClick={handleCreate}
             disabled={creating || !title.trim()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
           >
             {creating ? "Creating..." : "Create Test"}
           </button>
@@ -309,7 +309,7 @@ export default function UserTestingPage() {
                 <td className="px-4 py-3">
                   <button
                     onClick={() => setSelected(t)}
-                    className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                    className="rounded bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800"
                   >
                     View
                   </button>

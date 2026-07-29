@@ -58,12 +58,12 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 
 const DOC_TYPE_STYLES: Record<string, string> = {
   purchase_agreement: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20",
-  title: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20",
+  title: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
   registration: "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20",
   insurance: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20",
   disclosure: "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20",
-  credit_app: "bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-600/20",
-  trade_title: "bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-600/20",
+  credit_app: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
+  trade_title: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
   lien_release: "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-600/20",
   inspection: "bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-600/20",
   other: "bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-400/20",
@@ -543,7 +543,7 @@ export default function DocumentsPage() {
                       <button
                         onClick={() => { void handleAnalyze(doc); }}
                         disabled={analyzingId === doc.id}
-                        className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                        className="rounded px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
                       >
                         {analyzingId === doc.id ? "..." : "Analyze"}
                       </button>

@@ -229,7 +229,7 @@ export default function LenderContactsPanel() {
               type="submit"
               disabled={adding}
               data-testid="lender-add-submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+              className="px-4 py-2 bg-brand-700 text-white rounded disabled:opacity-50"
             >
               {adding ? "Adding…" : "Add lender contact"}
             </button>

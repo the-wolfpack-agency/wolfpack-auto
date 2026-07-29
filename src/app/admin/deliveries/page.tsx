@@ -38,7 +38,7 @@ interface DeliverySlot {
 function statusColor(status: string): string {
   const colors: Record<string, string> = {
     requested: "bg-yellow-100 text-yellow-800",
-    confirmed: "bg-blue-100 text-blue-800",
+    confirmed: "bg-brand-100 text-brand-900",
     in_transit: "bg-purple-100 text-purple-800",
     delivered: "bg-green-100 text-green-800",
     cancelled: "bg-red-100 text-red-800",
@@ -182,7 +182,7 @@ export default function DeliveriesPage() {
         </div>
         <button
           onClick={() => setShowScheduleForm(!showScheduleForm)}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           Schedule Delivery
         </button>
@@ -307,7 +307,7 @@ export default function DeliveriesPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
           >
             {submitting ? "Scheduling…" : "Confirm Delivery"}
           </button>
@@ -318,7 +318,7 @@ export default function DeliveriesPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <p className="text-sm text-gray-500">Active Deliveries</p>
-          <p className="text-2xl font-bold text-blue-600">{activeCount}</p>
+          <p className="text-2xl font-bold text-brand-700">{activeCount}</p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <p className="text-sm text-gray-500">Completed</p>

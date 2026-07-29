@@ -34,7 +34,7 @@ interface ResponseTemplate {
 const PLATFORM_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   google: { label: "Google", color: "bg-red-100 text-red-700", icon: "G" },
   yelp: { label: "Yelp", color: "bg-red-100 text-red-600", icon: "Y" },
-  facebook: { label: "Facebook", color: "bg-blue-100 text-blue-700", icon: "f" },
+  facebook: { label: "Facebook", color: "bg-brand-100 text-brand-800", icon: "f" },
 };
 
 function renderStars(rating: number): string {

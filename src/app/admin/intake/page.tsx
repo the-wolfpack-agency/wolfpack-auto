@@ -488,14 +488,14 @@ export default function IntakePage() {
                 ) : (
                   <ul className="space-y-3">
                     {recommendations.pricing_opportunities.map((p, i) => (
-                      <li key={i} className="rounded-lg bg-blue-50 p-3 text-sm">
+                      <li key={i} className="rounded-lg bg-brand-50 p-3 text-sm">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs text-blue-800">{p.vin}</span>
-                          <span className="text-xs font-semibold text-blue-800">
+                          <span className="font-mono text-xs text-brand-900">{p.vin}</span>
+                          <span className="text-xs font-semibold text-brand-900">
                             ${p.current_price.toLocaleString()} &rarr; ${p.suggested_price.toLocaleString()}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-blue-700">{p.reasoning}</p>
+                        <p className="mt-1 text-xs text-brand-800">{p.reasoning}</p>
                       </li>
                     ))}
                   </ul>
@@ -524,12 +524,12 @@ function SummaryCard({
 }) {
   const colorMap: Record<string, string> = {
     green: "bg-green-50 text-green-800 border-green-200",
-    blue: "bg-blue-50 text-blue-800 border-blue-200",
+    blue: "bg-brand-50 text-brand-900 border-brand-200",
     yellow: "bg-yellow-50 text-yellow-800 border-yellow-200",
     red: "bg-red-50 text-red-800 border-red-200",
     purple: "bg-purple-50 text-purple-800 border-purple-200",
-    indigo: "bg-indigo-50 text-indigo-800 border-indigo-200",
-    cyan: "bg-cyan-50 text-cyan-800 border-cyan-200",
+    indigo: "bg-brand-50 text-brand-900 border-brand-200",
+    cyan: "bg-brand-50 text-brand-900 border-brand-200",
     orange: "bg-orange-50 text-orange-800 border-orange-200",
   };
 
@@ -544,7 +544,7 @@ function SummaryCard({
 function StatusPill({ status }: { status: string }) {
   const styles: Record<string, string> = {
     created: "bg-green-100 text-green-800",
-    updated: "bg-blue-100 text-blue-800",
+    updated: "bg-brand-100 text-brand-900",
     skipped: "bg-yellow-100 text-yellow-800",
     error: "bg-red-100 text-red-800",
   };

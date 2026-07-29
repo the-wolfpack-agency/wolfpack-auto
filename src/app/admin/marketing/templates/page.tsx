@@ -73,12 +73,12 @@ const CATEGORY_TABS = [
 
 function getCategoryColor(category: string): string {
   const colors: Record<string, string> = {
-    social_post: "bg-blue-50 text-blue-700 ring-blue-600/20",
+    social_post: "bg-brand-50 text-brand-800 ring-brand-700/20",
     email_banner: "bg-purple-50 text-purple-700 ring-purple-600/20",
     flyer: "bg-orange-50 text-orange-700 ring-orange-600/20",
     price_tag: "bg-red-50 text-red-700 ring-red-600/20",
     sale_banner: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-    new_arrival: "bg-cyan-50 text-cyan-700 ring-cyan-600/20",
+    new_arrival: "bg-brand-50 text-brand-800 ring-brand-700/20",
     sold_celebration: "bg-amber-50 text-amber-700 ring-amber-600/20",
     testimonial: "bg-pink-50 text-pink-700 ring-pink-600/20",
   };
@@ -234,7 +234,7 @@ export default function MarketingTemplatesPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-brand-700" />
           <p className="text-sm text-gray-500">Loading templates...</p>
         </div>
       </div>
@@ -326,7 +326,7 @@ export default function MarketingTemplatesPage() {
                   onClick={() => selectTemplate(tpl)}
                   className={`rounded-lg border bg-white p-4 text-left shadow-sm transition-all hover:shadow-md ${
                     selectedTemplate?.id === tpl.id
-                      ? "border-blue-500 ring-2 ring-blue-200"
+                      ? "border-brand-600 ring-2 ring-brand-200"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -388,7 +388,7 @@ export default function MarketingTemplatesPage() {
                       const v = vehicles.find((veh) => veh.vin === e.target.value);
                       setSelectedVehicle(v || null);
                     }}
-                    className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
                   >
                     <option value="">None (use placeholder)</option>
                     {vehicles.map((v) => (
@@ -417,7 +417,7 @@ export default function MarketingTemplatesPage() {
                           }))
                         }
                         placeholder={field.default || ""}
-                        className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
                       />
                     ) : (
                       <input
@@ -430,7 +430,7 @@ export default function MarketingTemplatesPage() {
                           }))
                         }
                         placeholder={field.default || ""}
-                        className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-brand-600 focus:ring-1 focus:ring-brand-600"
                       />
                     )}
                   </div>
@@ -441,7 +441,7 @@ export default function MarketingTemplatesPage() {
                   <button
                     onClick={generatePreview}
                     disabled={generating}
-                    className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    className="w-full rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-800 disabled:opacity-50 transition-colors"
                   >
                     {generating ? "Generating..." : "Generate Preview"}
                   </button>

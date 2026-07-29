@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { getFeaturedVehicles } from "@/lib/data";
 import { getDealerConfig } from "@/lib/dealer-config";
+import AnnouncementBar from "@/components/home/AnnouncementBar";
+import FeaturedCarousel from "@/components/home/FeaturedCarousel";
+import TestimonialsCarousel, {
+  type Testimonial,
+} from "@/components/home/TestimonialsCarousel";
+import PaymentCalculatorSection from "@/components/home/PaymentCalculatorSection";
 
 export const dynamic = "force-dynamic";
 
@@ -9,17 +15,22 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${dealer.name} | ${dealer.tagline}`,
     description:
-      "Browse thousands of new and used vehicles. Lightning-fast search, transparent pricing, and a dealership experience built for the modern buyer.",
+      "Browse thousands of new and used vehicles. Transparent pricing, easy financing, and a dealership experience built for the modern buyer.",
     openGraph: {
       title: `${dealer.name} | ${dealer.tagline}`,
       description:
-        "Browse thousands of new and used vehicles. Lightning-fast search, transparent pricing, and a dealership experience built for the modern buyer.",
+        "Browse thousands of new and used vehicles. Transparent pricing, easy financing, and a dealership experience built for the modern buyer.",
       type: "website",
     },
   };
 }
 
-const testimonials = [
+const MAKES = [
+  "Audi", "BMW", "Chevrolet", "Ford", "Honda", "Hyundai", "Jeep",
+  "Kia", "Mazda", "Nissan", "Subaru", "Tesla", "Toyota", "Volkswagen",
+];
+
+const testimonials: Testimonial[] = [
   {
     name: "Sarah M.",
     location: "Denver, CO",
@@ -40,411 +51,469 @@ const testimonials = [
   },
 ];
 
-function StarRating({ count }: { count: number }) {
-  return (
-    <div className="flex gap-0.5" aria-label={`${count} out of 5 stars`}>
-      {Array.from({ length: count }).map((_, i) => (
-        <svg
-          key={i}
-          className="h-5 w-5 text-amber-400"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          aria-hidden="true"
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
+const TRUST_STATS = [
+  { value: "4.8", label: "Google Rating", icon: "M11.48 3.5a.56.56 0 011.04 0l2.12 5.11a.56.56 0 00.48.35l5.52.44c.5.04.7.66.32.99l-4.2 3.6a.56.56 0 00-.18.56l1.28 5.39a.56.56 0 01-.84.6l-4.72-2.88a.56.56 0 00-.59 0l-4.72 2.88a.56.56 0 01-.84-.6l1.28-5.39a.56.56 0 00-.18-.56l-4.2-3.6a.56.56 0 01.32-.99l5.52-.44a.56.56 0 00.48-.35L11.48 3.5z" },
+  { value: "10K+", label: "Loyal Customers", icon: "M6.63 10.5c.81 0 1.54-.45 2.03-1.08a9.04 9.04 0 012.86-2.4c.72-.38 1.35-.96 1.65-1.72.22-.53.33-1.1.33-1.67v-.38a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.15-.26 2.24-.72 3.22-.27.56.1 1.28.72 1.28h3.13c1.03 0 1.94.7 2.05 1.72.05.42.07.85.07 1.28a11.95 11.95 0 01-2.65 7.52c-.39.48-.99.73-1.6.73H14.23c-.48 0-.96-.08-1.42-.23l-3.11-1.04a4.5 4.5 0 00-1.43-.23H5.9M14.25 9h2.25M5.9 18.75c.08.2.17.4.27.6.2.4-.08.9-.52.9h-.9c-.9 0-1.72-.52-1.98-1.37a12 12 0 01-.52-3.5c0-1.56.3-3.04.83-4.4.24-.62 1.02-1.08 1.85-1.08h1.05c.47 0 .75.56.5.96a8.96 8.96 0 00-1.3 4.67c0 1.19.23 2.33.65 3.37z" },
+  { value: "BBB A+", label: "Accredited", icon: "M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.38c0-.62-.5-1.12-1.12-1.12h-.88M7.5 18.75v-3.38c0-.62.5-1.12 1.12-1.12h.88m5 0H9.5m5 0a7.45 7.45 0 01-.98-3.17M9.5 14.25a7.45 7.45 0 00.98-3.17M5.25 4.24c-.98.14-1.95.32-2.92.52A6 6 0 007.73 9.73M5.25 4.24V4.5c0 2.1.97 3.99 2.48 5.23M5.25 4.24V2.72a46.3 46.3 0 016.75-.47c2.29 0 4.55.16 6.75.47v1.52M7.73 9.73a6.73 6.73 0 002.75 1.35m8.27-6.84V4.5c0 2.1-.97 3.99-2.48 5.23m2.48-5.49a46.3 46.3 0 012.92.52 6 6 0 01-5.4 4.97m0 0a6.73 6.73 0 01-2.75 1.35m0 0a6.77 6.77 0 01-3.04 0" },
+  { value: "30+", label: "Lending Partners", icon: "M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" },
+  { value: "19+", label: "Years, Est 2007", icon: "M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" },
+];
+
+const SHOP_FEATURES = [
+  {
+    title: "AI Chat Assistant",
+    body: "Answers inventory and financing questions 24/7, or hands off to a person when it matters.",
+    icon: "M8.63 12a.38.38 0 11-.75 0 .38.38 0 01.75 0zm3.75 0a.38.38 0 11-.75 0 .38.38 0 01.75 0zm3.75 0a.38.38 0 11-.75 0 .38.38 0 01.75 0zM21 12c0 4.56-4.03 8.25-9 8.25a9.76 9.76 0 01-2.56-.34 6 6 0 01-4.03 1.06 4.48 4.48 0 00.98-2.02c.09-.46-.13-.9-.47-1.23C3.93 16.18 3 14.19 3 12c0-4.56 4.03-8.25 9-8.25s9 3.69 9 8.25z",
+  },
+  {
+    title: "Click-to-Text",
+    body: "One tap starts a real SMS thread with our team, no forms, no hold music.",
+    icon: "M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3",
+  },
+  {
+    title: "Digital Retailing",
+    body: "Reserve a vehicle, apply for financing, and see out-the-door pricing before you visit.",
+    icon: "M9 17.25v1.01a3 3 0 01-.88 2.12L7.5 21h9l-.62-.62A3 3 0 0115 18.26v-1.01m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25",
+  },
+  {
+    title: "Live Inventory Sync",
+    body: "Stock and pricing update straight from the DMS, no stale listings, ever.",
+    icon: "M16.02 9.35h4.99M2.99 19.64v-4.99m0 0h4.99m-4.99 0l3.18 3.18a8.25 8.25 0 0013.8-3.7M4.03 9.87a8.25 8.25 0 0113.8-3.7l3.18 3.18m0-4.99v4.99",
+  },
+];
+
+// Browse-by-Type imagery uses the designer's own V_01 car cutouts. The file
+// exported 7 of the 8 (no convertible), so Convertibles uses a stock white
+// convertible until the designer supplies that cutout.
+const CATEGORIES = [
+  { label: "Sedans", photo: "/images/types/sedan.png", count: "45 Available" },
+  { label: "SUVs", photo: "/images/types/suv.png", count: "120 Available" },
+  { label: "Trucks", photo: "/images/types/truck.png", count: "67 Available" },
+  { label: "Coupes", photo: "/images/types/coupe.png", count: "42 Available" },
+  { label: "Electric", photo: "/images/types/electric.png", count: "33 Available" },
+  { label: "Vans", photo: "/images/types/van.png", count: "94 Available" },
+  { label: "Convertibles", photo: "/images/types/convertible.png", count: "22 Available" },
+  { label: "Wagons", photo: "/images/types/wagon.png", count: "52 Available" },
+];
+
+const WHY = [
+  {
+    title: "Certified Vehicles",
+    body: "Every vehicle undergoes a rigorous 150-point inspection. Full CARFAX history report included with every listing.",
+    icon: "M9 12.75l2.25 2.25L15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  },
+  {
+    title: "Easy Financing",
+    body: "Get pre-approved in minutes with rates as low as 2.9% APR. We work with 30+ lenders to find your best rate.",
+    icon: "M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5",
+  },
+  {
+    title: "Money-Back Guarantee",
+    body: "Drive it for 7 days. If you are not 100% satisfied, return it for a full refund. No questions asked.",
+    icon: "M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z",
+  },
+];
 
 export default async function HomePage() {
   const [{ data: featuredVehicles }, dealer] = await Promise.all([
-    getFeaturedVehicles(4),
+    getFeaturedVehicles(6),
     getDealerConfig(),
   ]);
 
+  const calcVehicles = featuredVehicles.slice(0, 3).map((v) => ({
+    label: `${v.make} ${v.model}`,
+    price: v.price,
+    msrp: null,
+  }));
+
   return (
     <div>
-      {/* Hero Section */}
-      <section
-        aria-labelledby="hero-heading"
-        className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-950"
-      >
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-brand-400 blur-3xl" />
-          <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-accent-400 blur-3xl" />
-        </div>
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
-          <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-brand-300">
-              Trusted by thousands of drivers
+      {/* Personalized resume bar - only renders with real session history */}
+      <AnnouncementBar />
+
+      {/* Hero: full-bleed background that sits BEHIND the floating header nav.
+          Pulled up by the header height so the image shows behind it (V_01). */}
+      <section aria-labelledby="hero-heading" className="relative isolate -mt-[68px] overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/hero.jpg"
+          alt="Vehicle on a mountain road"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          loading="eager"
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-950/90 via-brand-950/70 to-brand-950/30" />
+
+        <div className="mx-auto max-w-7xl px-4 pb-28 pt-32 sm:px-6 sm:pb-32 sm:pt-36 lg:px-8 lg:pb-40 lg:pt-48">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+              {dealer.name}
             </p>
             <h1
               id="hero-heading"
-              className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
+              className="mt-4 text-4xl font-bold tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl"
             >
               {dealer.tagline}
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-brand-200">
-              Browse our curated selection of certified vehicles with transparent
-              pricing, easy financing, and a 7-day money-back guarantee.
+            <p className="mt-5 max-w-md text-lg text-white/80">
+              Transparent pricing. 7-day money-back guarantee. Pre-approved in
+              minutes.
             </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a
+                href="/inventory"
+                data-track="hero_browse_inventory"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand-950 transition-colors hover:bg-brand-100"
+              >
+                Browse Inventory
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+              <a
+                href="/financing"
+                data-track="hero_get_prequalified"
+                className="inline-flex items-center gap-2 rounded-full border border-white/50 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Get Pre-Qualified
+              </a>
+            </div>
+          </div>
+        </div>
 
-            {/* Search Bar */}
-            <form
-              action="/inventory"
-              method="GET"
-              role="search"
-              aria-label="Vehicle search"
-              className="mx-auto mt-10 flex max-w-3xl flex-col gap-3 sm:flex-row"
-            >
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr_auto]">
+      </section>
+
+      {/* Search module: straddles the hero and Featured sections, per V_01 */}
+      <div className="relative z-20 mx-auto -mt-14 max-w-7xl px-4 sm:-mt-16 sm:px-6 lg:px-8">
+        <form
+          action="/inventory"
+          method="GET"
+          role="search"
+          aria-label="Vehicle search"
+          className="rounded-card border border-surface-border bg-white p-5 shadow-card-hover sm:p-6"
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
+            <span className="shrink-0 text-lg font-semibold tracking-tight text-brand-950">
+              Search by Make &amp; Model
+            </span>
+            <div className="grid flex-1 gap-3 sm:grid-cols-[1fr_1.3fr_auto_auto] sm:items-center">
+              <div>
                 <label htmlFor="hero-make" className="sr-only">Make</label>
                 <select
                   id="hero-make"
                   name="make"
-                  className="w-full appearance-none rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
                   defaultValue=""
+                  className="w-full appearance-none rounded-full border border-surface-border bg-white px-4 py-3 text-base text-brand-950 focus:border-brand-950 focus:outline-none focus:ring-1 focus:ring-brand-950"
                 >
-                  <option value="" disabled className="text-gray-900">Any Make</option>
-                  <option className="text-gray-900">Audi</option>
-                  <option className="text-gray-900">BMW</option>
-                  <option className="text-gray-900">Chevrolet</option>
-                  <option className="text-gray-900">Ford</option>
-                  <option className="text-gray-900">Honda</option>
-                  <option className="text-gray-900">Hyundai</option>
-                  <option className="text-gray-900">Jeep</option>
-                  <option className="text-gray-900">Kia</option>
-                  <option className="text-gray-900">Mazda</option>
-                  <option className="text-gray-900">Nissan</option>
-                  <option className="text-gray-900">Subaru</option>
-                  <option className="text-gray-900">Tesla</option>
-                  <option className="text-gray-900">Toyota</option>
-                  <option className="text-gray-900">Volkswagen</option>
+                  <option value="">Make</option>
+                  {MAKES.map((m) => (
+                    <option key={m}>{m}</option>
+                  ))}
                 </select>
-                <label htmlFor="hero-model" className="sr-only">Model</label>
+              </div>
+              <div>
+                <label htmlFor="hero-model" className="sr-only">Model or keyword</label>
                 <input
                   id="hero-model"
                   name="q"
                   type="search"
                   placeholder="Search model or keyword..."
-                  className="w-full rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  className="w-full rounded-full border border-surface-border px-4 py-3 text-base text-brand-950 placeholder:text-brand-400 focus:border-brand-950 focus:outline-none focus:ring-1 focus:ring-brand-950"
                 />
+              </div>
+              <div>
                 <label htmlFor="hero-zip" className="sr-only">ZIP Code</label>
                 <input
                   id="hero-zip"
                   name="zip"
                   type="text"
-                  placeholder="ZIP"
+                  inputMode="numeric"
                   maxLength={5}
-                  className="w-full rounded-lg border-0 bg-white/10 px-4 py-3.5 text-base text-white backdrop-blur-sm placeholder:text-brand-300 focus:outline-none focus:ring-2 focus:ring-white/30 sm:w-24"
+                  placeholder="ZIP"
+                  className="w-full rounded-full border border-surface-border px-4 py-3 text-base text-brand-950 placeholder:text-brand-400 focus:border-brand-950 focus:outline-none focus:ring-1 focus:ring-brand-950 sm:w-28"
                 />
               </div>
               <button
                 type="submit"
-                className="rounded-lg bg-accent-500 px-8 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-accent-600 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-offset-2 focus:ring-offset-brand-900"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-950 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
               >
                 Browse Inventory
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
-            </form>
-
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-brand-300">
-              <span className="flex items-center gap-1.5">
-                <svg width="16" height="16" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                </svg>
-                500+ Vehicles
-              </span>
-              <span className="flex items-center gap-1.5">
-                <svg width="16" height="16" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                </svg>
-                Free CARFAX Report
-              </span>
-              <span className="flex items-center gap-1.5">
-                <svg width="16" height="16" className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-                </svg>
-                7-Day Money Back
-              </span>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us */}
-      <section aria-labelledby="why-heading" className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2
-            id="why-heading"
-            className="text-center text-3xl font-bold tracking-tight text-gray-900"
-          >
-            Why Choose {dealer.name}
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-gray-600">
-            We are redefining the car-buying experience with transparency, quality, and customer-first service.
-          </p>
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            {/* Certified */}
-            <div className="group rounded-2xl border border-surface-border bg-white p-8 text-center shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 transition-colors group-hover:bg-brand-100">
-                <svg width="32" height="32" className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                </svg>
-              </div>
-              <h3 className="mt-6 text-lg font-bold text-gray-900">Certified Vehicles</h3>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                Every vehicle undergoes a rigorous 150-point inspection. Full CARFAX history report included with every listing.
-              </p>
-            </div>
-            {/* Financing */}
-            <div className="group rounded-2xl border border-surface-border bg-white p-8 text-center shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-100">
-                <svg width="32" height="32" className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="mt-6 text-lg font-bold text-gray-900">Easy Financing</h3>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                Get pre-approved in minutes with rates as low as 2.9% APR. We work with 30+ lenders to find your best rate.
-              </p>
-            </div>
-            {/* Guarantee */}
-            <div className="group rounded-2xl border border-surface-border bg-white p-8 text-center shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-50 text-accent-600 transition-colors group-hover:bg-accent-100">
-                <svg width="32" height="32" className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-                </svg>
-              </div>
-              <h3 className="mt-6 text-lg font-bold text-gray-900">Money-Back Guarantee</h3>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                Drive it for 7 days. If you are not 100% satisfied, return it for a full refund. No questions asked.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+        </form>
+      </div>
 
       {/* Featured Vehicles */}
-      <section aria-labelledby="featured-heading" className="bg-surface-muted py-16 sm:py-20">
+      <section aria-labelledby="featured-heading" className="bg-surface-muted py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2
-                id="featured-heading"
-                className="text-3xl font-bold tracking-tight text-gray-900"
-              >
-                Featured Vehicles
-              </h2>
-              <p className="mt-2 text-gray-600">Hand-picked by our team for quality and value.</p>
-            </div>
+          <div className="text-center">
+            <h2
+              id="featured-heading"
+              className="text-4xl font-bold tracking-tight text-brand-950 sm:text-5xl"
+            >
+              Featured Vehicles.
+            </h2>
             <a
               href="/inventory"
-              className="hidden text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700 sm:block"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-950 transition-colors hover:text-brand-600"
             >
-              View all inventory &rarr;
+              View All Inventory
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </a>
           </div>
+          <FeaturedCarousel vehicles={featuredVehicles} />
+        </div>
+      </section>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredVehicles.map((v) => (
-              <a
-                key={v.vin}
-                href={`/inventory/${v.vin}`}
-                className="group overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1"
-              >
-                <div className={`relative h-48 bg-gradient-to-br ${v.gradient}`}>
-                  {v.photo ? (
-                    <img
-                      src={v.photo}
-                      alt={`${v.year} ${v.make} ${v.model}`}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <svg width="64" height="64" className="h-16 w-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                      </svg>
-                    </div>
-                  )}
-                  <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-900 backdrop-blur-sm">
-                    {v.tag}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold text-gray-900 group-hover:text-brand-600 transition-colors">
-                    {v.year} {v.make} {v.model}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {v.mileage.toLocaleString()} miles
-                  </p>
-                  <p className="mt-3 text-xl font-bold text-brand-700">
-                    ${v.price.toLocaleString()}
-                  </p>
-                  <div className="mt-4 flex items-center text-sm font-semibold text-brand-600 transition-colors group-hover:text-brand-700">
-                    View Details
-                    <svg className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
+      {/* Trust bar */}
+      <section aria-label="Dealer highlights" className="bg-brand-950">
+        <div className="mx-auto flex max-w-7xl flex-col divide-y divide-brand-800 px-4 sm:flex-row sm:divide-x sm:divide-y-0 sm:px-6 lg:px-8">
+          {TRUST_STATS.map((s) => (
+            <div key={s.label} className="flex flex-1 items-center gap-4 px-6 py-9">
+              <svg className="h-10 w-10 shrink-0 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={s.icon} />
+              </svg>
+              <div>
+                <p className="text-2xl font-bold leading-none text-white">{s.value}</p>
+                <p className="mt-1.5 text-xs font-medium uppercase tracking-wide text-brand-400">
+                  {s.label}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Browse by Type (white panel over a photographic background, per V_01) */}
+      <section aria-labelledby="browse-heading" className="relative isolate overflow-hidden py-16 sm:py-24">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/browse-bg.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 h-full w-full object-cover"
+        />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="overflow-hidden rounded-[2rem] bg-white shadow-card-hover">
+            <div className="flex items-center justify-between bg-brand-950 px-6 py-7 sm:px-10">
+              <h2 id="browse-heading" className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                Browse by Type
+              </h2>
+              <a href="/inventory" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 transition-colors hover:text-white">
+                View All Inventory &rarr;
               </a>
+            </div>
+            <div className="grid grid-cols-2 gap-5 p-6 sm:grid-cols-4 sm:gap-6 sm:p-10">
+              {CATEGORIES.map((cat, idx) => (
+                <a
+                  key={cat.label}
+                  href={`/inventory?category=${encodeURIComponent(cat.label)}`}
+                  data-track="browse_category_click"
+                  className="group flex flex-col items-center rounded-2xl bg-surface-muted p-6 text-center transition-colors hover:bg-surface-subtle"
+                >
+                  <div className="flex h-36 w-full items-center justify-center overflow-hidden px-2">
+                    {cat.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={cat.photo}
+                        alt={`Browse ${cat.label}`}
+                        className="max-h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                        loading={idx < 4 ? undefined : "lazy"}
+                      />
+                    ) : (
+                      <svg className="h-20 w-32 text-brand-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13l2-5a2 2 0 011.9-1.4h10.2A2 2 0 0119 8l2 5m-18 0h18m-18 0v4a1 1 0 001 1h1a1 1 0 001-1v-1h12v1a1 1 0 001 1h1a1 1 0 001-1v-4M6.5 16.5h.01M17.5 16.5h.01" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="mt-4 inline-block rounded-full bg-brand-950 px-5 py-2 text-sm font-semibold text-white">
+                    {cat.label}
+                  </span>
+                  <p className="mt-2.5 text-sm text-brand-400">{cat.count}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Built for how people shop now */}
+      <section aria-labelledby="shop-heading" className="bg-brand-900 py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 id="shop-heading" className="max-w-md text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            Built for how people shop now.
+          </h2>
+          <div className="mt-14 grid gap-y-10 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-brand-700">
+            {SHOP_FEATURES.map((f) => (
+              <div key={f.title} className="lg:px-8 lg:first:pl-0">
+                <svg className="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.3} d={f.icon} />
+                </svg>
+                <h3 className="mt-6 text-lg font-semibold text-white">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-brand-400">{f.body}</p>
+              </div>
             ))}
           </div>
-
-          <div className="mt-8 text-center sm:hidden">
-            <a
-              href="/inventory"
-              className="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
-            >
-              View all inventory &rarr;
-            </a>
-          </div>
         </div>
       </section>
 
-      {/* Trade-In Banner */}
-      <section aria-labelledby="trade-in-heading" className="bg-gray-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-8 sm:flex-row sm:justify-between">
-            <div className="max-w-xl">
-              <h2 id="trade-in-heading" className="text-3xl font-bold tracking-tight text-gray-900">
-                What&apos;s Your Car Worth?
-              </h2>
-              <p className="mt-3 text-lg text-gray-600">
-                Get an instant trade-in estimate in under 2 minutes — no obligation, no pressure. See your vehicle&apos;s real market value today.
-              </p>
-              <ul className="mt-4 space-y-1.5 text-sm text-gray-600">
-                <li className="flex items-center gap-2">
-                  <svg className="h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  Instant estimate — no waiting, no sales calls
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  Based on real market data, not guesswork
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                  Apply your trade-in value toward any vehicle
-                </li>
-              </ul>
-            </div>
-            <a
-              href="/trade-in"
-              className="shrink-0 rounded-lg bg-brand-600 px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:bg-brand-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
-            >
-              Get My Trade-In Value &rarr;
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* Financing Banner */}
-      <section
-        aria-labelledby="financing-heading"
-        className="relative overflow-hidden bg-gradient-to-r from-brand-700 to-brand-900"
-      >
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -right-32 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-white blur-3xl" />
-        </div>
-        <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-8 px-4 py-16 sm:flex-row sm:justify-between sm:px-6 lg:px-8">
-          <div>
-            <h2 id="financing-heading" className="text-3xl font-bold text-white">
-              Get Pre-Approved Today
+      {/* Why Choose Us (dark interior-photo header + overlapping line-icon cards) */}
+      <section aria-labelledby="why-heading" className="bg-surface-muted">
+        <div className="relative isolate overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/why-choose-bg.jpg"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 -z-10 bg-brand-950/70" />
+          <div className="mx-auto max-w-3xl px-4 pb-40 pt-20 text-center sm:px-6 sm:pb-48 sm:pt-28 lg:px-8">
+            <h2 id="why-heading" className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Why Choose {dealer.name}?
             </h2>
-            <p className="mt-2 text-brand-200">
-              Payments starting as low as <span className="text-2xl font-bold text-white">$189/mo</span> with approved credit.
+            <p className="mx-auto mt-5 max-w-2xl text-white/80">
+              We are redefining the car-buying experience with transparency,
+              quality, and customer-first service.
             </p>
           </div>
-          <a
-            href="/financing"
-            className="shrink-0 rounded-lg bg-white px-8 py-3.5 text-base font-bold text-brand-700 shadow-lg transition-all hover:bg-brand-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-brand-800"
-          >
-            Check Your Rate
-          </a>
         </div>
-      </section>
-
-      {/* Testimonials */}
-      <section aria-labelledby="testimonials-heading" className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2
-            id="testimonials-heading"
-            className="text-center text-3xl font-bold tracking-tight text-gray-900"
-          >
-            What Our Customers Say
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-gray-600">
-            Rated 4.8 stars across 1,200+ reviews on Google and DealerRater.
-          </p>
-
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            {testimonials.map((t) => (
-              <blockquote
-                key={t.name}
-                className="rounded-2xl border border-surface-border bg-surface-muted p-8"
-              >
-                <StarRating count={t.rating} />
-                <p className="mt-4 text-sm leading-relaxed text-gray-700">
-                  &ldquo;{t.text}&rdquo;
-                </p>
-                <footer className="mt-6 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{t.name}</p>
-                    <p className="text-xs text-gray-500">{t.location}</p>
-                  </div>
-                </footer>
-              </blockquote>
+        <div className="relative z-10 mx-auto -mt-28 max-w-7xl px-4 pb-16 sm:-mt-32 sm:px-6 sm:pb-24 lg:px-8">
+          <div className="grid gap-6 sm:grid-cols-3">
+            {WHY.map((c) => (
+              <div key={c.title} className="rounded-card bg-white p-8 text-center shadow-card">
+                <svg className="mx-auto h-14 w-14 text-brand-950" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d={c.icon} />
+                </svg>
+                <h3 className="mt-6 text-lg font-bold text-brand-950">{c.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-brand-500">{c.body}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Browse by Type */}
-      <section aria-labelledby="browse-heading" className="bg-surface-muted py-16 sm:py-20">
+      {/* Payment Calculator (dark, reuses PaymentCalculator + carries financing CTA) */}
+      <PaymentCalculatorSection vehicles={calcVehicles} />
+
+      {/* Testimonials */}
+      <section aria-labelledby="testimonials-heading" className="bg-surface-muted py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2
-            id="browse-heading"
-            className="text-center text-3xl font-bold tracking-tight text-gray-900"
-          >
-            Browse by Type
-          </h2>
-          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { label: "Sedans", photo: "https://images.unsplash.com/photo-1550355291-bbee04a92027?w=400&h=300&fit=crop&auto=format", count: "120+" },
-              { label: "SUVs", photo: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&h=300&fit=crop&auto=format", count: "150+" },
-              { label: "Trucks", photo: "https://images.unsplash.com/photo-1590362891991-f776e747a588?w=400&h=300&fit=crop&auto=format", count: "85+" },
-              { label: "Coupes", photo: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop&auto=format", count: "40+" },
-              { label: "Electric", photo: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop&auto=format", count: "45+" },
-              { label: "Vans", photo: "https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=400&h=300&fit=crop&auto=format", count: "25+" },
-              { label: "Convertibles", photo: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=400&h=300&fit=crop&auto=format", count: "30+" },
-              { label: "Wagons", photo: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=400&h=300&fit=crop&auto=format", count: "15+" },
-            ].map((cat, idx) => (
-              <a
-                key={cat.label}
-                href={`/inventory?category=${encodeURIComponent(cat.label)}`}
-                className="group overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1 hover:border-brand-200"
-              >
-                <div className="relative h-32 overflow-hidden">
-                  <img
-                    src={cat.photo}
-                    alt={`Browse ${cat.label}`}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading={idx < 4 ? undefined : "lazy"}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <div className="absolute bottom-3 left-3">
-                    <span className="text-sm font-bold text-white">{cat.label}</span>
-                    <span className="ml-2 text-xs text-white/80">{cat.count}</span>
-                  </div>
-                </div>
-              </a>
-            ))}
+          <div className="text-center">
+            <h2 id="testimonials-heading" className="text-4xl font-bold tracking-tight text-brand-950 sm:text-5xl">
+              What Our Customers Say.
+            </h2>
+            <a
+              href="/about"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-950 transition-colors hover:text-brand-600"
+            >
+              See All Reviews
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+          <TestimonialsCarousel testimonials={testimonials} />
+        </div>
+      </section>
+
+      {/* Free Trade-In Estimate (V_01) */}
+      <section aria-labelledby="trade-in-heading" className="bg-white py-16 sm:py-24">
+        <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-8">
+          <div>
+            <h2 id="trade-in-heading" className="text-4xl font-bold tracking-tight text-brand-950 sm:text-5xl">
+              Free Trade-In Estimate
+            </h2>
+            <p className="mt-5 max-w-md text-lg text-brand-500">
+              Get an instant trade-in estimate in under 2 minutes, no obligation,
+              no pressure. See your vehicle&apos;s real market value today.
+            </p>
+            <ul className="mt-7 space-y-3">
+              {[
+                "Instant estimate, no waiting, no sales calls",
+                "Based on real market data, not guesswork",
+                "Apply your trade-in value toward any vehicle",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-3 text-base text-brand-950">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-950">
+                    <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <form action="/trade-in" method="GET" className="mt-8 max-w-md">
+              <label htmlFor="trade-vin" className="block text-lg font-semibold text-brand-950">
+                Have your VIN?
+              </label>
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                <input
+                  id="trade-vin"
+                  name="vin"
+                  type="text"
+                  placeholder="Enter your VIN"
+                  className="w-full rounded-full border border-surface-border px-5 py-3 text-base text-brand-950 placeholder:text-brand-400 focus:border-brand-950 focus:outline-none focus:ring-1 focus:ring-brand-950"
+                />
+                <button
+                  type="submit"
+                  data-track="tradein_get_estimate"
+                  className="shrink-0 rounded-full bg-brand-950 px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-800"
+                >
+                  Get Estimate
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="relative pt-0 sm:pt-20">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/tradein-car.png"
+              alt="Trade in your vehicle"
+              className="w-full object-contain"
+            />
+            {/* Mobile: the connector-line callouts would overlap on narrow
+                widths, so show the same three trust points as a simple pill row. */}
+            <div className="mt-2 flex flex-wrap justify-center gap-2 sm:hidden">
+              {["Market Priced", "150-Pt Inspection", "Carfax Verified"].map((t) => (
+                <span
+                  key={t}
+                  className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+            {/* Callouts with connector lines pointing at the car (desktop only;
+                they would overlap on narrow mobile widths) */}
+            <div className="absolute left-[24%] top-0 hidden -translate-x-1/2 flex-col items-center sm:flex">
+              <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
+                Market Priced
+              </span>
+              <span className="mt-1 h-14 w-px bg-brand-950/50" />
+              <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
+            </div>
+            <div className="absolute left-1/2 top-2 hidden -translate-x-1/2 flex-col items-center sm:flex">
+              <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
+                150-Pt Inspection
+              </span>
+              <span className="mt-1 h-20 w-px bg-brand-950/50" />
+              <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
+            </div>
+            <div className="absolute right-[16%] top-6 hidden translate-x-1/2 flex-col items-center sm:flex">
+              <span className="whitespace-nowrap rounded-full border border-brand-950/15 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-brand-950 shadow-sm">
+                Carfax Verified
+              </span>
+              <span className="mt-1 h-14 w-px bg-brand-950/50" />
+              <span className="-mt-1 h-2 w-2 rounded-full bg-brand-950" />
+            </div>
           </div>
         </div>
       </section>

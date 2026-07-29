@@ -46,7 +46,7 @@ const SEVERITY_STYLES: Record<string, string> = {
   critical: "bg-red-100 text-red-800 ring-1 ring-inset ring-red-600/20",
   high: "bg-orange-100 text-orange-800 ring-1 ring-inset ring-orange-600/20",
   medium: "bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-600/20",
-  low: "bg-blue-100 text-blue-800 ring-1 ring-inset ring-blue-600/20",
+  low: "bg-brand-100 text-brand-900 ring-1 ring-inset ring-brand-700/20",
   info: "bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-400/20",
 };
 

@@ -35,7 +35,7 @@ function tierLabel(points: number): { label: string; className: string } {
   if (points > 500) return { label: "Gold", className: "bg-yellow-100 text-yellow-800 ring-yellow-400/40" };
   if (points > 200) return { label: "Silver", className: "bg-gray-100 text-gray-700 ring-gray-400/40" };
   if (points > 100) return { label: "Bronze", className: "bg-orange-100 text-orange-700 ring-orange-400/40" };
-  return { label: "Rising", className: "bg-blue-50 text-blue-600 ring-blue-400/30" };
+  return { label: "Rising", className: "bg-brand-50 text-brand-700 ring-brand-400/30" };
 }
 
 function formatDate(iso: string): string {

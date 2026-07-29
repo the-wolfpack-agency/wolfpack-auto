@@ -265,11 +265,12 @@ describe("BUG-001: trade-in route exists as a specific Next.js page", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("BUG-002: trade-in nav link is present on desktop and mobile", () => {
-  it("layout.tsx desktop nav includes /trade-in", () => {
+  it("SiteHeader.tsx desktop nav includes /trade-in", () => {
     const { readFileSync } = require("fs");
     const { join } = require("path");
+    // The floating header (with the desktop nav) lives in SiteHeader.tsx.
     const src = readFileSync(
-      join(__dirname, "../../app/layout.tsx"),
+      join(__dirname, "../../components/SiteHeader.tsx"),
       "utf-8",
     );
     expect(src).toContain('href: "/trade-in"');

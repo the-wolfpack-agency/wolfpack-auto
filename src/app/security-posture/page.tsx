@@ -124,7 +124,7 @@ export default function SecurityPosturePage(): JSX.Element {
   return (
     <main className="min-h-screen bg-surface-muted text-gray-900" data-testid="security-posture-page">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-brand-700 to-brand-900 text-white">
+      <section className="bg-brand-950 text-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
           <p className="uppercase tracking-widest text-xs sm:text-sm text-brand-200 mb-3">
             Trust and transparency

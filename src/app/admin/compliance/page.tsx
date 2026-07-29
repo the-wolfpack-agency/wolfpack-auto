@@ -35,7 +35,7 @@ interface ComplianceData {
 
 const GRADE_STYLES: Record<string, string> = {
   A: "bg-green-100 text-green-800 border-green-300",
-  B: "bg-blue-100 text-blue-800 border-blue-300",
+  B: "bg-brand-100 text-brand-900 border-brand-300",
   C: "bg-yellow-100 text-yellow-800 border-yellow-300",
   D: "bg-orange-100 text-orange-800 border-orange-300",
   F: "bg-red-100 text-red-800 border-red-300",
@@ -75,7 +75,7 @@ function formatDate(iso: string | null): string {
 
 function scoreColor(score: number): string {
   if (score >= 90) return "text-green-600";
-  if (score >= 80) return "text-blue-600";
+  if (score >= 80) return "text-brand-700";
   if (score >= 70) return "text-yellow-600";
   if (score >= 60) return "text-orange-500";
   return "text-red-600";
@@ -150,7 +150,7 @@ function CategoryBars({ scores }: { scores: CategoryScores | null }) {
               </div>
               <div className="h-3 w-full overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-3 rounded-full bg-blue-500 transition-all duration-500"
+                  className="h-3 rounded-full bg-brand-600 transition-all duration-500"
                   style={{ width: scores ? `${pct}%` : "0%" }}
                   role="progressbar"
                   aria-valuenow={pts}
@@ -271,7 +271,7 @@ export default function CompliancePage() {
         <button
           onClick={runCheck}
           disabled={checking || loading}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checking ? (
             <>

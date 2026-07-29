@@ -910,7 +910,7 @@ export default function OFACCompliancePage() {
                         <button
                           onClick={() => handleAction("escalate")}
                           disabled={actionLoading}
-                          className="flex-1 rounded-lg border border-blue-400 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-800 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex-1 rounded-lg border border-brand-400 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-900 transition-colors hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Escalate
                         </button>

@@ -14,7 +14,87 @@ import { DEFAULT_CONFIG } from "@/lib/dealer-config-shared";
 
 /** In-memory cache: { config, expiresAt } */
 let _cache: { config: DealerConfig; expiresAt: number } | null = null;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+// Short TTL so Settings changes (name, hours, branding) reflect on the public
+// site quickly instead of lagging by minutes, while still sparing the DB from a
+// query on every request.
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds
+
+/**
+ * Normalize `business_hours` to the `Record<string, string>` shape every UI
+ * consumer expects (layout banner, /contact, /help, chat).
+ *
+ * The admin Settings form saves hours as an ARRAY of
+ * `{ day, open, close, closed }` objects (stored as JSONB). Rendering that raw
+ * array produced "[object Object]" in the top banner and crashed /contact
+ * ("Objects are not valid as a React child"). This converts either shape into
+ * a plain `{ "Monday": "09:00 - 19:00" }` map.
+ */
+export function normalizeBusinessHours(raw: unknown): Record<string, string> {
+  let val: unknown = raw;
+  if (typeof val === "string") {
+    try {
+      val = JSON.parse(val);
+    } catch {
+      return DEFAULT_CONFIG.business_hours;
+    }
+  }
+
+  // Array of { day, open, close, closed } (what the Settings form saves).
+  if (Array.isArray(val)) {
+    const out: Record<string, string> = {};
+    for (const e of val) {
+      if (e && typeof e === "object" && "day" in e) {
+        const d = e as { day?: string; open?: string; close?: string; closed?: boolean };
+        if (!d.day) continue;
+        const label = d.day.charAt(0).toUpperCase() + d.day.slice(1);
+        out[label] = d.closed
+          ? "Closed"
+          : [d.open, d.close].filter(Boolean).join(" - ");
+      }
+    }
+    return Object.keys(out).length ? out : DEFAULT_CONFIG.business_hours;
+  }
+
+  // Already a plain { label: "hours" } string map.
+  if (val && typeof val === "object") {
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+      if (typeof v === "string") out[k] = v;
+    }
+    return Object.keys(out).length ? out : DEFAULT_CONFIG.business_hours;
+  }
+
+  return DEFAULT_CONFIG.business_hours;
+}
+
+/**
+ * Compact one-line summary of business hours for the top banner: collapses
+ * consecutive days with identical hours into ranges, e.g.
+ * "Mon-Fri: 09:00 - 19:00  ·  Sat: 09:00 - 17:00  ·  Sun: 12:00 - 17:00".
+ */
+export function summarizeBusinessHours(hours: Record<string, string>): string {
+  const entries = Object.entries(hours);
+  if (!entries.length) return "";
+  const groups: { start: string; end: string; hrs: string }[] = [];
+  for (const [day, hrs] of entries) {
+    const last = groups[groups.length - 1];
+    if (last && last.hrs === hrs) last.end = day;
+    else groups.push({ start: day, end: day, hrs });
+  }
+  const WEEKDAYS = new Set([
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+  ]);
+  // Abbreviate full weekday names ("Monday" -> "Mon"); leave existing short or
+  // range labels ("Mon-Fri", "Sat") untouched.
+  const abbr = (d: string) => (WEEKDAYS.has(d) ? d.slice(0, 3) : d);
+  return groups
+    .map((g) =>
+      g.start === g.end
+        ? `${abbr(g.start)}: ${g.hrs}`
+        : `${abbr(g.start)}-${abbr(g.end)}: ${g.hrs}`,
+    )
+    .join("  ·  ");
+}
 
 /**
  * Load the dealer configuration.
@@ -82,8 +162,7 @@ export async function getDealerConfig(
           secondary_color:
             row.secondary_color ?? DEFAULT_CONFIG.secondary_color,
           accent_color: row.accent_color ?? DEFAULT_CONFIG.accent_color,
-          business_hours:
-            row.business_hours ?? DEFAULT_CONFIG.business_hours,
+          business_hours: normalizeBusinessHours(row.business_hours),
           social: row.social ?? DEFAULT_CONFIG.social,
         };
       }

@@ -7,13 +7,13 @@ const STATUS_STYLES: Record<string, string> = {
   available: "bg-green-50 text-green-700 ring-green-600/20",
   pending: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
   sold: "bg-gray-100 text-gray-600 ring-gray-500/20",
-  in_transit: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  in_transit: "bg-brand-50 text-brand-800 ring-brand-700/20",
 
   // Lead statuses
-  new: "bg-blue-50 text-blue-700 ring-blue-600/20",
-  contacted: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
+  new: "bg-brand-50 text-brand-800 ring-brand-700/20",
+  contacted: "bg-brand-50 text-brand-800 ring-brand-700/20",
   qualified: "bg-purple-50 text-purple-700 ring-purple-600/20",
-  appointment_set: "bg-cyan-50 text-cyan-700 ring-cyan-600/20",
+  appointment_set: "bg-brand-50 text-brand-800 ring-brand-700/20",
   converted: "bg-green-50 text-green-700 ring-green-600/20",
   lost: "bg-red-50 text-red-700 ring-red-600/20",
 };

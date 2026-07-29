@@ -37,7 +37,7 @@ function formatBytes(bytes: number): string {
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
     completed: "bg-green-100 text-green-800",
-    running: "bg-blue-100 text-blue-800",
+    running: "bg-brand-100 text-brand-900",
     pending: "bg-yellow-100 text-yellow-800",
     failed: "bg-red-100 text-red-800",
   };
@@ -119,7 +119,7 @@ export default function DataExportPage() {
             <select
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
             >
               <option value="s3">Amazon S3</option>
               <option value="snowflake">Snowflake</option>
@@ -133,7 +133,7 @@ export default function DataExportPage() {
             <select
               value={table}
               onChange={(e) => setTable(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
             >
               <option value="analytics_events">Analytics Events</option>
               <option value="leads">Leads</option>
@@ -146,7 +146,7 @@ export default function DataExportPage() {
             <select
               value={format}
               onChange={(e) => setFormat(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
             >
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
@@ -160,7 +160,7 @@ export default function DataExportPage() {
               type="text"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
               placeholder="s3://bucket/path/"
             />
           </div>
@@ -170,7 +170,7 @@ export default function DataExportPage() {
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
           >
             {exporting ? "Exporting..." : "Export Now"}
           </button>

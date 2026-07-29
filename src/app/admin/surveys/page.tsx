@@ -85,7 +85,7 @@ export default function SurveysPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
       </div>
     );
   }
@@ -96,7 +96,7 @@ export default function SurveysPage() {
       <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
         <button
           onClick={() => setSelected(null)}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand-700 hover:underline"
         >
           &larr; Back to surveys
         </button>
@@ -149,7 +149,7 @@ export default function SurveysPage() {
             </button>
             <a
               href={`/admin/surveys/${selected.id}/responses`}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
             >
               View Responses
             </a>
@@ -245,7 +245,7 @@ export default function SurveysPage() {
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800"
         >
           {showCreate ? "Cancel" : "New Survey"}
         </button>
@@ -261,7 +261,7 @@ export default function SurveysPage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
               placeholder="e.g., Customer Satisfaction Survey"
             />
           </div>
@@ -270,7 +270,7 @@ export default function SurveysPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
               rows={2}
               placeholder="Brief description of the survey purpose"
             />
@@ -280,7 +280,7 @@ export default function SurveysPage() {
             <select
               value={triggerType}
               onChange={(e) => setTriggerType(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
             >
               <option value="time_on_page">Time on page</option>
               <option value="exit_intent">Exit intent</option>
@@ -292,7 +292,7 @@ export default function SurveysPage() {
           <button
             onClick={handleCreate}
             disabled={creating || !title.trim()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
           >
             {creating ? "Creating..." : "Create Survey"}
           </button>
@@ -360,7 +360,7 @@ export default function SurveysPage() {
                 <td className="px-4 py-3">
                   <button
                     onClick={() => setSelected(s)}
-                    className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                    className="rounded bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800"
                   >
                     View
                   </button>

@@ -63,7 +63,7 @@ function formatDate(iso: string): string {
 const STATUS_STYLES: Record<FloorPlanLine["status"], string> = {
   active: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20",
   curtailed: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20",
-  paid_off: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20",
+  paid_off: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
   repossessed: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20",
 };
 

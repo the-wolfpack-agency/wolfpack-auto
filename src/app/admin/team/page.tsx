@@ -25,7 +25,7 @@ const ROLES = ["owner", "admin", "manager", "staff"] as const;
 
 const ROLE_BADGE: Record<string, string> = {
   owner: "bg-purple-100 text-purple-800",
-  admin: "bg-blue-100 text-blue-800",
+  admin: "bg-brand-100 text-brand-900",
   manager: "bg-green-100 text-green-800",
   staff: "bg-gray-100 text-gray-700",
 };
@@ -42,7 +42,7 @@ function formatDate(iso: string | null): string {
 }
 
 const INPUT_CLASS =
-  "block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20";
+  "block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20";
 
 /* -------------------------------------------------------------------------- */
 /* Page                                                                       */
@@ -60,6 +60,22 @@ export default function TeamPage() {
   const [inviteSuccess, setInviteSuccess] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
+  // When email delivery is unavailable, the API returns the accept link so the
+  // admin can hand-deliver it instead of the UI falsely claiming an email went.
+  const [inviteDelivered, setInviteDelivered] = useState(true);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const copyInviteLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // Clipboard blocked: the link is visible for manual copy anyway.
+    }
+  };
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -83,6 +99,8 @@ export default function TeamPage() {
     e.preventDefault();
     setInviteSubmitting(true);
     setInviteError(null);
+    setInviteSuccess(false);
+    setInviteLink(null);
 
     try {
       const res = await fetch("/api/admin/dealer-users", {
@@ -95,21 +113,38 @@ export default function TeamPage() {
         }),
       });
 
+      const data = await res.json().catch(() => ({}) as Record<string, unknown>);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setInviteError(data.error || `Failed to create user (${res.status})`);
+        setInviteError(
+          (data.error as string) || `Failed to create user (${res.status})`,
+        );
         return;
       }
 
-      // Success — reset form and refresh
+      // Success: reset form and refresh
       setInviteName("");
       setInviteEmail("");
       setInviteRole("admin");
       setInviteSuccess(true);
-      setTimeout(() => {
-        setInviteSuccess(false);
-        setShowInvite(false);
-      }, 3000);
+
+      // undefined emailDelivered (older API) => assume the email was sent.
+      const delivered = data.emailDelivered !== false;
+      setInviteDelivered(delivered);
+      setInviteLink(
+        !delivered && typeof data.acceptUrl === "string"
+          ? (data.acceptUrl as string)
+          : null,
+      );
+
+      // Only auto-dismiss when the email actually went out. When we're showing
+      // a copyable link, keep the panel open so the admin can grab it.
+      if (delivered) {
+        setTimeout(() => {
+          setInviteSuccess(false);
+          setShowInvite(false);
+        }, 3000);
+      }
       fetchUsers();
     } catch {
       setInviteError("Network error. Please try again.");
@@ -124,6 +159,28 @@ export default function TeamPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: !user.is_active }),
+      });
+      fetchUsers();
+    } catch {
+      // swallow
+    }
+  };
+
+  // A pending invite is a user who was invited but has never signed in.
+  const isPendingInvite = (user: DealerUser) =>
+    !user.is_active && user.last_login === null;
+
+  const rescindInvite = async (user: DealerUser) => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(`Rescind the invite for ${user.email}? This frees the email to be invited again.`)
+    ) {
+      return;
+    }
+    try {
+      // hard=1 removes the pending-invite row so the email is freed.
+      await fetch(`/api/admin/dealer-users/${user.id}?hard=1`, {
+        method: "DELETE",
       });
       fetchUsers();
     } catch {
@@ -155,7 +212,7 @@ export default function TeamPage() {
         </div>
         <button
           onClick={() => setShowInvite(!showInvite)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
         >
           {showInvite ? "Cancel" : "Invite User"}
         </button>
@@ -171,9 +228,36 @@ export default function TeamPage() {
               {inviteError}
             </div>
           )}
-          {inviteSuccess && (
+          {inviteSuccess && inviteDelivered && (
             <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-              Invitation sent! They'll receive an email to set up their account.
+              Invitation sent! They&apos;ll receive an email to set up their account.
+            </div>
+          )}
+          {inviteSuccess && !inviteDelivered && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <p className="font-medium">
+                User added, but the invite email couldn&apos;t be sent automatically.
+              </p>
+              <p className="mt-1 text-amber-700">
+                Share this one-time sign-up link with them to finish setup:
+              </p>
+              {inviteLink && (
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={inviteLink}
+                    onFocus={(e) => e.target.select()}
+                    className="min-w-0 flex-1 rounded-md border border-amber-300 bg-white px-2 py-1 font-mono text-xs text-gray-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={copyInviteLink}
+                    className="shrink-0 rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 transition-colors"
+                  >
+                    {linkCopied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -227,7 +311,7 @@ export default function TeamPage() {
               <button
                 type="submit"
                 disabled={inviteSubmitting}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50 transition-colors"
               >
                 {inviteSubmitting ? "Sending..." : "Send Invite"}
               </button>
@@ -292,23 +376,42 @@ export default function TeamPage() {
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                           user.is_active
                             ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            : isPendingInvite(user)
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {user.is_active ? "Active" : "Inactive"}
+                        {user.is_active
+                          ? "Active"
+                          : isPendingInvite(user)
+                            ? "Pending"
+                            : "Inactive"}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
-                      <button
-                        onClick={() => toggleActive(user)}
-                        className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                          user.is_active
-                            ? "bg-red-50 text-red-700 hover:bg-red-100"
-                            : "bg-green-50 text-green-700 hover:bg-green-100"
-                        }`}
-                      >
-                        {user.is_active ? "Deactivate" : "Activate"}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        {isPendingInvite(user) ? (
+                          // Never-accepted invite: rescind removes the row and
+                          // frees the email so it can be invited again.
+                          <button
+                            onClick={() => rescindInvite(user)}
+                            className="rounded-md bg-red-50 px-3 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+                          >
+                            Rescind invite
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => toggleActive(user)}
+                            className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                              user.is_active
+                                ? "bg-red-50 text-red-700 hover:bg-red-100"
+                                : "bg-green-50 text-green-700 hover:bg-green-100"
+                            }`}
+                          >
+                            {user.is_active ? "Deactivate" : "Activate"}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

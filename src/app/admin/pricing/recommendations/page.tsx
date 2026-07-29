@@ -415,7 +415,7 @@ function actionBadgeClass(action: ActionType): string {
   switch (action) {
     case "hold": return "bg-green-100 text-green-800 ring-green-600/20";
     case "reduce": return "bg-yellow-100 text-yellow-800 ring-yellow-600/20";
-    case "increase": return "bg-blue-100 text-blue-800 ring-blue-600/20";
+    case "increase": return "bg-brand-100 text-brand-900 ring-brand-700/20";
     case "markdown": return "bg-red-100 text-red-800 ring-red-600/20";
     case "spotlight": return "bg-purple-100 text-purple-800 ring-purple-600/20";
   }
@@ -441,7 +441,7 @@ function severityClass(severity: string): string {
   switch (severity) {
     case "high": return "border-red-200 bg-red-50";
     case "medium": return "border-yellow-200 bg-yellow-50";
-    case "low": return "border-blue-200 bg-blue-50";
+    case "low": return "border-brand-200 bg-brand-50";
     default: return "border-gray-200 bg-gray-50";
   }
 }
@@ -450,7 +450,7 @@ function severityDot(severity: string): string {
   switch (severity) {
     case "high": return "bg-red-500";
     case "medium": return "bg-yellow-500";
-    case "low": return "bg-blue-500";
+    case "low": return "bg-brand-600";
     default: return "bg-gray-400";
   }
 }
@@ -897,7 +897,7 @@ export default function PricingRecommendationsPage() {
                       {/* Season tag */}
                       <td className="px-4 py-3">
                         {v.season_tag ? (
-                          <span className="inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+                          <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-inset ring-brand-700/20">
                             {v.season_tag}
                           </span>
                         ) : null}
@@ -943,7 +943,7 @@ export default function PricingRecommendationsPage() {
                         {actionLabel(v.action)}
                       </span>
                       {v.season_tag && (
-                        <span className="inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+                        <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ring-1 ring-inset ring-brand-700/20">
                           {v.season_tag}
                         </span>
                       )}

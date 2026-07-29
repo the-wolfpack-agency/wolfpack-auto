@@ -13,7 +13,7 @@ test.describe("Hero Search → Inventory Navigation", () => {
   test("submitting hero search navigates to /inventory with query params", async ({ page }) => {
     await page.goto("/");
     await page.locator('input[name="q"]').fill("RAV4");
-    await page.locator('button[type="submit"]').click();
+    await page.locator('form[action="/inventory"] button[type="submit"]').click();
     await page.waitForURL(/\/inventory/);
     expect(page.url()).toContain("q=RAV4");
   });
@@ -22,7 +22,7 @@ test.describe("Hero Search → Inventory Navigation", () => {
     await page.goto("/");
     await page.locator('select[name="make"]').selectOption("Toyota");
     await page.locator('input[name="q"]').fill("hybrid");
-    await page.locator('button[type="submit"]').click();
+    await page.locator('form[action="/inventory"] button[type="submit"]').click();
     await page.waitForURL(/\/inventory/);
     expect(page.url()).toContain("make=Toyota");
     expect(page.url()).toContain("q=hybrid");
@@ -61,7 +61,7 @@ test.describe("Hero Search → Inventory Navigation", () => {
   test("hero make dropdown includes all 14 makes", async ({ page }) => {
     await page.goto("/");
     const options = await page.locator('select[name="make"] option').allTextContents();
-    const makes = options.filter((o) => o !== "Any Make");
+    const makes = options.filter((o) => o !== "Make");
     expect(makes.length).toBe(14);
     expect(makes).toContain("Toyota");
     expect(makes).toContain("Tesla");

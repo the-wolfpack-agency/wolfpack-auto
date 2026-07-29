@@ -24,7 +24,7 @@ interface CustomerListItem {
 
 const STATUS_BADGE: Record<string, string> = {
   active: "bg-green-100 text-green-700",
-  prospect: "bg-blue-100 text-blue-700",
+  prospect: "bg-brand-100 text-brand-800",
   inactive: "bg-gray-100 text-gray-500",
 };
 
@@ -94,9 +94,9 @@ export default function CustomerListPage() {
           <p className="text-xs font-medium text-green-700">Active</p>
           <p className="mt-0.5 text-2xl font-bold text-green-700">{activeCount}</p>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium text-blue-700">Prospects</p>
-          <p className="mt-0.5 text-2xl font-bold text-blue-700">{prospectCount}</p>
+        <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 shadow-sm">
+          <p className="text-xs font-medium text-brand-800">Prospects</p>
+          <p className="mt-0.5 text-2xl font-bold text-brand-800">{prospectCount}</p>
         </div>
         <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 shadow-sm">
           <p className="text-xs font-medium text-brand-700">Total LTV</p>

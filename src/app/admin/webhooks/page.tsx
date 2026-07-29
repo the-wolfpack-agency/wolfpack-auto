@@ -223,7 +223,7 @@ export default function WebhooksPage() {
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 transition-colors"
         >
           {showAddForm ? "Cancel" : "Add Webhook"}
         </button>
@@ -249,7 +249,7 @@ export default function WebhooksPage() {
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 placeholder="https://your-crm.com/webhooks"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-600 focus:ring-brand-600"
               />
             </div>
             <div>
@@ -259,7 +259,7 @@ export default function WebhooksPage() {
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="CRM lead sync"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-600 focus:ring-brand-600"
               />
             </div>
             <div>
@@ -297,7 +297,7 @@ export default function WebhooksPage() {
             <button
               onClick={handleAdd}
               disabled={!newUrl || (!selectAll && selectedEvents.size === 0)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50 transition-colors"
             >
               Create Webhook
             </button>
@@ -465,7 +465,7 @@ export default function WebhooksPage() {
                 { event: "compliance.check_run", when: "Compliance check executed", payload: "check_type, result" },
               ].map((row) => (
                 <tr key={row.event} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 font-mono text-xs text-blue-700">{row.event}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-brand-800">{row.event}</td>
                   <td className="px-3 py-2 text-gray-600">{row.when}</td>
                   <td className="px-3 py-2 text-gray-500">{row.payload}</td>
                 </tr>

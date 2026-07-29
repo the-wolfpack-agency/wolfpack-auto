@@ -33,7 +33,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   critical: "bg-red-600 text-white",
   high: "bg-orange-500 text-white",
   medium: "bg-yellow-500 text-black",
-  low: "bg-blue-500 text-white",
+  low: "bg-brand-600 text-white",
   info: "bg-gray-400 text-white",
 };
 
@@ -144,7 +144,7 @@ export default function SecurityPage() {
         <button
           onClick={runScan}
           disabled={scanning}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-brand-700 text-white rounded-lg font-medium hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {scanning ? "Scanning..." : "Run Scan"}
         </button>
@@ -183,7 +183,7 @@ export default function SecurityPage() {
             <StatCard
               label="Low / Info"
               value={(scan.by_severity.low ?? 0) + (scan.by_severity.info ?? 0)}
-              color="text-blue-500"
+              color="text-brand-600"
             />
           </div>
 
@@ -291,7 +291,7 @@ function FindingRow({ finding }: { finding: SecurityFinding }) {
         </span>
       </div>
       {expanded && (
-        <div className="mt-3 ml-0 sm:ml-16 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800">
+        <div className="mt-3 ml-0 sm:ml-16 p-3 bg-brand-50 border border-brand-100 rounded text-sm text-brand-900">
           <strong>Recommendation:</strong> {finding.recommendation}
         </div>
       )}

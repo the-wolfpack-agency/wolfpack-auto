@@ -531,6 +531,7 @@ export interface FeaturedVehicle {
   gradient: string;
   tag: string;
   photo: string;
+  bodyStyle: string;
 }
 
 export async function getFeaturedVehicles(
@@ -545,7 +546,7 @@ export async function getFeaturedVehicles(
 
   try {
     const result = await query(
-      `SELECT vin, year, make, model, trim, price, mileage, condition
+      `SELECT vin, year, make, model, trim, price, mileage, condition, body_style
        FROM vehicles
        WHERE dealer_id = $1 AND status = 'available'
        ORDER BY created_at DESC, mileage ASC
@@ -570,6 +571,7 @@ export async function getFeaturedVehicles(
       gradient: "from-brand-400 to-brand-600",
       tag: r.condition === "new" ? "New Arrival" : r.condition === "certified" ? "Certified" : "Pre-Owned",
       photo: r.photo_url ?? "",
+      bodyStyle: r.body_style ?? "",
     }));
 
     return { data: vehicles, source: "database" };

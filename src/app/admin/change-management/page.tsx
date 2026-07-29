@@ -39,7 +39,7 @@ function formatDate(iso: string): string {
 
 const STATUS_STYLES: Record<ChangeStatus, string> = {
   proposed: "bg-gray-100 text-gray-600",
-  approved: "bg-blue-50 text-blue-700",
+  approved: "bg-brand-50 text-brand-800",
   active: "bg-emerald-50 text-emerald-700",
   rolled_back: "bg-red-50 text-red-700",
 };
@@ -51,10 +51,10 @@ const IMPACT_STYLES: Record<ChangeImpact, string> = {
 };
 
 const CATEGORY_STYLES: Record<ChangeCategory, string> = {
-  process: "bg-indigo-50 text-indigo-700",
+  process: "bg-brand-50 text-brand-800",
   pricing: "bg-purple-50 text-purple-700",
   staffing: "bg-orange-50 text-orange-700",
-  system: "bg-cyan-50 text-cyan-700",
+  system: "bg-brand-50 text-brand-800",
   policy: "bg-gray-100 text-gray-600",
 };
 

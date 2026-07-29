@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { pollWhileVisible } from "@/lib/poll-while-visible";
 import type {
   EngagementAlert,
   AlertPriority,
@@ -18,7 +19,7 @@ function priorityBadge(priority: AlertPriority): string {
     case "high":
       return "bg-orange-100 text-orange-800 border-orange-200";
     case "medium":
-      return "bg-blue-100 text-blue-800 border-blue-200";
+      return "bg-brand-100 text-brand-900 border-brand-200";
   }
 }
 
@@ -203,7 +204,7 @@ function AlertCard({
           </button>
           <button
             onClick={() => onAction(alert.id, "contacted")}
-            className="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="rounded-lg border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-100 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2"
           >
             Send Email
           </button>
@@ -257,8 +258,8 @@ export default function EngagementAlertsPage() {
   useEffect(() => {
     loadAlerts();
 
-    // Polling every 2 minutes (raised from 30s — Neon-quota fix 2026-05-19)
-    const interval = setInterval(loadAlerts, 120 * 1000);
+    // Polling every 2 minutes, only while the tab is visible (Neon egress)
+    const interval = pollWhileVisible(loadAlerts, 120 * 1000);
     return () => clearInterval(interval);
   }, [loadAlerts]);
 
@@ -294,7 +295,7 @@ export default function EngagementAlertsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Engagement Alerts</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Real-time buying signals — who should you call right now?
+            Real-time buying signals: who should you call right now?
           </p>
           {lastRefreshed && (
             <p className="mt-0.5 text-xs text-gray-400">
@@ -347,7 +348,7 @@ export default function EngagementAlertsPage() {
         <section aria-labelledby="medium-alerts-heading">
           <h2
             id="medium-alerts-heading"
-            className="mb-3 text-lg font-semibold text-blue-700"
+            className="mb-3 text-lg font-semibold text-brand-800"
           >
             Opportunities ({mediumAlerts.length})
           </h2>

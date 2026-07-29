@@ -50,7 +50,7 @@ export function OnboardingBanner() {
   if (setupComplete === null || setupComplete || dismissed) return null;
 
   return (
-    <div className="mb-6 rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-blue-50 p-5 shadow-sm">
+    <div className="mb-6 rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-brand-50 p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-bold text-gray-900">

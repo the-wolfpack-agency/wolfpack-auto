@@ -138,7 +138,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  working: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  working: "bg-brand-50 text-brand-800 ring-brand-700/20",
   pending_approval: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
   approved: "bg-green-50 text-green-700 ring-green-600/20",
   presented: "bg-purple-50 text-purple-700 ring-purple-600/20",
@@ -150,7 +150,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 const LENDER_STATUS_BADGE: Record<string, string> = {
   pending: "bg-yellow-50 text-yellow-700",
-  submitted: "bg-blue-50 text-blue-700",
+  submitted: "bg-brand-50 text-brand-800",
   approved: "bg-green-50 text-green-700",
   declined: "bg-red-50 text-red-700",
   funded: "bg-teal-50 text-teal-700",

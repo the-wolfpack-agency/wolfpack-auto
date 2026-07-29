@@ -105,8 +105,8 @@ test.describe("Homepage", () => {
     // Mileage (contains "miles")
     await expect(firstCard.getByText(/miles/i)).toBeVisible();
 
-    // View Details link text
-    await expect(firstCard.getByText("View Details")).toBeVisible();
+    // Details link text
+    await expect(firstCard.getByText("Details")).toBeVisible();
   });
 
   test("Why Choose Us section: 3 cards visible", async ({ page }) => {
@@ -148,9 +148,9 @@ test.describe("Homepage", () => {
     await expect(section.getByText("Trucks")).toBeVisible();
   });
 
-  test("financing banner: CTA links to financing page", async ({ page }) => {
+  test("financing CTA links to the financing page", async ({ page }) => {
     const financingLink = page.locator(
-      "a[href='/financing']:has-text('Check Your Rate')",
+      "a[href='/financing']:has-text('Get Pre-Qualified')",
     );
     await expect(financingLink).toBeVisible();
   });

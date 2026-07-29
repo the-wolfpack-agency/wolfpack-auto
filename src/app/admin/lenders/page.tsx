@@ -33,7 +33,7 @@ interface Lender {
 /* -------------------------------------------------------------------------- */
 
 const PORTAL_STYLES: Record<string, string> = {
-  routeone: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20",
+  routeone: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
   dealertrack: "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20",
   cudl: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20",
   direct: "bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-400/20",

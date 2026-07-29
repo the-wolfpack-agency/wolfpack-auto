@@ -99,7 +99,7 @@ export default function PricingPage() {
       {/* Hero */}
       <section
         aria-labelledby="pricing-hero-heading"
-        className="relative overflow-hidden bg-gradient-to-br from-brand-900 via-brand-800 to-brand-950"
+        className="relative overflow-hidden bg-brand-950"
       >
         <div className="absolute inset-0 opacity-10">
           <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-brand-400 blur-3xl" />

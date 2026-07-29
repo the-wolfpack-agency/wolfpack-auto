@@ -102,14 +102,14 @@ export default function AuctionAdminPage() {
         <button
           data-testid="auction-tab-opportunities"
           onClick={() => setTab("opportunities")}
-          className={`px-4 py-2 rounded ${tab === "opportunities" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded ${tab === "opportunities" ? "bg-brand-700 text-white" : "bg-gray-200"}`}
         >
           Opportunities
         </button>
         <button
           data-testid="auction-tab-benchmarks"
           onClick={() => setTab("benchmarks")}
-          className={`px-4 py-2 rounded ${tab === "benchmarks" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          className={`px-4 py-2 rounded ${tab === "benchmarks" ? "bg-brand-700 text-white" : "bg-gray-200"}`}
         >
           Benchmarks
         </button>
@@ -149,7 +149,7 @@ export default function AuctionAdminPage() {
                     <td>{new Date(o.listing.sale_at).toLocaleString()}</td>
                     <td>{o.status}</td>
                     <td className="space-x-1">
-                      <button data-testid={`opp-bid-${o.id}`} onClick={() => act(o.id, "bid")} className="px-2 py-1 bg-blue-500 text-white rounded text-xs">Bid</button>
+                      <button data-testid={`opp-bid-${o.id}`} onClick={() => act(o.id, "bid")} className="px-2 py-1 bg-brand-600 text-white rounded text-xs">Bid</button>
                       <button data-testid={`opp-won-${o.id}`} onClick={() => act(o.id, "won")} className="px-2 py-1 bg-green-500 text-white rounded text-xs">Won</button>
                       <button data-testid={`opp-lost-${o.id}`} onClick={() => act(o.id, "lost")} className="px-2 py-1 bg-yellow-500 text-white rounded text-xs">Lost</button>
                       <button data-testid={`opp-dismiss-${o.id}`} onClick={() => act(o.id, "dismiss")} className="px-2 py-1 bg-gray-500 text-white rounded text-xs">Dismiss</button>
@@ -171,7 +171,7 @@ export default function AuctionAdminPage() {
             <input data-testid="bench-model" value={benchModel} onChange={(e) => setBenchModel(e.target.value)} placeholder="Model" className="border p-2 rounded" />
             <input data-testid="bench-mileage" value={benchMileage} onChange={(e) => setBenchMileage(e.target.value)} placeholder="Mileage" className="border p-2 rounded" />
           </div>
-          <button data-testid="bench-lookup" onClick={lookupBenchmark} className="px-4 py-2 bg-blue-600 text-white rounded">
+          <button data-testid="bench-lookup" onClick={lookupBenchmark} className="px-4 py-2 bg-brand-700 text-white rounded">
             Look up benchmark
           </button>
 

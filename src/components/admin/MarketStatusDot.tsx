@@ -23,7 +23,7 @@ interface DotDef {
 const DOTS: Record<Recommendation, DotDef> = {
   HOLD: { color: "bg-emerald-500", label: "Priced right" },
   MOVE_TO_LOT_FRONT: { color: "bg-emerald-500", label: "Fresh and priced right" },
-  REPRICE_UP: { color: "bg-blue-500", label: "Underpriced for the market" },
+  REPRICE_UP: { color: "bg-brand-600", label: "Underpriced for the market" },
   REPRICE_DOWN: { color: "bg-red-500", label: "Overpriced or aging" },
   MOVE_TO_BACK_LOT: { color: "bg-amber-500", label: "Aged and underpriced" },
 };

@@ -92,7 +92,7 @@ export default function SMSPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
       </div>
     );
   }
@@ -125,13 +125,13 @@ export default function SMSPage() {
                 key={conv.lead_id}
                 onClick={() => selectConversation(conv)}
                 className={`w-full px-4 py-3 text-left hover:bg-gray-50 ${
-                  selected?.lead_id === conv.lead_id ? "bg-blue-50" : ""
+                  selected?.lead_id === conv.lead_id ? "bg-brand-50" : ""
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-gray-900">{conv.lead_name}</p>
                   {conv.unread > 0 && (
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white">
                       {conv.unread}
                     </span>
                   )}
@@ -169,12 +169,12 @@ export default function SMSPage() {
                     <div
                       className={`max-w-xs rounded-lg px-3 py-2 text-sm ${
                         msg.direction === "outbound"
-                          ? "bg-blue-600 text-white"
+                          ? "bg-brand-700 text-white"
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
                       <p>{msg.body}</p>
-                      <p className={`mt-1 text-xs ${msg.direction === "outbound" ? "text-blue-200" : "text-gray-400"}`}>
+                      <p className={`mt-1 text-xs ${msg.direction === "outbound" ? "text-brand-200" : "text-gray-400"}`}>
                         {new Date(msg.created_at).toLocaleTimeString()}
                       </p>
                     </div>
@@ -189,12 +189,12 @@ export default function SMSPage() {
                     onChange={(e) => setComposeBody(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSend()}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
                   />
                   <button
                     onClick={handleSend}
                     disabled={sending || !composeBody.trim()}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
                   >
                     {sending ? "..." : "Send"}
                   </button>

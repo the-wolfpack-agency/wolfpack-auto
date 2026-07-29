@@ -74,7 +74,7 @@ export default function LeadDetailPage({
         </div>
         {lead && (
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 font-medium text-blue-700 ring-1 ring-blue-600/20">
+            <span className="rounded-full bg-brand-50 px-2.5 py-0.5 font-medium text-brand-800 ring-1 ring-brand-700/20">
               {lead.status}
             </span>
             <span className="rounded-full bg-orange-50 px-2.5 py-0.5 font-medium text-orange-700 ring-1 ring-orange-600/20">

@@ -61,8 +61,8 @@ const RESULT_LABELS: Record<ComplianceCheck["result"], string> = {
 
 const TYPE_STYLES: Record<ComplianceCheck["check_type"], string> = {
   red_flags: "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20",
-  ofac: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20",
-  id_verification: "bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-600/20",
+  ofac: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
+  id_verification: "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20",
 };
 
 const TYPE_LABELS: Record<ComplianceCheck["check_type"], string> = {

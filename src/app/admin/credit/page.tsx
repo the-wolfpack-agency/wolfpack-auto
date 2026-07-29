@@ -66,7 +66,7 @@ const BUREAU_LABELS: Record<string, string> = {
 
 function scoreTier(score: number): { label: string; color: string } {
   if (score >= 750) return { label: "Excellent", color: "text-emerald-600" };
-  if (score >= 700) return { label: "Good", color: "text-blue-600" };
+  if (score >= 700) return { label: "Good", color: "text-brand-700" };
   if (score >= 650) return { label: "Fair", color: "text-amber-600" };
   return { label: "Poor", color: "text-red-600" };
 }
@@ -230,7 +230,7 @@ export default function CreditPage() {
         <StatCard label="Total Pulls" value={pulls.length} />
         <StatCard label="Average Score" value={avgScore || "---"} color={avgScore >= 700 ? "text-emerald-600" : avgScore >= 650 ? "text-amber-600" : "text-gray-900"} />
         <StatCard label="Hard Pulls" value={hardPulls} />
-        <StatCard label="Soft Pulls" value={softPulls} color="text-blue-600" />
+        <StatCard label="Soft Pulls" value={softPulls} color="text-brand-700" />
       </div>
 
       {/* Error */}
@@ -459,7 +459,7 @@ export default function CreditPage() {
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                             pull.pull_type === "hard"
                               ? "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
-                              : "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20"
+                              : "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-700/20"
                           }`}>
                             {pull.pull_type}
                           </span>

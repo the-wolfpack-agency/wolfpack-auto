@@ -39,7 +39,7 @@ const CATEGORY_LABELS: Record<ResourceCategory | "all", string> = {
 };
 
 const CATEGORY_BADGE: Record<ResourceCategory, string> = {
-  product_guide: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  product_guide: "bg-brand-50 text-brand-800 ring-brand-700/20",
   competitive: "bg-purple-50 text-purple-700 ring-purple-600/20",
   cheat_sheet: "bg-yellow-50 text-yellow-700 ring-yellow-600/20",
   process: "bg-teal-50 text-teal-700 ring-teal-600/20",

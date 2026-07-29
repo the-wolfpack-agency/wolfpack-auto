@@ -118,7 +118,7 @@ export default async function LaborInsightsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold text-gray-900">Labor Insights</h1>
           {report.isDemo && (
-            <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+            <span className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-800">
               Sample data
             </span>
           )}

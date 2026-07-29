@@ -141,7 +141,7 @@ export default function TrimVelocityPage() {
             data-testid="trim-velocity-sort"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortKey)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none"
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-600 focus:outline-none"
           >
             <option value="fastest">Fastest sellers</option>
             <option value="slowest">Slowest sellers</option>
@@ -173,26 +173,26 @@ export default function TrimVelocityPage() {
       {drill && (
         <section
           data-testid="trim-velocity-drill"
-          className="rounded-lg border border-blue-200 bg-blue-50 p-4"
+          className="rounded-lg border border-brand-200 bg-brand-50 p-4"
         >
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-blue-900">
+            <h2 className="text-base font-semibold text-brand-950">
               {trimLabel({ make: drill.make, model: drill.model, trim: drill.trim, year: drill.year })}: funded deals
             </h2>
             <button
               type="button"
               onClick={() => setDrill(null)}
-              className="text-xs text-blue-700 hover:underline"
+              className="text-xs text-brand-800 hover:underline"
             >
               Close
             </button>
           </div>
           {drill.rows.length === 0 ? (
-            <p className="text-sm text-blue-800">No funded VINs for this trim yet.</p>
+            <p className="text-sm text-brand-900">No funded VINs for this trim yet.</p>
           ) : (
             <ul className="space-y-1 text-sm">
               {drill.rows.map((r) => (
-                <li key={r.vin} className="flex justify-between text-blue-900">
+                <li key={r.vin} className="flex justify-between text-brand-950">
                   <span className="font-mono">{r.vin}</span>
                   <span>{Math.round(r.days_to_sell)} days {r.gross !== null ? `· $${Math.round(r.gross).toLocaleString()}` : ""}</span>
                 </li>

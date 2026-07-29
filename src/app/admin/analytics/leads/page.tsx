@@ -102,7 +102,7 @@ export default function LeadAnalyticsPage() {
   const tempColors = {
     hot: { bg: "bg-red-500", badge: "bg-red-100 text-red-700", dot: "bg-red-500" },
     warm: { bg: "bg-orange-500", badge: "bg-orange-100 text-orange-700", dot: "bg-orange-500" },
-    cool: { bg: "bg-blue-500", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500" },
+    cool: { bg: "bg-brand-600", badge: "bg-brand-100 text-brand-800", dot: "bg-brand-600" },
     cold: { bg: "bg-gray-400", badge: "bg-gray-100 text-gray-600", dot: "bg-gray-400" },
   };
 
@@ -136,7 +136,7 @@ export default function LeadAnalyticsPage() {
                   <div className="w-full flex flex-col-reverse" style={{ height: `${Math.min((total / 50) * 100, 100)}%` }}>
                     <div className="bg-red-500 rounded-b" style={{ height: `${(day.hot / total) * 100}%` }} title={`Hot: ${day.hot}`} />
                     <div className="bg-orange-500" style={{ height: `${(day.warm / total) * 100}%` }} title={`Warm: ${day.warm}`} />
-                    <div className="bg-blue-500" style={{ height: `${(day.cool / total) * 100}%` }} title={`Cool: ${day.cool}`} />
+                    <div className="bg-brand-600" style={{ height: `${(day.cool / total) * 100}%` }} title={`Cool: ${day.cool}`} />
                     <div className="bg-gray-400 rounded-t" style={{ height: `${(day.cold / total) * 100}%` }} title={`Cold: ${day.cold}`} />
                   </div>
                   <span className="text-[10px] text-gray-400 -rotate-45 origin-top-left whitespace-nowrap">

@@ -71,7 +71,7 @@ export default function FinancingPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-800 via-brand-900 to-brand-950">
+      <section className="relative overflow-hidden bg-brand-950">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute left-1/4 top-0 h-72 w-72 rounded-full bg-brand-400 blur-3xl" />
           <div className="absolute bottom-0 right-1/4 h-72 w-72 rounded-full bg-accent-400 blur-3xl" />

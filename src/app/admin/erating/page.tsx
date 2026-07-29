@@ -80,7 +80,7 @@ export default function ERatingPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-brand-700" />
       </div>
     );
   }
@@ -103,12 +103,12 @@ export default function ERatingPage() {
             value={vin}
             onChange={(e) => setVin(e.target.value)}
             placeholder="Enter VIN to compare rates..."
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
           <button
             onClick={handleCompare}
             disabled={comparing || !vin.trim()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
           >
             {comparing ? "Loading..." : "Compare Rates"}
           </button>
@@ -188,7 +188,7 @@ export default function ERatingPage() {
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-100">
                       <div
-                        className="h-full rounded-full bg-blue-500"
+                        className="h-full rounded-full bg-brand-600"
                         style={{ width: `${product.penetration_rate}%` }}
                       />
                     </div>

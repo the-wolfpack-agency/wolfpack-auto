@@ -159,13 +159,13 @@ export default function PrivacyAdminPage() {
               setError(null);
             }}
             placeholder="customer@example.com"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
           />
           <div className="flex gap-3">
             <button
               onClick={handleExport}
               disabled={exportLoading || !email}
-              className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 rounded-md bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50"
             >
               {exportLoading ? "Exporting..." : "Export Data"}
             </button>
@@ -226,12 +226,12 @@ export default function PrivacyAdminPage() {
 
       {/* Export data preview */}
       {exportData && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-6">
+        <div className="rounded-lg border border-brand-200 bg-brand-50 p-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-blue-800">Customer Data Export</h3>
+            <h3 className="font-semibold text-brand-900">Customer Data Export</h3>
             <button
               onClick={downloadExport}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+              className="rounded-md bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800"
             >
               Download JSON
             </button>

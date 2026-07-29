@@ -1,5 +1,5 @@
 /**
- * Structural tests for /status — public uptime page.
+ * Structural tests for /status public uptime page.
  *
  * Uses the source-string pattern (matches src/app/admin/auction/__tests__).
  * This page renders dynamically + has a client poller; behavioral E2E
@@ -55,8 +55,8 @@ describe("/status page", () => {
 
   it("has no em dashes in the visible copy (project convention)", () => {
     // Em dash is U+2014. Search the whole source.
-    expect(pageSrc.includes("—")).toBe(false);
-    expect(boardSrc.includes("—")).toBe(false);
+    expect(pageSrc.includes("\u2014")).toBe(false); // no em dash
+    expect(boardSrc.includes("\u2014")).toBe(false); // no em dash
   });
 });
 
@@ -66,7 +66,9 @@ describe("/status StatusBoard (client)", () => {
   });
 
   it("polls /api/status on an interval", () => {
-    expect(boardSrc).toContain("setInterval");
+    // Uses the visibility-aware poller so a backgrounded tab stops hitting
+    // the DB (Neon egress). Do not revert to a raw setInterval.
+    expect(boardSrc).toContain("pollWhileVisible");
     expect(boardSrc).toContain("/api/status");
     // 2 min poll cadence. Originally 30s, deliberately stretched to 120_000
     // in the 2026-05-19 Neon data-transfer quota fix (commit c72c37d), which
@@ -106,7 +108,7 @@ describe("/status StatusBoard (client)", () => {
     expect(boardSrc).toContain("sky-500");
   });
 
-  it("never lets the page render blank — falls back to a default payload", () => {
+  it("never lets the page render blank, falls back to a default payload", () => {
     // The board uses a `payload ?? { overall: 'operational', ... }` fallback.
     expect(boardSrc).toMatch(/payload\s*\?\?\s*\{/);
   });
