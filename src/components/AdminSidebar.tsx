@@ -238,7 +238,7 @@ const NAV_SECTIONS: NavSection[] = [
  * Build a set of nav hrefs that are PROPER PREFIXES of another nav href
  * (e.g. `/admin/inventory` is a prefix of `/admin/inventory/backgrounds`).
  * Such items must only match when pathname is the EXACT href OR a sub-
- * path that does NOT start with any longer-href sibling — otherwise
+ * path that does NOT start with any longer-href sibling, otherwise
  * both the parent (Inventory) and the child (Photo Backgrounds) light
  * up at once when the operator visits the child page.
  */
@@ -385,7 +385,7 @@ export default function AdminSidebar() {
           allDone: json.completed === true,
         });
       } catch {
-        // Silently ignore — sidebar should never break
+        // Silently ignore, sidebar should never break
       }
     }
     fetchProgress();
@@ -403,7 +403,7 @@ export default function AdminSidebar() {
         if (cancelled) return;
         setEnabledModules(Array.isArray(json.enabled) ? json.enabled : null);
       } catch {
-        // Sidebar must never break — fall through to the full nav.
+        // Sidebar must never break, fall through to the full nav.
       } finally {
         if (!cancelled) setModulesLoaded(true);
       }
@@ -427,8 +427,11 @@ export default function AdminSidebar() {
     }
   };
 
-  // Hide sidebar on the login page
-  if (pathname === "/admin/login") return null;
+  // Hide the sidebar on the unauthenticated admin pages (login and password
+  // reset). A logged-out visitor must never see the admin nav or app structure.
+  if (pathname === "/admin/login" || pathname === "/admin/reset-password") {
+    return null;
+  }
 
   // Filter the nav to the dealer's enabled modules. Agency roles see everything;
   // dealer roles see only enabled + CORE. Before the allow-list loads, non-agency
@@ -460,7 +463,7 @@ export default function AdminSidebar() {
         <span className="text-base font-semibold text-white">
           Wolfpack Auto
         </span>
-        {/* Close button — mobile only */}
+        {/* Close button, mobile only */}
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
@@ -473,7 +476,7 @@ export default function AdminSidebar() {
         </button>
       </div>
 
-      {/* Dealer Switcher — agency-level users only */}
+      {/* Dealer Switcher, agency-level users only */}
       {isAgencyUser && dealers.length > 0 && (
         <div className="border-b border-gray-800 px-3 py-2">
           <div className="relative">
@@ -513,9 +516,9 @@ export default function AdminSidebar() {
         </div>
       )}
 
-      {/* Navigation — grouped into collapsible sections */}
+      {/* Navigation, grouped into collapsible sections */}
       <nav aria-label="Admin navigation" className="flex-1 overflow-y-auto px-3 py-4">
-        {/* Getting Started — shown until all checklist items are complete */}
+        {/* Getting Started, shown until all checklist items are complete */}
         {gettingStartedProgress && !gettingStartedProgress.allDone && (
           <a
             href="/admin/getting-started"
@@ -583,7 +586,7 @@ export default function AdminSidebar() {
                   </svg>
                 </button>
 
-                {/* Section items — always in DOM for test compatibility, hidden via CSS */}
+                {/* Section items, always in DOM for test compatibility, hidden via CSS */}
                 <div
                   className={`overflow-hidden transition-all duration-200 ease-in-out ${
                     isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"

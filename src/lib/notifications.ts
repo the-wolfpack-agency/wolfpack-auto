@@ -436,9 +436,15 @@ export async function sendPasswordReset(params: {
   dealerName: string;
 }): Promise<void> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
+    // Stable app URL first. The old `A ?? B ? x : y` had a precedence bug (`??`
+    // binds tighter than `?:`), so it always used VERCEL_URL, or produced
+    // "https://undefined" when VERCEL_URL was unset, breaking the reset link.
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ??
+      process.env.NEXTAUTH_URL ??
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
     const resetUrl = `${baseUrl}/admin/reset-password?token=${params.resetToken}`;
 
     const html = passwordResetHTML({
@@ -447,13 +453,16 @@ export async function sendPasswordReset(params: {
       dealerName: params.dealerName,
     });
 
-    void dispatchEmail(
+    // AWAIT the send. A fire-and-forget `void dispatchEmail(...)` was killed by
+    // Vercel freezing the serverless function right after the 200 response, so
+    // the reset email never actually went out. Awaiting keeps the function alive
+    // until Graph has accepted the message. The outer catch keeps the caller
+    // enumeration-safe (it never surfaces whether the address exists).
+    await dispatchEmail(
       params.email,
-      `Reset your password — ${params.dealerName}`,
+      `Reset your password, ${params.dealerName}`,
       html,
-    ).catch((err) => {
-      console.error("[notifications] sendPasswordReset email failed:", err);
-    });
+    );
   } catch (err) {
     console.error("[notifications] sendPasswordReset failed:", err);
   }

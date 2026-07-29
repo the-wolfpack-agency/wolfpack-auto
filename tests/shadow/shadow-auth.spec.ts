@@ -156,6 +156,16 @@ test.describe("Shadow auth: password reset is public", () => {
     await expect(emailInput.first()).toBeVisible({ timeout: 10_000 });
   });
 
+  test("/admin/reset-password does not render the admin sidebar nav", async ({
+    page,
+  }) => {
+    await page.goto("/admin/reset-password", { waitUntil: "domcontentloaded" });
+    // A logged-out visitor must not see the admin navigation or app structure.
+    await expect(
+      page.locator('[aria-label^="Admin navigation"]'),
+    ).toHaveCount(0);
+  });
+
   test("POST /api/admin/reset-password is public (never 401)", async ({
     request,
   }) => {
