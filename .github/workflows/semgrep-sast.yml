@@ -37,15 +37,15 @@ jobs:
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
 
       - name: Install Semgrep
-        run: pip install semgrep
+        run: pip install semgrep==1.172.0
 
       # Findings must never block the build: continue-on-error keeps the job
       # green even when Semgrep exits non-zero on detected issues.
