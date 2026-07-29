@@ -434,7 +434,11 @@ export default function AdminSidebar() {
   };
 
   // Hide sidebar on the login page
-  if (pathname === "/admin/login") return null;
+  // Hide the sidebar on the unauthenticated admin pages (login and password
+  // reset). A logged-out visitor must never see the admin nav or app structure.
+  if (pathname === "/admin/login" || pathname === "/admin/reset-password") {
+    return null;
+  }
 
   // Filter the nav to the dealer's enabled modules. Agency roles see everything;
   // dealer roles see only enabled + CORE. Before the allow-list loads, non-agency

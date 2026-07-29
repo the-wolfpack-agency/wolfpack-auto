@@ -490,13 +490,15 @@ export async function sendPasswordReset(params: {
       dealerName: params.dealerName,
     });
 
-    void dispatchEmail(
+    // AWAIT the send. A fire-and-forget `void dispatchEmail(...)` was killed by
+    // Vercel freezing the serverless function right after the 200 response, so
+    // the reset email never actually went out (team invites work because that
+    // path already awaits). The outer catch keeps the caller enumeration-safe.
+    await dispatchEmail(
       params.email,
       `Reset your password: ${params.dealerName}`,
       html,
-    ).catch((err) => {
-      console.error("[notifications] sendPasswordReset email failed:", err);
-    });
+    );
   } catch (err) {
     console.error("[notifications] sendPasswordReset failed:", err);
   }

@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 /**
  * shadow-auth.spec.ts
  *
- * Auth-specific shadow tests — verify that:
+ * Auth-specific shadow tests, verify that:
  *   1. Admin routes never return 500 for unauthenticated requests.
  *   2. The login page is always accessible (never behind an auth wall).
  *   3. Public routes never require authentication (never return 401).
@@ -25,21 +25,21 @@ const ADMIN_API_ROUTES = [
 ];
 
 // ---------------------------------------------------------------------------
-// 1. Admin routes enforce auth — returns 401/403 or 200 in demo, never 500
+// 1. Admin routes enforce auth, returns 401/403 or 200 in demo, never 500
 // ---------------------------------------------------------------------------
 
 test.describe("Shadow auth: admin API routes never return 500 unauthenticated", () => {
   for (const route of ADMIN_API_ROUTES) {
-    test(`${route}: unauthenticated request returns 200, 401, or 403 — never 500`, async ({
+    test(`${route}: unauthenticated request returns 200, 401, or 403, never 500`, async ({
       request,
     }) => {
       const resp = await request.get(route);
       const status = resp.status();
 
       // The only acceptable outcomes for an unauthenticated request:
-      //   200 — demo mode (auth disabled)
-      //   401 — auth required (production middleware active)
-      //   403 — insufficient permissions
+      //   200, demo mode (auth disabled)
+      //   401, auth required (production middleware active)
+      //   403, insufficient permissions
       // Never acceptable: 500 (server crash), 502/504 (gateway error)
       expect([200, 401, 403]).toContain(status);
     });
@@ -85,7 +85,7 @@ test.describe("Shadow auth: admin API routes never return 500 unauthenticated", 
 });
 
 // ---------------------------------------------------------------------------
-// 2. Login page is always accessible — never behind an auth wall
+// 2. Login page is always accessible, never behind an auth wall
 // ---------------------------------------------------------------------------
 
 test.describe("Shadow auth: login page always accessible", () => {
@@ -112,7 +112,7 @@ test.describe("Shadow auth: login page always accessible", () => {
   }) => {
     await page.goto("/admin/login", { waitUntil: "domcontentloaded" });
 
-    // Must have actual form inputs — not a JSON 401 rendered as text
+    // Must have actual form inputs, not a JSON 401 rendered as text
     const emailInput = page.locator(
       'input[type="email"], input[name="email"]',
     );
@@ -132,6 +132,51 @@ test.describe("Shadow auth: login page always accessible", () => {
 });
 
 // ---------------------------------------------------------------------------
+// 2b. Password reset is always accessible, a locked-out user has no session,
+//     so gating it behind auth creates a login -> reset -> login redirect loop.
+// ---------------------------------------------------------------------------
+
+test.describe("Shadow auth: password reset is public", () => {
+  test("Browser navigation to /admin/reset-password does not redirect to login", async ({
+    page,
+  }) => {
+    await page.goto("/admin/reset-password", { waitUntil: "domcontentloaded" });
+    expect(page.url()).toContain("/admin/reset-password");
+    expect(page.url()).not.toContain("/admin/login");
+  });
+
+  test("/admin/reset-password renders the request form (an email input)", async ({
+    page,
+  }) => {
+    await page.goto("/admin/reset-password", { waitUntil: "domcontentloaded" });
+    const emailInput = page.locator(
+      'input[type="email"], input[name="email"]',
+    );
+    await expect(emailInput.first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("/admin/reset-password does not render the admin sidebar nav", async ({
+    page,
+  }) => {
+    await page.goto("/admin/reset-password", { waitUntil: "domcontentloaded" });
+    // A logged-out visitor must not see the admin navigation or app structure.
+    await expect(
+      page.locator('[aria-label^="Admin navigation"]'),
+    ).toHaveCount(0);
+  });
+
+  test("POST /api/admin/reset-password is public (never 401)", async ({
+    request,
+  }) => {
+    const resp = await request.post("/api/admin/reset-password", {
+      data: { email: "nobody@example.com" },
+    });
+    expect(resp.status()).not.toBe(401);
+    expect(resp.status()).not.toBe(500);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 3. Public routes never require auth (never return 401)
 // ---------------------------------------------------------------------------
 
@@ -142,7 +187,7 @@ test.describe("Shadow auth: public routes never return 401", () => {
   ];
 
   for (const { path, method } of PUBLIC_API_ROUTES) {
-    test(`${method} ${path} is publicly accessible — never returns 401`, async ({
+    test(`${method} ${path} is publicly accessible, never returns 401`, async ({
       request,
     }) => {
       const resp =
@@ -156,23 +201,23 @@ test.describe("Shadow auth: public routes never return 401", () => {
     });
   }
 
-  test("POST /api/leads is publicly accessible — never returns 401", async ({
+  test("POST /api/leads is publicly accessible, never returns 401", async ({
     request,
   }) => {
-    // Submit an invalid payload — we expect 422 (validation) not 401 (auth)
+    // Submit an invalid payload, we expect 422 (validation) not 401 (auth)
     const resp = await request.post("/api/leads", {
       data: { first_name: "Public" }, // intentionally incomplete
     });
 
     // 422 = public route reached, validated and rejected
     // 201 = public route reached and accepted (no DB mode)
-    // Never 401 or 403 — that would mean auth is blocking a public route
+    // Never 401 or 403, that would mean auth is blocking a public route
     expect(resp.status()).not.toBe(401);
     expect(resp.status()).not.toBe(403);
     expect([201, 400, 422, 429]).toContain(resp.status());
   });
 
-  test("POST /api/contact is publicly accessible — never returns 401", async ({
+  test("POST /api/contact is publicly accessible, never returns 401", async ({
     request,
   }) => {
     // Bearer auth header bypasses CSRF so we can test the route is reachable
