@@ -11,7 +11,7 @@ import {
 import { API_VERSION, API_VERSION_HEADER } from "@/lib/api-version";
 
 /**
- * Next.js Edge Middleware — runs on every request.
+ * Next.js Edge Middleware, runs on every request.
  *
  * Responsibilities:
  *   1. Resolve the current tenant (dealer) from the hostname.
@@ -37,7 +37,7 @@ const OEM_ID = process.env.OEM_ID ?? "";
 /** Routes that bypass tenant resolution (admin panel, API health, cron, privacy, etc.). */
 const ADMIN_ROUTE_PREFIXES = ["/admin", "/api/admin", "/api/health", "/api/privacy", "/api/cron", "/_next"];
 
-/** Platform domains — serve the marketing site, not a dealer. */
+/** Platform domains, serve the marketing site, not a dealer. */
 const PLATFORM_DOMAINS = new Set([
   "wolfpackauto.com",
   "www.wolfpackauto.com",
@@ -53,7 +53,7 @@ const SUBDOMAIN_SUFFIXES = [
 ];
 
 // ---------------------------------------------------------------------------
-// Tenant resolution (Edge-compatible — no Node.js APIs)
+// Tenant resolution (Edge-compatible, no Node.js APIs)
 // ---------------------------------------------------------------------------
 
 /**
@@ -67,7 +67,7 @@ const SUBDOMAIN_SUFFIXES = [
 function extractTenantSlug(hostname: string): string | null {
   const normalized = hostname.toLowerCase().replace(/\.$/, "");
 
-  // Platform root domains — no tenant
+  // Platform root domains, no tenant
   if (PLATFORM_DOMAINS.has(normalized)) return null;
 
   // Try subdomain extraction
@@ -78,20 +78,20 @@ function extractTenantSlug(hostname: string): string | null {
     }
   }
 
-  // Vercel preview/branch deploy URLs — treat as platform, not a dealer tenant.
+  // Vercel preview/branch deploy URLs, treat as platform, not a dealer tenant.
   // Covers wolfpack-auto-git-branch-org.vercel.app, etc.
   if (normalized.endsWith(".vercel.app")) {
     return null;
   }
 
-  // Custom domain — pass the full hostname as the slug hint so the
+  // Custom domain, pass the full hostname as the slug hint so the
   // server-side resolver can do a DB lookup. We prefix with "domain:"
   // to distinguish from subdomain slugs.
   if (!normalized.includes("localhost")) {
     return `domain:${normalized}`;
   }
 
-  // localhost without subdomain — use default
+  // localhost without subdomain, use default
   return null;
 }
 
@@ -139,19 +139,34 @@ export async function middleware(request: NextRequest) {
   const isLogin = pathname === "/admin/login";
   const isAuthApi = pathname.startsWith("/api/auth");
 
-  // This gate is ALWAYS on. DEMO_MODE never disables it — it only enables the
+  // This gate is ALWAYS on. DEMO_MODE never disables it, it only enables the
   // demo *credential* in src/lib/auth.ts, so a demo viewer still logs in
   // (demo@wolfpackauto.com / demo) and gets a real session. A previous
   // `!isDemoMode &&` escape here left the whole admin panel + dealer data
   // (incl. lead PII) served unauthenticated on the public deploy
   // (platform-scan critical, 2026-06).
   //
-  // Health endpoints are public — load balancers, canary probes, and monitoring
+  // Health endpoints are public, load balancers, canary probes, and monitoring
   // need unauthenticated access. The deep health endpoint self-protects with
   // CANARY_SECRET so infrastructure details stay private.
   const isHealthRoute = pathname.startsWith("/api/health");
 
-  if (isAdminRoute(pathname) && !isLogin && !isAuthApi && !isHealthRoute) {
+  // Password reset must be reachable WITHOUT a session. A locked-out user has no
+  // token, so gating these behind auth creates a redirect loop (login ->
+  // reset-password -> login). The reset page is public and its API is secured by
+  // the emailed one-time token + 1h expiry (POST requests the email, PUT sets the
+  // new password), never by the session.
+  const isPasswordReset =
+    pathname === "/admin/reset-password" ||
+    pathname.startsWith("/api/admin/reset-password");
+
+  if (
+    isAdminRoute(pathname) &&
+    !isLogin &&
+    !isAuthApi &&
+    !isHealthRoute &&
+    !isPasswordReset
+  ) {
     const secret = process.env.NEXTAUTH_SECRET || (() => {
       if (process.env.NODE_ENV === "production") {
         throw new Error(
@@ -193,7 +208,7 @@ export async function middleware(request: NextRequest) {
       onboardingExemptPaths.some((p) => pathname.startsWith(p));
 
     if (!isExemptFromOnboarding) {
-      // Check the onboarding_complete cookie — set by the client after status fetch
+      // Check the onboarding_complete cookie, set by the client after status fetch
       const onboardingComplete = request.cookies.get("onboarding_complete")?.value;
       if (onboardingComplete === "false") {
         const gettingStartedUrl = new URL("/admin/getting-started", request.url);
@@ -201,7 +216,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Authenticated admin route — continue without tenant resolution
+    // Authenticated admin route, continue without tenant resolution
     return applyHeaders(NextResponse.next(), hostname, request);
   }
 
@@ -209,7 +224,7 @@ export async function middleware(request: NextRequest) {
   if (isAdminRoute(pathname) || isAuthApi) {
     const adminReqHeaders = new Headers(request.headers);
     adminReqHeaders.set("x-is-admin", "1");
-    // Propagate OEM context for admin routes — read by server components via headers()
+    // Propagate OEM context for admin routes, read by server components via headers()
     adminReqHeaders.set("x-oem-id", OEM_ID);
     const adminResponse = NextResponse.next({ request: { headers: adminReqHeaders } });
     return applyHeaders(adminResponse, hostname, request);
@@ -217,7 +232,7 @@ export async function middleware(request: NextRequest) {
 
   const tenantSlug = extractTenantSlug(hostname);
 
-  // If this is a platform domain (no tenant), let it through — serves
+  // If this is a platform domain (no tenant), let it through, serves
   // the marketing / landing page at the app root.
   if (tenantSlug === null) {
     return applyHeaders(NextResponse.next(), hostname, request);
@@ -229,7 +244,7 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
 
   if (tenantSlug.startsWith("domain:")) {
-    // Custom domain — pass raw domain for DB lookup
+    // Custom domain, pass raw domain for DB lookup
     const domain = tenantSlug.slice("domain:".length);
     requestHeaders.set("x-dealer-domain", domain);
     requestHeaders.set("x-tenant-type", "custom_domain");
@@ -263,7 +278,7 @@ function applyHeaders(
     response.headers.set(key, value);
   }
 
-  // Frame protection — owned HERE (not next.config) so it can vary per-request.
+  // Frame protection, owned HERE (not next.config) so it can vary per-request.
   // The admin heatmap embeds public pages as a same-origin iframe ONLY under
   // ?__heatmap_bg=1; that request gets SAMEORIGIN / frame-ancestors 'self'.
   // Every other request stays DENY / frame-ancestors 'none', so third-party
@@ -274,7 +289,7 @@ function applyHeaders(
   response.headers.set("X-Frame-Options", isHeatmapPreview ? "SAMEORIGIN" : "DENY");
   // SECURITY_HEADERS (applied above) already sets the CSP with
   // `frame-ancestors 'none'`. For preview, REWRITE that directive to 'self' in
-  // place — appending a second value would leave 'none' as the intersection and
+  // place, appending a second value would leave 'none' as the intersection and
   // still block framing. Non-preview keeps 'none' untouched.
   if (isHeatmapPreview) {
     const csp = response.headers.get("Content-Security-Policy");
@@ -295,7 +310,7 @@ function applyHeaders(
   response.headers.delete("X-Powered-By");
   response.headers.delete("Server");
 
-  // API versioning — all /api/ responses include the platform API version
+  // API versioning, all /api/ responses include the platform API version
   // so clients can detect breaking changes and show upgrade prompts.
   response.headers.set(API_VERSION_HEADER, API_VERSION);
 
