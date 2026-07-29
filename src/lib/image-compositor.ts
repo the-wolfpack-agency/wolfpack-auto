@@ -1,5 +1,5 @@
 /**
- * Image Compositor — Sharp-Based Vehicle + Background Compositing
+ * Image Compositor: Sharp-Based Vehicle + Background Compositing
  *
  * Creates professional composite images by layering:
  *  1. Background (preset gradient or custom uploaded image)
@@ -18,7 +18,7 @@
  *   });
  */
 
-import sharp from "sharp";
+import sharp, { type OverlayOptions } from "sharp";
 import type { CompositeOptions } from "./background-generator";
 import { DEFAULT_COMPOSITE_OPTIONS } from "./background-generator";
 
@@ -308,13 +308,13 @@ export async function compositeVehicle(
   let backgroundBuffer: Buffer;
 
   if (input.background_buffer) {
-    // Custom uploaded background — resize to canvas dimensions
+    // Custom uploaded background, resize to canvas dimensions
     backgroundBuffer = await sharp(input.background_buffer)
       .resize(output_width, output_height, { fit: "cover" })
       .png()
       .toBuffer();
   } else if (input.background_css) {
-    // CSS gradient — render as image
+    // CSS gradient, render as image
     backgroundBuffer = await generateGradientBackground(
       input.background_css,
       output_width,
@@ -364,7 +364,7 @@ export async function compositeVehicle(
   const yOffset = Math.round((output_height - vehicleH) * 0.55);
 
   // 3. Build composite layers
-  const layers: sharp.OverlayOptions[] = [];
+  const layers: OverlayOptions[] = [];
 
   // Shadow layer (below vehicle)
   if (opts.add_shadow) {
@@ -391,7 +391,7 @@ export async function compositeVehicle(
       );
       layers.push({ input: reflectionBuf, left: 0, top: 0 });
     } catch {
-      // Reflection generation can fail on very small images — skip gracefully
+      // Reflection generation can fail on very small images, skip gracefully
     }
   }
 
@@ -412,7 +412,7 @@ export async function compositeVehicle(
       );
       layers.push({ input: watermarkBuf, left: 0, top: 0 });
     } catch {
-      // Watermark failure is non-critical — skip
+      // Watermark failure is non-critical, skip
     }
   }
 
