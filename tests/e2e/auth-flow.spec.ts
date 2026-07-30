@@ -15,7 +15,68 @@ import { test, expect } from "@playwright/test";
  */
 
 // ---------------------------------------------------------------------------
-// Journey 1 — Admin login page renders with form
+// Journey 0: Invite acceptance is reachable from the emailed link
+//
+// Regression cover for a client-reported bug: the "Accept Invitation" email
+// links to /admin/accept-invite?token=..., but the auth gate bounced the
+// session-less invitee to /admin/login?callbackUrl=%2Fadmin%2Faccept-invite,
+// dropping the token and showing the sign-in form instead of the set-password
+// flow. This journey asserts the fix through the UI so it cannot silently
+// regress: land on accept-invite, render the set-password form, and NEVER get
+// redirected to login.
+// ---------------------------------------------------------------------------
+
+test.describe("Auth flow: invite acceptance (set password)", () => {
+  const INVITE_URL = "/admin/accept-invite?token=e2e-test-invite-token";
+
+  test("Emailed invite link lands on the set-password page, not the login page", async ({
+    page,
+  }) => {
+    const response = await page.goto(INVITE_URL, {
+      waitUntil: "domcontentloaded",
+      timeout: 30_000,
+    });
+
+    // Must not error or auth-block the session-less invitee.
+    expect(response?.status()).not.toBe(500);
+    expect(response?.status()).not.toBe(401);
+
+    // The whole bug: the invitee was redirected to login and lost the token.
+    // After the fix the URL stays on accept-invite (token preserved).
+    expect(page.url()).toContain("/admin/accept-invite");
+    expect(page.url()).not.toContain("/admin/login");
+    expect(page.url()).not.toContain("callbackUrl");
+  });
+
+  test("Set-password form renders (password field), not the login email form", async ({
+    page,
+  }) => {
+    await page.goto(INVITE_URL, { waitUntil: "domcontentloaded", timeout: 30_000 });
+
+    // The set-password form must be present for a valid-shaped token link.
+    const passwordInput = page.locator('input[type="password"]');
+    await expect(passwordInput.first()).toBeVisible({ timeout: 10_000 });
+
+    // It is the invite flow, not the sign-in flow: no email/sign-in field, and
+    // the copy is about setting a password.
+    await expect(page.locator('input[type="email"]')).toHaveCount(0);
+    await expect(page.getByText(/set your password/i).first()).toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
+  test("Logged-out invitee does not see the admin nav / sidebar", async ({
+    page,
+  }) => {
+    await page.goto(INVITE_URL, { waitUntil: "domcontentloaded", timeout: 30_000 });
+    // The admin sidebar self-hides on unauthenticated pages. A logged-out
+    // invitee must never see the app nav (e.g. an Inventory / Sign out link).
+    await expect(page.getByRole("link", { name: /inventory/i })).toHaveCount(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Journey 1: Admin login page renders with form
 // ---------------------------------------------------------------------------
 
 test.describe("Auth flow: admin login page", () => {
@@ -70,7 +131,7 @@ test.describe("Auth flow: admin login page", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Journey 2 — Admin API routes return 401 without session (or 200 in demo)
+// Journey 2: Admin API routes return 401 without session (or 200 in demo)
 // ---------------------------------------------------------------------------
 
 test.describe("Auth flow: admin API route protection", () => {
@@ -96,7 +157,7 @@ test.describe("Auth flow: admin API route protection", () => {
     request,
   }) => {
     const resp = await request.get("/api/admin/billing");
-    // Billing always calls requireAuth — returns 401 when auth is active,
+    // Billing always calls requireAuth, returns 401 when auth is active,
     // or may return 200/500 depending on DB state in demo mode
     expect([200, 401, 403, 500]).toContain(resp.status());
   });
@@ -120,14 +181,14 @@ test.describe("Auth flow: admin API route protection", () => {
 
     for (const route of routes) {
       const resp = await request.get(route);
-      // Gateway errors mean the server crashed — never acceptable
+      // Gateway errors mean the server crashed, never acceptable
       expect([502, 504]).not.toContain(resp.status());
     }
   });
 });
 
 // ---------------------------------------------------------------------------
-// Journey 3 — Wrong credentials returns error
+// Journey 3: Wrong credentials returns error
 // ---------------------------------------------------------------------------
 
 test.describe("Auth flow: login with wrong credentials", () => {
@@ -165,10 +226,10 @@ test.describe("Auth flow: login with wrong credentials", () => {
     const currentUrl = page.url();
     const pageContent = await page.textContent("body");
 
-    // The page must still be functional — not a blank crash
+    // The page must still be functional, not a blank crash
     expect(pageContent!.length).toBeGreaterThan(50);
 
-    // If still on login page — check for error indicators
+    // If still on login page, check for error indicators
     if (currentUrl.includes("/admin/login")) {
       const hasError = await page
         .locator(
@@ -178,7 +239,7 @@ test.describe("Auth flow: login with wrong credentials", () => {
         .isVisible({ timeout: 3_000 })
         .catch(() => false);
 
-      // Either error shown OR we're back at login — both are valid failure states
+      // Either error shown OR we're back at login, both are valid failure states
       const isStillLogin =
         currentUrl.includes("/admin/login") || currentUrl.includes("/login");
       expect(hasError || isStillLogin).toBe(true);
@@ -188,7 +249,7 @@ test.describe("Auth flow: login with wrong credentials", () => {
   test("POST to NextAuth credentials endpoint with wrong password returns error", async ({
     request,
   }) => {
-    // NextAuth credentials callback — returns redirect or error
+    // NextAuth credentials callback, returns redirect or error
     // We post to the sign-in endpoint and expect a non-2xx or error body
     const resp = await request.post("/api/auth/callback/credentials", {
       form: {
@@ -219,7 +280,7 @@ test.describe("Auth flow: login with wrong credentials", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Journey 4 — Unauthenticated browser request to /admin
+// Journey 4: Unauthenticated browser request to /admin
 // ---------------------------------------------------------------------------
 
 test.describe("Auth flow: unauthenticated /admin access", () => {
@@ -235,7 +296,7 @@ test.describe("Auth flow: unauthenticated /admin access", () => {
 
     // Acceptable outcomes:
     //   A) Redirected to /admin/login (production auth)
-    //   B) Landed on /admin dashboard (demo mode — auth disabled)
+    //   B) Landed on /admin dashboard (demo mode, auth disabled)
     //   C) Redirected to / or another page
     const isLoginPage = finalUrl.includes("/admin/login");
     const isAdminDashboard =
@@ -244,7 +305,7 @@ test.describe("Auth flow: unauthenticated /admin access", () => {
 
     expect(isLoginPage || isAdminDashboard || isMarketingRedirect).toBe(true);
 
-    // Whatever happened — page must not be blank
+    // Whatever happened, page must not be blank
     const bodyText = await page.textContent("body");
     expect(bodyText!.length).toBeGreaterThan(20);
   });
@@ -256,7 +317,7 @@ test.describe("Auth flow: unauthenticated /admin access", () => {
       waitUntil: "domcontentloaded",
     });
 
-    // Follow redirects — after redirects the final status should not be 500
+    // Follow redirects, after redirects the final status should not be 500
     expect(response?.status()).not.toBe(500);
   });
 });

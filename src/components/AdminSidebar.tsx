@@ -433,10 +433,14 @@ export default function AdminSidebar() {
     }
   };
 
-  // Hide sidebar on the login page
-  // Hide the sidebar on the unauthenticated admin pages (login and password
-  // reset). A logged-out visitor must never see the admin nav or app structure.
-  if (pathname === "/admin/login" || pathname === "/admin/reset-password") {
+  // Hide the sidebar on the unauthenticated admin pages (login, password reset,
+  // and invite acceptance). A logged-out visitor, including an invited user who
+  // has not set a password yet, must never see the admin nav or app structure.
+  if (
+    pathname === "/admin/login" ||
+    pathname === "/admin/reset-password" ||
+    pathname === "/admin/accept-invite"
+  ) {
     return null;
   }
 

@@ -161,12 +161,25 @@ export async function middleware(request: NextRequest) {
     pathname === "/admin/reset-password" ||
     pathname.startsWith("/api/admin/reset-password");
 
+  // Invite acceptance must be reachable WITHOUT a session, the same shape as
+  // password reset. An invited user has no account or session yet, they arrive
+  // from the emailed link (/admin/accept-invite?token=...) to set a password.
+  // Gating it bounced the invitee to /admin/login and dropped the ?token=
+  // query (callbackUrl only carries the path), so the set-password flow never
+  // rendered (reported by a client, 2026-07). The page is public and the POST
+  // to /api/admin/accept-invite is secured by the emailed invite token (hashed,
+  // single-use, expiring), never by the session, the token IS the auth.
+  const isAcceptInvite =
+    pathname === "/admin/accept-invite" ||
+    pathname.startsWith("/api/admin/accept-invite");
+
   if (
     isAdminRoute(pathname) &&
     !isLogin &&
     !isAuthApi &&
     !isHealthRoute &&
-    !isPasswordReset
+    !isPasswordReset &&
+    !isAcceptInvite
   ) {
     const secret = process.env.NEXTAUTH_SECRET || (() => {
       if (process.env.NODE_ENV === "production") {
