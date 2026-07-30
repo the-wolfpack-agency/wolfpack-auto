@@ -56,6 +56,32 @@ describe("middleware: password reset is reachable without a session", () => {
   });
 });
 
+describe("middleware: invite acceptance is reachable without a session", () => {
+  // Regression cover for the invite loop a coworker hit: the emailed
+  // "Accept Invitation" link points at /admin/accept-invite?token=..., but the
+  // auth gate bounced the session-less invitee to
+  // /admin/login?callbackUrl=%2Fadmin%2Faccept-invite, dropping the ?token= and
+  // showing the sign-in form instead of the set-password flow. An invited user
+  // has no account yet, so gating this route makes the invite unusable.
+  test("GET /admin/accept-invite is not redirected to login", async () => {
+    const res = await middleware(request("/admin/accept-invite"));
+    expect(redirectLocation(res)).not.toContain("/admin/login");
+  });
+
+  test("GET /admin/accept-invite with a token does not drop the token via a login redirect", async () => {
+    const res = await middleware(request("/admin/accept-invite?token=abc123"));
+    // The whole bug: the invitee was redirected and lost the token. Assert no
+    // redirect to login at all, so the page renders and reads its own ?token=.
+    expect(redirectLocation(res)).not.toContain("/admin/login");
+    expect(redirectLocation(res)).not.toContain("callbackUrl");
+  });
+
+  test("POST /api/admin/accept-invite (set password from invite) is not 401", async () => {
+    const res = await middleware(request("/api/admin/accept-invite", "POST"));
+    expect(res.status).not.toBe(401);
+  });
+});
+
 describe("middleware: the auth wall still gates real protected routes", () => {
   test("unauthenticated GET /admin/inventory redirects to /admin/login", async () => {
     const res = await middleware(request("/admin/inventory"));
