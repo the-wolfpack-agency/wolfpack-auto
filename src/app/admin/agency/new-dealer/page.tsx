@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { redirectToLoginIfUnauthenticated } from "@/lib/auth-redirect";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -20,6 +21,7 @@ interface CreatedDealer {
   public_url: string;
   admin_url: string;
   admin_credentials?: { email: string; temp_password: string };
+  invite?: { email: string; accept_url: string; delivered: boolean; reason?: string };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -152,6 +154,11 @@ export default function NewDealerPage() {
         }),
       });
 
+      /* A 401 means the session is gone. Showing "Authentication required"
+         above a filled-in form leaves somebody typing into a page that can
+         never save, with no way out. Send them to sign in and bring them back. */
+      if (redirectToLoginIfUnauthenticated(res)) return;
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error || `Failed to create dealer (${res.status})`);
@@ -166,6 +173,7 @@ export default function NewDealerPage() {
         public_url: data.public_url ?? `/dealers/${data.slug}`,
         admin_url: `/admin?dealer=${data.slug}`,
         admin_credentials: data.admin_credentials,
+        invite: data.invite,
       });
     } catch {
       setError("Network error. Please try again.");
@@ -207,19 +215,48 @@ export default function NewDealerPage() {
               </a>
             </div>
 
-            {created.admin_credentials && (
-              <div className="mt-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4">
-                <p className="text-sm font-medium text-yellow-800">Default Admin Credentials</p>
-                <p className="mt-1 text-sm text-yellow-700">
-                  Email: <code className="rounded bg-yellow-100 px-1">{created.admin_credentials.email}</code>
-                </p>
-                <p className="text-sm text-yellow-700">
-                  Temp Password: <code className="rounded bg-yellow-100 px-1">{created.admin_credentials.temp_password}</code>
-                </p>
-                <p className="mt-2 text-xs text-yellow-600">
-                  Please change this password immediately after first login.
-                </p>
-              </div>
+            {/* The invite, not a password to read out over the phone. The
+                dealer's admin sets their own at /admin/accept-invite, the same
+                way Instinct and the Porsche Experience OS onboard people. */}
+            {created.invite && (
+              created.invite.delivered ? (
+                <div
+                  data-testid="invite-sent"
+                  className="mt-4 rounded-lg border border-green-300 bg-green-50 p-4"
+                >
+                  <p className="text-sm font-medium text-green-800">Invite sent</p>
+                  <p className="mt-1 text-sm text-green-700">
+                    We emailed <code className="rounded bg-green-100 px-1">{created.invite.email}</code>{" "}
+                    a link to set their password. It expires in 7 days.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  data-testid="invite-not-sent"
+                  className="mt-4 rounded-lg border border-yellow-300 bg-yellow-50 p-4"
+                >
+                  {/* Say plainly that nothing was sent, rather than implying it
+                      was. The link still works, so the dealer is not blocked. */}
+                  <p className="text-sm font-medium text-yellow-800">
+                    Invite not emailed{created.invite.reason ? ` (${created.invite.reason})` : ""}
+                  </p>
+                  <p className="mt-1 text-sm text-yellow-700">
+                    Send this link to{" "}
+                    <code className="rounded bg-yellow-100 px-1">{created.invite.email}</code> so they
+                    can set a password:
+                  </p>
+                  {created.invite.accept_url && (
+                    <p className="mt-2 break-all text-sm">
+                      <a
+                        href={created.invite.accept_url}
+                        className="font-medium text-brand-700 underline hover:text-brand-900"
+                      >
+                        {created.invite.accept_url}
+                      </a>
+                    </p>
+                  )}
+                </div>
+              )
             )}
           </div>
 
