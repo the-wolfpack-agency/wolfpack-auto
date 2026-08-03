@@ -75,7 +75,11 @@ function deadButtons(): Dead[] {
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .replace(/^\s*\/\/.*$/gm, "");
-    for (const m of src.matchAll(/<button\b((?:[^>]|\n)*?)>/g)) {
+    /* `[^>]` already matches a newline, so `(?:[^>]|\n)` was a redundant
+         alternation over the same character and backtracks exponentially on a
+         long run of them (CodeQL js/redos). The plain class is equivalent and
+         linear. */
+      for (const m of src.matchAll(/<button\b([^>]*?)>/g)) {
       const attrs = m[1];
       if (/onClick|type="submit"|type={"submit"}|disabled|form=/.test(attrs)) continue;
       const line = src.slice(0, m.index).split("\n").length;
