@@ -117,4 +117,42 @@ describe("AdminAuthWatcher", () => {
     act(() => root.unmount());
     expect(window.fetch).toBe(installed); // original restored
   });
+
+  test("does NOT redirect when already on the login page", async () => {
+    /* The production incident. The login page has no session, so its /api calls
+       answer 401; redirecting to login from login refreshed the browser
+       continuously, and because each hop encoded the previous URL into `next`
+       the address grew on every pass until it was thousands of characters. */
+    window.history.pushState({}, "", "/admin/login");
+    global.fetch = jest.fn().mockResolvedValue(resp(401));
+    const root = mount(container);
+    await window.fetch("/api/admin/me");
+    expect(signOutMock).not.toHaveBeenCalled();
+    act(() => root.unmount());
+  });
+
+  test.each([
+    ["/admin/accept-invite"],
+    ["/admin/reset-password"],
+    ["/admin/forgot-password"],
+  ])("does NOT redirect from %s, which has no session by design", async (path) => {
+    window.history.pushState({}, "", path);
+    global.fetch = jest.fn().mockResolvedValue(resp(401));
+    const root = mount(container);
+    await window.fetch("/api/admin/me");
+    expect(signOutMock).not.toHaveBeenCalled();
+    act(() => root.unmount());
+  });
+
+  test("never nests a login URL inside next", async () => {
+    // The mechanism that made the URL grow without bound.
+    window.history.pushState({}, "", "/admin/leads");
+    global.fetch = jest.fn().mockResolvedValue(resp(401));
+    const root = mount(container);
+    await window.fetch("/api/admin/leads");
+    const cb = signOutMock.mock.calls[0][0].callbackUrl as string;
+    expect(cb).toBe(`/admin/login?next=${encodeURIComponent("/admin/leads")}`);
+    expect(decodeURIComponent(decodeURIComponent(cb))).not.toMatch(/login[\s\S]*login/);
+    act(() => root.unmount());
+  });
 });
