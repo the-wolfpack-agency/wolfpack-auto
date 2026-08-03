@@ -30,7 +30,9 @@ beforeEach(() => {
     if (/INSERT INTO dealers/.test(sql)) {
       return Promise.resolve({ rows: [{ id: "d1", name: "Acme Motors", slug: "acme-motors" }] });
     }
-    return Promise.resolve({ rows: [] });
+    // A fresh address: the admin row is created.
+    if (/INSERT INTO dealer_users/.test(sql)) return Promise.resolve({ rows: [], rowCount: 1 });
+    return Promise.resolve({ rows: [], rowCount: 0 });
   });
 });
 
@@ -106,5 +108,54 @@ describe("shadow mode", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.invite).toMatchObject({ delivered: false, reason: "shadow_mode" });
     expect(mockSend).not.toHaveBeenCalled();
+  });
+});
+
+describe("an address that already belongs to somebody", () => {
+  /**
+   * The incident. The upsert used to be
+   *   ON CONFLICT (email) DO UPDATE SET dealer_id = EXCLUDED.dealer_id, role = 'owner'
+   * so creating a dealer with an existing user's address MOVED that person to
+   * the new dealer and changed their role. A real account was pulled out of its
+   * own workspace and signed in to an empty tenant.
+   */
+  beforeEach(() => {
+    mockQuery.mockImplementation((sql: string) => {
+      if (/SELECT id FROM dealers/.test(sql)) return Promise.resolve({ rows: [] });
+      if (/INSERT INTO dealers/.test(sql)) {
+        return Promise.resolve({ rows: [{ id: "d1", name: "Acme Motors", slug: "acme-motors" }] });
+      }
+      // ON CONFLICT DO NOTHING: the row already existed, nothing written.
+      if (/INSERT INTO dealer_users/.test(sql)) return Promise.resolve({ rows: [], rowCount: 0 });
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+  });
+
+  it("never reassigns the existing account to the new dealer", async () => {
+    await createDealer(INPUT);
+    const insert = mockQuery.mock.calls.find(([sql]) => /INSERT INTO dealer_users/.test(sql))!;
+    expect(insert[0]).toMatch(/ON CONFLICT \(email\) DO NOTHING/i);
+    expect(insert[0]).not.toMatch(/DO UPDATE/i);
+    expect(insert[0]).not.toMatch(/dealer_id\s*=\s*EXCLUDED/i);
+  });
+
+  it("still creates the dealer", async () => {
+    // The dealer is what was asked for; the account is somebody else's.
+    const r = await createDealer(INPUT);
+    expect(r.ok).toBe(true);
+  });
+
+  it("sends no invite, because no token was stored", async () => {
+    await createDealer(INPUT);
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("reports account_exists rather than claiming an invite went out", async () => {
+    const r = await createDealer(INPUT);
+    if (r.ok) {
+      expect(r.invite.delivered).toBe(false);
+      expect(r.invite.reason).toBe("account_exists");
+      expect(r.invite.accept_url).toBe("");
+    }
   });
 });
