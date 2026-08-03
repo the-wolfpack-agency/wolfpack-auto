@@ -204,19 +204,29 @@ export async function createDealer(
        Same shape the onboarding wizard writes, so one accept flow serves both. */
     const inviteToken = randomBytes(32).toString("hex");
     const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    /* False when the address already had an account, which DO NOTHING leaves
+       untouched. No invite is sent in that case: the token was never stored,
+       so a link would not work, and claiming one was sent is worse than
+       saying plainly that the person already has an account. */
+    let adminRowCreated = false;
     try {
-      await query(
-        `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active,
+      const adminInsert = await query(
+        /* DO NOTHING, never DO UPDATE.
+       *
+       * This used to set dealer_id = EXCLUDED.dealer_id and role = 'owner' on
+       * conflict. When the address already belonged to somebody, creating a
+       * dealer silently MOVED that person to the new dealer and changed their
+       * role. A real account was pulled out of its own workspace by somebody
+       * onboarding a client with their address, and they signed in to an empty
+       * tenant. Creating a dealer must never touch an account that already
+       * exists. */
+      `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active,
                                    invite_token, invite_expires_at, created_at, updated_at)
          VALUES ($1, $2, $3, NULL, 'owner', false, $4, $5, NOW(), NOW())
-         ON CONFLICT (email) DO UPDATE SET
-           dealer_id = EXCLUDED.dealer_id,
-           role = 'owner',
-           invite_token = EXCLUDED.invite_token,
-           invite_expires_at = EXCLUDED.invite_expires_at,
-           updated_at = NOW()`,
+         ON CONFLICT (email) DO NOTHING`,
         [dealer.id, adminEmail, `${name} Admin`, inviteToken, inviteExpiresAt.toISOString()],
       );
+      adminRowCreated = (adminInsert.rowCount ?? 0) > 0;
     } catch (err) {
       console.error("[create-dealer] Failed to create default admin:", err);
     }
@@ -229,7 +239,16 @@ export async function createDealer(
       delivered: false,
       reason: "send_failed" as string | undefined,
     };
-    try {
+    if (!adminRowCreated) {
+      /* The address already had an account, so nothing was created and no token
+         was stored. Say so rather than reporting an invite that does not exist. */
+      invite = {
+        email: adminEmail,
+        accept_url: "",
+        delivered: false,
+        reason: "account_exists",
+      };
+    } else try {
       const res = await sendTeamInvite({
         inviteeEmail: adminEmail,
         inviteeName: `${name} Admin`,
