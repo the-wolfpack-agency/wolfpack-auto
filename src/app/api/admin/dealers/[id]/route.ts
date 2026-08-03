@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole, isAuthenticated } from "@/lib/auth-guard";
+import { AGENCY_DEALER_ROLES } from "@/lib/dealers/agency-roles";
 import { trackSystem } from "@/lib/analytics-hooks";
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const authResult = await requireRole(["owner"]);
+  const authResult = await requireRole(AGENCY_DEALER_ROLES);
   if (!isAuthenticated(authResult)) return authResult;
   const { id } = await params;
 
