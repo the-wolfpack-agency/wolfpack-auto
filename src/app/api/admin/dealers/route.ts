@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireRole, isAuthenticated } from "@/lib/auth-guard";
 import { trackSystem } from "@/lib/analytics-hooks";
 import { createDealer } from "@/lib/dealers/create-dealer";
+import { AGENCY_DEALER_ROLES } from "@/lib/dealers/agency-roles";
 
 /**
  * GET   /api/admin/dealers — list all dealers
@@ -61,7 +62,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireRole(["owner"]);
+  const authResult = await requireRole(AGENCY_DEALER_ROLES);
   if (!isAuthenticated(authResult)) return authResult;
 
   let body: Record<string, unknown>;
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { name, slug, phone, email, address, branding, sales_hours } = body as {
+  const { name, slug, phone, email, address, branding, sales_hours, logo_url } = body as {
     name?: string;
     slug?: string;
     phone?: string;
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
     address?: Record<string, string>;
     branding?: Record<string, string>;
     sales_hours?: unknown[];
+    logo_url?: string;
   };
 
   // Shared dealer-create logic lives in src/lib/dealers/create-dealer.ts
@@ -92,6 +94,7 @@ export async function POST(request: NextRequest) {
     address,
     branding,
     sales_hours,
+    logo_url,
   });
 
   if (!created.ok) {
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const authResult = await requireRole(["owner"]);
+  const authResult = await requireRole(AGENCY_DEALER_ROLES);
   if (!isAuthenticated(authResult)) return authResult;
 
   let body: Record<string, unknown>;

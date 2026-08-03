@@ -48,7 +48,24 @@ test.describe("Agency: Dealer API", () => {
         branding: { primary_color: "#0070c7", secondary_color: "#f97316" },
       },
     });
+    /* This assertion used to be `not.toBe(500)` with the real checks hidden
+       behind `if (status === 201)`. Unauthenticated the route answers 401, so
+       the body was never inspected and this test passed green for months while
+       /admin/agency/new-dealer could not create a dealer at all: the route
+       required role `owner` and every real person holds `admin`, so every
+       submit was a 403.
+
+       403 is now explicitly disallowed. 401 means "no session", which is the
+       expected state here; 403 means the role gate itself refuses somebody who
+       reached it, which is the bug. The authenticated version of this check
+       lives in src/app/api/admin/dealers/__tests__/create-dealer-contract.test.ts,
+       where roles can be driven directly without credentials. */
     expect(res.status()).not.toBe(500);
+    expect(
+      res.status(),
+      "403 here means the dealer role gate refuses a real user, which is what broke onboarding",
+    ).not.toBe(403);
+    expect([200, 201, 401]).toContain(res.status());
     if (res.status() === 201) {
       const body = await res.json();
       expect(body).toHaveProperty("id");

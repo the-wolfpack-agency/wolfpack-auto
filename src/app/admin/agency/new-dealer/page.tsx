@@ -38,6 +38,10 @@ function slugify(name: string): string {
 const INPUT_CLASS =
   "mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20";
 
+/** Same limits the server enforces in create-dealer.ts and the logo endpoint. */
+const LOGO_TYPES = ["image/png", "image/jpeg", "image/svg+xml"];
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+
 const LABEL_CLASS = "block text-sm font-medium text-gray-700";
 
 /* -------------------------------------------------------------------------- */
@@ -68,6 +72,44 @@ export default function NewDealerPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedDealer | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoName, setLogoName] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
+
+  /**
+   * Read the chosen file into a base64 data URL.
+   *
+   * That is exactly how /api/admin/settings/logo already stores a logo in
+   * dealers.logo_url, so this reuses the existing convention instead of adding
+   * a second one. It also has to be a data URL here: the file is chosen before
+   * the dealer exists, so there is no row yet to attach an upload to.
+   *
+   * The server validates type and size again; these checks are so the person
+   * gets told immediately rather than after a failed submit.
+   */
+  const handleLogoChange = useCallback((file: File | null) => {
+    setLogoError(null);
+    if (!file) {
+      setLogoUrl(null);
+      setLogoName(null);
+      return;
+    }
+    if (!LOGO_TYPES.includes(file.type)) {
+      setLogoError("Only PNG, JPG, or SVG files are accepted.");
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      setLogoError("File must be under 2 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLogoUrl(reader.result as string);
+      setLogoName(file.name);
+    };
+    reader.onerror = () => setLogoError("Could not read that file. Try another.");
+    reader.readAsDataURL(file);
+  }, []);
 
   const handleNameChange = useCallback((val: string) => {
     setName(val);
@@ -101,6 +143,7 @@ export default function NewDealerPage() {
           email,
           address: { street, city, state, zip },
           branding: { primary_color: primaryColor, secondary_color: secondaryColor },
+          logo_url: logoUrl,
           sales_hours: hours.filter((h) => !h.closed).map((h) => ({
             day: h.day,
             open: h.open,
@@ -409,16 +452,51 @@ export default function NewDealerPage() {
               </div>
             </div>
             <div className="sm:col-span-2">
-              <label className={LABEL_CLASS}>Logo</label>
-              <div className="mt-2 flex cursor-pointer items-center gap-4 rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 transition-colors hover:border-brand-600 hover:text-brand-700">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gray-100 text-xs text-gray-400">
-                  ?
+              <label htmlFor="dealer-logo" className={LABEL_CLASS}>Logo</label>
+              {/* This was a bare <div> with cursor-pointer and no input: it looked
+                  clickable and did nothing at all. It is a real file control now,
+                  and the label wraps it so the whole area is the click target. */}
+              <label
+                htmlFor="dealer-logo"
+                className="mt-2 flex cursor-pointer items-center gap-4 rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500 transition-colors hover:border-brand-600 hover:text-brand-700 focus-within:border-brand-600 focus-within:ring-2 focus-within:ring-brand-600/20"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded bg-gray-100 text-xs text-gray-400">
+                  {logoUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={logoUrl} alt="" className="h-full w-full object-contain" />
+                  ) : (
+                    "?"
+                  )}
                 </div>
                 <div>
-                  <span className="block font-medium text-gray-700">Click to upload logo</span>
+                  <span className="block font-medium text-gray-700">
+                    {logoName ? `Selected: ${logoName}` : "Click to upload logo"}
+                  </span>
                   <span className="text-xs text-gray-400">PNG, JPG, or SVG up to 2MB</span>
                 </div>
-              </div>
+                <input
+                  id="dealer-logo"
+                  data-testid="dealer-logo-input"
+                  type="file"
+                  accept={LOGO_TYPES.join(",")}
+                  className="sr-only"
+                  onChange={(e) => handleLogoChange(e.target.files?.[0] ?? null)}
+                />
+              </label>
+              {logoError && (
+                <p data-testid="dealer-logo-error" className="mt-2 text-sm text-red-600">
+                  {logoError}
+                </p>
+              )}
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={() => handleLogoChange(null)}
+                  className="mt-2 text-sm text-gray-500 underline hover:text-gray-700"
+                >
+                  Remove logo
+                </button>
+              )}
             </div>
           </div>
         </section>

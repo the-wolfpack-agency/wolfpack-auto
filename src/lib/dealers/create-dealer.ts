@@ -21,6 +21,13 @@ export interface CreateDealerInput {
   address?: Record<string, string>;
   branding?: Record<string, string>;
   sales_hours?: unknown[];
+  /**
+   * Logo as a base64 data URL, matching how /api/admin/settings/logo already
+   * stores it in dealers.logo_url. A data URL is what lets the new-dealer form
+   * carry a logo at all: the file is chosen before the dealer exists, so there
+   * is no row to attach an upload to yet.
+   */
+  logo_url?: string;
 }
 
 export interface CreateDealerResult {
@@ -55,6 +62,28 @@ export function sanitizeSlug(slug: string): string {
     .replace(/^-|-$/g, "");
 }
 
+/** Same limits the upload endpoint enforces, so both paths agree. */
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+const LOGO_TYPES = ["image/png", "image/jpeg", "image/svg+xml"];
+
+/**
+ * Accept a logo data URL only if it is one, of an allowed type, and small enough.
+ *
+ * The value arrives from a browser, so the client-side checks are a convenience
+ * and this is the one that counts. Returns null for anything unusable rather
+ * than throwing: a bad logo must not stop a dealer being created.
+ */
+export function validateLogoDataUrl(value: unknown): string | null {
+  if (typeof value !== "string" || value === "") return null;
+  const m = /^data:([a-z+/-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(value);
+  if (!m) return null;
+  if (!LOGO_TYPES.includes(m[1].toLowerCase())) return null;
+  // 4 base64 chars per 3 bytes; ignore padding.
+  const bytes = Math.floor((m[2].length * 3) / 4);
+  if (bytes > LOGO_MAX_BYTES) return null;
+  return value;
+}
+
 /**
  * Generate a one-time temporary password for the auto-created admin.
  * Format: Wp<base36-time>! — meets the project's password validator.
@@ -85,6 +114,7 @@ export async function createDealer(
   input: CreateDealerInput,
 ): Promise<CreateDealerResult | CreateDealerError> {
   const { name, phone, email, address, branding, sales_hours } = input;
+  const logoUrl = validateLogoDataUrl(input.logo_url);
 
   if (!name || !input.slug) {
     return { ok: false, status: 400, error: "name and slug are required" };
@@ -130,8 +160,8 @@ export async function createDealer(
 
     // Insert the dealer row.
     const result = await query<{ id: string; name: string; slug: string }>(
-      `INSERT INTO dealers (name, slug, subdomain, phone, email, address, branding, sales_hours, is_active, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW())
+      `INSERT INTO dealers (name, slug, subdomain, phone, email, address, branding, sales_hours, logo_url, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, NOW(), NOW())
        RETURNING id, name, slug`,
       [
         name,
@@ -142,6 +172,7 @@ export async function createDealer(
         JSON.stringify(address ?? {}),
         JSON.stringify(branding ?? {}),
         JSON.stringify(sales_hours ?? []),
+        logoUrl,
       ],
     );
 
