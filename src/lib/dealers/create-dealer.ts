@@ -12,6 +12,7 @@
 
 import { randomBytes } from "crypto";
 import { trackSystem } from "@/lib/analytics-hooks";
+import { sendTeamInvite } from "@/lib/notifications";
 
 export interface CreateDealerInput {
   name: string;
@@ -42,6 +43,24 @@ export interface CreateDealerResult {
   admin_credentials: {
     email: string;
     temp_password: string;
+  };
+  /**
+   * The invite sent to the new dealer's admin.
+   *
+   * Creating a dealer used to mint a temp password and print it on screen for
+   * somebody to relay by hand. Every other product here (Instinct, the Porsche
+   * Experience OS) emails an invite link and lets the person set their own
+   * password, and this now does the same through the same sendTeamInvite path
+   * the onboarding wizard already uses.
+   *
+   * `accept_url` is returned either way. When no mailbox is configured the send
+   * is skipped rather than faked, and the operator gets a link to pass on.
+   */
+  invite: {
+    email: string;
+    accept_url: string;
+    delivered: boolean;
+    reason?: string;
   };
 }
 
@@ -143,6 +162,7 @@ export async function createDealer(
       public_url: `/dealers/${cleanSlug}`,
       admin_url: `/admin?dealer=${cleanSlug}`,
       admin_credentials: { email: adminEmail, temp_password: tempPassword },
+      invite: { email: adminEmail, accept_url: "", delivered: false, reason: "shadow_mode" },
     };
   }
 
@@ -178,18 +198,55 @@ export async function createDealer(
 
     const dealer = result.rows[0];
 
-    // Auto-onboarding step 1: default admin user.
+    /* Auto-onboarding step 1: the dealer's admin, invited rather than issued a
+       password. The row starts inactive with an invite token; accepting it at
+       /admin/accept-invite is what sets a password and activates the account.
+       Same shape the onboarding wizard writes, so one accept flow serves both. */
+    const inviteToken = randomBytes(32).toString("hex");
+    const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     try {
-      const { hash } = await import("bcryptjs");
-      const passwordHash = await hash(tempPassword, 12);
       await query(
-        `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, 'owner', true, NOW(), NOW())
-         ON CONFLICT (email) DO NOTHING`,
-        [dealer.id, adminEmail, `${name} Admin`, passwordHash],
+        `INSERT INTO dealer_users (dealer_id, email, name, password_hash, role, is_active,
+                                   invite_token, invite_expires_at, created_at, updated_at)
+         VALUES ($1, $2, $3, NULL, 'owner', false, $4, $5, NOW(), NOW())
+         ON CONFLICT (email) DO UPDATE SET
+           dealer_id = EXCLUDED.dealer_id,
+           role = 'owner',
+           invite_token = EXCLUDED.invite_token,
+           invite_expires_at = EXCLUDED.invite_expires_at,
+           updated_at = NOW()`,
+        [dealer.id, adminEmail, `${name} Admin`, inviteToken, inviteExpiresAt.toISOString()],
       );
     } catch (err) {
       console.error("[create-dealer] Failed to create default admin:", err);
+    }
+
+    /* Send it. A failed send must never fail the dealer: the token is stored,
+       the link comes back in the response, and it can be resent. */
+    let invite = {
+      email: adminEmail,
+      accept_url: "",
+      delivered: false,
+      reason: "send_failed" as string | undefined,
+    };
+    try {
+      const res = await sendTeamInvite({
+        inviteeEmail: adminEmail,
+        inviteeName: `${name} Admin`,
+        role: "owner",
+        inviterName: "Wolfpack Auto",
+        dealerName: name,
+        inviteToken,
+        dealerId: dealer.id,
+      });
+      invite = {
+        email: adminEmail,
+        accept_url: res.acceptUrl,
+        delivered: Boolean(res.delivered),
+        reason: res.delivered ? undefined : res.reason,
+      };
+    } catch (err) {
+      console.error("[create-dealer] Failed to send invite email:", err);
     }
 
     // Auto-onboarding step 2: default message templates (best-effort).
@@ -228,6 +285,7 @@ export async function createDealer(
       public_url: `/dealers/${dealer.slug}`,
       admin_url: `/admin?dealer=${dealer.slug}`,
       admin_credentials: { email: adminEmail, temp_password: tempPassword },
+      invite,
     };
   } catch (err) {
     console.error("[create-dealer] Failed:", err);
