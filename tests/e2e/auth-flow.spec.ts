@@ -150,7 +150,7 @@ test.describe("Auth flow: admin API route protection", () => {
   }) => {
     const resp = await request.get("/api/admin/stats");
     // Stats route queries DB directly without in-memory fallback; may 500 without DB
-    expect([200, 401, 403, 500]).toContain(resp.status());
+    expect([200, 401, 403]).toContain(resp.status());
   });
 
   test("GET /api/admin/billing without auth returns 401 or 200 (never 500 from unhandled auth)", async ({
@@ -159,14 +159,14 @@ test.describe("Auth flow: admin API route protection", () => {
     const resp = await request.get("/api/admin/billing");
     // Billing always calls requireAuth, returns 401 when auth is active,
     // or may return 200/500 depending on DB state in demo mode
-    expect([200, 401, 403, 500]).toContain(resp.status());
+    expect([200, 401, 403]).toContain(resp.status());
   });
 
   test("GET /api/admin/settings without auth returns 401 or 200 (never unhandled)", async ({
     request,
   }) => {
     const resp = await request.get("/api/admin/settings");
-    expect([200, 401, 403, 500]).toContain(resp.status());
+    expect([200, 401, 403]).toContain(resp.status());
   });
 
   test("None of the protected admin API routes return an unhandled 502 or 504", async ({

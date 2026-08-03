@@ -86,7 +86,7 @@ test.describe("Onboarding Analytics: event emission", () => {
       "/api/admin/analytics/query?event_type=system&action=system.onboarding_step",
     );
     // 500 possible if onboarding_events table doesn't exist (migration 043 not run)
-    expect([200, 401, 403, 404, 405, 500]).toContain(res.status());
+    expect([200, 401, 403, 404, 405]).toContain(res.status());
 
     if (res.status() === 200) {
       const body = await res.json();
@@ -291,7 +291,7 @@ test.describe("Onboarding Analytics: funnel query", () => {
     const res = await request.get(
       "/api/admin/analytics/query?event_type=system",
     );
-    expect([200, 401, 403, 404, 405, 500]).toContain(res.status());
+    expect([200, 401, 403, 404, 405]).toContain(res.status());
 
     if (res.status() === 200) {
       const body = await res.json();
