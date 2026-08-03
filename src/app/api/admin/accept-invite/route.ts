@@ -40,13 +40,24 @@ export async function POST(request: NextRequest) {
     const { hash } = await import("bcryptjs");
     const { query } = await import("@/lib/db");
 
-    // Find user by invite token that hasn't expired
+    /* Find the user by a live invite token.
+     *
+     * This used to also require `is_active = false`, which meant anybody who
+     * already had an account could never accept an invite: the row keeps
+     * is_active = true, the lookup returned nothing, and the page said
+     * "Invalid or expired invitation" at somebody holding a perfectly good
+     * link. That is exactly what happens when a dealer is created for an
+     * address that is already a user, which is common when re-onboarding.
+     *
+     * The token is the credential, and it is enough on its own: it is 32 random
+     * bytes, it is emailed only to the address it belongs to, it expires in 7
+     * days, and it is cleared on use below so it works exactly once. Requiring
+     * is_active on top of that protected nothing and locked out real people. */
     const result = await query(
       `SELECT id, dealer_id, email, name, role
        FROM dealer_users
        WHERE invite_token = $1
          AND invite_expires_at > NOW()
-         AND is_active = false
        LIMIT 1`,
       [token],
     );
