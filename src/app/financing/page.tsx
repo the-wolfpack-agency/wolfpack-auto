@@ -144,12 +144,16 @@ export default function FinancingPage() {
                     </li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  className={`mt-8 w-full rounded-xl px-6 py-3 text-base font-bold text-white transition-colors ${tier.buttonBg} focus:outline-none focus:ring-2 focus:ring-offset-2`}
+                {/* Was a <button> with no handler: it looked like the primary
+                    call to action on the page and did nothing at all. Points at
+                    the page's own #apply section, the same target the hero CTA
+                    above already uses. */}
+                <a
+                  href="#apply"
+                  className={`mt-8 block w-full rounded-xl px-6 py-3 text-center text-base font-bold text-white transition-colors ${tier.buttonBg} focus:outline-none focus:ring-2 focus:ring-offset-2`}
                 >
                   Apply Now
-                </button>
+                </a>
               </div>
             ))}
           </div>
@@ -244,12 +248,17 @@ export default function FinancingPage() {
                 <p className="mt-2 text-4xl font-bold text-brand-700">$489<span className="text-xl font-normal text-brand-500">/mo</span></p>
               </div>
 
-              <button
-                type="button"
-                className="w-full rounded-xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-brand-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+              {/* Had no handler and did nothing. There is no public
+                  pre-approval form yet, so it goes to /contact, which is where
+                  this page's own closing CTA already sends people. An honest
+                  destination beats a button that silently fails under a
+                  customer's finger. */}
+              <a
+                href="/contact"
+                className="block w-full rounded-xl bg-brand-600 px-6 py-3.5 text-center text-base font-bold text-white shadow-lg transition-all hover:bg-brand-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
               >
                 Get Pre-Approved with This Payment
-              </button>
+              </a>
             </div>
           </div>
         </div>
