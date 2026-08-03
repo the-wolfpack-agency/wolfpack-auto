@@ -17,6 +17,17 @@ import { signOut } from "next-auth/react";
  *
  * Renders nothing.
  */
+/**
+ * Pages that legitimately have no session. A 401 on these is expected, not a
+ * signal to send somebody to sign in.
+ */
+const PUBLIC_AUTH_PATHS = [
+  "/admin/login",
+  "/admin/accept-invite",
+  "/admin/reset-password",
+  "/admin/forgot-password",
+];
+
 export default function AdminAuthWatcher() {
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -42,9 +53,26 @@ export default function AdminAuthWatcher() {
             u.origin === window.location.origin &&
             u.pathname.startsWith("/api/") &&
             !u.pathname.startsWith("/api/auth/");
-          if (sameOriginApi) {
+
+          /* Never redirect while already on an unauthenticated page.
+           *
+           * The login page has no session by definition, so any /api call it
+           * makes answers 401. Redirecting to login from login is a loop, and
+           * because each hop encoded the previous URL into `next`, the address
+           * grew on every pass: ?next=%2Fadmin%2Flogin%3Fnext%3D%252F... until
+           * the browser was refreshing continuously. */
+          const onPublicAuthPage = PUBLIC_AUTH_PATHS.some(
+            (p) => window.location.pathname === p || window.location.pathname.startsWith(`${p}/`),
+          );
+
+          if (sameOriginApi && !onPublicAuthPage) {
             handling = true;
-            const next = window.location.pathname + window.location.search;
+            const current = window.location.pathname + window.location.search;
+            /* Never carry a login URL forward as `next`; that is what let the
+               parameter nest inside itself. */
+            const next = PUBLIC_AUTH_PATHS.some((p) => window.location.pathname.startsWith(p))
+              ? "/admin"
+              : current;
             void signOut({
               callbackUrl: `/admin/login?next=${encodeURIComponent(next)}`,
             });
