@@ -1,5 +1,20 @@
 import { test, expect } from "@playwright/test";
 
+/**
+ * NOTE on assertions in this file.
+ *
+ * These were `expect(status).not.toBe(500)`, which rules out a crash and
+ * nothing else: a 403 or 404 sails through. That is how "POST /api/admin/dealers
+ * creates a new dealer" stayed green for months while the page could not
+ * onboard anybody, because the route answered 403 to every real user.
+ *
+ * They now name the statuses that are actually valid. 401 remains acceptable
+ * because these run unauthenticated in shadow mode; 403 does NOT, because a 403
+ * means the gate refuses somebody who reached it, which is the bug class this
+ * file failed to catch.
+ */
+
+
 // Add immediately after imports:
 test.skip(
   !process.env.DATABASE_URL,
@@ -29,7 +44,7 @@ test.describe("Agency: Dealer API", () => {
   test("GET /api/admin/dealers returns dealer list", async ({ request }) => {
     const res = await request.get("/api/admin/dealers");
     // 401 (auth) or 200 (shadow) — never 500
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     if (res.status() === 200) {
       const body = await res.json();
       expect(body).toHaveProperty("dealers");
@@ -60,7 +75,7 @@ test.describe("Agency: Dealer API", () => {
        reached it, which is the bug. The authenticated version of this check
        lives in src/app/api/admin/dealers/__tests__/create-dealer-contract.test.ts,
        where roles can be driven directly without credentials. */
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     expect(
       res.status(),
       "403 here means the dealer role gate refuses a real user, which is what broke onboarding",
@@ -78,7 +93,7 @@ test.describe("Agency: Dealer API", () => {
     const res = await request.post("/api/admin/dealers", {
       data: { phone: "123" },
     });
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     // Should be 400 (validation) or 401 (auth)
     if (res.status() !== 401) {
       expect(res.status()).toBe(400);
@@ -92,7 +107,7 @@ test.describe("Agency: Dealer API", () => {
         is_active: false,
       },
     });
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
   });
 });
 
@@ -103,7 +118,7 @@ test.describe("Agency: Dealer API", () => {
 test.describe("Agency: Dealer Users API", () => {
   test("GET /api/admin/dealer-users returns user list", async ({ request }) => {
     const res = await request.get("/api/admin/dealer-users");
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     if (res.status() === 200) {
       const body = await res.json();
       expect(body).toHaveProperty("users");
@@ -120,7 +135,7 @@ test.describe("Agency: Dealer Users API", () => {
         role: "admin",
       },
     });
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     if (res.status() === 201) {
       const body = await res.json();
       expect(body).toHaveProperty("user");
@@ -133,7 +148,7 @@ test.describe("Agency: Dealer Users API", () => {
     const res = await request.post("/api/admin/dealer-users", {
       data: { email: "noname@test.com" },
     });
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     if (res.status() !== 401) {
       expect(res.status()).toBe(400);
     }
@@ -145,13 +160,13 @@ test.describe("Agency: Dealer Users API", () => {
     const first = await request.post("/api/admin/dealer-users", {
       data: { name: "User A", email, password: "Pass1234!", role: "staff" },
     });
-    expect(first.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(first.status());
 
     // Second attempt with same email
     const second = await request.post("/api/admin/dealer-users", {
       data: { name: "User B", email, password: "Pass1234!", role: "staff" },
     });
-    expect(second.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(second.status());
     // In DB mode: 409. In shadow mode: 201 (no dupe check). Both acceptable.
   });
 
@@ -159,12 +174,12 @@ test.describe("Agency: Dealer Users API", () => {
     const res = await request.patch("/api/admin/dealer-users/usr-001", {
       data: { role: "manager" },
     });
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
   });
 
   test("DELETE /api/admin/dealer-users/[id] deactivates a user", async ({ request }) => {
     const res = await request.delete("/api/admin/dealer-users/usr-003");
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     if (res.status() === 200) {
       const body = await res.json();
       expect(body).toHaveProperty("success", true);
@@ -182,14 +197,14 @@ test.describe("Agency: Switch Dealer", () => {
       data: { dealer_id: "00000000-0000-4000-a000-000000000001" },
     });
     // 401 (auth needed) or 200 (session updated) — never 500
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
   });
 
   test("POST /api/admin/switch-dealer requires dealer_id", async ({ request }) => {
     const res = await request.post("/api/admin/switch-dealer", {
       data: {},
     });
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     // Should be 400 or 401
     if (res.status() !== 401) {
       expect(res.status()).toBe(400);
@@ -204,12 +219,12 @@ test.describe("Agency: Switch Dealer", () => {
 test.describe("Agency: Page Rendering", () => {
   test("Agency page loads", async ({ page }) => {
     const response = await page.goto("/admin/agency");
-    expect(response?.status()).not.toBe(500);
+    expect([200, 401, 403, 307, 302]).toContain(response?.status() ?? 0);
   });
 
   test("New dealer page loads with form", async ({ page }) => {
     const response = await page.goto("/admin/agency/new-dealer");
-    expect(response?.status()).not.toBe(500);
+    expect([200, 401, 403, 307, 302]).toContain(response?.status() ?? 0);
     // Check the page has the key form elements (may be behind auth redirect)
     const url = page.url();
     if (!url.includes("/login")) {
@@ -219,12 +234,12 @@ test.describe("Agency: Page Rendering", () => {
 
   test("Team page loads", async ({ page }) => {
     const response = await page.goto("/admin/team");
-    expect(response?.status()).not.toBe(500);
+    expect([200, 401, 403, 307, 302]).toContain(response?.status() ?? 0);
   });
 
   test("Settings page loads with webhook section", async ({ page }) => {
     const response = await page.goto("/admin/settings");
-    expect(response?.status()).not.toBe(500);
+    expect([200, 401, 403, 307, 302]).toContain(response?.status() ?? 0);
     const url = page.url();
     if (!url.includes("/login")) {
       // Check for the integrations section
@@ -245,7 +260,7 @@ test.describe("Agency: Regressions", () => {
     // Verify the route is reachable (not 404/500)
     const res = await request.get("/api/admin/dealer-users");
     expect(res.status()).not.toBe(404);
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
 
     if (res.status() === 200) {
       const body = await res.json();
@@ -262,7 +277,7 @@ test.describe("Agency: Regressions", () => {
     // Verify that /api/admin routes are auth-gated
     // Sending a request without credentials should return 401 (not 500)
     const res = await request.get("/api/admin/dealer-users");
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
     // If auth is active, we get 401; if demo mode, we get 200
     expect([200, 401]).toContain(res.status());
   });
@@ -272,7 +287,7 @@ test.describe("Agency: Regressions", () => {
       data: { dealer_id: "demo-dealer" },
     });
     expect(res.status()).not.toBe(404);
-    expect(res.status()).not.toBe(500);
+    expect([200, 201, 400, 401, 409]).toContain(res.status());
   });
 
   test("Never 500 on any agency endpoint", async ({ request }) => {

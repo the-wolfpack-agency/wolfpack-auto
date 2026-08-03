@@ -259,7 +259,7 @@ test.describe("Data integrity: admin export endpoints", () => {
       expect(contentType).toMatch(/csv|json|text/i);
     } else {
       // Auth required — acceptable in test environment
-      expect([401, 403, 500]).toContain(response.status());
+      expect([401, 403]).toContain(response.status());
       test.info().annotations.push({
         type: "info",
         description: `Leads export returned ${response.status()} — likely needs auth`,
@@ -277,7 +277,7 @@ test.describe("Data integrity: admin export endpoints", () => {
       // Should have some structure
       expect(typeof body).toBe("object");
     } else {
-      expect([401, 403, 500]).toContain(response.status());
+      expect([401, 403]).toContain(response.status());
       test.info().annotations.push({
         type: "info",
         description: `Analytics export returned ${response.status()} — likely needs auth`,
