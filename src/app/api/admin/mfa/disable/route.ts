@@ -19,7 +19,11 @@ interface DisableRequestBody {
 }
 
 export async function DELETE(request: Request): Promise<NextResponse> {
-  const authResult = await requireRole(["admin"]);
+  /* owner is included deliberately. The gate used to be ["admin"] alone,
+     which locked out the highest-privilege role: an owner could not disable
+     MFA for anybody. requireRole is a flat includes() with no hierarchy, so
+     every gate has to name owner explicitly. */
+  const authResult = await requireRole(["owner", "admin"]);
   if (!isAuthenticated(authResult)) return authResult;
 
   if (!process.env.DATABASE_URL) {

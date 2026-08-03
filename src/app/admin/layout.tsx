@@ -19,6 +19,13 @@ export default function AdminLayout({
 }) {
   return (
     <AuthProvider>
+      {/* Global session-expiry guard. It was imported here and never rendered,
+          so every admin page sat on a dead "Authentication required" banner
+          when a session expired instead of going to login. Its own tests
+          passed the whole time: they exercise the component directly and never
+          asserted it was mounted. layout-mounts-auth-watcher.test.tsx does. */}
+      <AdminAuthWatcher />
+
       {/*
         Hide the root layout's public chrome (top bar, nav header, footer,
         chat bubble, cookie banner) on all admin pages. The admin layout
