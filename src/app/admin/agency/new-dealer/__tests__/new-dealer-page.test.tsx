@@ -26,6 +26,11 @@ import NewDealerPage from "../page";
 
 declare const global: any;
 
+const mockRedirect = jest.fn((_res: { status: number }) => false);
+jest.mock("@/lib/auth-redirect", () => ({
+  redirectToLoginIfUnauthenticated: (res: { status: number }) => mockRedirect(res),
+}));
+
 // React 18 concurrent act() support; without it every state update warns.
 (global as any).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -37,6 +42,7 @@ let root: Root;
 beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
+  mockRedirect.mockReturnValue(false);
   global.fetch = jest.fn(() =>
     Promise.resolve({
       ok: true,
@@ -141,6 +147,49 @@ describe("choosing a file", () => {
     });
     const err = container.querySelector('[data-testid="dealer-logo-error"]');
     expect(err?.textContent).toMatch(/under 2 MB/i);
+  });
+});
+
+describe("when the session has expired", () => {
+  it("hands the 401 to the login redirect instead of rendering a dead form", async () => {
+    /* The reported state: "Authentication required" in red above a filled-in
+       form that could never save, with no way out.
+
+       jsdom will not allow window.location to be replaced, so this asserts the
+       wiring: the response reaches the redirect helper, and the raw error is
+       NOT rendered beside the form. What the helper then does with a 401 is
+       covered directly in src/lib/__tests__/auth-redirect.test.ts. */
+    mockRedirect.mockReturnValue(true);
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ error: "Authentication required" }),
+      }),
+    );
+    render();
+    const form = container.querySelector("form")!;
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(mockRedirect).toHaveBeenCalledWith(expect.objectContaining({ status: 401 }));
+    expect(container.textContent).not.toContain("Authentication required");
+  });
+
+  it("does NOT redirect on a 403, which is a real permission answer", async () => {
+    // 403 was the dealer-role bug; it has to stay visible, not bounce to login.
+    mockRedirect.mockReturnValue(false);
+    global.fetch = jest.fn(() =>
+      Promise.resolve({ ok: false, status: 403, json: () => Promise.resolve({ error: "Insufficient permissions" }) }),
+    );
+    render();
+    const form = container.querySelector("form")!;
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(container.textContent).toContain("Insufficient permissions");
   });
 });
 

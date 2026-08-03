@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
     public_url: created.public_url,
     admin_url: created.admin_url,
     admin_credentials: created.admin_credentials,
+    invite: created.invite,
   }, { status: 201 });
 }
 
