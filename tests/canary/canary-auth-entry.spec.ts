@@ -83,3 +83,57 @@ test.describe("unauthenticated entry points", () => {
     await expect(page.locator('button[type="submit"]').first()).toBeVisible({ timeout: 15_000 });
   });
 });
+
+/**
+ * The other half of the contract: gated surfaces must turn a stranger away.
+ *
+ * WHY THIS IS SEPARATE
+ *
+ * Until 2026-08-04 the canary had no session at all, so its 30 admin-page
+ * checks were really asserting that a signed-out visitor COULD read the dealer
+ * dashboard. When `DEMO_MODE` stopped waving anonymous traffic past the
+ * middleware gate — the right change — those checks went red, and the red was
+ * easy to misread as "the admin pages are broken".
+ *
+ * Now the admin checks carry a real session, and the signed-out behaviour is
+ * asserted here, deliberately, in a block that never gets one. A future change
+ * that re-opens the gate turns this red instead of quietly turning the rest of
+ * the suite green.
+ *
+ * This block must never use `storageState`.
+ */
+const GATED_ROUTES = [
+  "/admin",
+  "/admin/leads",
+  "/admin/deals",
+  "/admin/settings",
+  "/admin/agency",
+];
+
+test.describe("gated surfaces refuse a signed-out visitor", () => {
+  for (const route of GATED_ROUTES) {
+    test(`${route} sends a signed-out visitor to the sign-in page`, async ({
+      page,
+    }) => {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+
+      expect(
+        page.url(),
+        `${route} rendered for a visitor with no session. The admin auth gate ` +
+          `is open — this is a data exposure, not a test failure.`,
+      ).toContain("/admin/login");
+    });
+  }
+
+  test("an admin API answers a signed-out caller with 401, not data", async ({
+    request,
+  }) => {
+    /* A page redirect is not enough on its own. The April incident was a page
+       that looked gated while its APIs answered anyway. */
+    const res = await request.get("/api/admin/dealers");
+    expect(
+      [401, 403],
+      `/api/admin/dealers answered ${res.status()} to a caller with no session`,
+    ).toContain(res.status());
+  });
+});

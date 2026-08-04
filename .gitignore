@@ -37,3 +37,4 @@ __pycache__/
 # Playwright run artifacts
 test-results/
 playwright-report/
+tests/canary/.auth/

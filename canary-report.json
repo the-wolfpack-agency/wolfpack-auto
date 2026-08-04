@@ -1,7 +1,15 @@
 {
   "config": {
-    "configFile": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/playwright.canary.config.ts",
-    "rootDir": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/canary",
+    "argv": [
+      "/usr/local/bin/node",
+      "/Users/nicholashomyk/mono/wolfpack-auto/node_modules/.bin/playwright",
+      "test",
+      "--config=playwright.canary.config.ts",
+      "--list"
+    ],
+    "configFile": "/Users/nicholashomyk/mono/wolfpack-auto/playwright.canary.config.ts",
+    "rootDir": "/Users/nicholashomyk/mono/wolfpack-auto/tests/canary",
+    "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": false,
     "globalSetup": null,
@@ -10,22 +18,34 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 1
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/test-results",
+        "outputDir": "/Users/nicholashomyk/mono/wolfpack-auto/test-results",
         "repeatEach": 1,
         "retries": 1,
-        "metadata": {
-          "actualWorkers": 1
-        },
-        "id": "",
-        "name": "",
-        "testDir": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/canary",
+        "metadata": {},
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/Users/nicholashomyk/mono/wolfpack-auto/tests/canary",
         "testIgnore": [],
+        "testMatch": [
+          "/canary-auth\\.setup\\.ts$/"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/nicholashomyk/mono/wolfpack-auto/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {},
+        "id": "canary",
+        "name": "canary",
+        "testDir": "/Users/nicholashomyk/mono/wolfpack-auto/tests/canary",
+        "testIgnore": [
+          "/canary-auth\\.setup\\.ts$/"
+        ],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
@@ -56,16 +76,311 @@
       "max": 5,
       "threshold": 300000
     },
-    "runAgents": "none",
     "shard": null,
     "tags": [],
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
-    "version": "1.58.2",
+    "version": "1.62.0",
     "workers": 1,
     "webServer": null
   },
   "suites": [
+    {
+      "title": "canary-auth.setup.ts",
+      "file": "canary-auth.setup.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "canary signs in",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "setup",
+              "projectName": "setup",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "90b5ad238e74c4b2577a-51be2ddd8d0da1f8d13b",
+          "file": "canary-auth.setup.ts",
+          "line": 16,
+          "column": 6
+        }
+      ]
+    },
+    {
+      "title": "canary-analytics-coverage.spec.ts",
+      "file": "canary-analytics-coverage.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "analytics coverage manifest scanned 128 pages",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-fa418b170bf37665ebab",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 103,
+          "column": 5
+        },
+        {
+          "title": "clicks track on /admin/onboarding (30 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-6b50fff8e540ae9be9fb",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/lender-routing (23 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-afa82324c2e90ee887cb",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/agency/new-dealer (21 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-50026c25427b3a14c779",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /service-booking (19 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-0ceff223b117c4e7c850",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/deal-copilot (18 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-1c73a676e619ef858424",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/inventory/backgrounds (18 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-848ac5929a5257b3ac85",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/service/repair-orders (17 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-dfe5ff018e0df5408e41",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/settings (17 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-e4d55b87cd88938b5799",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/documents (16 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-4a376eb39598dabcc519",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/syndication (16 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-b702a224281c7ede4dad",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/deals (15 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-7b963f5076eb81219723",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        },
+        {
+          "title": "clicks track on /admin/ofac (15 interactives)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "5f132d1eb78c61af7673-b7d863f6e3b07e12d041",
+          "file": "canary-analytics-coverage.spec.ts",
+          "line": 109,
+          "column": 7
+        }
+      ]
+    },
     {
       "title": "canary-analytics.spec.ts",
       "file": "canary-analytics.spec.ts",
@@ -88,27 +403,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 356,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:07.740Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "0bf38ccd39b7df01d2dd-90d2b26e68f0caba7147",
+              "id": "0bf38ccd39b7df01d2dd-46bb24bbdbcf52dfc145",
               "file": "canary-analytics.spec.ts",
               "line": 18,
               "column": 7
@@ -122,27 +423,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 33,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:08.109Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "0bf38ccd39b7df01d2dd-8f3b8c3195ba3959941a",
+              "id": "0bf38ccd39b7df01d2dd-466da697beb4747ef1c1",
               "file": "canary-analytics.spec.ts",
               "line": 26,
               "column": 7
@@ -156,27 +443,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 111,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:08.149Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "0bf38ccd39b7df01d2dd-dd050be3d071b15e6747",
+              "id": "0bf38ccd39b7df01d2dd-67f7075ee7536c0f8243",
               "file": "canary-analytics.spec.ts",
               "line": 44,
               "column": 7
@@ -190,27 +463,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 230,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:08.269Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "0bf38ccd39b7df01d2dd-ffa3bfeb8e343dc17c4a",
+              "id": "0bf38ccd39b7df01d2dd-27bd02395ed682116d50",
               "file": "canary-analytics.spec.ts",
               "line": 59,
               "column": 7
@@ -224,29 +483,260 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 109,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:08.508Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "0bf38ccd39b7df01d2dd-ba1cd1d1e512b8738e1d",
+              "id": "0bf38ccd39b7df01d2dd-a6e05b4e15f096ad0ee5",
               "file": "canary-analytics.spec.ts",
               "line": 70,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "canary-auth-entry.spec.ts",
+      "file": "canary-auth-entry.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "unauthenticated entry points",
+          "file": "canary-auth-entry.spec.ts",
+          "line": 34,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin/login settles without a redirect loop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-4596cfca00dae001a9bd",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 36,
+              "column": 9
+            },
+            {
+              "title": "/admin/accept-invite settles without a redirect loop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-c8f6855f7a19fd9a42b3",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 36,
+              "column": 9
+            },
+            {
+              "title": "/admin/reset-password settles without a redirect loop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-0fe08904592f3ddb008e",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 36,
+              "column": 9
+            },
+            {
+              "title": "/admin/forgot-password settles without a redirect loop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-33c0dedf7b44a186b902",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 36,
+              "column": 9
+            },
+            {
+              "title": "/admin/login shows a usable sign-in form",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-8b067031018c2b6d19cc",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 77,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "gated surfaces refuse a signed-out visitor",
+          "file": "canary-auth-entry.spec.ts",
+          "line": 113,
+          "column": 6,
+          "specs": [
+            {
+              "title": "/admin sends a signed-out visitor to the sign-in page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-75ecb3f14251cf9972d4",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 115,
+              "column": 9
+            },
+            {
+              "title": "/admin/leads sends a signed-out visitor to the sign-in page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-e3362f1c33848053dfe5",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 115,
+              "column": 9
+            },
+            {
+              "title": "/admin/deals sends a signed-out visitor to the sign-in page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-df557298cdbbf4b9b9ca",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 115,
+              "column": 9
+            },
+            {
+              "title": "/admin/settings sends a signed-out visitor to the sign-in page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-dbfd17431415793fd9bb",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 115,
+              "column": 9
+            },
+            {
+              "title": "/admin/agency sends a signed-out visitor to the sign-in page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-73ca860213aebb4a96c4",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 115,
+              "column": 9
+            },
+            {
+              "title": "an admin API answers a signed-out caller with 401, not data",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "be96058ca5c16c8cc665-f5b60ef932a4e03930ad",
+              "file": "canary-auth-entry.spec.ts",
+              "line": 128,
               "column": 7
             }
           ]
@@ -275,27 +765,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1221,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:08.628Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "b9a84efbdc05dbe5a9ca-fa3af9253b6aae3ad413",
+              "id": "b9a84efbdc05dbe5a9ca-b20354559e6240b5b582",
               "file": "canary-data-source.spec.ts",
               "line": 35,
               "column": 7
@@ -309,27 +785,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 36,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:09.854Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "b9a84efbdc05dbe5a9ca-2e523b591e566944cc30",
+              "id": "b9a84efbdc05dbe5a9ca-7d4868eaad64ad96aa93",
               "file": "canary-data-source.spec.ts",
               "line": 47,
               "column": 7
@@ -343,27 +805,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 46,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:09.894Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "b9a84efbdc05dbe5a9ca-023e483033c4098b6293",
+              "id": "b9a84efbdc05dbe5a9ca-2a3622ed9afdca878b51",
               "file": "canary-data-source.spec.ts",
               "line": 57,
               "column": 7
@@ -377,27 +825,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 26,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:09.945Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "b9a84efbdc05dbe5a9ca-f57a9c9a3be38cb5ff98",
+              "id": "b9a84efbdc05dbe5a9ca-7ee85b42e34f909800d0",
               "file": "canary-data-source.spec.ts",
               "line": 77,
               "column": 7
@@ -411,27 +845,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:09.975Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "b9a84efbdc05dbe5a9ca-f3026117b7fa2900b045",
+              "id": "b9a84efbdc05dbe5a9ca-bbb5e9b6b1b330badb06",
               "file": "canary-data-source.spec.ts",
               "line": 87,
               "column": 7
@@ -445,27 +865,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 256,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:09.987Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "b9a84efbdc05dbe5a9ca-92bb8aa0027808f18d27",
+              "id": "b9a84efbdc05dbe5a9ca-2f2d2a587fdb4206214e",
               "file": "canary-data-source.spec.ts",
               "line": 100,
               "column": 7
@@ -496,27 +902,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 106,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:10.254Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-4c9071e38ad797618a00",
+              "id": "40d7468b063e47c718e4-67a39a1eaad1c879eb02",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 16,
               "column": 7
@@ -530,27 +922,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 129,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:10.364Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-a576a4d5671ac8e70d20",
+              "id": "40d7468b063e47c718e4-8194bb66a71ac69db6c6",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 49,
               "column": 7
@@ -564,27 +942,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 94,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:10.497Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-4313818ee6bbab8bd1fe",
+              "id": "40d7468b063e47c718e4-1fb735864dcdf23c77f5",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 61,
               "column": 7
@@ -598,27 +962,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 96,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:10.596Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-07322873456d6f429ea8",
+              "id": "40d7468b063e47c718e4-186b7e465857d1ced528",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 69,
               "column": 7
@@ -632,27 +982,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 96,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:10.695Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-261962cc267a087b391d",
+              "id": "40d7468b063e47c718e4-d4512581e3749832f0c5",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 82,
               "column": 7
@@ -666,27 +1002,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 102,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:10.796Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-dbff6641c80c137aac00",
+              "id": "40d7468b063e47c718e4-b4f51620b7e819e71be8",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 92,
               "column": 7
@@ -700,27 +1022,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 98,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:10.904Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-a75d8da7c1b7448db3f5",
+              "id": "40d7468b063e47c718e4-d0ad405ca0e0b6d1a420",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 103,
               "column": 7
@@ -734,27 +1042,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 208,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.005Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "40d7468b063e47c718e4-ea19fcd5dd577d88be2e",
+              "id": "40d7468b063e47c718e4-da30493b0603ee8ccabf",
               "file": "canary-deep-health-unit.spec.ts",
               "line": 115,
               "column": 7
@@ -785,27 +1079,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 104,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.219Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-3705f3dd4c2b92c9a1af",
+              "id": "a4cf8a3baff4789282b7-38db0bc2504cd4156589",
               "file": "canary-health.spec.ts",
               "line": 11,
               "column": 7
@@ -819,27 +1099,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 105,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.329Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-9ca927d13f63a2558db9",
+              "id": "a4cf8a3baff4789282b7-8693b2ddee4c8291b7cd",
               "file": "canary-health.spec.ts",
               "line": 21,
               "column": 7
@@ -853,27 +1119,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 102,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.439Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-c7053d827746b7a7de93",
+              "id": "a4cf8a3baff4789282b7-8d94d1c7cfd9a6b9f879",
               "file": "canary-health.spec.ts",
               "line": 30,
               "column": 7
@@ -887,27 +1139,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 102,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.548Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-1b382ee877ec9807a0f2",
+              "id": "a4cf8a3baff4789282b7-32db53cc72ec91a41342",
               "file": "canary-health.spec.ts",
               "line": 40,
               "column": 7
@@ -921,27 +1159,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 107,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.655Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-35e42e53558579eb90a9",
+              "id": "a4cf8a3baff4789282b7-d44ca7b5229154cdab2a",
               "file": "canary-health.spec.ts",
               "line": 50,
               "column": 7
@@ -955,27 +1179,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 111,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.768Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-515c8d275c2bd6e54afd",
+              "id": "a4cf8a3baff4789282b7-32e5254d995e2c321705",
               "file": "canary-health.spec.ts",
               "line": 58,
               "column": 7
@@ -989,27 +1199,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 113,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:11.886Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-211be944c70fc37438c9",
+              "id": "a4cf8a3baff4789282b7-3264db83e5b9bc624bc4",
               "file": "canary-health.spec.ts",
               "line": 67,
               "column": 7
@@ -1023,27 +1219,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 108,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:12.008Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-f29184670225a0149183",
+              "id": "a4cf8a3baff4789282b7-109ec1f7917b70201ace",
               "file": "canary-health.spec.ts",
               "line": 75,
               "column": 7
@@ -1057,32 +1239,66 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 152,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:12.128Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "a4cf8a3baff4789282b7-7ba34862c82d05deaf62",
+              "id": "a4cf8a3baff4789282b7-a28c1d0e9c12f1b0792b",
               "file": "canary-health.spec.ts",
               "line": 85,
               "column": 7
             }
           ]
+        }
+      ]
+    },
+    {
+      "title": "canary-heatmap-end-to-end.spec.ts",
+      "file": "canary-heatmap-end-to-end.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "end-to-end: real Playwright clicks populate the heatmap on prod",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "98ddc1e6e02fd3763c39-5664209c81e668cfc38e",
+          "file": "canary-heatmap-end-to-end.spec.ts",
+          "line": 36,
+          "column": 5
+        },
+        {
+          "title": "admin/* events ingest with dealer_id stamp + persist to PG (skipped if buffer is the only signal)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "98ddc1e6e02fd3763c39-fe730856d1ca96710810",
+          "file": "canary-heatmap-end-to-end.spec.ts",
+          "line": 139,
+          "column": 5
         }
       ]
     },
@@ -1093,7 +1309,7 @@
       "line": 0,
       "specs": [
         {
-          "title": "Shallow health responds within 3000ms (cold) / 500ms (warm)",
+          "title": "Shallow health responds within 10000ms (cold) / 8000ms (warm)",
           "ok": true,
           "tags": [],
           "tests": [
@@ -1101,70 +1317,19 @@
               "timeout": 30000,
               "annotations": [],
               "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "failed",
-                  "duration": 7395,
-                  "error": {
-                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m500\u001b[39m\nReceived:   \u001b[31m5409\u001b[39m",
-                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m500\u001b[39m\nReceived:   \u001b[31m5409\u001b[39m\n    at /Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/canary/canary-latency.spec.ts:94:25",
-                    "location": {
-                      "file": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/canary/canary-latency.spec.ts",
-                      "column": 25,
-                      "line": 94
-                    },
-                    "snippet": "  92 |\n  93 |     expect(warmRes.status()).toBeLessThan(500);\n> 94 |     expect(warmLatency).toBeLessThan(check.warmThresholdMs);\n     |                         ^\n  95 |   });\n  96 | }\n  97 |"
-                  },
-                  "errors": [
-                    {
-                      "location": {
-                        "file": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/canary/canary-latency.spec.ts",
-                        "column": 25,
-                        "line": 94
-                      },
-                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m500\u001b[39m\nReceived:   \u001b[31m5409\u001b[39m\n\n  92 |\n  93 |     expect(warmRes.status()).toBeLessThan(500);\n> 94 |     expect(warmLatency).toBeLessThan(check.warmThresholdMs);\n     |                         ^\n  95 |   });\n  96 | }\n  97 |\n    at /Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/canary/canary-latency.spec.ts:94:25"
-                    }
-                  ],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-03-29T21:55:12.291Z",
-                  "annotations": [],
-                  "attachments": [],
-                  "errorLocation": {
-                    "file": "/Users/nicholashomyk/mono/AgenticQA/wolfpack-auto/tests/canary/canary-latency.spec.ts",
-                    "column": 25,
-                    "line": 94
-                  }
-                },
-                {
-                  "workerIndex": 1,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 90,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 1,
-                  "startTime": "2026-03-29T21:55:20.208Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "flaky"
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
             }
           ],
-          "id": "aa6bacdbc4d38651625c-3f5ffe408ce71e8c93b7",
+          "id": "aa6bacdbc4d38651625c-640fc9b86d42a8a4d941",
           "file": "canary-latency.spec.ts",
           "line": 66,
           "column": 7
         },
         {
-          "title": "Deep health (all probes) responds within 5000ms (cold) / 2000ms (warm)",
+          "title": "Deep health (all probes) responds within 10000ms (cold) / 8000ms (warm)",
           "ok": true,
           "tags": [],
           "tests": [
@@ -1172,33 +1337,19 @@
               "timeout": 30000,
               "annotations": [],
               "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 1,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 228,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-03-29T21:55:20.307Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
             }
           ],
-          "id": "aa6bacdbc4d38651625c-4b228312d3e06520e3fe",
+          "id": "aa6bacdbc4d38651625c-fda32a45fb204d6985e2",
           "file": "canary-latency.spec.ts",
           "line": 66,
           "column": 7
         },
         {
-          "title": "Inventory list responds within 3000ms (cold) / 1000ms (warm)",
+          "title": "Inventory list responds within 8000ms (cold) / 5000ms (warm)",
           "ok": true,
           "tags": [],
           "tests": [
@@ -1206,33 +1357,19 @@
               "timeout": 30000,
               "annotations": [],
               "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 1,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 80,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-03-29T21:55:20.542Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
             }
           ],
-          "id": "aa6bacdbc4d38651625c-d989d55776ff2fb5efa5",
+          "id": "aa6bacdbc4d38651625c-11fbf6b9e5e001990df0",
           "file": "canary-latency.spec.ts",
           "line": 66,
           "column": 7
         },
         {
-          "title": "Lead submission responds within 3000ms (cold) / 1000ms (warm)",
+          "title": "Lead submission responds within 8000ms (cold) / 5000ms (warm)",
           "ok": true,
           "tags": [],
           "tests": [
@@ -1240,27 +1377,13 @@
               "timeout": 30000,
               "annotations": [],
               "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 1,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 57,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-03-29T21:55:20.630Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
             }
           ],
-          "id": "aa6bacdbc4d38651625c-cf6b6357171f5b8ba93d",
+          "id": "aa6bacdbc4d38651625c-e47bfe5a4b6c9f9464c3",
           "file": "canary-latency.spec.ts",
           "line": 66,
           "column": 7
@@ -1274,30 +1397,697 @@
               "timeout": 30000,
               "annotations": [],
               "expectedStatus": "passed",
-              "projectId": "",
-              "projectName": "",
-              "results": [
-                {
-                  "workerIndex": 1,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 194,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-03-29T21:55:20.692Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
             }
           ],
-          "id": "aa6bacdbc4d38651625c-99fb0ac8c7067104e0f6",
+          "id": "aa6bacdbc4d38651625c-062bbcfacf85bb09b414",
           "file": "canary-latency.spec.ts",
           "line": 98,
           "column": 5
+        }
+      ]
+    },
+    {
+      "title": "canary-public-consent.spec.ts",
+      "file": "canary-public-consent.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "PRIVACY: public-page clicks WITHOUT consent are not tracked",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19cf6c8c41d082dcd50b-fa8b49784e0a6e2f322f",
+          "file": "canary-public-consent.spec.ts",
+          "line": 30,
+          "column": 5
+        },
+        {
+          "title": "ANALYTICS: public-page clicks WITH wolfpack_consent=accepted are tracked",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19cf6c8c41d082dcd50b-7af0610934c385a7919a",
+          "file": "canary-public-consent.spec.ts",
+          "line": 76,
+          "column": 5
+        },
+        {
+          "title": "dropdown PAGES: public storefront pages appear in /api/admin/heatmaps topPages once visited with consent",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "canary",
+              "projectName": "canary",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19cf6c8c41d082dcd50b-f7d5c5d6bffe9cc7829c",
+          "file": "canary-public-consent.spec.ts",
+          "line": 149,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "canary-ui-render.spec.ts",
+      "file": "canary-ui-render.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "UI Render — Public Pages (customer-facing)",
+          "file": "canary-ui-render.spec.ts",
+          "line": 79,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Homepage (/) renders for customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-d57ef7d39357385bae27",
+              "file": "canary-ui-render.spec.ts",
+              "line": 81,
+              "column": 9
+            },
+            {
+              "title": "Inventory (/inventory) renders for customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-b634c871855b7bb36d4d",
+              "file": "canary-ui-render.spec.ts",
+              "line": 81,
+              "column": 9
+            },
+            {
+              "title": "Trade-In (/trade-in) renders for customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-be8b465573cb867fd8c0",
+              "file": "canary-ui-render.spec.ts",
+              "line": 81,
+              "column": 9
+            },
+            {
+              "title": "Service Booking (/service-booking) renders for customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-60d98263632849fe6703",
+              "file": "canary-ui-render.spec.ts",
+              "line": 81,
+              "column": 9
+            },
+            {
+              "title": "Privacy (/privacy) renders for customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-e43cff600f080fde9b1e",
+              "file": "canary-ui-render.spec.ts",
+              "line": 81,
+              "column": 9
+            },
+            {
+              "title": "Terms (/terms) renders for customers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-9cf99bb9c3c4d8401817",
+              "file": "canary-ui-render.spec.ts",
+              "line": 81,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "UI Render — Admin Pages (dealer dashboard)",
+          "file": "canary-ui-render.spec.ts",
+          "line": 117,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Dashboard (/admin) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-0a494663df3a6f4dfbcc",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Inventory (/admin/inventory) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-a19440237aaca12d97e5",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Leads (/admin/leads) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-26c63acd34f8df0f2ace",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Deals (/admin/deals) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-c8d2ac0bbea745d53a14",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Analytics (/admin/analytics) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-1de33ce40825692ffa7d",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Analytics Brain (/admin/analytics-brain) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-30c1bc08a3faca495485",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Compliance (/admin/compliance) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-3450c4180464533e1dff",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Settings (/admin/settings) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-8504a576c0ef38da3b70",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Service (/admin/service) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-fa8e692ab11a799e0ddf",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Pricing (/admin/pricing) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-144e78e63682f70c4602",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Marketing (/admin/marketing) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-4ee677f0fa26e8478e8b",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Documents (/admin/documents) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-ce397119f36f3d9c9576",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Customers (/admin/customers) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-4a15018a24cff56a110f",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Reports (/admin/reports) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-c2bdad099d0403c16426",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Funnel Health (/admin/funnel-health) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-2e1b981479a9f8d45850",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Team (/admin/team) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-41849bb2c138676fa0bb",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "Security (/admin/security) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-a87f9f3dc2566873fbff",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            },
+            {
+              "title": "System Health (/admin/system) renders without white-screening",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-5ce1aff0e44e89897d9f",
+              "file": "canary-ui-render.spec.ts",
+              "line": 124,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "UI Render — Cross-Cutting Checks",
+          "file": "canary-ui-render.spec.ts",
+          "line": 174,
+          "column": 6,
+          "specs": [
+            {
+              "title": "homepage loads within 3 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-9f954f7c8173e1f17081",
+              "file": "canary-ui-render.spec.ts",
+              "line": 175,
+              "column": 7
+            },
+            {
+              "title": "admin dashboard loads within 5 seconds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-c108f73fa33f9890933a",
+              "file": "canary-ui-render.spec.ts",
+              "line": 182,
+              "column": 7
+            },
+            {
+              "title": "CSS is loaded (not unstyled)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-dbaca0297429d0ed8a14",
+              "file": "canary-ui-render.spec.ts",
+              "line": 189,
+              "column": 7
+            },
+            {
+              "title": "no React error boundary fallback visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-e7d1981dc322cc9f5e0f",
+              "file": "canary-ui-render.spec.ts",
+              "line": 202,
+              "column": 7
+            },
+            {
+              "title": "inventory page loads real vehicle data or empty state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "7b975894cae95abd7e8f-0ee8c0411bdf7c6cb032",
+              "file": "canary-ui-render.spec.ts",
+              "line": 213,
+              "column": 7
+            }
+          ]
         }
       ]
     },
@@ -1323,27 +2113,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 103,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:20.895Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "d62e7898cb370e442c4a-6852711cff9bfef9eddd",
+              "id": "d62e7898cb370e442c4a-46c21780c6ff667eaaf1",
               "file": "canary-write-roundtrip.spec.ts",
               "line": 15,
               "column": 7
@@ -1357,27 +2133,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 26,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:21.002Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "d62e7898cb370e442c4a-7bd6db1778735e3e1bcc",
+              "id": "d62e7898cb370e442c4a-982e10ce9a736dd35dfc",
               "file": "canary-write-roundtrip.spec.ts",
               "line": 27,
               "column": 7
@@ -1391,27 +2153,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 168,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:21.034Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "d62e7898cb370e442c4a-c12f9218b66019dbc2bb",
+              "id": "d62e7898cb370e442c4a-16157a771d3841c4db39",
               "file": "canary-write-roundtrip.spec.ts",
               "line": 67,
               "column": 7
@@ -1425,27 +2173,13 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "",
-                  "projectName": "",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 286,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-29T21:55:21.208Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "canary",
+                  "projectName": "canary",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "d62e7898cb370e442c4a-017c81d9812fe71fdafc",
+              "id": "d62e7898cb370e442c4a-1b78542f274331011e96",
               "file": "canary-write-roundtrip.spec.ts",
               "line": 76,
               "column": 7
@@ -1457,11 +2191,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-03-29T21:55:07.165Z",
-    "duration": 14356.879,
-    "expected": 36,
-    "skipped": 0,
+    "startTime": "2026-08-04T15:14:53.235Z",
+    "duration": 93.654,
+    "expected": 0,
+    "skipped": 96,
     "unexpected": 0,
-    "flaky": 1
+    "flaky": 0
   }
 }

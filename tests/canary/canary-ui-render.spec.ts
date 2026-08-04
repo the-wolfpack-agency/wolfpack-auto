@@ -14,6 +14,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { CANARY_STATE } from "./helpers/canary-auth";
 
 /* -------------------------------------------------------------------------- */
 /* Page lists — exhaustive coverage of every user-facing route                 */
@@ -114,6 +115,11 @@ test.describe("UI Render — Public Pages (customer-facing)", () => {
 /* -------------------------------------------------------------------------- */
 
 test.describe("UI Render — Admin Pages (dealer dashboard)", () => {
+  /* Admin pages are gated. Without this the whole block asserts that a
+     signed-out visitor can read the dealer dashboard, which is both wrong and
+     the opposite of what we want to be true. */
+  test.use({ storageState: CANARY_STATE });
+
   for (const { path, name } of ADMIN_PAGES) {
     test(`${name} (${path}) renders without white-screening`, async ({ page }) => {
       const jsErrors: string[] = [];
@@ -132,7 +138,7 @@ test.describe("UI Render — Admin Pages (dealer dashboard)", () => {
       // Must not redirect to login (auth misconfiguration)
       expect(
         page.url(),
-        `${path} redirected to login — DEMO_MODE or auth broken`,
+        `${path} redirected to login while signed in — the session was rejected, or this page gates on a capability the canary account lacks`,
       ).not.toContain("/admin/login");
 
       // HTTP 200

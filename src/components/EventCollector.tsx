@@ -265,13 +265,59 @@ function hasAnalyticsConsent(): boolean {
   return false;
 }
 
-function enqueueEvent(event: AnalyticsEvent): void {
-  // Respect cookie consent: if consent is not granted, only allow essential events.
-  if (!ESSENTIAL_EVENT_TYPES.has(event.event_type)) {
-    if (!hasAnalyticsConsent()) return;
-  }
+/** Strip identity from an event so it can be counted but not attributed.
+ *
+ * Returns a copy with the same shape, so downstream buffering, batching and
+ * the server contract are unchanged — only the identifiers differ. Matches
+ * exactly what `anonEvent()` produces for the heatmap types. */
+function withoutIdentity(event: AnalyticsEvent): AnalyticsEvent {
+  return { ...event, session_id: "anon", user_fingerprint: "anon" };
+}
 
-  eventBuffer.push(event);
+/**
+ * The consent rule, as a pure function so it can be tested directly.
+ *
+ * Returns the event to record, or `null` to drop it.
+ *
+ * Exported because the previous unit test re-implemented this logic in the test
+ * file "to keep the test self-contained", which means it pinned a copy and
+ * could never have failed on a regression in the real code. Testing the actual
+ * decision is the point.
+ */
+export function applyConsentPolicy(
+  event: AnalyticsEvent,
+  consented: boolean,
+): AnalyticsEvent | null {
+  const essential = ESSENTIAL_EVENT_TYPES.has(event.event_type);
+  if (!essential && !consented) return null;
+  if (essential && !consented) return withoutIdentity(event);
+  return event;
+}
+
+/** The event types that may be recorded before consent. Exported for the test
+ *  that holds every one of them to the no-identity rule. */
+export const CONSENT_EXEMPT_EVENT_TYPES: ReadonlySet<string> = ESSENTIAL_EVENT_TYPES;
+
+function enqueueEvent(event: AnalyticsEvent): void {
+  /* An essential event may be COUNTED before consent. It may not be ATTRIBUTED.
+   *
+   * The exemption above is justified by these events carrying no identity, and
+   * `heatmap_click` / `heatmap_move` earn it: `anonEvent()` hard-codes their
+   * session_id and user_fingerprint to "anon". `page_view` does not — it is
+   * built by `buildEvent()`, so until 2026-08-04 it left the browser with a
+   * real session id AND a persistent fingerprint before the visitor had agreed
+   * to anything. Measured on production: one page_view carrying
+   * `s_…`/`fp_…` alongside five correctly anonymous heatmap clicks.
+   *
+   * Anonymising here rather than at the call site makes the guarantee hold for
+   * whatever gets added to ESSENTIAL_EVENT_TYPES next, instead of depending on
+   * whoever adds it remembering. No data is lost: the page view is still
+   * recorded and still aggregates, it just cannot be tied to a person until
+   * they consent. Once consent is given, events carry real identity again. */
+  const safe = applyConsentPolicy(event, hasAnalyticsConsent());
+  if (!safe) return;
+
+  eventBuffer.push(safe);
 
   if (eventBuffer.length >= FLUSH_THRESHOLD) {
     // Threshold reached — flush immediately and cancel any pending timers.

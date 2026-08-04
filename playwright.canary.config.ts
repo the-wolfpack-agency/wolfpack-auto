@@ -33,4 +33,29 @@ export default defineConfig({
       "x-canary-secret": process.env.CANARY_SECRET ?? "",
     },
   },
+
+  /*
+   * Two projects, because the canary has to prove two opposite things.
+   *
+   *   setup   signs in once and saves the session.
+   *   canary  runs every spec. Specs that check a gated surface opt into the
+   *           saved session with `test.use({ storageState: CANARY_STATE })`;
+   *           the ones that check anonymous behaviour deliberately do not, so
+   *           they keep seeing production the way a signed-out visitor does.
+   *
+   * The session is NOT applied globally here. Doing that would silently
+   * authenticate `canary-auth-entry.spec.ts`, whose whole job is to confirm a
+   * signed-out visitor is turned away.
+   */
+  projects: [
+    {
+      name: "setup",
+      testMatch: /canary-auth\.setup\.ts$/,
+    },
+    {
+      name: "canary",
+      testIgnore: /canary-auth\.setup\.ts$/,
+      dependencies: ["setup"],
+    },
+  ],
 });

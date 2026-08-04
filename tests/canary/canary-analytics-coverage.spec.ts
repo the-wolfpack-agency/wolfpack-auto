@@ -24,7 +24,8 @@
  *   COVERAGE_FILTER   substring match on route (e.g. "deals|leads").
  */
 
-import { test, expect, request as pwRequest } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { CANARY_STATE, authedRequest } from "./helpers/canary-auth";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
@@ -76,7 +77,7 @@ const ELIGIBLE = MANIFEST.pages
    Sets BEFORE the first navigation so the EventCollector reads
    the right consent on mount. */
 async function ensureConsent(
-  context: Awaited<ReturnType<typeof pwRequest.newContext>> | unknown,
+  context: unknown,
   baseURL: string,
   route: string,
 ) {
@@ -94,6 +95,11 @@ async function ensureConsent(
 
 test.describe.configure({ mode: "serial" });
 
+/* Most routes in the manifest are gated, and the heatmap read is gated for
+   all of them. Public routes still stamp their own consent cookie below, so
+   signing in does not change what is being measured there. */
+test.use({ storageState: CANARY_STATE });
+
 test(`analytics coverage manifest scanned ${MANIFEST.page_count} pages`, () => {
   expect(MANIFEST.page_count).toBeGreaterThan(0);
   expect(ELIGIBLE.length).toBeGreaterThan(0);
@@ -104,7 +110,7 @@ for (const entry of ELIGIBLE) {
     page,
     baseURL,
   }) => {
-    const apiCtx = await pwRequest.newContext({ baseURL });
+    const apiCtx = await authedRequest(baseURL);
     const PAGE_FILTER = entry.route;
 
     const before = await (
@@ -137,7 +143,7 @@ for (const entry of ELIGIBLE) {
        needs to know about. Surface it as a fail rather than skip. */
     expect(
       page.url(),
-      `auth gate redirected ${entry.route} to ${page.url()} — set CANARY_AUTH_COOKIE for the canary env`,
+      `signed in, but ${entry.route} still redirected to ${page.url()} — the saved session was rejected`,
     ).toContain(entry.route);
 
     /* Three clicks at varied coordinates on the page body. */
