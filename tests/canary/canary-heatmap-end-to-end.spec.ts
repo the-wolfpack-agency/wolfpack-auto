@@ -21,18 +21,23 @@
  *     tests/canary/canary-heatmap-end-to-end.spec.ts
  */
 
-import { test, expect, request as pwRequest } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { CANARY_STATE, authedRequest } from "./helpers/canary-auth";
 
 const TARGET = "/admin/heatmaps";
 const PAGE_FILTER = "/admin/heatmaps";
 
 test.describe.configure({ mode: "serial" });
 
+/* Clicks an /admin page and reads /api/admin/heatmaps, both of which are
+   gated. A cookie-less context is why the read answered 401. */
+test.use({ storageState: CANARY_STATE });
+
 test("end-to-end: real Playwright clicks populate the heatmap on prod", async ({
   page,
   baseURL,
 }) => {
-  const apiCtx = await pwRequest.newContext({ baseURL });
+  const apiCtx = await authedRequest(baseURL);
 
   /* ── Step 1: snapshot the heatmap state BEFORE we click. ────── */
   const beforeRes = await apiCtx.get(
@@ -51,12 +56,11 @@ test("end-to-end: real Playwright clicks populate the heatmap on prod", async ({
      auth and redirects to /login, the rest of the test can't run —
      fail loudly with the URL we ended on so the operator knows. */
   const landed = page.url();
-  if (!landed.includes(TARGET)) {
-    test.skip(
-      true,
-      `auth gate redirected canary to ${landed} — set CANARY_AUTH_COOKIE or run against a preview deploy with auth disabled`,
-    );
-  }
+  expect(
+    landed,
+    `signed in, but ${TARGET} still redirected to ${landed}. The saved session ` +
+      `was rejected — do not skip past this, it means the canary is blind.`,
+  ).toContain(TARGET);
 
   /* ── Step 3: click around — 7 clicks at varied coordinates. ── */
   for (let i = 0; i < 7; i++) {
@@ -136,7 +140,7 @@ test("admin/* events ingest with dealer_id stamp + persist to PG (skipped if buf
   page,
   baseURL,
 }) => {
-  const apiCtx = await pwRequest.newContext({ baseURL });
+  const apiCtx = await authedRequest(baseURL);
   const before = await (
     await apiCtx.get("/api/analytics/events")
   ).json();
