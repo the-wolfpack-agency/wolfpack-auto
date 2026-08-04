@@ -60,8 +60,8 @@ export async function GET(
          u.last_activity_at
        FROM dealers d
        LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt, MAX(last_login) AS last_activity_at FROM dealer_users GROUP BY dealer_id) u ON u.dealer_id = d.id::text
-       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM leads GROUP BY dealer_id) l ON l.dealer_id = d.id::text
-       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM vehicles GROUP BY dealer_id) v ON v.dealer_id = d.id::text
+       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM leads GROUP BY dealer_id) l ON l.dealer_id = d.id
+       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM vehicles GROUP BY dealer_id) v ON v.dealer_id = d.id
        WHERE d.id = $1
        LIMIT 1`,
       [params.id],

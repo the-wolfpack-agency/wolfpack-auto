@@ -65,8 +65,8 @@ export async function GET(request: NextRequest) {
         `SELECT COUNT(*)::int AS cnt
            FROM dealers d
           WHERE d.is_active
-            AND NOT EXISTS (SELECT 1 FROM vehicles v WHERE v.dealer_id = d.id::text)
-            AND NOT EXISTS (SELECT 1 FROM leads l WHERE l.dealer_id = d.id::text)`,
+            AND NOT EXISTS (SELECT 1 FROM vehicles v WHERE v.dealer_id = d.id)
+            AND NOT EXISTS (SELECT 1 FROM leads l WHERE l.dealer_id = d.id)`,
       );
       onboarding = Number(onb.rows[0]?.cnt ?? 0);
     } catch { /* tables may not exist on a fresh DB */ }

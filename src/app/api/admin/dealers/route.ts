@@ -50,14 +50,31 @@ export async function GET() {
               COALESCE(l.cnt, 0) AS leads_count,
               COALESCE(v.cnt, 0) AS inventory_count
        FROM dealers d
-       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM leads GROUP BY dealer_id) l ON l.dealer_id = d.id::text
-       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM vehicles GROUP BY dealer_id) v ON v.dealer_id = d.id::text
+       -- No ::text here. leads.dealer_id and vehicles.dealer_id are uuid, the
+       -- same type as dealers.id, so casting made it "uuid = text" and the
+       -- whole statement failed. Only dealer_users.dealer_id is text, and that
+       -- table is not joined here.
+       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM leads GROUP BY dealer_id) l ON l.dealer_id = d.id
+       LEFT JOIN (SELECT dealer_id, COUNT(*)::int AS cnt FROM vehicles GROUP BY dealer_id) v ON v.dealer_id = d.id
        ORDER BY d.name`,
     );
     return NextResponse.json({ dealers: result.rows });
   } catch (err) {
+    /* Never answer a failed query with sample data.
+     *
+     * This used to return MOCK_DEALERS on any error. The join above was broken
+     * (uuid = text), so the Agency Dashboard listed two invented dealerships,
+     * "Demo Dealership" and "Triangle Auto Group", complete with invented lead
+     * and inventory counts, while 19 real ones including a newly onboarded
+     * client were invisible. The page looked healthy and was showing fiction.
+     *
+     * A failure has to read as a failure. Shadow mode (no DATABASE_URL) still
+     * serves samples, because there is no database to be wrong about. */
     console.error("[dealers] DB error:", err);
-    return NextResponse.json({ dealers: MOCK_DEALERS });
+    return NextResponse.json(
+      { error: "Could not load your dealers. This is a server error, not an empty list." },
+      { status: 500 },
+    );
   }
 }
 
