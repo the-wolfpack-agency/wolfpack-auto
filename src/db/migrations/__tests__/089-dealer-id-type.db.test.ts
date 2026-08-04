@@ -87,6 +87,14 @@ d("089 dealer_id type reconcile", () => {
        parse would lose somebody's account. */
     await seed(["REAL", "not-a-uuid"]);
     await expect(db.query(SQL)).rejects.toThrow(/not uuids|refusing to convert/i);
+
+    /* The migration opens with BEGIN, so RAISE EXCEPTION leaves the connection
+       in an aborted transaction and every later statement answers "current
+       transaction is aborted" until it is cleared. That is Postgres behaving
+       correctly and the refusal working; it just has to be unwound before the
+       column can be inspected. */
+    await db.query("ROLLBACK");
+
     const { rows } = await db.query(
       `SELECT data_type FROM information_schema.columns WHERE table_name='dealer_users' AND column_name='dealer_id'`,
     );
