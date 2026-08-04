@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import LeadDetailPanel from "@/components/LeadDetailPanel";
 import { reportClientError } from "@/lib/client-log";
+import { ErrorState, describeFetchFailure } from "@/components/admin/ErrorState";
 import type {
   Lead,
   LeadStatus,
@@ -104,6 +105,10 @@ export default function LeadsManagementPage() {
 
   // UI state
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  /* Why the leads could not be loaded, or null when they loaded fine.
+     Before this existed, both a dropped request and a 401 rendered an empty
+     table that read as "no leads" — the 2026-08-04 Sentry report. */
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<"assign" | "status">("status");
   const [bulkValue, setBulkValue] = useState("");
@@ -129,8 +134,19 @@ export default function LeadsManagementPage() {
         setLeads(data.leads ?? []);
         setTotal(data.total ?? 0);
         setTeamMembers(data.team_members ?? []);
+        setLoadError(null);
+      } else {
+        /* A non-ok response used to fall through this `if` with no `else`, so
+           a 401 or a 500 left the previous rows on screen and no explanation. */
+        setLoadError(describeFetchFailure({ res }));
+        reportClientError("admin.leads.fetch_not_ok", new Error(`status ${res.status}`), {
+          status: res.status,
+        });
       }
     } catch (err) {
+      /* The request never completed. Still reported to Sentry as before, but
+         the operator is now told, rather than shown an empty table. */
+      setLoadError(describeFetchFailure({ err }));
       reportClientError("admin.leads.fetch_failed", err);
     } finally {
       setLoading(false);
@@ -550,6 +566,24 @@ export default function LeadsManagementPage() {
                 <tr>
                   <td colSpan={12} className="px-4 py-12 text-center text-sm text-gray-500">
                     Loading leads...
+                  </td>
+                </tr>
+              ) : loadError ? (
+                /* Must come BEFORE the empty check. When the request failed we
+                   have no idea how many leads exist, and the empty branch below
+                   asserts "No leads match your filters" — telling an operator
+                   something false about their own pipeline. */
+                <tr>
+                  <td colSpan={12} className="px-4 py-8">
+                    <ErrorState
+                      title="Unable to load leads"
+                      message={loadError}
+                      onRetry={() => {
+                        setLoadError(null);
+                        setLoading(true);
+                        void fetchLeads();
+                      }}
+                    />
                   </td>
                 </tr>
               ) : leads.length === 0 ? (
