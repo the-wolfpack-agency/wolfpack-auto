@@ -1,0 +1,63 @@
+# Run the SQL against a real Postgres.
+#
+# The Agency Dashboard listed two invented dealerships with invented lead and
+# inventory counts while 19 real ones, including a newly onboarded client, were
+# invisible. The join said `l.dealer_id = d.id::text` and leads.dealer_id is
+# uuid, so Postgres raised "operator does not exist: uuid = text", the route
+# caught it and answered with sample data. Every check in this repo passed: the
+# SQL is a valid string, the unit tests mock `query`, and the fallback hid the
+# failure behind a healthy-looking page.
+#
+# Tests named *.db.test.ts opt in. They skip without TEST_DATABASE_URL, so a
+# local `npm test` is unchanged and this job is where they actually run.
+name: DB contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  db-contract:
+    name: SQL against a real Postgres
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Pin to the major production runs. A cast can be legal in one and not
+        # another, and this check is worthless if the server disagrees with the
+        # one that parses it for real.
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: auto_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e  # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run the database contract tests
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auto_test
+        run: npx jest --testPathPatterns "\.db\.test\.ts$" --runInBand
+      - name: Fail if the suite silently skipped
+        # The failure this job exists to prevent is a check that looks green
+        # while asserting nothing. Without the URL these tests skip and the job
+        # would still pass.
+        env:
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auto_test
+        run: |
+          set -euo pipefail
+          npx jest --testPathPatterns "\.db\.test\.ts$" --runInBand --json --outputFile=db.json >/dev/null 2>&1 || true
+          PASSED=$(node -e "console.log(require('./db.json').numPassedTests)")
+          echo "database-backed assertions that ran: $PASSED"
+          if [ "$PASSED" -lt 1 ]; then
+            echo "::error::No database-backed tests ran; this job asserted nothing."
+            exit 1
+          fi
