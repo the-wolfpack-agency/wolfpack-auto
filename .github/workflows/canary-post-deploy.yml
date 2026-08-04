@@ -16,10 +16,17 @@
 name: "Canary: Post-Deploy Verification"
 
 on:
-  # deployment_status/schedule disabled until May 1 (Actions minutes budget)
-  # deployment_status:
-  # schedule:
-  #   - cron: "0 6 * * *"
+  # Re-enabled 2026-08-03. It was commented out "until May 1 (Actions minutes
+  # budget)" and never turned back on, so nothing verified production after a
+  # deploy for roughly three months. In that window a change of mine shipped an
+  # infinite redirect loop on /admin/login while a client was using the
+  # platform. The job that would have caught it existed and was switched off.
+  #
+  # Cost is bounded by the `production` filter below: it runs once per
+  # production deployment, not per preview.
+  deployment_status:
+  schedule:
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       url:
@@ -48,9 +55,13 @@ jobs:
     name: Production Canary
     runs-on: ubuntu-latest
     # Only run on successful deployments (or manual/scheduled triggers)
+    # Production only. Vercel fires deployment_status for previews as well, and
+    # running the canary against a preview both wastes minutes and verifies the
+    # wrong target.
     if: >
       github.event_name != 'deployment_status' ||
-      github.event.deployment_status.state == 'success'
+      (github.event.deployment_status.state == 'success' &&
+       contains(fromJSON('["Production","production"]'), github.event.deployment_status.environment))
     timeout-minutes: 5
 
     steps:

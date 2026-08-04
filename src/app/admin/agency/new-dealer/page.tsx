@@ -238,13 +238,23 @@ export default function NewDealerPage() {
                   {/* Say plainly that nothing was sent, rather than implying it
                       was. The link still works, so the dealer is not blocked. */}
                   <p className="text-sm font-medium text-yellow-800">
-                    Invite not emailed{created.invite.reason ? ` (${created.invite.reason})` : ""}
+                    {created.invite.reason === "account_exists"
+                      ? "That email already has an account"
+                      : `Invite not emailed${created.invite.reason ? ` (${created.invite.reason})` : ""}`}
                   </p>
+                  {created.invite.reason === "account_exists" ? (
+                    <p className="mt-1 text-sm text-yellow-700">
+                      The dealer was created. <code className="rounded bg-yellow-100 px-1">{created.invite.email}</code>{" "}
+                      already belongs to someone, so their account was left exactly as it was and no
+                      invite was sent. Add them from the Team page if they should have access here.
+                    </p>
+                  ) : (
                   <p className="mt-1 text-sm text-yellow-700">
                     Send this link to{" "}
                     <code className="rounded bg-yellow-100 px-1">{created.invite.email}</code> so they
                     can set a password:
                   </p>
+                  )}
                   {created.invite.accept_url && (
                     <p className="mt-2 break-all text-sm">
                       <a
