@@ -1,0 +1,65 @@
+name: neon-branch-reaper
+
+# Delete preview databases whose pull request is gone.
+#
+# WHY THIS EXISTS
+#
+# The Neon/Vercel integration creates a database branch for every preview
+# deployment and never removes one. On 2026-08-07 this project held 70 branches,
+# 69 of them previews, the oldest from April. Only 10 had an open pull request.
+# Vercel bills branch-hours: 8,258 of them, $16.53, which was 67% of a $24.73
+# monthly bill for a handful of low-traffic sites.
+#
+# Cleaning that up by hand takes an afternoon and is back within weeks, so the
+# cleanup is the job rather than the fix. This is the fix.
+#
+# SAFE BY CONSTRUCTION
+#
+# A preview branch is copy-on-write from `main` and holds no production data:
+# anything deleted here comes back on the next deploy of that branch. The
+# reaper still refuses to touch anything it is not certain about:
+#   - `main` and any non-preview branch are never candidates
+#   - a branch whose PR is OPEN is never deleted
+#   - a dry run on pull_request prints what it WOULD delete and removes nothing
+#
+# Requires NEON_API_KEY (Neon > Account settings > API keys) in repo secrets.
+
+on:
+  schedule:
+    # Weekly, Sunday 04:00 UTC. Branch-hours accrue continuously, so weekly
+    # keeps the bill flat without hammering the API.
+    - cron: "0 4 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would be deleted without deleting it"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: neon-branch-reaper
+  cancel-in-progress: false
+
+jobs:
+  reap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+
+      - name: Reap preview branches with no open PR
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+          GH_TOKEN: ${{ github.token }}
+          # Scheduled runs delete. Manual runs default to a dry run so the first
+          # thing anyone does with this is look, not delete.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: node .github/scripts/reap-neon-branches.mjs
