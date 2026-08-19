@@ -96,3 +96,42 @@ describe("middleware: the auth wall still gates real protected routes", () => {
     expect(res.status).toBe(401);
   });
 });
+
+/**
+ * The login round trip must not eat the query string.
+ *
+ * Reported 2026-08-19: the CEO opened an invitation link and got "Invalid or
+ * missing invitation token". Accept-invite is exempt from this gate, so it was
+ * not the cause that time, and the comment in the middleware records the day it
+ * WAS: an invitee bounced to login lost their ?token= because the callback
+ * carried the path alone.
+ *
+ * Exempting one route fixed one route. The mechanism that truncates every
+ * other one stayed exactly as it was, and a link that loses its parameters
+ * looks like a broken destination page rather than a broken redirect.
+ */
+describe("middleware: a redirect to login preserves the whole destination", () => {
+  test("the query survives, not just the path", async () => {
+    const res = await middleware(request("/admin/vehicles?status=sold&page=3"));
+    const location = redirectLocation(res);
+    expect(location).toContain("/admin/login");
+
+    const callback = new URL(location).searchParams.get("callbackUrl");
+    expect(callback).toBe("/admin/vehicles?status=sold&page=3");
+  });
+
+  test("a path with no query is unchanged, with no stray question mark", async () => {
+    const res = await middleware(request("/admin/vehicles"));
+    const callback = new URL(redirectLocation(res)).searchParams.get("callbackUrl");
+    expect(callback).toBe("/admin/vehicles");
+  });
+
+  test("the callback stays a path, so it can never send anybody off-site", async () => {
+    /* It is read straight into window.location.href after sign-in. Whatever
+       this contains must be same-origin by construction. */
+    const res = await middleware(request("/admin/vehicles?next=https://evil.example"));
+    const callback = new URL(redirectLocation(res)).searchParams.get("callbackUrl") ?? "";
+    expect(callback.startsWith("/")).toBe(true);
+    expect(callback.startsWith("//")).toBe(false);
+  });
+});
