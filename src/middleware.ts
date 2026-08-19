@@ -202,8 +202,20 @@ export async function middleware(request: NextRequest) {
         );
       }
 
+      /* THE CALLBACK CARRIES THE QUERY, NOT JUST THE PATH.
+         This set `pathname` alone, so any round trip through login dropped
+         every query parameter the user arrived with. The comment sixty lines
+         above records what that cost once already: an invitee bounced to login
+         lost their ?token= and the set-password flow never rendered. Accept
+         invite is exempt from this gate now, which fixes that one route and
+         leaves the mechanism intact for the next one. A token, a ?next=, a
+         deep link into a filtered list: all of them are silently truncated
+         here, and the failure looks like the destination page is broken.
+
+         Same-origin by construction: the value is a path plus its query, never
+         a URL, so it cannot become an open redirect. */
       const loginUrl = new URL("/admin/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
+      loginUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`);
       return applyHeaders(NextResponse.redirect(loginUrl), hostname, request);
     }
 

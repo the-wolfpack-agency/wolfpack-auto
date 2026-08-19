@@ -95,9 +95,49 @@ function AcceptInviteForm() {
           </p>
         </div>
 
+        {/* NO TOKEN IS A DEAD END, AND IT WAS THE WHOLE SCREEN.
+            Reported 2026-08-19 by the CEO, with a screenshot: a red box saying
+            "check your email for the correct link" and nothing else. Every
+            reason to land here is ordinary. The link wrapped in their mail
+            client and only half of it hyperlinked. They opened the page from
+            history, or from a bookmark. They already accepted, and the account
+            exists. Or the invitation genuinely expired, since these last seven
+            days.
+
+            In every one of those cases there is something useful to do, and
+            the page offered none of it. Somebody who already has an account
+            needs the sign-in link. Somebody whose link is stale needs to know
+            who to ask, and that asking again works, rather than being told to
+            go and re-read an email that did not work the first time. */}
         {!token && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-center text-sm text-red-400">
-            Invalid or missing invitation token. Please check your email for the correct link.
+          <div className="space-y-4" data-testid="accept-invite-no-token">
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+              <p className="font-semibold text-amber-100">This link is missing its invitation code.</p>
+              <p className="mt-2 text-amber-200/90">
+                That usually means the link was cut short by an email app, or it was opened from
+                history rather than from the invitation itself. Invitations also expire after seven
+                days.
+              </p>
+            </div>
+            <div className="space-y-3 text-sm text-gray-300">
+              <p>
+                <span className="font-medium text-white">Already set a password?</span>{" "}
+                <a href="/admin/login" className="text-brand-400 underline hover:text-brand-300">
+                  Sign in instead
+                </a>
+                .
+              </p>
+              <p>
+                <span className="font-medium text-white">Still need access?</span> Ask whoever
+                invited you to send it again from Team in the admin portal. A fresh invitation
+                works even if this one has expired.
+              </p>
+              <p className="text-gray-400">
+                Opening the invitation email and clicking <span className="text-gray-200">Accept
+                Invitation</span> is the surest route: the full link is also printed underneath that
+                button, so it can be copied and pasted whole.
+              </p>
+            </div>
           </div>
         )}
 

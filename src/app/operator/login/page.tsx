@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, type FormEvent } from "react";
+import { safeCallbackUrl } from "@/lib/safe-callback-url";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 
@@ -20,7 +21,13 @@ export default function OperatorLoginPage() {
 
 function OperatorLoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/operator";
+  /* Same hazard as the admin login, same rule. This is assigned to
+     window.location.href once the operator has authenticated, so an unchecked
+     value sends somebody who has just typed a password to a copy of this page
+     on another domain. Found by sweeping every redirect in the estate after
+     the admin one, 2026-08-19: fixing the reported instance and leaving its
+     twin is how a class of bug survives being fixed. */
+  const next = safeCallbackUrl(searchParams.get("next"), "/operator");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense, type FormEvent } from "react";
+import { safeCallbackUrl } from "@/lib/safe-callback-url";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchJson } from "@/lib/safe-fetch";
@@ -31,7 +32,9 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
+  /* Attacker-controllable, and assigned to window.location.href below once the
+     password has been accepted. Same-origin paths only: see safeCallbackUrl. */
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
 
   // -------------------------------------------------------------------------
   // Step 1: password authentication
