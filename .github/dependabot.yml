@@ -9,6 +9,9 @@ version: 2
 updates:
   # JavaScript / TypeScript dependencies
   - package-ecosystem: "npm"
+    # wait 3 days before a new version is proposed (security updates are not delayed): a poisoned release is usually caught and pulled first
+    cooldown:
+      default-days: 3
     directory: "/"
     schedule:
       interval: "weekly"
@@ -30,6 +33,9 @@ updates:
 
   # GitHub Actions versions — weekly, low churn.
   - package-ecosystem: "github-actions"
+    # wait 3 days before a new version is proposed (security updates are not delayed): a poisoned release is usually caught and pulled first
+    cooldown:
+      default-days: 3
     directory: "/"
     schedule:
       interval: "weekly"
